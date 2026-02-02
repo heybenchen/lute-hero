@@ -1,5 +1,12 @@
-import { BoardSpace as BoardSpaceType, Player } from '@/types'
-import { GenreBadge } from '@/components/ui/GenreBadge'
+import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
+
+const genreEmojis: Record<Genre, string> = {
+  Pop: '🎵',
+  Rock: '🎸',
+  Electronic: '⚡',
+  Classical: '🎻',
+  HipHop: '🎤',
+}
 
 interface BoardSpaceProps {
   space: BoardSpaceType
@@ -136,11 +143,13 @@ export function BoardSpace({
         {/* Genre tags */}
         {space.genreTags.length > 0 && (
           <div className="flex flex-wrap gap-0.5 justify-center">
-            {space.genreTags.slice(0, 3).map((genre, idx) => (
-              <GenreBadge key={idx} genre={genre} className="text-[6px] px-1 py-0" />
+            {space.genreTags.slice(0, 4).map((genre, idx) => (
+              <span key={idx} className="text-xs" title={genre}>
+                {genreEmojis[genre]}
+              </span>
             ))}
-            {space.genreTags.length > 3 && (
-              <span className="text-[7px] text-gold-500">+{space.genreTags.length - 3}</span>
+            {space.genreTags.length > 4 && (
+              <span className="text-[7px] text-gold-500">+{space.genreTags.length - 4}</span>
             )}
           </div>
         )}
