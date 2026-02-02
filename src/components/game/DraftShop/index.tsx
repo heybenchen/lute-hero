@@ -3,6 +3,8 @@ import { useGameStore, selectPlayerById } from '@/store'
 import { DraftCard, Song } from '@/types'
 import { generateDicePairCard, generateSongCard } from '@/data/draftCards'
 import { DraftCardDisplay } from './DraftCardDisplay'
+import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
+import { getMaxValue } from '@/game-logic/dice/roller'
 
 interface DraftShopProps {
   playerId: string
@@ -76,15 +78,15 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
         return newCards
       })
     } else if (card.type === 'song') {
-      // Create new song
+      // Create new song with 2 effects
       const newSong: Song = {
         id: `${playerId}-song-${Date.now()}`,
         name: card.songName || 'New Song',
         slots: [
-          { dice: null, effect: card.songEffect || null },
           { dice: null, effect: null },
           { dice: null, effect: null },
-          { dice: null, effect: null },
+          { dice: null, effect: card.songEffect || null }, // Effect 1 in slot 3
+          { dice: null, effect: card.songEffect2 || null }, // Effect 2 in slot 4
         ],
         used: false,
       }
@@ -215,6 +217,19 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               {player.songs.map((song) => (
                 <div key={song.id} className="card">
                   <div className="card-header">{song.name}</div>
+
+                  {/* Show slot effects */}
+                  <div className="mb-2 space-y-1">
+                    {song.slots.map((slot, idx) => slot.effect && (
+                      <div key={idx} className="bg-purple-50 p-1 rounded text-xs border border-purple-200">
+                        <span className="font-bold text-purple-800">Slot {idx + 1}:</span>{' '}
+                        <span className="text-purple-700">
+                          {TRACK_EFFECT_DESCRIPTIONS[slot.effect.type] || slot.effect.type}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="grid grid-cols-4 gap-2">
                     {song.slots.map((slot, idx) => (
                       <button
@@ -222,25 +237,32 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                         onClick={() => handleSlotDice(song.id, idx)}
                         disabled={!selectedDice || !!slot.dice}
                         className={`
-                          h-20 rounded-lg border-2 flex flex-col items-center justify-center text-xs
+                          h-24 rounded-lg border-2 flex flex-col items-center justify-center text-xs relative
                           ${slot.dice
                             ? 'bg-parchment-200 border-wood-500 cursor-not-allowed'
                             : selectedDice
                             ? 'bg-blue-50 border-blue-500 hover:bg-blue-100 cursor-pointer'
                             : 'bg-parchment-200 border-dashed border-wood-400'
                           }
+                          ${slot.effect ? 'border-purple-400' : ''}
                         `}
                       >
                         {slot.dice ? (
                           <div className="text-center">
-                            <div className="text-2xl">🎲</div>
-                            <div className="font-bold">{slot.dice.type}</div>
+                            <div className="text-3xl">🎲</div>
+                            <div className="font-bold text-sm">{slot.dice.type}</div>
+                            <div className="text-xs px-1 py-0.5 bg-yellow-400 rounded-full text-white font-bold mt-1">
+                              {getMaxValue(slot.dice.type)}
+                            </div>
+                            <div className="text-[10px] text-wood-500 mt-1">{slot.dice.genre}</div>
                           </div>
                         ) : (
                           <div className="text-wood-400">Empty</div>
                         )}
                         {slot.effect && (
-                          <div className="text-purple-600 mt-1">✨</div>
+                          <div className="absolute top-1 right-1 w-5 h-5 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs">
+                            ✨
+                          </div>
                         )}
                       </button>
                     ))}

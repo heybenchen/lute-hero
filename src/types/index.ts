@@ -60,8 +60,8 @@ export interface MonsterTemplate {
   id: string
   name: string
   baseHP: number
-  vulnerabilities: Genre[] // 2x damage
-  resistances: Genre[] // 0.5x damage
+  vulnerability: Genre | null // Single weakness - 2x damage
+  resistance: Genre | null // Single resistance - 0.5x damage
   description: string
   isElite?: boolean
   isBoss?: boolean
@@ -73,8 +73,8 @@ export interface Monster {
   name: string
   currentHP: number
   maxHP: number
-  vulnerabilities: Genre[]
-  resistances: Genre[]
+  vulnerability: Genre | null
+  resistance: Genre | null
   isElite: boolean
   isBoss: boolean
 }
@@ -127,6 +127,7 @@ export interface DraftCard {
   // For song cards
   songName?: string
   songEffect?: TrackEffect
+  songEffect2?: TrackEffect // All songs have 2 effects now
 }
 
 // ============================================

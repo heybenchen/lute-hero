@@ -1,73 +1,73 @@
 import { MonsterTemplate, Genre } from '@/types'
 
 export const MONSTER_TEMPLATES: MonsterTemplate[] = [
-  // Regular Monsters
+  // Regular Monsters - Each with 1 weakness and 1 resistance
   {
     id: 'groupie',
     name: 'Wandering Groupie',
     baseHP: 15,
-    vulnerabilities: ['Pop'],
-    resistances: ['Classical'],
+    vulnerability: 'Pop',
+    resistance: 'Classical',
     description: 'A lost fan searching for their favorite band',
   },
   {
     id: 'headbanger',
     name: 'Wild Headbanger',
     baseHP: 20,
-    vulnerabilities: ['Rock'],
-    resistances: ['Electronic'],
+    vulnerability: 'Rock',
+    resistance: 'Electronic',
     description: 'An aggressive fan who only respects heavy music',
   },
   {
     id: 'raver',
     name: 'Hyperactive Raver',
     baseHP: 18,
-    vulnerabilities: ['Electronic'],
-    resistances: ['Classical'],
+    vulnerability: 'Electronic',
+    resistance: 'Classical',
     description: 'Dancing non-stop to beats only they can hear',
   },
   {
     id: 'critic',
     name: 'Pretentious Critic',
     baseHP: 25,
-    vulnerabilities: ['Classical'],
-    resistances: ['Pop'],
+    vulnerability: 'Classical',
+    resistance: 'Pop',
     description: 'Only appreciates "real" music',
   },
   {
     id: 'freestyler',
     name: 'Battle Freestyler',
     baseHP: 22,
-    vulnerabilities: ['HipHop'],
-    resistances: ['Rock'],
+    vulnerability: 'HipHop',
+    resistance: 'Rock',
     description: 'Ready to throw down in a rap battle',
   },
 
-  // Dual Weakness Monsters (Harder)
+  // More variety
   {
-    id: 'fusion_fan',
-    name: 'Fusion Fan',
-    baseHP: 30,
-    vulnerabilities: ['Rock', 'Electronic'],
-    resistances: ['Pop'],
-    description: 'Loves genre-bending mashups',
+    id: 'pop_reject',
+    name: 'Pop Reject',
+    baseHP: 18,
+    vulnerability: 'Rock',
+    resistance: 'Pop',
+    description: 'Hates mainstream music',
   },
   {
-    id: 'orchestra_rebel',
-    name: 'Orchestra Rebel',
-    baseHP: 28,
-    vulnerabilities: ['Classical', 'HipHop'],
-    resistances: ['Electronic'],
-    description: 'Classical training meets street beats',
+    id: 'classical_snob',
+    name: 'Classical Snob',
+    baseHP: 24,
+    vulnerability: 'Classical',
+    resistance: 'HipHop',
+    description: 'Only respects the classics',
   },
 
-  // Elite Monsters (Underground Scene)
+  // Elite Monsters (Underground Scene) - Single weakness/resistance
   {
     id: 'elite_pop_star',
     name: 'Fallen Pop Star',
     baseHP: 50,
-    vulnerabilities: ['Pop'],
-    resistances: ['Rock', 'Classical'],
+    vulnerability: 'Pop',
+    resistance: 'Rock',
     description: 'A former idol seeking redemption',
     isElite: true,
   },
@@ -75,8 +75,8 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
     id: 'elite_rockstar',
     name: 'Legendary Rockstar',
     baseHP: 55,
-    vulnerabilities: ['Rock'],
-    resistances: ['Pop', 'Electronic'],
+    vulnerability: 'Rock',
+    resistance: 'Pop',
     description: 'The ghost of rock and roll past',
     isElite: true,
   },
@@ -84,8 +84,8 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
     id: 'elite_dj',
     name: 'Rogue AI DJ',
     baseHP: 52,
-    vulnerabilities: ['Electronic'],
-    resistances: ['Classical', 'HipHop'],
+    vulnerability: 'Electronic',
+    resistance: 'Classical',
     description: 'Sentient music software gone wild',
     isElite: true,
   },
@@ -93,8 +93,8 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
     id: 'elite_conductor',
     name: 'Mad Conductor',
     baseHP: 58,
-    vulnerabilities: ['Classical'],
-    resistances: ['Electronic', 'Pop'],
+    vulnerability: 'Classical',
+    resistance: 'Electronic',
     description: 'Orchestrating chaos itself',
     isElite: true,
   },
@@ -102,19 +102,19 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
     id: 'elite_mc',
     name: 'Battle MC Supreme',
     baseHP: 54,
-    vulnerabilities: ['HipHop'],
-    resistances: ['Rock', 'Classical'],
+    vulnerability: 'HipHop',
+    resistance: 'Rock',
     description: 'The final word in verbal combat',
     isElite: true,
   },
 
-  // Final Boss
+  // Final Boss - No weakness or resistance
   {
     id: 'boss_silence',
     name: 'The Eternal Silence',
     baseHP: 150,
-    vulnerabilities: [], // No vulnerabilities
-    resistances: [], // No resistances - but high HP
+    vulnerability: null,
+    resistance: null,
     description: 'The antithesis of all music, the end of sound itself',
     isBoss: true,
   },
@@ -123,12 +123,12 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
 // Helper to get random monster by genre weakness
 export function getMonsterByGenre(genre: Genre, isElite = false): MonsterTemplate {
   const candidates = MONSTER_TEMPLATES.filter(
-    (m) => m.vulnerabilities.includes(genre) && m.isElite === isElite && !m.isBoss
+    (m) => m.vulnerability === genre && m.isElite === isElite && !m.isBoss
   )
 
   if (candidates.length === 0) {
     // Fallback to any monster with that vulnerability
-    const anyMatch = MONSTER_TEMPLATES.filter((m) => m.vulnerabilities.includes(genre) && !m.isBoss)
+    const anyMatch = MONSTER_TEMPLATES.filter((m) => m.vulnerability === genre && !m.isBoss)
     return anyMatch[Math.floor(Math.random() * anyMatch.length)]
   }
 

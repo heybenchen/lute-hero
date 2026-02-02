@@ -13,21 +13,20 @@ describe('Damage Calculator', () => {
     name: 'Test Monster',
     currentHP: 50,
     maxHP: 50,
-    vulnerabilities: ['Rock', 'Pop'],
-    resistances: ['Classical'],
+    vulnerability: 'Rock',
+    resistance: 'Classical',
     isElite: false,
     isBoss: false,
   })
 
   describe('getGenreMultiplier', () => {
-    it('should return 2x for vulnerable genres', () => {
+    it('should return 2x for vulnerable genre', () => {
       const monster = createTestMonster()
 
       expect(getGenreMultiplier('Rock', monster)).toBe(2.0)
-      expect(getGenreMultiplier('Pop', monster)).toBe(2.0)
     })
 
-    it('should return 0.5x for resistant genres', () => {
+    it('should return 0.5x for resistant genre', () => {
       const monster = createTestMonster()
 
       expect(getGenreMultiplier('Classical', monster)).toBe(0.5)
@@ -36,6 +35,7 @@ describe('Damage Calculator', () => {
     it('should return 1x for neutral genres', () => {
       const monster = createTestMonster()
 
+      expect(getGenreMultiplier('Pop', monster)).toBe(1.0)
       expect(getGenreMultiplier('Electronic', monster)).toBe(1.0)
       expect(getGenreMultiplier('HipHop', monster)).toBe(1.0)
     })

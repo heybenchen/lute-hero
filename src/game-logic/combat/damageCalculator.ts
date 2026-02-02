@@ -16,11 +16,11 @@ import {
  * Calculate damage multiplier for a genre against a monster
  */
 export function getGenreMultiplier(genre: Genre, monster: Monster): number {
-  if (monster.vulnerabilities.includes(genre)) {
+  if (monster.vulnerability === genre) {
     return 2.0 // Vulnerable: 2x damage
   }
 
-  if (monster.resistances.includes(genre)) {
+  if (monster.resistance === genre) {
     return 0.5 // Resistant: 0.5x damage
   }
 

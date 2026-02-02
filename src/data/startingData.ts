@@ -32,8 +32,8 @@ export function createStarterSong(genre: Genre, playerId: string): Song {
   const slots: [SongSlot, SongSlot, SongSlot, SongSlot] = [
     { dice: starterDice[0], effect: null },
     { dice: starterDice[1], effect: null },
-    { dice: null, effect: TRACK_EFFECTS.addFlat3 }, // Slot 3 has a basic effect
-    { dice: null, effect: null }, // Empty slot
+    { dice: null, effect: TRACK_EFFECTS.addFlat3 }, // Slot 3 has effect 1
+    { dice: null, effect: TRACK_EFFECTS.rerollOnes }, // Slot 4 has effect 2 (all songs have 2 effects)
   ]
 
   return {

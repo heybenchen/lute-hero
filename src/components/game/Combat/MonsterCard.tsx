@@ -41,31 +41,23 @@ export function MonsterCard({ monster }: MonsterCardProps) {
         </div>
       </div>
 
-      {/* Vulnerabilities */}
-      {monster.vulnerabilities.length > 0 && (
+      {/* Vulnerability */}
+      {monster.vulnerability && (
         <div className="mb-2">
           <div className="text-xs font-bold text-green-700 mb-1">
             Vulnerable to (2x):
           </div>
-          <div className="flex flex-wrap gap-1">
-            {monster.vulnerabilities.map((genre, idx) => (
-              <GenreBadge key={idx} genre={genre} />
-            ))}
-          </div>
+          <GenreBadge genre={monster.vulnerability} />
         </div>
       )}
 
-      {/* Resistances */}
-      {monster.resistances.length > 0 && (
+      {/* Resistance */}
+      {monster.resistance && (
         <div>
           <div className="text-xs font-bold text-red-700 mb-1">
             Resistant to (0.5x):
           </div>
-          <div className="flex flex-wrap gap-1">
-            {monster.resistances.map((genre, idx) => (
-              <GenreBadge key={idx} genre={genre} />
-            ))}
-          </div>
+          <GenreBadge genre={monster.resistance} />
         </div>
       )}
 

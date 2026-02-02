@@ -35,8 +35,8 @@ describe('Monster Spawner', () => {
         id: 'test-template',
         name: 'Test Monster',
         baseHP: 30,
-        vulnerabilities: ['Rock'],
-        resistances: ['Classical'],
+        vulnerability: 'Rock',
+        resistance: 'Classical',
         description: 'A test monster',
       }
 
@@ -46,8 +46,8 @@ describe('Monster Spawner', () => {
       expect(monster.name).toBe('Test Monster')
       expect(monster.currentHP).toBe(30)
       expect(monster.maxHP).toBe(30)
-      expect(monster.vulnerabilities).toEqual(['Rock'])
-      expect(monster.resistances).toEqual(['Classical'])
+      expect(monster.vulnerability).toBe('Rock')
+      expect(monster.resistance).toBe('Classical')
       expect(monster.isElite).toBe(false)
       expect(monster.isBoss).toBe(false)
     })
@@ -57,8 +57,8 @@ describe('Monster Spawner', () => {
         id: 'test-template',
         name: 'Test Monster',
         baseHP: 30,
-        vulnerabilities: [],
-        resistances: [],
+        vulnerability: null,
+        resistance: null,
         description: 'A test monster',
       }
 
@@ -73,8 +73,8 @@ describe('Monster Spawner', () => {
         id: 'elite-template',
         name: 'Elite Monster',
         baseHP: 50,
-        vulnerabilities: [],
-        resistances: [],
+        vulnerability: 'Rock',
+        resistance: 'Pop',
         description: 'An elite monster',
         isElite: true,
       }
@@ -83,8 +83,8 @@ describe('Monster Spawner', () => {
         id: 'boss-template',
         name: 'Boss Monster',
         baseHP: 150,
-        vulnerabilities: [],
-        resistances: [],
+        vulnerability: null,
+        resistance: null,
         description: 'A boss monster',
         isBoss: true,
       }

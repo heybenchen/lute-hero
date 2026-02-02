@@ -6,6 +6,7 @@ import { DraftShop } from '../DraftShop'
 export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
   const players = useGameStore((state) => state.players)
+  const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
   const collectiveFame = useGameStore(selectCollectiveFame)
   const phase = useGameStore((state) => state.phase)
@@ -15,10 +16,13 @@ export function PlayerPanel() {
   const addGenreTags = useGameStore((state) => state.addGenreTags)
   const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
   const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
+  const startCombat = useGameStore((state) => state.startCombat)
 
   if (!currentPlayer) return null
 
   const movesRemaining = 2 - currentPlayer.movesThisTurn
+  const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
+  const hasMonsters = currentSpace && currentSpace.monsters.length > 0
 
   const handleEndTurn = () => {
     // Reset moves for current player
@@ -121,6 +125,20 @@ export function PlayerPanel() {
 
       {/* Actions */}
       <div className="space-y-2">
+        {/* Fight button - only show if monsters on current space */}
+        {hasMonsters && (
+          <button
+            onClick={() => {
+              if (currentSpace) {
+                startCombat(currentPlayer.id, currentSpace.id, currentSpace.monsters)
+              }
+            }}
+            className="btn-primary w-full bg-red-600 hover:bg-red-500"
+          >
+            ⚔️ Fight {currentSpace.monsters.length} Monster{currentSpace.monsters.length > 1 ? 's' : ''}
+          </button>
+        )}
+
         <button
           onClick={() => setShowDraftShop(true)}
           className="btn-secondary w-full"

@@ -76,30 +76,53 @@ export function DraftCardDisplay({
       {/* Song preview */}
       {card.type === 'song' && (
         <div className="mb-4">
-          <div className="text-lg font-bold text-center mb-2">
+          <div className="text-lg font-bold text-center mb-3">
             {card.songName}
           </div>
-          {card.songEffect && (
-            <div className="text-sm text-purple-700 text-center">
-              ✨ Slot Effect: {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type] || card.songEffect.type}
-            </div>
-          )}
+          <div className="space-y-1 text-xs">
+            {card.songEffect && (
+              <div className="bg-purple-100 p-2 rounded border border-purple-300">
+                <div className="font-bold text-purple-800 mb-1">Slot 3:</div>
+                <div className="text-purple-700">
+                  ✨ {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type] || card.songEffect.type}
+                </div>
+              </div>
+            )}
+            {card.songEffect2 && (
+              <div className="bg-purple-100 p-2 rounded border border-purple-300">
+                <div className="font-bold text-purple-800 mb-1">Slot 4:</div>
+                <div className="text-purple-700">
+                  ✨ {TRACK_EFFECT_DESCRIPTIONS[card.songEffect2.type] || card.songEffect2.type}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Tooltip for songs */}
-      {showTooltip && card.type === 'song' && card.songEffect && (
-        <div className="absolute z-50 bg-wood-600 text-parchment-100 p-3 rounded-lg shadow-2xl left-1/2 transform -translate-x-1/2 -top-2 -translate-y-full w-64 border-2 border-wood-400">
+      {showTooltip && card.type === 'song' && (card.songEffect || card.songEffect2) && (
+        <div className="absolute z-50 bg-wood-600 text-parchment-100 p-3 rounded-lg shadow-2xl left-1/2 transform -translate-x-1/2 -top-2 -translate-y-full w-72 border-2 border-wood-400">
           <div className="font-bold mb-2 text-center">{card.songName}</div>
-          <div className="text-sm">
-            <div className="mb-2">
-              <span className="text-purple-300 font-bold">Slot 1 Effect:</span>
-            </div>
-            <div className="bg-wood-500 p-2 rounded text-parchment-200 text-xs">
-              {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type] || card.songEffect.type}
-            </div>
-            <div className="text-xs text-parchment-300 mt-2">
-              Slots 2-4 are empty and can be filled with any dice
+          <div className="text-sm space-y-2">
+            {card.songEffect && (
+              <div>
+                <div className="text-purple-300 font-bold mb-1">Slot 3 Effect:</div>
+                <div className="bg-wood-500 p-2 rounded text-parchment-200 text-xs">
+                  {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type] || card.songEffect.type}
+                </div>
+              </div>
+            )}
+            {card.songEffect2 && (
+              <div>
+                <div className="text-purple-300 font-bold mb-1">Slot 4 Effect:</div>
+                <div className="bg-wood-500 p-2 rounded text-parchment-200 text-xs">
+                  {TRACK_EFFECT_DESCRIPTIONS[card.songEffect2.type] || card.songEffect2.type}
+                </div>
+              </div>
+            )}
+            <div className="text-xs text-parchment-300 mt-2 border-t border-parchment-400 pt-2">
+              Slots 1-2 are empty and can be filled with any dice
             </div>
           </div>
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">

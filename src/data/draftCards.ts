@@ -77,7 +77,8 @@ export function generateDicePairCard(playerId: string): DraftCard {
 
 export function generateSongCard(): DraftCard {
   const effects = Object.keys(TRACK_EFFECTS)
-  const randomEffect = effects[Math.floor(Math.random() * effects.length)]
+  const randomEffect1 = effects[Math.floor(Math.random() * effects.length)]
+  const randomEffect2 = effects[Math.floor(Math.random() * effects.length)]
 
   const songNames = [
     'Acoustic Serenade',
@@ -97,7 +98,8 @@ export function generateSongCard(): DraftCard {
     type: 'song',
     cost: 5,
     songName: songNames[Math.floor(Math.random() * songNames.length)],
-    songEffect: TRACK_EFFECTS[randomEffect],
+    songEffect: TRACK_EFFECTS[randomEffect1],
+    songEffect2: TRACK_EFFECTS[randomEffect2], // All songs now have 2 effects
   }
 }
 

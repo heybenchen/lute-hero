@@ -53,8 +53,8 @@ export function createMonsterFromTemplate(
     name: template.name,
     currentHP: template.baseHP,
     maxHP: template.baseHP,
-    vulnerabilities: template.vulnerabilities,
-    resistances: template.resistances,
+    vulnerability: template.vulnerability,
+    resistance: template.resistance,
     isElite: template.isElite || false,
     isBoss: template.isBoss || false,
   }
