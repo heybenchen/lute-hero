@@ -1,6 +1,7 @@
 import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { PlayerPanel } from './PlayerPanel'
+import { CurrentPlayerDisplay } from './CurrentPlayerDisplay'
 
 export function GameView() {
   return (
@@ -13,6 +14,7 @@ export function GameView() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Board - 2 columns */}
           <div className="lg:col-span-2">
+            <CurrentPlayerDisplay />
             <Board />
           </div>
 

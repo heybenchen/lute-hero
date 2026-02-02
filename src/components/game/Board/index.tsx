@@ -9,6 +9,7 @@ export function Board() {
   const movePlayer = useGameStore((state) => state.movePlayer)
   const spawnMonstersAtSpace = useGameStore((state) => state.spawnMonstersAtSpace)
   const startCombat = useGameStore((state) => state.startCombat)
+  const incrementPlayerFights = useGameStore((state) => state.incrementPlayerFights)
 
   if (!currentPlayer) return null
 
@@ -20,6 +21,19 @@ export function Board() {
     const canMove = validMoves.some((s) => s.id === spaceId)
     if (!canMove) return
 
+    // Check if space will have monsters after spawning
+    const targetSpace = spaces.find((s) => s.id === spaceId)
+    const willHaveMonsters = targetSpace && (
+      targetSpace.monsters.length > 0 ||
+      Math.floor(targetSpace.genreTags.length / 2) > 0
+    )
+
+    // If moving to a space with monsters, need a fight action available
+    const canFight = currentPlayer.fightsThisTurn < 2
+    if (willHaveMonsters && !canFight) {
+      return // Can't move to monster space without fight actions
+    }
+
     // Move player to space
     movePlayer(currentPlayer.id, spaceId)
 
@@ -30,29 +44,30 @@ export function Board() {
     const space = useGameStore.getState().spaces.find((s) => s.id === spaceId)
 
     if (space && space.monsters.length > 0) {
-      // Start combat
+      // Auto-trigger combat and consume a fight action
+      useGameStore.getState().incrementPlayerFights(currentPlayer.id)
       startCombat(currentPlayer.id, spaceId, space.monsters)
     }
   }
 
-  // Paper map layout with organic positioning - optimized spacing to prevent overlaps
+  // Paper map layout with organic positioning - optimized for 90x90 spaces
   // Manually positioned nodes for better visibility and paper map aesthetic
-  // Node cards are 140px wide, so need at least 160px spacing to avoid overlap
+  // Node cards are 90px wide, so need at least 100px spacing to avoid overlap
   const nodePositions: Record<number, { x: number; y: number }> = {
-    0: { x: 80, y: 60 },     // Top-left edge
-    1: { x: 280, y: 80 },    // Near top-left
-    2: { x: 480, y: 40 },    // Top-center edge
-    3: { x: 260, y: 220 },   // Left-center (moved right and up from 120,260)
-    4: { x: 420, y: 240 },   // Center-left (moved right from 320)
-    5: { x: 620, y: 220 },   // Center-right (moved right from 520)
-    6: { x: 720, y: 120 },   // Right of top (moved right from 680)
-    7: { x: 880, y: 60 },    // Top-right edge
-    8: { x: 920, y: 280 },   // Right edge
-    9: { x: 780, y: 380 },   // Right-center edge
-    10: { x: 580, y: 420 },  // Center-bottom
-    11: { x: 380, y: 460 },  // Bottom-center
-    12: { x: 180, y: 480 },  // Bottom-left edge
-    13: { x: 60, y: 380 },   // Left edge (moved down from 340 to avoid overlap with node 3)
+    0: { x: 60, y: 50 },     // Top-left edge
+    1: { x: 220, y: 70 },    // Near top-left
+    2: { x: 380, y: 40 },    // Top-center edge
+    3: { x: 200, y: 200 },   // Left-center
+    4: { x: 360, y: 210 },   // Center-left
+    5: { x: 520, y: 190 },   // Center-right
+    6: { x: 630, y: 100 },   // Right of top
+    7: { x: 750, y: 60 },    // Top-right edge
+    8: { x: 780, y: 240 },   // Right edge
+    9: { x: 660, y: 350 },   // Right-center edge
+    10: { x: 490, y: 380 },  // Center-bottom
+    11: { x: 310, y: 410 },  // Bottom-center
+    12: { x: 140, y: 430 },  // Bottom-left edge
+    13: { x: 50, y: 320 },   // Left edge
   }
 
   return (
@@ -68,8 +83,8 @@ export function Board() {
       />
 
       {/* Scrollable map container */}
-      <div className="relative overflow-auto" style={{ maxHeight: '700px' }}>
-        <div className="relative p-8" style={{ width: '1100px', height: '620px', margin: '0 auto' }}>
+      <div className="relative overflow-auto" style={{ maxHeight: '600px' }}>
+        <div className="relative p-8" style={{ width: '950px', height: '550px', margin: '0 auto' }}>
         {/* Render connections */}
         <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
           <defs>
@@ -93,11 +108,11 @@ export function Board() {
 
               if (!pos1 || !pos2) return null
 
-              // Add offset to connect from center of nodes (adjusted for smaller size)
-              const x1 = pos1.x + 70
-              const y1 = pos1.y + 70
-              const x2 = pos2.x + 70
-              const y2 = pos2.y + 70
+              // Add offset to connect from center of nodes (90px / 2 = 45px)
+              const x1 = pos1.x + 45
+              const y1 = pos1.y + 45
+              const x2 = pos2.x + 45
+              const y2 = pos2.y + 45
 
               const isActivePath = validMoves.some((s) => s.id === space.id && s.connections.includes(connId)) ||
                                    validMoves.some((s) => s.id === connId && s.connections.includes(space.id))

@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
-import { DraftCard, Song } from '@/types'
+import { DraftCard, Song, DiceType } from '@/types'
 import { generateDicePairCard, generateSongCard } from '@/data/draftCards'
 import { DraftCardDisplay } from './DraftCardDisplay'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
+import { GenreBadge } from '@/components/ui/GenreBadge'
+
+const diceIcons: Record<DiceType, string> = {
+  d4: '△',
+  d6: '⚄',
+  d12: '⬢',
+  d20: '⬟',
+}
 
 interface DraftShopProps {
   playerId: string
@@ -248,13 +256,12 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                         `}
                       >
                         {slot.dice ? (
-                          <div className="text-center">
-                            <div className="text-3xl">🎲</div>
-                            <div className="font-bold text-sm">{slot.dice.type}</div>
-                            <div className="text-xs px-1 py-0.5 bg-yellow-400 rounded-full text-white font-bold mt-1">
+                          <div className="text-center relative">
+                            <div className="text-3xl mb-1">{diceIcons[slot.dice.type]}</div>
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-lg">
                               {getMaxValue(slot.dice.type)}
                             </div>
-                            <div className="text-[10px] text-wood-500 mt-1">{slot.dice.genre}</div>
+                            <GenreBadge genre={slot.dice.genre} className="text-[8px]" />
                           </div>
                         ) : (
                           <div className="text-wood-400">Empty</div>
