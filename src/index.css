@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-wood-600 font-game text-parchment-100;
+  }
+}
+
+@layer components {
+  /* Tabletop card style */
+  .card {
+    @apply bg-parchment-100 text-wood-600 rounded-lg shadow-lg border-4 border-wood-500 p-4;
+  }
+
+  .card-header {
+    @apply font-medieval text-xl font-bold mb-2 border-b-2 border-wood-400 pb-2;
+  }
+
+  /* Dice style */
+  .die {
+    @apply w-16 h-16 rounded-lg bg-parchment-200 border-2 border-wood-500 flex items-center justify-center text-2xl font-bold shadow-md;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply px-6 py-3 bg-wood-500 hover:bg-wood-400 text-parchment-50 font-bold rounded-lg shadow-lg transition-all duration-200 border-2 border-wood-600;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-parchment-300 hover:bg-parchment-200 text-wood-600 font-bold rounded-lg shadow-md transition-all duration-200 border-2 border-wood-500;
+  }
+
+  /* Genre badges */
+  .genre-pop { @apply bg-pop text-white; }
+  .genre-rock { @apply bg-rock text-white; }
+  .genre-electronic { @apply bg-electronic text-gray-900; }
+  .genre-classical { @apply bg-classical text-white; }
+  .genre-hiphop { @apply bg-hiphop text-gray-900; }
+}

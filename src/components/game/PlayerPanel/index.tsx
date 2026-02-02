@@ -1,0 +1,144 @@
+import { useState } from 'react'
+import { useGameStore, selectCurrentPlayer, selectCollectiveFame } from '@/store'
+import { FAME_THRESHOLDS } from '@/data/startingData'
+import { DraftShop } from '../DraftShop'
+
+export function PlayerPanel() {
+  const [showDraftShop, setShowDraftShop] = useState(false)
+  const players = useGameStore((state) => state.players)
+  const currentPlayer = useGameStore(selectCurrentPlayer)
+  const collectiveFame = useGameStore(selectCollectiveFame)
+  const phase = useGameStore((state) => state.phase)
+  const currentRound = useGameStore((state) => state.currentRound)
+  const nextTurn = useGameStore((state) => state.nextTurn)
+  const nextRound = useGameStore((state) => state.nextRound)
+  const addGenreTags = useGameStore((state) => state.addGenreTags)
+  const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
+  const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
+
+  if (!currentPlayer) return null
+
+  const movesRemaining = 2 - currentPlayer.movesThisTurn
+
+  const handleEndTurn = () => {
+    // Reset moves for current player
+    resetPlayerMoves(currentPlayer.id)
+
+    if (currentTurnPlayerIndex >= players.length - 1) {
+      // End of round - reset moves for all players
+      players.forEach((p) => resetPlayerMoves(p.id))
+      nextRound()
+      addGenreTags()
+    } else {
+      // Next player's turn
+      nextTurn()
+    }
+  }
+
+  return (
+    <div className="card p-6">
+      {/* Game info */}
+      <div className="mb-6 text-center">
+        <h2 className="font-medieval text-2xl text-wood-600 mb-2">
+          Round {currentRound} - {phase.toUpperCase()} Phase
+        </h2>
+        <div className="text-lg">
+          <strong>Collective Fame:</strong> {collectiveFame} / {FAME_THRESHOLDS.undergroundScene}
+        </div>
+      </div>
+
+      {/* Current player */}
+      <div className="mb-6 p-4 bg-wood-100 rounded-lg">
+        <h3 className="font-medieval text-xl mb-3">Current Turn</h3>
+        <div className="flex items-center gap-4 mb-3">
+          <div
+            className="w-16 h-16 rounded-full border-4 border-wood-600 flex items-center justify-center text-2xl font-bold"
+            style={{ backgroundColor: currentPlayer.color }}
+          >
+            {currentPlayer.name.charAt(0)}
+          </div>
+          <div>
+            <div className="text-xl font-bold">{currentPlayer.name}</div>
+            <div className="text-sm">
+              Fame: {currentPlayer.fame} | EXP: {currentPlayer.exp} | Monsters: {currentPlayer.monstersDefeated}
+            </div>
+          </div>
+        </div>
+
+        {/* Movement tracker */}
+        <div className="bg-parchment-200 p-2 rounded-lg">
+          <div className="text-sm font-bold text-wood-600 mb-1">
+            Moves Remaining:
+          </div>
+          <div className="flex gap-2">
+            {[1, 2].map((move) => (
+              <div
+                key={move}
+                className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold ${
+                  move <= movesRemaining
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-300 text-gray-500'
+                }`}
+              >
+                {move}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* All players */}
+      <div className="mb-6">
+        <h3 className="font-medieval text-lg mb-2">All Players</h3>
+        <div className="space-y-2">
+          {players.map((player) => (
+            <div
+              key={player.id}
+              className={`p-3 rounded-lg ${
+                player.id === currentPlayer.id
+                  ? 'bg-green-100 border-2 border-green-500'
+                  : 'bg-parchment-200'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-full border-2 border-wood-600 flex items-center justify-center font-bold"
+                  style={{ backgroundColor: player.color }}
+                >
+                  {player.name.charAt(0)}
+                </div>
+                <div className="flex-1">
+                  <div className="font-bold">{player.name}</div>
+                  <div className="text-xs">
+                    Fame: {player.fame} | EXP: {player.exp} | Songs: {player.songs.length}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="space-y-2">
+        <button
+          onClick={() => setShowDraftShop(true)}
+          className="btn-secondary w-full"
+        >
+          🎪 Open Draft Shop ({currentPlayer.exp} EXP)
+        </button>
+        <button onClick={handleEndTurn} className="btn-primary w-full">
+          End Turn
+        </button>
+      </div>
+
+      {/* Draft shop modal */}
+      {showDraftShop && (
+        <DraftShop
+          playerId={currentPlayer.id}
+          onClose={() => setShowDraftShop(false)}
+        />
+      )}
+    </div>
+  )
+}
