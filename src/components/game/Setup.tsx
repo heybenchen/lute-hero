@@ -64,12 +64,12 @@ export function Setup() {
         <div className="text-center mb-8">
           <h1 className="font-display text-5xl text-gold-400 mb-3">
             Lute Hero
-          </h1>
+        </h1>
           <div className="h-px mx-auto w-64 mb-4" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.5), transparent)' }} />
           <p className="text-parchment-400 italic font-game text-base">
-            A post-catastrophe fantasy world where only Bards remain.
-            Defeat monsters by converting them into fans with the power of music!
-          </p>
+          A post-catastrophe fantasy world where only Bards remain.
+          Defeat monsters by converting them into fans with the power of music!
+        </p>
         </div>
 
         {/* Player count */}

@@ -17,7 +17,7 @@ export function PlayerPanel() {
   const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
   const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
   const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
-  const incrementPlayerFights = useGameStore((state) => state.incrementPlayerFights)
+  const usePlayerFight = useGameStore((state) => state.usePlayerFight)
   const startCombat = useGameStore((state) => state.startCombat)
 
   if (!currentPlayer) return null
@@ -32,11 +32,13 @@ export function PlayerPanel() {
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
     resetPlayerFights(currentPlayer.id)
+    useGameStore.getState().updatePlayer(currentPlayer.id, { hasShoppedThisTurn: false })
 
     if (currentTurnPlayerIndex >= players.length - 1) {
       players.forEach((p) => {
         resetPlayerMoves(p.id)
         resetPlayerFights(p.id)
+        useGameStore.getState().updatePlayer(p.id, { hasShoppedThisTurn: false })
       })
       nextRound()
       addGenreTags()
@@ -47,7 +49,7 @@ export function PlayerPanel() {
 
   const handleFight = () => {
     if (currentSpace && canFight) {
-      incrementPlayerFights(currentPlayer.id)
+      usePlayerFight(currentPlayer.id)
       startCombat(currentPlayer.id, currentSpace.id, currentSpace.monsters)
     }
   }
@@ -101,7 +103,7 @@ export function PlayerPanel() {
           </div>
         </div>
 
-        {/* Action trackers */}
+        {/* Move and Action trackers */}
         <div className="grid grid-cols-2 gap-2">
           {/* Movement tracker */}
           <div className="rounded-lg p-2" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
@@ -222,15 +224,17 @@ export function PlayerPanel() {
         <button
           onClick={() => setShowDraftShop(true)}
           className="btn-secondary w-full text-sm"
+          disabled={currentPlayer.hasShoppedThisTurn}
         >
-          Draft Shop ({currentPlayer.exp} EXP)
+          Studio ({currentPlayer.exp} EXP)
+          {currentPlayer.hasShoppedThisTurn && ' (Used)'}
         </button>
         <button onClick={handleEndTurn} className="btn-primary w-full text-sm">
           End Turn
         </button>
       </div>
 
-      {/* Draft shop modal */}
+      {/* Studio modal */}
       {showDraftShop && (
         <DraftShop
           playerId={currentPlayer.id}

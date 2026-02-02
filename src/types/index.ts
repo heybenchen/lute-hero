@@ -111,8 +111,9 @@ export interface Player {
   monstersDefeated: number
   isEliminated: boolean // For final boss phase
   totalBossDamage: number // For final boss ranking
-  movesThisTurn: number // Track moves for 2-space limit
+  movesThisTurn: number // Track moves for 2-move limit
   fightsThisTurn: number // Track fights for 2-fight limit
+  hasShoppedThisTurn: boolean // Track if player has shopped this turn
 }
 
 // ============================================

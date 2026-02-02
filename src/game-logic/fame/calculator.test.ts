@@ -22,6 +22,7 @@ describe('Fame Calculator', () => {
     totalBossDamage: 0,
     movesThisTurn: 0,
     fightsThisTurn: 0,
+    hasShoppedThisTurn: false,
     ...overrides,
   })
 

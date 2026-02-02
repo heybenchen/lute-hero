@@ -14,6 +14,7 @@ export interface PlayersSlice {
   // Actions
   initializePlayers: (playerConfigs: { name: string; starterGenre: Genre; color: string }[]) => void
   movePlayer: (playerId: string, newSpaceId: number) => void
+  usePlayerFight: (playerId: string) => void
   updatePlayer: (playerId: string, updates: Partial<Player>) => void
   addSongToPlayer: (playerId: string, song: Song) => void
   addDiceToPlayer: (playerId: string, dice: Dice, songId: string, slotIndex: number) => void
@@ -22,8 +23,8 @@ export interface PlayersSlice {
   incrementPlayerMonstersDefeated: (playerId: string, count: number) => void
   eliminatePlayer: (playerId: string) => void
   resetPlayerMoves: (playerId: string) => void
-  incrementPlayerFights: (playerId: string) => void
   resetPlayerFights: (playerId: string) => void
+  setPlayerShopped: (playerId: string) => void
 }
 
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
@@ -52,6 +53,7 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
         totalBossDamage: 0,
         movesThisTurn: 0,
         fightsThisTurn: 0,
+        hasShoppedThisTurn: false,
       }
     })
 
@@ -62,6 +64,14 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
     set({
       players: get().players.map((p) =>
         p.id === playerId ? { ...p, position: newSpaceId, movesThisTurn: p.movesThisTurn + 1 } : p
+      ),
+    })
+  },
+
+  usePlayerFight: (playerId) => {
+    set({
+      players: get().players.map((p) =>
+        p.id === playerId ? { ...p, fightsThisTurn: p.fightsThisTurn + 1 } : p
       ),
     })
   },
@@ -147,18 +157,18 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
     })
   },
 
-  incrementPlayerFights: (playerId) => {
-    set({
-      players: get().players.map((p) =>
-        p.id === playerId ? { ...p, fightsThisTurn: p.fightsThisTurn + 1 } : p
-      ),
-    })
-  },
-
   resetPlayerFights: (playerId) => {
     set({
       players: get().players.map((p) =>
         p.id === playerId ? { ...p, fightsThisTurn: 0 } : p
+      ),
+    })
+  },
+
+  setPlayerShopped: (playerId) => {
+    set({
+      players: get().players.map((p) =>
+        p.id === playerId ? { ...p, hasShoppedThisTurn: true } : p
       ),
     })
   },

@@ -8,45 +8,24 @@ export function Board() {
   const currentPlayer = useGameStore(selectCurrentPlayer)
   const movePlayer = useGameStore((state) => state.movePlayer)
   const spawnMonstersAtSpace = useGameStore((state) => state.spawnMonstersAtSpace)
-  const startCombat = useGameStore((state) => state.startCombat)
 
   if (!currentPlayer) return null
 
-  // Allow moves up to 2 spaces away if player hasn't used both moves
+  // Allow moves if player hasn't used both moves
   const canMove = currentPlayer.movesThisTurn < 2
   const validMoves = canMove ? getValidMoves(currentPlayer.position, spaces) : []
 
   const handleSpaceClick = (spaceId: number) => {
-    const canMove = validMoves.some((s) => s.id === spaceId)
     if (!canMove) return
 
-    // Check if space will have monsters after spawning
-    const targetSpace = spaces.find((s) => s.id === spaceId)
-    const willHaveMonsters = targetSpace && (
-      targetSpace.monsters.length > 0 ||
-      Math.floor(targetSpace.genreTags.length / 2) > 0
-    )
+    const isValidMove = validMoves.some((s) => s.id === spaceId)
+    if (!isValidMove) return
 
-    // If moving to a space with monsters, need a fight action available
-    const canFight = currentPlayer.fightsThisTurn < 2
-    if (willHaveMonsters && !canFight) {
-      return // Can't move to monster space without fight actions
-    }
-
-    // Move player to space
+    // Move player to space (consumes a move, not an action)
     movePlayer(currentPlayer.id, spaceId)
 
-    // Spawn monsters
+    // Spawn monsters (but don't auto-trigger combat)
     spawnMonstersAtSpace(spaceId)
-
-    // Get the updated space with monsters
-    const space = useGameStore.getState().spaces.find((s) => s.id === spaceId)
-
-    if (space && space.monsters.length > 0) {
-      // Auto-trigger combat and consume a fight action
-      useGameStore.getState().incrementPlayerFights(currentPlayer.id)
-      startCombat(currentPlayer.id, spaceId, space.monsters)
-    }
   }
 
   // Paper map layout with organic positioning - optimized for 90x90 spaces

@@ -25,6 +25,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const player = useGameStore(selectPlayerById(playerId))
   const awardPlayerExp = useGameStore((state) => state.awardPlayerExp)
   const addSongToPlayer = useGameStore((state) => state.addSongToPlayer)
+  const setPlayerShopped = useGameStore((state) => state.setPlayerShopped)
 
   const [diceCards, setDiceCards] = useState<DraftCard[]>([])
   const [songCards, setSongCards] = useState<DraftCard[]>([])
@@ -32,18 +33,23 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     dice: any[]
     cardId: string
   } | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
 
+  // Initialize cards only once when component mounts
   useEffect(() => {
-    setDiceCards([
-      generateDicePairCard(playerId),
-      generateDicePairCard(playerId),
-      generateDicePairCard(playerId),
-    ])
-    setSongCards([
-      generateSongCard(),
-      generateSongCard(),
-    ])
-  }, [playerId])
+    if (!isInitialized) {
+      setDiceCards([
+        generateDicePairCard(playerId),
+        generateDicePairCard(playerId),
+        generateDicePairCard(playerId),
+      ])
+      setSongCards([
+        generateSongCard(),
+        generateSongCard(),
+      ])
+      setIsInitialized(true)
+    }
+  }, [playerId, isInitialized])
 
   const handleRefreshDice = () => {
     if (!player || player.exp < REFRESH_COST) return
@@ -69,9 +75,12 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   if (!player) return null
 
   const handlePurchase = (card: DraftCard) => {
-    if (!player || player.exp < card.cost) return
+    // Check if player has enough EXP and hasn't shopped this turn
+    if (!player || player.exp < card.cost || player.hasShoppedThisTurn) return
 
+    // Consume EXP and mark as shopped
     awardPlayerExp(playerId, -card.cost)
+    setPlayerShopped(playerId)
 
     if (card.type === 'dice' && card.dice) {
       setSelectedDice({ dice: card.dice, cardId: card.id })
@@ -129,10 +138,12 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
           <div className="flex justify-between items-center mb-6">
             <div>
               <div className="font-display text-2xl text-gold-400">
-                Draft Shop
+                Studio
               </div>
               <p className="text-sm text-parchment-400">
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span> Available
+                {' '}&middot;{' '}
+                <span className="text-parchment-500 italic">Shopping ends your turn</span>
               </p>
             </div>
             <button onClick={onClose} className="btn-secondary text-sm">
@@ -183,7 +194,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   key={card.id}
                   card={card}
                   onPurchase={() => handlePurchase(card)}
-                  canAfford={player.exp >= card.cost}
+                  canAfford={player.exp >= card.cost && !player.hasShoppedThisTurn}
                 />
               ))}
             </div>
@@ -213,7 +224,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   key={card.id}
                   card={card}
                   onPurchase={() => handlePurchase(card)}
-                  canAfford={player.exp >= card.cost}
+                  canAfford={player.exp >= card.cost && !player.hasShoppedThisTurn}
                 />
               ))}
             </div>

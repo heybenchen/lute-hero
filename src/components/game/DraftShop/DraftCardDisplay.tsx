@@ -159,7 +159,7 @@ export function DraftCardDisplay({
         disabled={!canAfford || disabled}
         className="btn-primary w-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {canAfford ? 'Purchase' : 'Not Enough EXP'}
+        {canAfford ? 'Purchase' : 'Not Available'}
       </button>
     </div>
   )
