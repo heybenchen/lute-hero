@@ -54,8 +54,8 @@ export const DICE_UPGRADE_PATH: { [key in DiceType]: DiceType | null } = {
 
 // Fame thresholds for phase transitions
 export const FAME_THRESHOLDS = {
-  undergroundScene: 30, // Total collective fame needed
-  finalBoss: 50, // Total collective fame needed
+  undergroundScene: 300, // Total collective fame needed
+  finalBoss: 500, // Total collective fame needed
 }
 
 // Fame multipliers based on total monsters defeated

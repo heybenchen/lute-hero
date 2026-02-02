@@ -119,9 +119,9 @@ export function Setup() {
                     newNames[idx] = e.target.value
                     setPlayerNames(newNames)
                   }}
-                  className="flex-1 px-4 py-2 rounded-lg text-parchment-200 font-game placeholder:text-parchment-500"
+                  className="flex-1 px-4 py-2 rounded-lg text-white font-game placeholder:text-parchment-500"
                   style={{
-                    background: 'rgba(42, 33, 24, 0.6)',
+                    background: 'rgba(42, 33, 24, 0.9)',
                     border: '1px solid rgba(212, 168, 83, 0.2)',
                   }}
                   placeholder={`Player ${idx + 1} Name`}
@@ -134,9 +134,9 @@ export function Setup() {
                     newGenres[idx] = e.target.value as Genre
                     setSelectedGenres(newGenres)
                   }}
-                  className="px-4 py-2 rounded-lg text-parchment-200 font-game"
+                  className="px-4 py-2 rounded-lg text-white font-game"
                   style={{
-                    background: 'rgba(42, 33, 24, 0.6)',
+                    background: 'rgba(42, 33, 24, 0.9)',
                     border: '1px solid rgba(212, 168, 83, 0.2)',
                   }}
                 >

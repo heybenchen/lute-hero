@@ -11,7 +11,7 @@ export function calculateFameEarned(
   const totalDefeated = currentMonstersDefeated + newMonstersDefeated
   const multiplier = calculateFameMultiplier(totalDefeated)
 
-  return newMonstersDefeated * multiplier
+  return newMonstersDefeated * multiplier * 10
 }
 
 /**
