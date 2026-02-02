@@ -10,10 +10,10 @@ export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps
   if (calculations.length === 0) return null
 
   return (
-    <div className="bg-wood-100 p-3 rounded-lg">
-      <h3 className="font-medieval text-base text-wood-600 mb-2">
-        📊 Damage Breakdown
-      </h3>
+    <div className="p-3 rounded-lg" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.15)' }}>
+      <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider mb-2">
+        Damage Breakdown
+      </div>
 
       <div className="space-y-2">
         {calculations.map((calc, idx) => {
@@ -21,37 +21,38 @@ export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps
           if (!monster) return null
 
           return (
-            <div key={idx} className="bg-parchment-100 p-2 rounded border border-wood-400">
+            <div key={idx} className="p-2 rounded" style={{ background: 'rgba(42, 33, 24, 0.6)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
               {/* Monster name and total damage */}
               <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-sm text-wood-600">{monster.name}</span>
-                <span className="text-red-600 font-bold text-lg">-{calc.totalDamage} HP</span>
+                <span className="font-bold text-sm text-parchment-200">{monster.name}</span>
+                <span className="text-red-400 font-bold text-base">-{calc.totalDamage} HP</span>
               </div>
 
               {/* Compact damage formula */}
               <div className="text-xs space-y-1">
-                {/* Base + Crits */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-wood-500">Rolls:</span>
+                  <span className="text-parchment-500 text-[10px]">Rolls:</span>
                   {calc.genreMultipliers.map((gm, gmIdx) => (
-                    <div key={gmIdx} className="flex items-center gap-1 bg-parchment-200 px-2 py-0.5 rounded">
-                      <GenreBadge genre={gm.genre} className="text-[10px]" />
+                    <div key={gmIdx} className="flex items-center gap-1 px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(212, 168, 83, 0.08)', border: '1px solid rgba(212, 168, 83, 0.1)' }}
+                    >
+                      <GenreBadge genre={gm.genre} className="text-[8px] px-1 py-0" />
                       {gm.multiplier !== 1 && (
-                        <span className={`font-bold ${
-                          gm.multiplier === 2 ? 'text-green-600' :
-                          gm.multiplier === 0.5 ? 'text-red-600' :
-                          'text-wood-600'
+                        <span className={`font-bold text-[10px] ${
+                          gm.multiplier === 2 ? 'text-green-400' :
+                          gm.multiplier === 0.5 ? 'text-red-400' :
+                          'text-parchment-300'
                         }`}>
-                          ×{gm.multiplier}
+                          x{gm.multiplier}
                         </span>
                       )}
                     </div>
                   ))}
                   {calc.critBonuses > 0 && (
-                    <span className="text-yellow-600 font-bold">+ {calc.critBonuses} crit</span>
+                    <span className="text-gold-400 font-bold text-[10px]">+ {calc.critBonuses} crit</span>
                   )}
                   {calc.effectBonuses > 0 && (
-                    <span className="text-purple-600 font-bold">+ {calc.effectBonuses} effects</span>
+                    <span className="text-classical font-bold text-[10px]">+ {calc.effectBonuses} effects</span>
                   )}
                 </div>
               </div>

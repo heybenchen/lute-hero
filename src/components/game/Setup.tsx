@@ -16,7 +16,6 @@ export function Setup() {
   const startGame = useGameStore((state) => state.startGame)
 
   const handleStart = () => {
-    // Create player configs
     const configs = []
     for (let i = 0; i < playerCount; i++) {
       configs.push({
@@ -26,18 +25,15 @@ export function Setup() {
       })
     }
 
-    // Initialize game
     initializeBoard()
     initializePlayers(configs)
 
-    // Add starting genre tags to spaces adjacent to each player's starting position
     const board = useGameStore.getState().spaces
     const players = useGameStore.getState().players
 
     players.forEach((player) => {
       const playerSpace = board.find((s) => s.id === player.position)
       if (playerSpace) {
-        // Add player's starting genre to adjacent spaces
         playerSpace.connections.forEach((connId) => {
           useGameStore.getState().updateSpace(connId, {
             genreTags: [...(board.find((s) => s.id === connId)?.genreTags || []), player.songs[0].slots[0].dice?.genre || 'Pop']
@@ -46,35 +42,55 @@ export function Setup() {
       }
     })
 
-    addGenreTags() // Add initial genre tags to all spaces
+    addGenreTags()
     startGame()
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8">
-      <div className="card max-w-2xl w-full">
-        <h1 className="card-header text-4xl text-center">
-          🎸 Lute Hero 🎸
-        </h1>
+    <div className="min-h-screen flex items-center justify-center p-8 relative">
+      {/* Atmospheric background */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 50% 30%, rgba(212, 168, 83, 0.06) 0%, transparent 60%),
+            radial-gradient(ellipse at 50% 100%, rgba(109, 86, 56, 0.08) 0%, transparent 50%)
+          `,
+        }}
+      />
 
-        <p className="text-center text-lg mb-8">
-          A post-catastrophe fantasy world where only Bards remain.
-          Defeat monsters by converting them into fans with the power of music!
-        </p>
+      <div className="card-ornate max-w-2xl w-full relative z-10 p-8">
+        {/* Title */}
+        <div className="text-center mb-8">
+          <h1 className="font-display text-5xl text-gold-400 mb-3">
+            Lute Hero
+          </h1>
+          <div className="h-px mx-auto w-64 mb-4" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.5), transparent)' }} />
+          <p className="text-parchment-400 italic font-game text-base">
+            A post-catastrophe fantasy world where only Bards remain.
+            Defeat monsters by converting them into fans with the power of music!
+          </p>
+        </div>
 
         {/* Player count */}
         <div className="mb-6">
-          <label className="block font-bold mb-2">Number of Players</label>
+          <label className="block font-medieval text-sm text-parchment-400 uppercase tracking-wider mb-2">Number of Players</label>
           <div className="flex gap-2">
             {[2, 3, 4].map((count) => (
               <button
                 key={count}
                 onClick={() => setPlayerCount(count)}
-                className={`px-6 py-3 rounded-lg font-bold ${
-                  playerCount === count
-                    ? 'bg-wood-500 text-parchment-50'
-                    : 'bg-parchment-300 text-wood-600'
-                }`}
+                className="px-6 py-2.5 rounded-lg font-medieval font-bold text-sm transition-all duration-200"
+                style={{
+                  background: playerCount === count
+                    ? 'linear-gradient(135deg, #6d5638, #5a4529)'
+                    : 'rgba(61, 48, 32, 0.4)',
+                  border: playerCount === count
+                    ? '1px solid rgba(212, 168, 83, 0.5)'
+                    : '1px solid rgba(212, 168, 83, 0.15)',
+                  color: playerCount === count ? '#f0d78c' : '#d9c49f',
+                  boxShadow: playerCount === count ? '0 0 10px rgba(212, 168, 83, 0.15)' : 'none',
+                }}
               >
                 {count} Players
               </button>
@@ -84,12 +100,12 @@ export function Setup() {
 
         {/* Player names and genres */}
         <div className="mb-8">
-          <label className="block font-bold mb-3">Player Setup</label>
-          <div className="space-y-4">
+          <label className="block font-medieval text-sm text-parchment-400 uppercase tracking-wider mb-3">Player Setup</label>
+          <div className="space-y-3">
             {Array.from({ length: playerCount }).map((_, idx) => (
               <div key={idx} className="flex gap-3 items-center">
                 <div
-                  className="w-10 h-10 rounded-full border-2 border-wood-600 flex items-center justify-center font-bold"
+                  className="player-avatar w-10 h-10 text-base flex-shrink-0"
                   style={{ backgroundColor: PLAYER_COLORS[idx] }}
                 >
                   {idx + 1}
@@ -103,7 +119,11 @@ export function Setup() {
                     newNames[idx] = e.target.value
                     setPlayerNames(newNames)
                   }}
-                  className="flex-1 px-4 py-2 border-2 border-wood-500 rounded-lg"
+                  className="flex-1 px-4 py-2 rounded-lg text-parchment-200 font-game placeholder:text-parchment-500"
+                  style={{
+                    background: 'rgba(42, 33, 24, 0.6)',
+                    border: '1px solid rgba(212, 168, 83, 0.2)',
+                  }}
                   placeholder={`Player ${idx + 1} Name`}
                 />
 
@@ -114,7 +134,11 @@ export function Setup() {
                     newGenres[idx] = e.target.value as Genre
                     setSelectedGenres(newGenres)
                   }}
-                  className="px-4 py-2 border-2 border-wood-500 rounded-lg"
+                  className="px-4 py-2 rounded-lg text-parchment-200 font-game"
+                  style={{
+                    background: 'rgba(42, 33, 24, 0.6)',
+                    border: '1px solid rgba(212, 168, 83, 0.2)',
+                  }}
                 >
                   {GENRES.map((genre) => (
                     <option key={genre} value={genre}>
@@ -128,14 +152,23 @@ export function Setup() {
         </div>
 
         {/* Start button */}
-        <button onClick={handleStart} className="btn-primary w-full text-xl">
+        <button onClick={handleStart} className="btn-primary w-full text-lg py-4"
+          style={{
+            boxShadow: '0 0 20px rgba(212, 168, 83, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
+          }}
+        >
           Start Game
         </button>
 
         {/* How to play */}
-        <div className="mt-6 text-sm text-wood-500 bg-parchment-200 p-4 rounded-lg">
-          <h3 className="font-bold mb-2">Quick Rules:</h3>
-          <ul className="list-disc list-inside space-y-1">
+        <div className="mt-6 p-4 rounded-lg text-sm"
+          style={{
+            background: 'rgba(61, 48, 32, 0.3)',
+            border: '1px solid rgba(212, 168, 83, 0.1)',
+          }}
+        >
+          <h3 className="font-medieval font-bold mb-2 text-gold-400 text-xs uppercase tracking-wider">Quick Rules</h3>
+          <ul className="list-disc list-inside space-y-1 text-parchment-400 text-xs">
             <li>Move to connected spaces each turn</li>
             <li>Genre tags spawn monsters when you enter</li>
             <li>Play songs to deal damage (AOE to all monsters)</li>

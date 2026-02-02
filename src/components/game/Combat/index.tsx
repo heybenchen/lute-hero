@@ -44,25 +44,17 @@ export function CombatModal() {
     const result = endCombat(success)
 
     if (success) {
-      // Award fame
       const fameEarned = calculateFameEarned(
         player.monstersDefeated,
         result.monstersDefeated
       )
       awardPlayerFame(player.id, fameEarned)
-
-      // Award base EXP (10 per monster)
       awardPlayerExp(player.id, result.monstersDefeated * 10)
-
-      // Increment monsters defeated
       incrementPlayerMonstersDefeated(player.id, result.monstersDefeated)
-
-      // Clear space
       if (spaceId !== null) {
         clearSpaceAfterCombat(spaceId)
       }
     } else {
-      // Failure: bonus EXP (catchup mechanic)
       const baseExp = monsters.length * 10
       const bonusExp = calculateFailureBonus(baseExp)
       awardPlayerExp(player.id, bonusExp)
@@ -70,25 +62,32 @@ export function CombatModal() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-8">
-      <div className="bg-parchment-100 rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-auto">
+    <div className="modal-overlay">
+      <div className="modal-content max-w-6xl">
         <div className="p-6">
           {/* Header */}
           <div className="text-center mb-6">
-            <h2 className="font-medieval text-3xl text-wood-600 mb-2">
-              🎸 THE MASHUP 🎸
-            </h2>
-            <p className="text-lg text-wood-500">
-              {player.name}'s Battle - Convert these fans!
+            <div className="font-display text-3xl text-gold-400 mb-1">
+              The Mashup
+            </div>
+            <div className="h-px mx-auto w-48 mb-2" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.4), transparent)' }} />
+            <p className="text-sm text-parchment-400 italic font-game">
+              {player.name}'s Battle &mdash; Convert these fans!
             </p>
           </div>
 
           {/* Monsters */}
           <div className="mb-6">
-            <h3 className="font-medieval text-xl text-wood-600 mb-3">
-              Monsters ({monsters.filter((m: Monster) => m.currentHP > 0).length} remaining)
-            </h3>
-            <div className="flex gap-4 overflow-x-auto pb-2">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+                Monsters
+              </div>
+              <div className="text-xs text-red-400 font-bold">
+                ({monsters.filter((m: Monster) => m.currentHP > 0).length} remaining)
+              </div>
+              <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2">
               {monsters.map((monster: Monster) => (
                 <MonsterCard key={monster.id} monster={monster} />
               ))}
@@ -97,10 +96,16 @@ export function CombatModal() {
 
           {/* Songs */}
           <div className="mb-6">
-            <h3 className="font-medieval text-xl text-wood-600 mb-3">
-              Your Songs ({player.songs.length - songsUsed.length} remaining)
-            </h3>
-            <div className="flex gap-4 overflow-x-auto pb-2">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+                Your Songs
+              </div>
+              <div className="text-xs text-gold-400 font-bold">
+                ({player.songs.length - songsUsed.length} remaining)
+              </div>
+              <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2">
               {player.songs.map((song) => (
                 <SongCard
                   key={song.id}
@@ -114,10 +119,10 @@ export function CombatModal() {
 
           {/* Last roll result */}
           {rolls.length > 0 && (
-            <div className="mb-6 bg-wood-100 p-4 rounded-lg">
-              <h3 className="font-medieval text-lg text-wood-600 mb-3">
-                🎲 Last Roll
-              </h3>
+            <div className="mb-6 p-4 rounded-lg" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.15)' }}>
+              <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider mb-3">
+                Last Roll
+              </div>
               <div className="flex gap-3 items-center flex-wrap">
                 {rolls.map((roll, idx) => {
                   const dice = player.songs
@@ -150,17 +155,26 @@ export function CombatModal() {
           )}
 
           {/* Actions */}
-          <div className="flex gap-4 justify-center">
+          <div className="flex gap-4 justify-center pt-2">
             {allMonstersDefeated ? (
-              <button onClick={handleEndCombat} className="btn-primary text-xl">
-                ✓ Victory! Claim Fame
+              <button onClick={handleEndCombat}
+                className="px-8 py-3 font-medieval font-bold rounded-lg text-lg transition-all duration-200"
+                style={{
+                  background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
+                  border: '1px solid rgba(100, 220, 100, 0.5)',
+                  color: '#d4ffd6',
+                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
+                  boxShadow: '0 0 20px rgba(100, 220, 100, 0.2), 0 4px 15px rgba(0,0,0,0.3)',
+                }}
+              >
+                &#x2713; Victory! Claim Fame
               </button>
             ) : canContinue ? (
-              <p className="text-lg text-wood-600">
+              <p className="text-base text-parchment-400 italic font-game animate-pulse-slow">
                 Select a song to play...
               </p>
             ) : (
-              <button onClick={handleEndCombat} className="btn-secondary text-xl">
+              <button onClick={handleEndCombat} className="btn-secondary text-lg px-8">
                 Retreat (Gain Bonus EXP)
               </button>
             )}

@@ -9,10 +9,10 @@ interface DiceDisplayProps {
 }
 
 const diceIcons: Record<DiceType, string> = {
-  d4: '△',
-  d6: '⚄',
-  d12: '⬢',
-  d20: '⬟',
+  d4: '\u25B3',
+  d6: '\u2684',
+  d12: '\u2B22',
+  d20: '\u2B1F',
 }
 
 export function DiceDisplay({
@@ -22,16 +22,24 @@ export function DiceDisplay({
   className = '',
 }: DiceDisplayProps) {
   return (
-    <div className={`die ${isCrit ? 'ring-4 ring-yellow-400' : ''} ${className}`}>
+    <div
+      className={`die ${className}`}
+      style={{
+        boxShadow: isCrit
+          ? '0 0 12px rgba(230, 195, 90, 0.5), 0 0 4px rgba(230, 195, 90, 0.3)'
+          : undefined,
+        borderColor: isCrit ? 'rgba(230, 195, 90, 0.7)' : undefined,
+      }}
+    >
       <div className="flex flex-col items-center">
-        <div className="text-3xl">{diceIcons[dice.type]}</div>
+        <div className="text-2xl text-gold-400">{diceIcons[dice.type]}</div>
         {value !== undefined && (
-          <div className={`text-2xl font-bold ${isCrit ? 'text-yellow-600' : ''}`}>
+          <div className={`text-xl font-bold ${isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
             {value}
           </div>
         )}
-        <div className="text-xs mt-1">
-          <GenreBadge genre={dice.genre} />
+        <div className="text-xs mt-0.5">
+          <GenreBadge genre={dice.genre} className="text-[8px] px-1 py-0" />
         </div>
       </div>
     </div>

@@ -50,130 +50,139 @@ export function Board() {
   }
 
   // Paper map layout with organic positioning - optimized for 90x90 spaces
-  // Manually positioned nodes for better visibility and paper map aesthetic
-  // Node cards are 90px wide, so need at least 100px spacing to avoid overlap
   const nodePositions: Record<number, { x: number; y: number }> = {
-    0: { x: 60, y: 50 },     // Top-left edge
-    1: { x: 220, y: 70 },    // Near top-left
-    2: { x: 380, y: 40 },    // Top-center edge
-    3: { x: 200, y: 200 },   // Left-center
-    4: { x: 360, y: 210 },   // Center-left
-    5: { x: 520, y: 190 },   // Center-right
-    6: { x: 630, y: 100 },   // Right of top
-    7: { x: 750, y: 60 },    // Top-right edge
-    8: { x: 780, y: 240 },   // Right edge
-    9: { x: 660, y: 350 },   // Right-center edge
-    10: { x: 490, y: 380 },  // Center-bottom
-    11: { x: 310, y: 410 },  // Bottom-center
-    12: { x: 140, y: 430 },  // Bottom-left edge
-    13: { x: 50, y: 320 },   // Left edge
+    0: { x: 60, y: 50 },
+    1: { x: 220, y: 70 },
+    2: { x: 380, y: 40 },
+    3: { x: 200, y: 200 },
+    4: { x: 360, y: 210 },
+    5: { x: 520, y: 190 },
+    6: { x: 630, y: 100 },
+    7: { x: 750, y: 60 },
+    8: { x: 780, y: 240 },
+    9: { x: 660, y: 350 },
+    10: { x: 490, y: 380 },
+    11: { x: 310, y: 410 },
+    12: { x: 140, y: 430 },
+    13: { x: 50, y: 320 },
   }
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-parchment-200 via-parchment-100 to-parchment-200 rounded-xl shadow-2xl border-4 border-wood-400 overflow-hidden flex items-center justify-center">
-      {/* Paper texture overlay */}
-      <div className="absolute inset-0 opacity-30 pointer-events-none rounded-xl"
-           style={{
-             backgroundImage: `
-               repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 111, 71, 0.1) 2px, rgba(139, 111, 71, 0.1) 4px),
-               repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139, 111, 71, 0.1) 2px, rgba(139, 111, 71, 0.1) 4px)
-             `
-           }}
+    <div className="relative w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
+      style={{
+        background: 'linear-gradient(135deg, #1e1812 0%, #16120d 50%, #1e1812 100%)',
+      }}
+    >
+
+      {/* Warm vignette */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(13, 10, 7, 0.6) 100%)',
+        }}
       />
 
       {/* Map container */}
       <div className="relative">
         <div className="relative p-6" style={{ width: '950px', height: '550px' }}>
-        {/* Render connections */}
-        <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
-          <defs>
-            <filter id="roughEdge">
-              <feTurbulence baseFrequency="0.05" numOctaves="2" result="noise"/>
-              <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
-            </filter>
-            <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#8b6f47" stopOpacity="0.5" />
-              <stop offset="50%" stopColor="#6d5638" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#8b6f47" stopOpacity="0.5" />
-            </linearGradient>
-          </defs>
-          {spaces.map((space) =>
-            space.connections.map((connId) => {
-              const connSpace = spaces.find((s) => s.id === connId)
-              if (!connSpace || connId < space.id) return null // Draw each connection once
+          {/* Render connections */}
+          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+            <defs>
+              <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#d4a853" stopOpacity="0.15" />
+                <stop offset="50%" stopColor="#d4a853" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#d4a853" stopOpacity="0.15" />
+              </linearGradient>
+              <linearGradient id="activePathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#e6c35a" stopOpacity="0.5" />
+                <stop offset="50%" stopColor="#f0d78c" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#e6c35a" stopOpacity="0.5" />
+              </linearGradient>
+            </defs>
+            {spaces.map((space) =>
+              space.connections.map((connId) => {
+                const connSpace = spaces.find((s) => s.id === connId)
+                if (!connSpace || connId < space.id) return null
 
-              const pos1 = nodePositions[space.id]
-              const pos2 = nodePositions[connId]
+                const pos1 = nodePositions[space.id]
+                const pos2 = nodePositions[connId]
 
-              if (!pos1 || !pos2) return null
+                if (!pos1 || !pos2) return null
 
-              // Add offset to connect from center of nodes (90px / 2 = 45px)
-              const x1 = pos1.x + 45
-              const y1 = pos1.y + 45
-              const x2 = pos2.x + 45
-              const y2 = pos2.y + 45
+                const x1 = pos1.x + 45
+                const y1 = pos1.y + 45
+                const x2 = pos2.x + 45
+                const y2 = pos2.y + 45
 
-              const isActivePath = validMoves.some((s) => s.id === space.id && s.connections.includes(connId)) ||
-                                   validMoves.some((s) => s.id === connId && s.connections.includes(space.id))
+                const isActivePath = validMoves.some((s) => s.id === space.id && s.connections.includes(connId)) ||
+                                     validMoves.some((s) => s.id === connId && s.connections.includes(space.id))
 
-              // Create a slightly curved path for paper map feel
-              const midX = (x1 + x2) / 2
-              const midY = (y1 + y2) / 2
-              const dx = x2 - x1
-              const dy = y2 - y1
-              const curvature = 20
-              const controlX = midX - dy / Math.sqrt(dx * dx + dy * dy) * curvature
-              const controlY = midY + dx / Math.sqrt(dx * dx + dy * dy) * curvature
+                const midX = (x1 + x2) / 2
+                const midY = (y1 + y2) / 2
+                const dx = x2 - x1
+                const dy = y2 - y1
+                const curvature = 20
+                const controlX = midX - dy / Math.sqrt(dx * dx + dy * dy) * curvature
+                const controlY = midY + dx / Math.sqrt(dx * dx + dy * dy) * curvature
 
-              return (
-                <path
-                  key={`${space.id}-${connId}`}
-                  d={`M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`}
-                  stroke={isActivePath ? "#3b82f6" : "url(#pathGradient)"}
-                  strokeWidth={isActivePath ? "6" : "3"}
-                  fill="none"
-                  opacity={isActivePath ? "0.9" : "0.5"}
-                  strokeDasharray={isActivePath ? "12,6" : "0"}
-                  filter={!isActivePath ? "url(#roughEdge)" : ""}
-                  strokeLinecap="round"
+                return (
+                  <g key={`${space.id}-${connId}`}>
+                    {/* Glow layer for active paths */}
+                    {isActivePath && (
+                      <path
+                        d={`M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`}
+                        stroke="#d4a853"
+                        strokeWidth="8"
+                        fill="none"
+                        opacity="0.12"
+                        strokeLinecap="round"
+                      />
+                    )}
+                    <path
+                      d={`M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`}
+                      stroke={isActivePath ? "url(#activePathGradient)" : "url(#pathGradient)"}
+                      strokeWidth={isActivePath ? "3" : "1.5"}
+                      fill="none"
+                      strokeDasharray={isActivePath ? "8,4" : "0"}
+                      strokeLinecap="round"
+                    />
+                  </g>
+                )
+              })
+            )}
+          </svg>
+
+          {/* Render spaces */}
+          {spaces.map((space) => {
+            const pos = nodePositions[space.id]
+            if (!pos) return null
+
+            return (
+              <div
+                key={space.id}
+                style={{
+                  position: 'absolute',
+                  left: `${pos.x}px`,
+                  top: `${pos.y}px`,
+                  zIndex: 10,
+                }}
+              >
+                <BoardSpaceComponent
+                  space={space}
+                  players={players}
+                  isCurrentPlayer={currentPlayer.position === space.id}
+                  canMoveTo={validMoves.some((s) => s.id === space.id)}
+                  onClick={() => handleSpaceClick(space.id)}
                 />
-              )
-            })
-          )}
-        </svg>
+              </div>
+            )
+          })}
 
-        {/* Render spaces */}
-        {spaces.map((space) => {
-          const pos = nodePositions[space.id]
-          if (!pos) return null
-
-          return (
-            <div
-              key={space.id}
-              style={{
-                position: 'absolute',
-                left: `${pos.x}px`,
-                top: `${pos.y}px`,
-                zIndex: 10,
-              }}
-            >
-              <BoardSpaceComponent
-                space={space}
-                players={players}
-                isCurrentPlayer={currentPlayer.position === space.id}
-                canMoveTo={validMoves.some((s) => s.id === space.id)}
-                onClick={() => handleSpaceClick(space.id)}
-              />
+          {/* Map title decoration */}
+          <div className="absolute top-3 left-1/2 transform -translate-x-1/2 pointer-events-none">
+            <div className="font-display text-xl text-gold-500 opacity-25 tracking-widest text-center">
+              The Bardic Realm
             </div>
-          )
-        })}
-
-        {/* Map title decoration */}
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 pointer-events-none">
-          <div className="font-medieval text-2xl text-wood-600 opacity-40 text-center">
-            ~ The Bardic Realm ~
           </div>
-        </div>
         </div>
       </div>
     </div>

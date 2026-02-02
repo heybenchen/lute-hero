@@ -10,8 +10,12 @@ interface SongCardProps {
 
 export function SongCard({ song, onPlay, disabled }: SongCardProps) {
   return (
-    <div className={`card ${song.used ? 'opacity-50' : ''} min-w-[300px]`}>
-      <div className="card-header">{song.name}</div>
+    <div className={`card min-w-[280px] transition-all duration-200 ${song.used ? 'opacity-40' : ''}`}>
+      <div className="font-medieval text-base font-bold text-gold-400 mb-3 pb-2"
+        style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
+      >
+        {song.name}
+      </div>
 
       {/* Dice slots */}
       <div className="grid grid-cols-4 gap-2 mb-3">
@@ -20,7 +24,12 @@ export function SongCard({ song, onPlay, disabled }: SongCardProps) {
             {slot.dice ? (
               <DiceDisplay dice={slot.dice} className="w-full h-full" />
             ) : (
-              <div className="w-16 h-16 border-2 border-dashed border-wood-400 rounded-lg flex items-center justify-center text-xs text-wood-400">
+              <div className="w-16 h-16 rounded-lg flex items-center justify-center text-xs"
+                style={{
+                  border: '1px dashed rgba(212, 168, 83, 0.2)',
+                  color: 'rgba(212, 168, 83, 0.3)',
+                }}
+              >
                 Empty
               </div>
             )}
@@ -28,10 +37,16 @@ export function SongCard({ song, onPlay, disabled }: SongCardProps) {
             {/* Effect indicator */}
             {slot.effect && (
               <div
-                className="absolute -top-2 -right-2 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold"
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                 title={TRACK_EFFECT_DESCRIPTIONS[slot.effect.type] || slot.effect.type}
+                style={{
+                  background: 'linear-gradient(135deg, #9040cc, #6a20aa)',
+                  border: '1px solid rgba(176, 124, 255, 0.5)',
+                  color: '#e8d0ff',
+                  boxShadow: '0 0 6px rgba(176, 124, 255, 0.3)',
+                }}
               >
-                ✨
+                &#x2728;
               </div>
             )}
           </div>
@@ -46,8 +61,8 @@ export function SongCard({ song, onPlay, disabled }: SongCardProps) {
           const desc = TRACK_EFFECT_DESCRIPTIONS[slot.effect.type] || slot.effect.type
 
           return (
-            <div key={idx} className="text-purple-700 mb-1">
-              <strong>Slot {idx + 1}:</strong> {desc}
+            <div key={idx} className="text-classical/80 mb-1">
+              <strong className="text-classical">Slot {idx + 1}:</strong> {desc}
             </div>
           )
         })}
@@ -57,9 +72,21 @@ export function SongCard({ song, onPlay, disabled }: SongCardProps) {
       <button
         onClick={onPlay}
         disabled={disabled || song.used}
-        className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`w-full py-2 font-medieval font-bold rounded-lg transition-all duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed ${
+          song.used ? '' : ''
+        }`}
+        style={{
+          background: song.used
+            ? 'rgba(255, 255, 255, 0.05)'
+            : 'linear-gradient(135deg, #6d5638, #5a4529)',
+          border: song.used
+            ? '1px solid rgba(255, 255, 255, 0.1)'
+            : '1px solid rgba(212, 168, 83, 0.4)',
+          color: song.used ? 'rgba(255, 255, 255, 0.3)' : '#f0d78c',
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+        }}
       >
-        {song.used ? '✓ Played' : '🎵 Play Song'}
+        {song.used ? '\u2713 Played' : '\u266B Play Song'}
       </button>
     </div>
   )

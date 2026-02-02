@@ -8,10 +8,10 @@ import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 
 const diceIcons: Record<DiceType, string> = {
-  d4: '△',
-  d6: '⚄',
-  d12: '⬢',
-  d20: '⬟',
+  d4: '\u25B3',
+  d6: '\u2684',
+  d12: '\u2B22',
+  d20: '\u2B1F',
 }
 
 interface DraftShopProps {
@@ -34,7 +34,6 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   } | null>(null)
 
   useEffect(() => {
-    // Generate initial cards: 3 dice, 2 songs
     setDiceCards([
       generateDicePairCard(playerId),
       generateDicePairCard(playerId),
@@ -72,35 +71,30 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const handlePurchase = (card: DraftCard) => {
     if (!player || player.exp < card.cost) return
 
-    // Deduct EXP
     awardPlayerExp(playerId, -card.cost)
 
     if (card.type === 'dice' && card.dice) {
-      // Store dice for player to slot into songs
       setSelectedDice({ dice: card.dice, cardId: card.id })
 
-      // Remove purchased card and add new one
       setDiceCards((prev) => {
         const newCards = prev.filter((c) => c.id !== card.id)
         newCards.push(generateDicePairCard(playerId))
         return newCards
       })
     } else if (card.type === 'song') {
-      // Create new song with 2 effects
       const newSong: Song = {
         id: `${playerId}-song-${Date.now()}`,
         name: card.songName || 'New Song',
         slots: [
           { dice: null, effect: null },
           { dice: null, effect: null },
-          { dice: null, effect: card.songEffect || null }, // Effect 1 in slot 3
-          { dice: null, effect: card.songEffect2 || null }, // Effect 2 in slot 4
+          { dice: null, effect: card.songEffect || null },
+          { dice: null, effect: card.songEffect2 || null },
         ],
         used: false,
       }
       addSongToPlayer(playerId, newSong)
 
-      // Remove purchased card and add new one
       setSongCards((prev) => {
         const newCards = prev.filter((c) => c.id !== card.id)
         newCards.push(generateSongCard())
@@ -115,10 +109,8 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     const song = player.songs.find((s) => s.id === songId)
     if (!song || song.slots[slotIndex].dice) return
 
-    // Slot the first dice
     useGameStore.getState().addDiceToPlayer(playerId, selectedDice.dice[0], songId, slotIndex)
 
-    // If there's a second slot available, try to slot it
     if (selectedDice.dice.length > 1) {
       const nextEmptySlot = song.slots.findIndex((s, idx) => idx > slotIndex && !s.dice)
       if (nextEmptySlot !== -1) {
@@ -130,33 +122,38 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-8">
-      <div className="bg-parchment-100 rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-auto">
+    <div className="modal-overlay">
+      <div className="modal-content max-w-6xl">
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="font-medieval text-3xl text-wood-600">
-                🎪 Draft Shop
-              </h2>
-              <p className="text-lg text-wood-500">
-                {player.name} - {player.exp} EXP Available
+              <div className="font-display text-2xl text-gold-400">
+                Draft Shop
+              </div>
+              <p className="text-sm text-parchment-400">
+                {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span> Available
               </p>
             </div>
-            <button onClick={onClose} className="btn-secondary">
+            <button onClick={onClose} className="btn-secondary text-sm">
               Close Shop
             </button>
           </div>
 
           {/* Selected dice to slot */}
           {selectedDice && (
-            <div className="bg-blue-100 border-2 border-blue-500 rounded-lg p-4 mb-6">
-              <h3 className="font-bold text-blue-900 mb-2">
-                📦 Click an empty slot below to place your new dice:
-              </h3>
+            <div className="rounded-lg p-4 mb-6 animate-fade-in"
+              style={{
+                background: 'rgba(0, 100, 200, 0.1)',
+                border: '1px solid rgba(100, 180, 255, 0.3)',
+              }}
+            >
+              <div className="font-bold text-blue-300 mb-2 text-sm">
+                Click an empty slot below to place your new dice:
+              </div>
               <div className="flex gap-3">
-                {selectedDice.dice.map((dice, idx) => (
-                  <div key={idx} className="text-2xl">🎲 {dice.type}</div>
+                {selectedDice.dice.map((dice: any, idx: number) => (
+                  <div key={idx} className="text-xl text-gold-400">{diceIcons[dice.type as DiceType]} {dice.type}</div>
                 ))}
               </div>
             </div>
@@ -165,19 +162,22 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
           {/* Dice cards */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-medieval text-xl text-wood-600">
-                🎲 Dice Pairs (3 available)
-              </h3>
+              <div className="flex items-center gap-2">
+                <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+                  Dice Pairs
+                </div>
+                <div className="text-xs text-parchment-500">(3 available)</div>
+              </div>
               <button
                 onClick={handleRefreshDice}
                 disabled={!player || player.exp < REFRESH_COST}
-                className="btn-secondary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
                 title={`Refresh dice selection for ${REFRESH_COST} EXP`}
               >
-                🔄 Refresh ({REFRESH_COST} EXP)
+                Refresh ({REFRESH_COST} EXP)
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {diceCards.map((card) => (
                 <DraftCardDisplay
                   key={card.id}
@@ -192,19 +192,22 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
           {/* Song cards */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-medieval text-xl text-wood-600">
-                🎵 Song Tracks (2 available)
-              </h3>
+              <div className="flex items-center gap-2">
+                <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+                  Song Tracks
+                </div>
+                <div className="text-xs text-parchment-500">(2 available)</div>
+              </div>
               <button
                 onClick={handleRefreshSongs}
                 disabled={!player || player.exp < REFRESH_COST}
-                className="btn-secondary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
                 title={`Refresh song selection for ${REFRESH_COST} EXP`}
               >
-                🔄 Refresh ({REFRESH_COST} EXP)
+                Refresh ({REFRESH_COST} EXP)
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {songCards.map((card) => (
                 <DraftCardDisplay
                   key={card.id}
@@ -218,20 +221,30 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
           {/* Player's songs */}
           <div>
-            <h3 className="font-medieval text-xl text-wood-600 mb-3">
-              Your Songs (click empty slots to add dice)
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+                Your Songs
+              </div>
+              <div className="text-xs text-parchment-500">(click empty slots to add dice)</div>
+              <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {player.songs.map((song) => (
                 <div key={song.id} className="card">
-                  <div className="card-header">{song.name}</div>
+                  <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-2"
+                    style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
+                  >
+                    {song.name}
+                  </div>
 
                   {/* Show slot effects */}
                   <div className="mb-2 space-y-1">
                     {song.slots.map((slot, idx) => slot.effect && (
-                      <div key={idx} className="bg-purple-50 p-1 rounded text-xs border border-purple-200">
-                        <span className="font-bold text-purple-800">Slot {idx + 1}:</span>{' '}
-                        <span className="text-purple-700">
+                      <div key={idx} className="p-1.5 rounded text-xs"
+                        style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
+                      >
+                        <span className="font-bold text-classical">Slot {idx + 1}:</span>{' '}
+                        <span className="text-classical/80">
                           {TRACK_EFFECT_DESCRIPTIONS[slot.effect.type] || slot.effect.type}
                         </span>
                       </div>
@@ -244,31 +257,47 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                         key={idx}
                         onClick={() => handleSlotDice(song.id, idx)}
                         disabled={!selectedDice || !!slot.dice}
-                        className={`
-                          h-24 rounded-lg border-2 flex flex-col items-center justify-center text-xs relative
-                          ${slot.dice
-                            ? 'bg-parchment-200 border-wood-500 cursor-not-allowed'
-                            : selectedDice
-                            ? 'bg-blue-50 border-blue-500 hover:bg-blue-100 cursor-pointer'
-                            : 'bg-parchment-200 border-dashed border-wood-400'
-                          }
-                          ${slot.effect ? 'border-purple-400' : ''}
-                        `}
+                        className="h-20 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
+                        style={{
+                          background: slot.dice
+                            ? 'rgba(212, 168, 83, 0.1)'
+                            : selectedDice && !slot.dice
+                            ? 'rgba(0, 100, 200, 0.1)'
+                            : 'rgba(255, 255, 255, 0.02)',
+                          border: slot.dice
+                            ? '1px solid rgba(212, 168, 83, 0.25)'
+                            : selectedDice && !slot.dice
+                            ? '1px solid rgba(100, 180, 255, 0.4)'
+                            : '1px dashed rgba(212, 168, 83, 0.12)',
+                          cursor: selectedDice && !slot.dice ? 'pointer' : slot.dice ? 'not-allowed' : 'default',
+                        }}
                       >
                         {slot.dice ? (
                           <div className="text-center relative">
-                            <div className="text-3xl mb-1">{diceIcons[slot.dice.type]}</div>
-                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-lg">
+                            <div className="text-2xl mb-0.5 text-gold-400">{diceIcons[slot.dice.type]}</div>
+                            <div className="absolute -top-1 -right-3 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                              style={{
+                                background: 'linear-gradient(135deg, #b8922e, #d4a853)',
+                                color: '#1a1410',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                              }}
+                            >
                               {getMaxValue(slot.dice.type)}
                             </div>
-                            <GenreBadge genre={slot.dice.genre} className="text-[8px]" />
+                            <GenreBadge genre={slot.dice.genre} className="text-[7px] px-1 py-0" />
                           </div>
                         ) : (
-                          <div className="text-wood-400">Empty</div>
+                          <div className="text-parchment-500/30 text-[10px]">Empty</div>
                         )}
                         {slot.effect && (
-                          <div className="absolute top-1 right-1 w-5 h-5 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs">
-                            ✨
+                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px]"
+                            style={{
+                              background: 'rgba(176, 124, 255, 0.3)',
+                              border: '1px solid rgba(176, 124, 255, 0.4)',
+                              color: '#e8d0ff',
+                            }}
+                          >
+                            &#x2728;
                           </div>
                         )}
                       </button>

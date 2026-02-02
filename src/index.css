@@ -4,38 +4,167 @@
 
 @layer base {
   body {
-    @apply bg-wood-600 font-game text-parchment-100;
+    @apply bg-tavern-950 font-game text-parchment-200;
+  }
+
+  ::selection {
+    background: rgba(212, 168, 83, 0.3);
+    color: #fdfbf7;
   }
 }
 
 @layer components {
-  /* Tabletop card style */
+  /* =============================================
+     CARD SYSTEM
+     ============================================= */
   .card {
-    @apply bg-parchment-100 text-wood-600 rounded-lg shadow-lg border-4 border-wood-500 p-4;
+    @apply bg-tavern-800 text-parchment-200 rounded-lg p-3;
+    border: 1px solid rgba(212, 168, 83, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 
   .card-header {
-    @apply font-medieval text-xl font-bold mb-2 border-b-2 border-wood-400 pb-2;
+    @apply font-medieval text-lg font-bold mb-2 pb-1.5 text-gold-400;
+    border-bottom: 1px solid rgba(212, 168, 83, 0.25);
   }
 
-  /* Dice style */
+  .card-ornate {
+    @apply card relative;
+    border: 2px solid rgba(212, 168, 83, 0.3);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  }
+
+  /* =============================================
+     DICE DISPLAY
+     ============================================= */
   .die {
-    @apply w-16 h-16 rounded-lg bg-parchment-200 border-2 border-wood-500 flex items-center justify-center text-2xl font-bold shadow-md;
+    @apply w-14 h-14 rounded-lg flex items-center justify-center text-xl font-bold;
+    background: #2e2419;
+    border: 1px solid rgba(212, 168, 83, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 
-  /* Button styles */
+  .die-sm {
+    @apply w-10 h-10 rounded flex items-center justify-center text-sm font-bold;
+    background: #2e2419;
+    border: 1px solid rgba(212, 168, 83, 0.3);
+  }
+
+  /* =============================================
+     BUTTONS
+     ============================================= */
   .btn-primary {
-    @apply px-6 py-3 bg-wood-500 hover:bg-wood-400 text-parchment-50 font-bold rounded-lg shadow-lg transition-all duration-200 border-2 border-wood-600;
+    @apply px-5 py-2.5 font-medieval font-bold rounded-lg transition-colors duration-150;
+    background: #6d5638;
+    border: 1px solid rgba(212, 168, 83, 0.4);
+    color: #f0d78c;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .btn-primary:hover {
+    background: #8b6f47;
+    border-color: rgba(212, 168, 83, 0.6);
+  }
+
+  .btn-primary:active {
+    background: #5a4529;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 bg-parchment-300 hover:bg-parchment-200 text-wood-600 font-bold rounded-lg shadow-md transition-all duration-200 border-2 border-wood-500;
+    @apply px-5 py-2.5 font-medieval font-bold rounded-lg transition-colors duration-150;
+    background: #3d3020;
+    border: 1px solid rgba(212, 168, 83, 0.2);
+    color: #d9c49f;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
 
-  /* Genre badges */
+  .btn-secondary:hover {
+    background: #4e3d2a;
+    border-color: rgba(212, 168, 83, 0.35);
+  }
+
+  /* =============================================
+     GENRE BADGES
+     ============================================= */
   .genre-pop { @apply bg-pop text-white; }
   .genre-rock { @apply bg-rock text-white; }
   .genre-electronic { @apply bg-electronic text-gray-900; }
   .genre-classical { @apply bg-classical text-white; }
   .genre-hiphop { @apply bg-hiphop text-gray-900; }
+
+  /* =============================================
+     HP BAR
+     ============================================= */
+  .hp-bar {
+    @apply w-full h-3 rounded-full overflow-hidden;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .hp-fill {
+    @apply h-full transition-[width] duration-300;
+  }
+
+  /* =============================================
+     MODAL OVERLAY
+     ============================================= */
+  .modal-overlay {
+    @apply fixed inset-0 flex items-center justify-center z-50 p-4;
+    background: rgba(0, 0, 0, 0.88);
+  }
+
+  .modal-content {
+    @apply rounded-xl w-full max-h-[92vh] overflow-auto;
+    background: #1e1812;
+    border: 1px solid rgba(212, 168, 83, 0.25);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  /* =============================================
+     SCROLLBAR STYLING
+     ============================================= */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(13, 10, 7, 0.5);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(212, 168, 83, 0.25);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 168, 83, 0.4);
+  }
+
+  /* =============================================
+     DECORATIVE DIVIDER
+     ============================================= */
+  .divider-ornate {
+    @apply relative my-3;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(212, 168, 83, 0.35), transparent);
+  }
+
+  .divider-ornate::before {
+    content: '\2726';
+    @apply absolute left-1/2 -translate-x-1/2 -translate-y-1/2;
+    color: rgba(212, 168, 83, 0.4);
+    font-size: 12px;
+    background: #1e1812;
+    padding: 0 6px;
+  }
+
+  /* =============================================
+     PLAYER AVATAR
+     ============================================= */
+  .player-avatar {
+    @apply rounded-full flex items-center justify-center font-bold;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
 }

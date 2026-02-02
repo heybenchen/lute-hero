@@ -25,56 +25,96 @@ export function BoardSpace({
       onClick={onClick}
       disabled={!canMoveTo}
       className={`
-        card relative p-2 w-[90px] h-[90px] transition-all duration-200
-        flex flex-col justify-between
+        relative w-[90px] h-[90px] rounded-lg transition-all duration-200
+        flex flex-col justify-between p-2
         ${canMoveTo
-          ? 'hover:scale-110 hover:shadow-2xl cursor-pointer ring-2 ring-blue-400 hover:ring-blue-500'
-          : 'opacity-70 cursor-not-allowed'
+          ? 'cursor-pointer hover:scale-110'
+          : 'cursor-not-allowed'
         }
-        ${isCurrentPlayer ? 'ring-3 ring-green-500 shadow-2xl scale-105' : ''}
-        ${hasMonsters ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-500' : ''}
-        ${potentialMonsters > 0 && !hasMonsters ? 'bg-gradient-to-br from-yellow-50 to-orange-50' : ''}
+        ${isCurrentPlayer ? 'scale-105' : ''}
+        ${!canMoveTo && !isCurrentPlayer ? 'opacity-60' : ''}
       `}
+      style={{
+        background: hasMonsters
+          ? 'linear-gradient(135deg, rgba(232, 32, 64, 0.15) 0%, rgba(139, 30, 30, 0.2) 100%)'
+          : potentialMonsters > 0
+          ? 'linear-gradient(135deg, rgba(255, 157, 27, 0.1) 0%, rgba(180, 100, 20, 0.1) 100%)'
+          : 'linear-gradient(135deg, rgba(42, 33, 24, 0.9) 0%, rgba(61, 48, 32, 0.9) 100%)',
+        border: isCurrentPlayer
+          ? '2px solid rgba(100, 220, 100, 0.6)'
+          : canMoveTo
+          ? '2px solid rgba(212, 168, 83, 0.5)'
+          : hasMonsters
+          ? '1px solid rgba(232, 32, 64, 0.4)'
+          : '1px solid rgba(212, 168, 83, 0.15)',
+        boxShadow: isCurrentPlayer
+          ? '0 0 15px rgba(100, 220, 100, 0.2), 0 4px 8px rgba(0,0,0,0.3)'
+          : canMoveTo
+          ? '0 0 12px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(0,0,0,0.3)'
+          : '0 2px 6px rgba(0,0,0,0.3)',
+      }}
       title={space.name}
     >
       {/* Edge indicator */}
       {space.isEdge && (
-        <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg border border-white text-[10px]">
-          🏠
+        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+          style={{
+            background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            color: '#d4ffd6',
+          }}
+        >
+          S
         </div>
       )}
 
       {/* Space ID badge */}
-      <div className="absolute -top-1 -left-1 w-5 h-5 bg-wood-500 text-parchment-100 rounded-full flex items-center justify-center text-[10px] font-bold border border-parchment-200">
+      <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+        style={{
+          background: 'linear-gradient(135deg, #4e3d2a, #3d3020)',
+          border: '1px solid rgba(212, 168, 83, 0.3)',
+          color: '#d4a853',
+        }}
+      >
         {space.id}
       </div>
 
       {/* Space name */}
-      <div className="text-[8px] font-medieval font-bold text-center leading-tight mb-0.5 text-wood-600">
+      <div className="text-[7px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
         {space.name}
       </div>
 
       {/* Content area */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-1">
+      <div className="flex-1 flex flex-col items-center justify-center gap-0.5">
         {/* Monster indicator */}
         {hasMonsters && (
           <div className="flex flex-col items-center group relative">
-            <div className="text-xl">👹</div>
-            <div className="text-red-600 font-bold text-sm">
-              ×{space.monsters.length}
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+              style={{ background: 'rgba(232, 32, 64, 0.25)', border: '1px solid rgba(232, 32, 64, 0.5)', color: '#ff6b6b' }}
+            >
+              &#x1F479;
+            </div>
+            <div className="text-red-400 font-bold text-[10px]">
+              x{space.monsters.length}
             </div>
             {/* Hover tooltip */}
-            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-48 bg-wood-700 text-parchment-100 rounded-lg p-2 shadow-xl border-2 border-wood-500 text-xs pointer-events-none">
+            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-48 rounded-lg p-2 shadow-xl text-xs pointer-events-none"
+              style={{
+                background: 'linear-gradient(135deg, #2a2118, #1a1410)',
+                border: '1px solid rgba(212, 168, 83, 0.3)',
+              }}
+            >
               {space.monsters.map((monster, idx) => (
-                <div key={monster.id} className={`${idx > 0 ? 'mt-2 pt-2 border-t border-wood-500' : ''}`}>
-                  <div className="font-bold text-yellow-300">{monster.name}</div>
-                  <div className="text-[10px] mt-1">
+                <div key={monster.id} className={`${idx > 0 ? 'mt-2 pt-2 border-t border-gold-500/20' : ''}`}>
+                  <div className="font-bold text-gold-400">{monster.name}</div>
+                  <div className="text-[10px] mt-1 text-parchment-300">
                     <div>HP: {monster.currentHP}/{monster.maxHP}</div>
                     {monster.vulnerability && (
-                      <div className="text-green-300">Weak: {monster.vulnerability}</div>
+                      <div className="text-green-400">Weak: {monster.vulnerability}</div>
                     )}
                     {monster.resistance && (
-                      <div className="text-red-300">Resist: {monster.resistance}</div>
+                      <div className="text-red-400">Resist: {monster.resistance}</div>
                     )}
                   </div>
                 </div>
@@ -85,9 +125,9 @@ export function BoardSpace({
 
         {/* Potential monsters indicator */}
         {!hasMonsters && potentialMonsters > 0 && (
-          <div className="flex flex-col items-center opacity-50">
-            <div className="text-base">⚠️</div>
-            <div className="text-orange-600 font-bold text-[10px]">
+          <div className="flex flex-col items-center opacity-60">
+            <div className="text-amber-400 text-sm">&#x26A0;</div>
+            <div className="text-amber-400 font-bold text-[9px]">
               {potentialMonsters}
             </div>
           </div>
@@ -97,10 +137,10 @@ export function BoardSpace({
         {space.genreTags.length > 0 && (
           <div className="flex flex-wrap gap-0.5 justify-center">
             {space.genreTags.slice(0, 3).map((genre, idx) => (
-              <GenreBadge key={idx} genre={genre} className="text-[8px]" />
+              <GenreBadge key={idx} genre={genre} className="text-[6px] px-1 py-0" />
             ))}
             {space.genreTags.length > 3 && (
-              <span className="text-[8px] text-wood-500">+{space.genreTags.length - 3}</span>
+              <span className="text-[7px] text-gold-500">+{space.genreTags.length - 3}</span>
             )}
           </div>
         )}
@@ -112,7 +152,7 @@ export function BoardSpace({
           {playersHere.map((player) => (
             <div
               key={player.id}
-              className="w-5 h-5 rounded-full border border-wood-600 flex items-center justify-center text-[10px] font-bold shadow-lg"
+              className="player-avatar w-5 h-5 text-[9px]"
               style={{ backgroundColor: player.color }}
               title={player.name}
             >
@@ -122,11 +162,12 @@ export function BoardSpace({
         </div>
       )}
 
-      {/* Move indicator */}
+      {/* Move indicator glow */}
       {canMoveTo && (
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-          <div className="text-4xl opacity-20">→</div>
-        </div>
+        <div
+          className="absolute inset-0 rounded-lg pointer-events-none animate-glow-pulse"
+          style={{ boxShadow: '0 0 14px rgba(212, 168, 83, 0.4)' }}
+        />
       )}
     </button>
   )
