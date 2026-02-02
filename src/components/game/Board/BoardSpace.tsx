@@ -25,10 +25,10 @@ export function BoardSpace({
       onClick={onClick}
       disabled={!canMoveTo}
       className={`
-        card relative p-4 w-[160px] h-[160px] transition-all duration-200
+        card relative p-3 w-[140px] h-[140px] transition-all duration-200
         flex flex-col justify-between
         ${canMoveTo
-          ? 'hover:scale-110 hover:shadow-2xl cursor-pointer ring-4 ring-blue-400 animate-pulse'
+          ? 'hover:scale-110 hover:shadow-2xl cursor-pointer ring-3 ring-blue-400 hover:ring-blue-500'
           : 'opacity-70 cursor-not-allowed'
         }
         ${isCurrentPlayer ? 'ring-4 ring-green-500 shadow-2xl scale-105' : ''}
@@ -39,18 +39,18 @@ export function BoardSpace({
     >
       {/* Edge indicator */}
       {space.isEdge && (
-        <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg border-2 border-white">
+        <div className="absolute -top-2 -right-2 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg border-2 border-white text-sm">
           🏠
         </div>
       )}
 
       {/* Space ID badge */}
-      <div className="absolute -top-2 -left-2 w-7 h-7 bg-wood-500 text-parchment-100 rounded-full flex items-center justify-center text-xs font-bold border-2 border-parchment-200">
+      <div className="absolute -top-2 -left-2 w-6 h-6 bg-wood-500 text-parchment-100 rounded-full flex items-center justify-center text-xs font-bold border-2 border-parchment-200">
         {space.id}
       </div>
 
       {/* Space name */}
-      <div className="text-xs font-medieval font-bold text-center leading-tight mb-2 text-wood-600">
+      <div className="text-[10px] font-medieval font-bold text-center leading-tight mb-1 text-wood-600">
         {space.name}
       </div>
 
@@ -95,7 +95,7 @@ export function BoardSpace({
           {playersHere.map((player) => (
             <div
               key={player.id}
-              className="w-10 h-10 rounded-full border-3 border-wood-600 flex items-center justify-center text-sm font-bold shadow-lg transform -rotate-12 hover:rotate-0 transition-transform"
+              className="w-8 h-8 rounded-full border-2 border-wood-600 flex items-center justify-center text-xs font-bold shadow-lg"
               style={{ backgroundColor: player.color }}
               title={player.name}
             >

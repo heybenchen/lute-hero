@@ -35,27 +35,27 @@ export function Board() {
     }
   }
 
-  // Paper map layout with organic positioning
+  // Paper map layout with organic positioning - optimized spacing to prevent overlaps
   // Manually positioned nodes for better visibility and paper map aesthetic
   const nodePositions: Record<number, { x: number; y: number }> = {
-    0: { x: 100, y: 100 },   // Top-left edge
-    1: { x: 250, y: 120 },   // Near top-left
-    2: { x: 400, y: 80 },    // Top-center edge
-    3: { x: 150, y: 250 },   // Left-center
-    4: { x: 300, y: 230 },   // Center-left
-    5: { x: 450, y: 210 },   // Center-right
-    6: { x: 550, y: 140 },   // Right of top
-    7: { x: 700, y: 100 },   // Top-right edge
-    8: { x: 750, y: 250 },   // Right edge
-    9: { x: 650, y: 320 },   // Right-center edge
-    10: { x: 500, y: 350 },  // Center-bottom
-    11: { x: 350, y: 380 },  // Bottom-center
-    12: { x: 200, y: 400 },  // Bottom-left edge
-    13: { x: 100, y: 280 },  // Left edge
+    0: { x: 80, y: 60 },     // Top-left edge
+    1: { x: 280, y: 80 },    // Near top-left
+    2: { x: 480, y: 40 },    // Top-center edge
+    3: { x: 120, y: 260 },   // Left-center
+    4: { x: 320, y: 240 },   // Center-left
+    5: { x: 520, y: 220 },   // Center-right
+    6: { x: 680, y: 120 },   // Right of top
+    7: { x: 880, y: 60 },    // Top-right edge
+    8: { x: 920, y: 280 },   // Right edge
+    9: { x: 780, y: 380 },   // Right-center edge
+    10: { x: 580, y: 420 },  // Center-bottom
+    11: { x: 380, y: 460 },  // Bottom-center
+    12: { x: 180, y: 480 },  // Bottom-left edge
+    13: { x: 80, y: 340 },   // Left edge
   }
 
   return (
-    <div className="relative w-full bg-gradient-to-br from-parchment-200 via-parchment-100 to-parchment-200 rounded-xl p-8 shadow-2xl border-4 border-wood-400">
+    <div className="relative w-full bg-gradient-to-br from-parchment-200 via-parchment-100 to-parchment-200 rounded-xl shadow-2xl border-4 border-wood-400 overflow-hidden">
       {/* Paper texture overlay */}
       <div className="absolute inset-0 opacity-30 pointer-events-none rounded-xl"
            style={{
@@ -66,7 +66,9 @@ export function Board() {
            }}
       />
 
-      <div className="relative" style={{ width: '900px', height: '550px', margin: '0 auto' }}>
+      {/* Scrollable map container */}
+      <div className="relative overflow-auto" style={{ maxHeight: '700px' }}>
+        <div className="relative p-8" style={{ width: '1100px', height: '620px', margin: '0 auto' }}>
         {/* Render connections */}
         <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
           <defs>
@@ -90,11 +92,11 @@ export function Board() {
 
               if (!pos1 || !pos2) return null
 
-              // Add offset to connect from center of nodes
-              const x1 = pos1.x + 80
-              const y1 = pos1.y + 80
-              const x2 = pos2.x + 80
-              const y2 = pos2.y + 80
+              // Add offset to connect from center of nodes (adjusted for smaller size)
+              const x1 = pos1.x + 70
+              const y1 = pos1.y + 70
+              const x2 = pos2.x + 70
+              const y2 = pos2.y + 70
 
               const isActivePath = validMoves.some((s) => s.id === space.id && s.connections.includes(connId)) ||
                                    validMoves.some((s) => s.id === connId && s.connections.includes(space.id))
@@ -152,10 +154,11 @@ export function Board() {
         })}
 
         {/* Map title decoration */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 pointer-events-none">
-          <div className="font-medieval text-3xl text-wood-600 opacity-30 text-center">
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 pointer-events-none">
+          <div className="font-medieval text-2xl text-wood-600 opacity-40 text-center">
             ~ The Bardic Realm ~
           </div>
+        </div>
         </div>
       </div>
     </div>
