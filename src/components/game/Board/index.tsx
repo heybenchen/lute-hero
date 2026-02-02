@@ -71,7 +71,7 @@ export function Board() {
   }
 
   return (
-    <div className="relative w-full bg-gradient-to-br from-parchment-200 via-parchment-100 to-parchment-200 rounded-xl shadow-2xl border-4 border-wood-400 overflow-hidden">
+    <div className="relative w-full h-full bg-gradient-to-br from-parchment-200 via-parchment-100 to-parchment-200 rounded-xl shadow-2xl border-4 border-wood-400 overflow-hidden flex items-center justify-center">
       {/* Paper texture overlay */}
       <div className="absolute inset-0 opacity-30 pointer-events-none rounded-xl"
            style={{
@@ -84,7 +84,7 @@ export function Board() {
 
       {/* Map container */}
       <div className="relative">
-        <div className="relative p-8" style={{ width: '950px', height: '550px', margin: '0 auto' }}>
+        <div className="relative p-6" style={{ width: '950px', height: '550px' }}>
         {/* Render connections */}
         <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
           <defs>
