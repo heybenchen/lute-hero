@@ -9,7 +9,6 @@ export function Board() {
   const movePlayer = useGameStore((state) => state.movePlayer)
   const spawnMonstersAtSpace = useGameStore((state) => state.spawnMonstersAtSpace)
   const startCombat = useGameStore((state) => state.startCombat)
-  const incrementPlayerFights = useGameStore((state) => state.incrementPlayerFights)
 
   if (!currentPlayer) return null
 

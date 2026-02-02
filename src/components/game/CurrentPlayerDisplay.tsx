@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
-import { Song } from '@/types'
 
 export function CurrentPlayerDisplay() {
   const currentPlayer = useGameStore(selectCurrentPlayer)
@@ -114,12 +113,6 @@ export function CurrentPlayerDisplay() {
           })()}
         </div>
       )}
-    </div>
-  )
-}
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
