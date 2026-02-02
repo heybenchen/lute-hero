@@ -82,8 +82,8 @@ export function Board() {
            }}
       />
 
-      {/* Scrollable map container */}
-      <div className="relative overflow-auto" style={{ maxHeight: '600px' }}>
+      {/* Map container */}
+      <div className="relative">
         <div className="relative p-8" style={{ width: '950px', height: '550px', margin: '0 auto' }}>
         {/* Render connections */}
         <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
