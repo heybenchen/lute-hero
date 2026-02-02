@@ -22,6 +22,8 @@ export interface PlayersSlice {
   incrementPlayerMonstersDefeated: (playerId: string, count: number) => void
   eliminatePlayer: (playerId: string) => void
   resetPlayerMoves: (playerId: string) => void
+  incrementPlayerFights: (playerId: string) => void
+  resetPlayerFights: (playerId: string) => void
 }
 
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
@@ -49,6 +51,7 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
         isEliminated: false,
         totalBossDamage: 0,
         movesThisTurn: 0,
+        fightsThisTurn: 0,
       }
     })
 
@@ -140,6 +143,22 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
     set({
       players: get().players.map((p) =>
         p.id === playerId ? { ...p, movesThisTurn: 0 } : p
+      ),
+    })
+  },
+
+  incrementPlayerFights: (playerId) => {
+    set({
+      players: get().players.map((p) =>
+        p.id === playerId ? { ...p, fightsThisTurn: p.fightsThisTurn + 1 } : p
+      ),
+    })
+  },
+
+  resetPlayerFights: (playerId) => {
+    set({
+      players: get().players.map((p) =>
+        p.id === playerId ? { ...p, fightsThisTurn: 0 } : p
       ),
     })
   },

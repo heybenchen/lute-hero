@@ -37,21 +37,22 @@ export function Board() {
 
   // Paper map layout with organic positioning - optimized spacing to prevent overlaps
   // Manually positioned nodes for better visibility and paper map aesthetic
+  // Node cards are 140px wide, so need at least 160px spacing to avoid overlap
   const nodePositions: Record<number, { x: number; y: number }> = {
     0: { x: 80, y: 60 },     // Top-left edge
     1: { x: 280, y: 80 },    // Near top-left
     2: { x: 480, y: 40 },    // Top-center edge
-    3: { x: 120, y: 260 },   // Left-center
-    4: { x: 320, y: 240 },   // Center-left
-    5: { x: 520, y: 220 },   // Center-right
-    6: { x: 680, y: 120 },   // Right of top
+    3: { x: 260, y: 220 },   // Left-center (moved right and up from 120,260)
+    4: { x: 420, y: 240 },   // Center-left (moved right from 320)
+    5: { x: 620, y: 220 },   // Center-right (moved right from 520)
+    6: { x: 720, y: 120 },   // Right of top (moved right from 680)
     7: { x: 880, y: 60 },    // Top-right edge
     8: { x: 920, y: 280 },   // Right edge
     9: { x: 780, y: 380 },   // Right-center edge
     10: { x: 580, y: 420 },  // Center-bottom
     11: { x: 380, y: 460 },  // Bottom-center
     12: { x: 180, y: 480 },  // Bottom-left edge
-    13: { x: 80, y: 340 },   // Left edge
+    13: { x: 60, y: 380 },   // Left edge (moved down from 340 to avoid overlap with node 3)
   }
 
   return (

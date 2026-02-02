@@ -16,26 +16,41 @@ export function PlayerPanel() {
   const addGenreTags = useGameStore((state) => state.addGenreTags)
   const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
   const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
+  const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
+  const incrementPlayerFights = useGameStore((state) => state.incrementPlayerFights)
   const startCombat = useGameStore((state) => state.startCombat)
 
   if (!currentPlayer) return null
 
   const movesRemaining = 2 - currentPlayer.movesThisTurn
+  const fightsRemaining = 2 - currentPlayer.fightsThisTurn
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
+  const canFight = hasMonsters && fightsRemaining > 0
 
   const handleEndTurn = () => {
-    // Reset moves for current player
+    // Reset moves and fights for current player
     resetPlayerMoves(currentPlayer.id)
+    resetPlayerFights(currentPlayer.id)
 
     if (currentTurnPlayerIndex >= players.length - 1) {
-      // End of round - reset moves for all players
-      players.forEach((p) => resetPlayerMoves(p.id))
+      // End of round - reset moves and fights for all players
+      players.forEach((p) => {
+        resetPlayerMoves(p.id)
+        resetPlayerFights(p.id)
+      })
       nextRound()
       addGenreTags()
     } else {
       // Next player's turn
       nextTurn()
+    }
+  }
+
+  const handleFight = () => {
+    if (currentSpace && canFight) {
+      incrementPlayerFights(currentPlayer.id)
+      startCombat(currentPlayer.id, currentSpace.id, currentSpace.monsters)
     }
   }
 
@@ -69,24 +84,48 @@ export function PlayerPanel() {
           </div>
         </div>
 
-        {/* Movement tracker */}
-        <div className="bg-parchment-200 p-2 rounded-lg">
-          <div className="text-sm font-bold text-wood-600 mb-1">
-            Moves Remaining:
+        {/* Action trackers */}
+        <div className="bg-parchment-200 p-2 rounded-lg space-y-2">
+          {/* Movement tracker */}
+          <div>
+            <div className="text-xs font-bold text-wood-600 mb-1">
+              Moves Remaining:
+            </div>
+            <div className="flex gap-2">
+              {[1, 2].map((move) => (
+                <div
+                  key={move}
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${
+                    move <= movesRemaining
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-300 text-gray-500'
+                  }`}
+                >
+                  {move}
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {[1, 2].map((move) => (
-              <div
-                key={move}
-                className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold ${
-                  move <= movesRemaining
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-300 text-gray-500'
-                }`}
-              >
-                {move}
-              </div>
-            ))}
+
+          {/* Fight tracker */}
+          <div>
+            <div className="text-xs font-bold text-wood-600 mb-1">
+              Fights Remaining:
+            </div>
+            <div className="flex gap-2">
+              {[1, 2].map((fight) => (
+                <div
+                  key={fight}
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${
+                    fight <= fightsRemaining
+                      ? 'bg-red-500 text-white'
+                      : 'bg-gray-300 text-gray-500'
+                  }`}
+                >
+                  ⚔️
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -125,17 +164,15 @@ export function PlayerPanel() {
 
       {/* Actions */}
       <div className="space-y-2">
-        {/* Fight button - only show if monsters on current space */}
+        {/* Fight button - only show if monsters on current space and fights remaining */}
         {hasMonsters && (
           <button
-            onClick={() => {
-              if (currentSpace) {
-                startCombat(currentPlayer.id, currentSpace.id, currentSpace.monsters)
-              }
-            }}
-            className="btn-primary w-full bg-red-600 hover:bg-red-500"
+            onClick={handleFight}
+            disabled={!canFight}
+            className="btn-primary w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             ⚔️ Fight {currentSpace.monsters.length} Monster{currentSpace.monsters.length > 1 ? 's' : ''}
+            {!canFight && ' (No fights left)'}
           </button>
         )}
 
