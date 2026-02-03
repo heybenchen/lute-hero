@@ -25,7 +25,6 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const player = useGameStore(selectPlayerById(playerId))
   const awardPlayerExp = useGameStore((state) => state.awardPlayerExp)
   const addSongToPlayer = useGameStore((state) => state.addSongToPlayer)
-  const setPlayerShopped = useGameStore((state) => state.setPlayerShopped)
 
   const [diceCards, setDiceCards] = useState<DraftCard[]>([])
   const [songCards, setSongCards] = useState<DraftCard[]>([])
@@ -75,12 +74,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   if (!player) return null
 
   const handlePurchase = (card: DraftCard) => {
-    // Check if player has enough EXP and hasn't shopped this turn
-    if (!player || player.exp < card.cost || player.hasShoppedThisTurn) return
+    // Check if player has enough EXP
+    if (!player || player.exp < card.cost) return
 
-    // Consume EXP and mark as shopped
+    // Consume EXP
     awardPlayerExp(playerId, -card.cost)
-    setPlayerShopped(playerId)
 
     if (card.type === 'dice' && card.dice) {
       setSelectedDice({ dice: card.dice, cardId: card.id })
@@ -142,8 +140,6 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </div>
               <p className="text-sm text-parchment-400">
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span> Available
-                {' '}&middot;{' '}
-                <span className="text-parchment-500 italic">Shopping ends your turn</span>
               </p>
             </div>
             <button onClick={onClose} className="btn-secondary text-sm">
@@ -194,7 +190,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   key={card.id}
                   card={card}
                   onPurchase={() => handlePurchase(card)}
-                  canAfford={player.exp >= card.cost && !player.hasShoppedThisTurn}
+                  canAfford={player.exp >= card.cost}
                 />
               ))}
             </div>
@@ -224,7 +220,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   key={card.id}
                   card={card}
                   onPurchase={() => handlePurchase(card)}
-                  canAfford={player.exp >= card.cost && !player.hasShoppedThisTurn}
+                  canAfford={player.exp >= card.cost}
                 />
               ))}
             </div>

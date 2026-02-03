@@ -23,7 +23,7 @@ export function PlayerPanel() {
   if (!currentPlayer) return null
 
   const movesRemaining = 2 - currentPlayer.movesThisTurn
-  const fightsRemaining = 2 - currentPlayer.fightsThisTurn
+  const fightsRemaining = 1 - currentPlayer.fightsThisTurn
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
   const canFight = hasMonsters && fightsRemaining > 0
@@ -32,13 +32,11 @@ export function PlayerPanel() {
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
     resetPlayerFights(currentPlayer.id)
-    useGameStore.getState().updatePlayer(currentPlayer.id, { hasShoppedThisTurn: false })
 
     if (currentTurnPlayerIndex >= players.length - 1) {
       players.forEach((p) => {
         resetPlayerMoves(p.id)
         resetPlayerFights(p.id)
-        useGameStore.getState().updatePlayer(p.id, { hasShoppedThisTurn: false })
       })
       nextRound()
       addGenreTags()
@@ -138,7 +136,7 @@ export function PlayerPanel() {
               Fights
             </div>
             <div className="flex gap-1.5 justify-center">
-              {[1, 2].map((fight) => (
+              {[1].map((fight) => (
                 <div
                   key={fight}
                   className="w-8 h-8 rounded flex items-center justify-center font-bold text-xs transition-all duration-200"
@@ -224,10 +222,10 @@ export function PlayerPanel() {
         <button
           onClick={() => setShowDraftShop(true)}
           className="btn-secondary w-full text-sm"
-          disabled={currentPlayer.hasShoppedThisTurn}
+          disabled={currentPlayer.fightsThisTurn === 0}
         >
           Studio ({currentPlayer.exp} EXP)
-          {currentPlayer.hasShoppedThisTurn && ' (Used)'}
+          {currentPlayer.fightsThisTurn === 0 && ' (Fight first)'}
         </button>
         <button onClick={handleEndTurn} className="btn-primary w-full text-sm">
           End Turn

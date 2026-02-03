@@ -43,7 +43,7 @@ All slices merge into one store (`src/store/index.ts`) with devtools middleware.
 - **Monster spawning**: Each round adds 1 genre tag per space; every 2 tags of a genre spawns 1 monster of that genre
 - **Phase progression**: Collective fame thresholds (30 → Underground, 50 → Final Boss)
 - **Dice upgrade path**: d4 → d6 → d12 → d20
-- **Turn structure**: Move up to 2 spaces, fight up to 2 combats, then draft
+- **Turn structure**: Move up to 2 spaces, fight 1 combat, then shop (unlimited purchases after fighting)
 
 ## Styling
 
