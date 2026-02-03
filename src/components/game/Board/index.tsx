@@ -63,8 +63,8 @@ export function Board() {
       {/* Map container */}
       <div className="relative">
         <div className="relative p-6" style={{ width: '950px', height: '550px' }}>
-          {/* Render connections */}
-          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+          {/* Render connections - z-index 0 to ensure connectors are underneath tiles */}
+          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 0, position: 'absolute' }}>
             <defs>
               <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#d4a853" stopOpacity="0.15" />

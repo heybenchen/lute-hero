@@ -4,7 +4,7 @@ import {
   createBoardGraph,
   addGenreTagsToBoard,
 } from '@/game-logic/board/graphBuilder'
-import { spawnMonstersFromTags, clearSpace } from '@/game-logic/combat/monsterSpawner'
+import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '@/game-logic/combat/monsterSpawner'
 
 export interface BoardSlice {
   // State
@@ -14,6 +14,7 @@ export interface BoardSlice {
   initializeBoard: () => void
   addGenreTags: () => void
   spawnMonstersAtSpace: (spaceId: number) => void
+  spawnInitialMonstersOnBoard: () => void
   clearSpaceAfterCombat: (spaceId: number) => void
   updateSpace: (spaceId: number, updates: Partial<BoardSpace>) => void
 }
@@ -44,6 +45,17 @@ export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
         s.id === spaceId ? { ...s, monsters } : s
       ),
     })
+  },
+
+  spawnInitialMonstersOnBoard: () => {
+    const updatedSpaces = get().spaces.map((space) => {
+      if (space.genreTags.length === 0) return space
+
+      const monsters = spawnInitialMonsters(space.genreTags, space.id)
+      return { ...space, monsters }
+    })
+
+    set({ spaces: updatedSpaces })
   },
 
   clearSpaceAfterCombat: (spaceId) => {

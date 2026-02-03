@@ -41,6 +41,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
         generateDicePairCard(playerId),
         generateDicePairCard(playerId),
         generateDicePairCard(playerId),
+        generateDicePairCard(playerId),
       ])
       setSongCards([
         generateSongCard(),
@@ -55,6 +56,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
     awardPlayerExp(playerId, -REFRESH_COST)
     setDiceCards([
+      generateDicePairCard(playerId),
       generateDicePairCard(playerId),
       generateDicePairCard(playerId),
       generateDicePairCard(playerId),
@@ -111,21 +113,23 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   }
 
   const handleSlotDice = (songId: string, slotIndex: number) => {
-    if (!selectedDice) return
+    if (!selectedDice || selectedDice.dice.length === 0) return
 
     const song = player.songs.find((s) => s.id === songId)
     if (!song || song.slots[slotIndex].dice) return
 
+    // Slot only the first die
     useGameStore.getState().addDiceToPlayer(playerId, selectedDice.dice[0], songId, slotIndex)
 
+    // Keep remaining dice in selectedDice, or clear if none left
     if (selectedDice.dice.length > 1) {
-      const nextEmptySlot = song.slots.findIndex((s, idx) => idx > slotIndex && !s.dice)
-      if (nextEmptySlot !== -1) {
-        useGameStore.getState().addDiceToPlayer(playerId, selectedDice.dice[1], songId, nextEmptySlot)
-      }
+      setSelectedDice({
+        ...selectedDice,
+        dice: selectedDice.dice.slice(1),
+      })
+    } else {
+      setSelectedDice(null)
     }
-
-    setSelectedDice(null)
   }
 
   return (
@@ -173,7 +177,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
                   Dice Pairs
                 </div>
-                <div className="text-xs text-parchment-500">(3 available)</div>
+                <div className="text-xs text-parchment-500">(4 available)</div>
               </div>
               <button
                 onClick={handleRefreshDice}
@@ -184,7 +188,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 Refresh ({REFRESH_COST} EXP)
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               {diceCards.map((card) => (
                 <DraftCardDisplay
                   key={card.id}

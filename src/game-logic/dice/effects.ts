@@ -129,12 +129,14 @@ export function applyTrackEffect(
 
 /**
  * Calculate flat bonuses from effects
+ * Only applies to slots that have dice
  */
 export function calculateEffectBonuses(slots: SongSlot[]): number {
   let bonus = 0
 
   slots.forEach((slot) => {
-    if (slot.effect?.type === 'addFlat') {
+    // Only apply effect if there's a dice in the slot
+    if (slot.dice && slot.effect?.type === 'addFlat') {
       bonus += slot.effect.amount
     }
   })
@@ -144,12 +146,14 @@ export function calculateEffectBonuses(slots: SongSlot[]): number {
 
 /**
  * Calculate damage multipliers from effects
+ * Only applies to slots that have dice
  */
 export function calculateEffectMultipliers(slots: SongSlot[]): number {
   let multiplier = 1
 
   slots.forEach((slot) => {
-    if (slot.effect?.type === 'multiplyDamage') {
+    // Only apply effect if there's a dice in the slot
+    if (slot.dice && slot.effect?.type === 'multiplyDamage') {
       multiplier *= slot.effect.multiplier
     }
   })

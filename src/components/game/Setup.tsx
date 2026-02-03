@@ -13,6 +13,7 @@ export function Setup() {
   const initializePlayers = useGameStore((state) => state.initializePlayers)
   const initializeBoard = useGameStore((state) => state.initializeBoard)
   const addGenreTags = useGameStore((state) => state.addGenreTags)
+  const spawnInitialMonstersOnBoard = useGameStore((state) => state.spawnInitialMonstersOnBoard)
   const startGame = useGameStore((state) => state.startGame)
 
   const handleStart = () => {
@@ -43,6 +44,7 @@ export function Setup() {
     })
 
     addGenreTags()
+    spawnInitialMonstersOnBoard()
     startGame()
   }
 

@@ -17,6 +17,7 @@ describe('Damage Calculator', () => {
     resistance: 'Classical',
     isElite: false,
     isBoss: false,
+    level: 1,
   })
 
   describe('getGenreMultiplier', () => {

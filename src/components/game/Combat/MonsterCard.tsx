@@ -11,27 +11,27 @@ export function MonsterCard({ monster }: MonsterCardProps) {
 
   return (
     <div
-      className={`card min-w-[190px] transition-all duration-300 ${isDefeated ? 'opacity-40 grayscale' : ''}`}
+      className={`card min-w-[140px] p-2 transition-all duration-300 ${isDefeated ? 'opacity-40 grayscale' : ''}`}
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="font-medieval text-base font-bold text-gold-400 truncate">
+      <div className="flex items-center justify-between mb-1">
+        <div className="font-medieval text-xs font-bold text-gold-400 truncate flex-1">
           {monster.name}
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {monster.isElite && <span className="text-gold-400 text-sm">&#x2605;</span>}
-          {monster.isBoss && <span className="text-classical text-sm">&#x265B;</span>}
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          {monster.isElite && <span className="text-gold-400 text-[10px]">&#x2605;</span>}
+          {monster.isBoss && <span className="text-classical text-[10px]">&#x265B;</span>}
         </div>
       </div>
 
       {/* HP Bar */}
-      <div className="mb-3">
-        <div className="flex justify-between text-[10px] mb-1">
+      <div className="mb-2">
+        <div className="flex justify-between text-[9px] mb-0.5">
           <span className="text-parchment-400">HP</span>
           <span className="font-bold text-parchment-200">
-            {monster.currentHP} / {monster.maxHP}
+            {monster.currentHP}/{monster.maxHP}
           </span>
         </div>
-        <div className="hp-bar">
+        <div className="hp-bar h-1.5">
           <div
             className="hp-fill"
             style={{
@@ -46,28 +46,24 @@ export function MonsterCard({ monster }: MonsterCardProps) {
         </div>
       </div>
 
-      {/* Vulnerability */}
-      {monster.vulnerability && (
-        <div className="mb-2">
-          <div className="text-[10px] font-bold text-green-400 mb-1">
-            Vulnerable (2x):
+      {/* Vulnerability & Resistance inline */}
+      <div className="flex gap-2 text-[8px]">
+        {monster.vulnerability && (
+          <div className="flex-1">
+            <div className="font-bold text-green-400 mb-0.5">2x:</div>
+            <GenreBadge genre={monster.vulnerability} className="text-[8px] px-1 py-0" />
           </div>
-          <GenreBadge genre={monster.vulnerability} className="text-[10px]" />
-        </div>
-      )}
-
-      {/* Resistance */}
-      {monster.resistance && (
-        <div>
-          <div className="text-[10px] font-bold text-red-400 mb-1">
-            Resistant (0.5x):
+        )}
+        {monster.resistance && (
+          <div className="flex-1">
+            <div className="font-bold text-red-400 mb-0.5">0.5x:</div>
+            <GenreBadge genre={monster.resistance} className="text-[8px] px-1 py-0" />
           </div>
-          <GenreBadge genre={monster.resistance} className="text-[10px]" />
-        </div>
-      )}
+        )}
+      </div>
 
       {isDefeated && (
-        <div className="mt-3 text-center font-medieval font-bold text-green-400 text-sm">
+        <div className="mt-1 text-center font-medieval font-bold text-green-400 text-[10px]">
           CONVERTED &#x266B;
         </div>
       )}

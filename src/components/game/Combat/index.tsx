@@ -31,6 +31,9 @@ export function CombatModal() {
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
   const canContinue = songsUsed.length < player.songs.length
+  const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
+  const victoryExp = monstersDefeatedCount * 10
+  const retreatExp = Math.floor(monsters.length * 10 * 1.5)
 
   const handlePlaySong = (songId: string) => {
     const song = player.songs.find((s) => s.id === songId)
@@ -63,31 +66,30 @@ export function CombatModal() {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content max-w-6xl">
-        <div className="p-6">
+      <div className="modal-content max-w-5xl">
+        <div className="p-4">
           {/* Header */}
-          <div className="text-center mb-6">
-            <div className="font-display text-3xl text-gold-400 mb-1">
+          <div className="text-center mb-3">
+            <div className="font-display text-2xl text-gold-400">
               The Mashup
             </div>
-            <div className="h-px mx-auto w-48 mb-2" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.4), transparent)' }} />
-            <p className="text-sm text-parchment-400 italic font-game">
+            <p className="text-xs text-parchment-400 italic font-game">
               {player.name}'s Battle &mdash; Convert these fans!
             </p>
           </div>
 
           {/* Monsters */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+          <div className="mb-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="text-[9px] font-medieval text-parchment-400 uppercase tracking-wider">
                 Monsters
               </div>
-              <div className="text-xs text-red-400 font-bold">
+              <div className="text-[10px] text-red-400 font-bold">
                 ({monsters.filter((m: Monster) => m.currentHP > 0).length} remaining)
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {monsters.map((monster: Monster) => (
                 <MonsterCard key={monster.id} monster={monster} />
               ))}
@@ -95,17 +97,17 @@ export function CombatModal() {
           </div>
 
           {/* Songs */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+          <div className="mb-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="text-[9px] font-medieval text-parchment-400 uppercase tracking-wider">
                 Your Songs
               </div>
-              <div className="text-xs text-gold-400 font-bold">
+              <div className="text-[10px] text-gold-400 font-bold">
                 ({player.songs.length - songsUsed.length} remaining)
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {player.songs.map((song) => (
                 <SongCard
                   key={song.id}
@@ -119,11 +121,11 @@ export function CombatModal() {
 
           {/* Last roll result */}
           {rolls.length > 0 && (
-            <div className="mb-6 p-4 rounded-lg" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.15)' }}>
-              <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider mb-3">
+            <div className="mb-3 p-2 rounded-lg" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.15)' }}>
+              <div className="text-[9px] font-medieval text-parchment-400 uppercase tracking-wider mb-2">
                 Last Roll
               </div>
-              <div className="flex gap-3 items-center flex-wrap">
+              <div className="flex gap-2 items-center flex-wrap">
                 {rolls.map((roll, idx) => {
                   const dice = player.songs
                     .flatMap((s) => s.slots)
@@ -137,6 +139,7 @@ export function CombatModal() {
                       dice={dice}
                       value={roll.value}
                       isCrit={roll.isCrit}
+                      compact
                     />
                   )
                 })}
@@ -146,7 +149,7 @@ export function CombatModal() {
 
           {/* Damage breakdown */}
           {lastDamageCalculations.length > 0 && (
-            <div className="mb-6">
+            <div className="mb-3">
               <DamageBreakdown
                 calculations={lastDamageCalculations}
                 monsters={monsters}
@@ -154,11 +157,37 @@ export function CombatModal() {
             </div>
           )}
 
+          {/* EXP Breakdown */}
+          {(allMonstersDefeated || (!canContinue && !allMonstersDefeated)) && (
+            <div className="mb-3 p-2 rounded-lg" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.15)' }}>
+              <div className="text-center">
+                <div className="text-[9px] font-medieval text-parchment-400 uppercase tracking-wider mb-1">
+                  EXP Reward
+                </div>
+                {allMonstersDefeated ? (
+                  <div className="text-xl font-bold text-gold-400">
+                    +{victoryExp} EXP
+                    <div className="text-[10px] text-parchment-400 font-normal">
+                      {monstersDefeatedCount} monster{monstersDefeatedCount !== 1 ? 's' : ''} × 10 EXP
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-xl font-bold text-gold-400">
+                    +{retreatExp} EXP
+                    <div className="text-[10px] text-parchment-400 font-normal">
+                      {monsters.length} monster{monsters.length !== 1 ? 's' : ''} × 15 EXP (includes 50% failure bonus)
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
-          <div className="flex gap-4 justify-center pt-2">
+          <div className="flex gap-3 justify-center pt-1">
             {allMonstersDefeated ? (
               <button onClick={handleEndCombat}
-                className="px-8 py-3 font-medieval font-bold rounded-lg text-lg transition-all duration-200"
+                className="px-6 py-2 font-medieval font-bold rounded-lg text-sm transition-all duration-200"
                 style={{
                   background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
                   border: '1px solid rgba(100, 220, 100, 0.5)',
@@ -170,12 +199,12 @@ export function CombatModal() {
                 &#x2713; Victory! Claim Fame
               </button>
             ) : canContinue ? (
-              <p className="text-base text-parchment-400 italic font-game animate-pulse-slow">
+              <p className="text-sm text-parchment-400 italic font-game animate-pulse-slow">
                 Select a song to play...
               </p>
             ) : (
-              <button onClick={handleEndCombat} className="btn-secondary text-lg px-8">
-                Retreat (Gain Bonus EXP)
+              <button onClick={handleEndCombat} className="btn-secondary text-sm px-6">
+                Retreat
               </button>
             )}
           </div>

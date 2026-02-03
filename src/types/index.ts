@@ -77,6 +77,7 @@ export interface Monster {
   resistance: Genre | null
   isElite: boolean
   isBoss: boolean
+  level: number // Monster level (higher = more HP)
 }
 
 // ============================================

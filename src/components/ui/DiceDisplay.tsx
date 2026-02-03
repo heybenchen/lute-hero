@@ -6,6 +6,7 @@ interface DiceDisplayProps {
   value?: number
   isCrit?: boolean
   className?: string
+  compact?: boolean
 }
 
 const diceIcons: Record<DiceType, string> = {
@@ -20,7 +21,34 @@ export function DiceDisplay({
   value,
   isCrit = false,
   className = '',
+  compact = false,
 }: DiceDisplayProps) {
+  if (compact) {
+    return (
+      <div
+        className={`die p-1 ${className}`}
+        style={{
+          boxShadow: isCrit
+            ? '0 0 8px rgba(230, 195, 90, 0.5), 0 0 3px rgba(230, 195, 90, 0.3)'
+            : undefined,
+          borderColor: isCrit ? 'rgba(230, 195, 90, 0.7)' : undefined,
+          minWidth: '40px',
+          minHeight: '40px',
+        }}
+      >
+        <div className="flex flex-col items-center">
+          <div className="text-base text-gold-400">{diceIcons[dice.type]}</div>
+          {value !== undefined && (
+            <div className={`text-sm font-bold ${isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
+              {value}
+            </div>
+          )}
+          <GenreBadge genre={dice.genre} className="text-[6px] px-0.5 py-0" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       className={`die ${className}`}
