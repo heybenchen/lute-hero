@@ -10,6 +10,8 @@ import {
   applyTrackEffect,
   calculateEffectBonuses,
   calculateEffectMultipliers,
+  calculateHarmonizeBonus,
+  calculateOffbeatMultiplier,
 } from '../dice/effects'
 
 /**
@@ -80,8 +82,10 @@ export function calculateDamage(
   // 2. Calculate crit bonuses
   const critBonuses = rolls.reduce((sum, roll) => sum + roll.critBonus, 0)
 
-  // 3. Calculate effect bonuses (flat additions)
-  const effectBonuses = calculateEffectBonuses(song.slots)
+  // 3. Calculate effect bonuses (flat additions) + harmonize bonus
+  const effectBonuses =
+    calculateEffectBonuses(song.slots) +
+    calculateHarmonizeBonus(song.slots, rolls)
 
   // 4. Apply effect multipliers
   const effectMultiplier = calculateEffectMultipliers(song.slots)
@@ -91,17 +95,22 @@ export function calculateDamage(
   let genreAdjustedDamage = 0
 
   rolls.forEach((roll) => {
-    // Find the dice that created this roll
-    const dice = song.slots.find((slot) => slot.dice?.id === roll.diceId)?.dice
+    // Find the slot that created this roll
+    const slot = song.slots.find((s) => s.dice?.id === roll.diceId)
+    const dice = slot?.dice
 
-    if (dice) {
-      const multiplier = getGenreMultiplier(dice.genre, monster)
-      genreMultipliers.push({ genre: dice.genre, multiplier })
+    if (dice && slot) {
+      const genreMultiplier = getGenreMultiplier(dice.genre, monster)
+      genreMultipliers.push({ genre: dice.genre, multiplier: genreMultiplier })
 
-      // Apply genre multiplier to this specific die's damage
-      genreAdjustedDamage += (roll.value + roll.critBonus) * multiplier
+      // Calculate offbeat multiplier (odd = 2x, even = 0.5x)
+      const offbeatMultiplier = calculateOffbeatMultiplier(roll, slot)
+
+      // Apply genre and offbeat multipliers to this specific die's damage
+      genreAdjustedDamage +=
+        (roll.value + roll.critBonus) * genreMultiplier * offbeatMultiplier
     } else {
-      // No dice found (shouldn't happen), add unadjusted
+      // No slot found (shouldn't happen), add unadjusted
       genreAdjustedDamage += roll.value + roll.critBonus
     }
   })

@@ -39,6 +39,9 @@ export type TrackEffect =
   | { type: 'rollTwiceKeepHigher' }
   | { type: 'vampiric'; healPercent: number } // Heal % of damage dealt
   | { type: 'explosive' } // Crit triggers another roll
+  | { type: 'harmonize'; bonusDamage: number } // Bonus if 2+ dice roll same value
+  | { type: 'gamble' } // Roll d12; keep if higher, else deal 0
+  | { type: 'offbeat' } // Odd rolls 2x damage, even rolls 0.5x damage
 
 export interface SongSlot {
   dice: Dice | null

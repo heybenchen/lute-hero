@@ -15,6 +15,9 @@ export const TRACK_EFFECTS: { [key: string]: TrackEffect } = {
   rollTwice: { type: 'rollTwiceKeepHigher' },
   vampiric20: { type: 'vampiric', healPercent: 20 },
   explosive: { type: 'explosive' },
+  harmonize: { type: 'harmonize', bonusDamage: 4 },
+  gamble: { type: 'gamble' },
+  offbeat: { type: 'offbeat' },
 }
 
 export const TRACK_EFFECT_DESCRIPTIONS: { [key: string]: string } = {
@@ -32,4 +35,7 @@ export const TRACK_EFFECT_DESCRIPTIONS: { [key: string]: string } = {
   rollTwice: 'Roll twice, keep the higher value',
   vampiric20: 'Heal 20% of damage dealt',
   explosive: 'Critical hits trigger an additional roll',
+  harmonize: 'If 2+ dice roll the same value, +4 bonus damage',
+  gamble: 'Roll a d12; keep if higher than your die, else deal 0',
+  offbeat: 'Odd rolls deal 2x damage, even rolls deal 0.5x',
 }
