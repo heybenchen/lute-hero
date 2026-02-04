@@ -109,10 +109,6 @@ export function applyTrackEffect(
       }
       break
 
-    case 'vampiric':
-      // Healing applied after damage calculation
-      break
-
     case 'explosive':
       if (roll.isCrit) {
         // Trigger additional roll on crit

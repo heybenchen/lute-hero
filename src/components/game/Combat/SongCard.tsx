@@ -53,16 +53,17 @@ export function SongCard({ song, onPlay, disabled }: SongCardProps) {
         ))}
       </div>
 
-      {/* Track effects list - more compact */}
-      <div className="text-[9px] mb-2 space-y-0.5">
+      {/* Track effects list - compact */}
+      <div className="text-[9px] mb-2 space-y-0.5 max-h-12 overflow-hidden">
         {song.slots.map((slot, idx) => {
           if (!slot.effect) return null
 
           const desc = TRACK_EFFECT_DESCRIPTIONS[slot.effect.type] || slot.effect.type
 
           return (
-            <div key={idx} className="text-classical/80 truncate">
-              <strong className="text-classical">{idx + 1}:</strong> {desc}
+            <div key={idx} className="flex items-center gap-1 text-classical/80">
+              <strong className="text-classical shrink-0">{idx + 1}:</strong>
+              <span className="truncate">{desc}</span>
             </div>
           )
         })}

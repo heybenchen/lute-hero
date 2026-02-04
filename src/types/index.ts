@@ -37,7 +37,6 @@ export type TrackEffect =
   | { type: 'guaranteedCrit'; used: boolean }
   | { type: 'addDice'; diceType: DiceType; used: boolean }
   | { type: 'rollTwiceKeepHigher' }
-  | { type: 'vampiric'; healPercent: number } // Heal % of damage dealt
   | { type: 'explosive' } // Crit triggers another roll
   | { type: 'harmonize'; bonusDamage: number } // Bonus if 2+ dice roll same value
   | { type: 'gamble' } // Roll d12; keep if higher, else deal 0

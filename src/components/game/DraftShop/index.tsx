@@ -249,13 +249,13 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   </div>
 
                   {/* Show slot effects */}
-                  <div className="mb-2 space-y-1">
+                  <div className="mb-2 space-y-0.5">
                     {song.slots.map((slot, idx) => slot.effect && (
-                      <div key={idx} className="p-1.5 rounded text-xs"
+                      <div key={idx} className="p-1 rounded text-[11px] flex items-center gap-1.5"
                         style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
                       >
-                        <span className="font-bold text-classical">Slot {idx + 1}:</span>{' '}
-                        <span className="text-classical/80">
+                        <span className="font-bold text-classical shrink-0">{idx + 1}:</span>
+                        <span className="text-classical/80 truncate">
                           {TRACK_EFFECT_DESCRIPTIONS[slot.effect.type] || slot.effect.type}
                         </span>
                       </div>
