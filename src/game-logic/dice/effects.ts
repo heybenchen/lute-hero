@@ -8,6 +8,7 @@ import {
   getMaxValue,
   flipDiceValue,
   rollDiceWithCrit,
+  rollDie,
 } from './roller'
 import { DICE_UPGRADE_PATH } from '@/data/startingData'
 
@@ -108,15 +109,40 @@ export function applyTrackEffect(
       }
       break
 
-    case 'vampiric':
-      // Healing applied after damage calculation
-      break
-
     case 'explosive':
       if (roll.isCrit) {
         // Trigger additional roll on crit
         additionalRolls.push(rollDiceWithCrit(dice))
       }
+      break
+
+    case 'harmonize':
+      // Bonus calculated at song level in calculateHarmonizeBonus
+      break
+
+    case 'gamble':
+      // Roll a d12; if higher than original, keep it; else deal 0
+      const gambleRoll = rollDie('d12')
+      if (gambleRoll > roll.value) {
+        modifiedRoll.value = gambleRoll
+        // Check if gamble roll is a crit (rolled 12)
+        if (gambleRoll === 12) {
+          modifiedRoll.isCrit = true
+          modifiedRoll.critBonus = 5
+        } else {
+          modifiedRoll.isCrit = false
+          modifiedRoll.critBonus = 0
+        }
+      } else {
+        // Gamble failed - deal 0 damage
+        modifiedRoll.value = 0
+        modifiedRoll.isCrit = false
+        modifiedRoll.critBonus = 0
+      }
+      break
+
+    case 'offbeat':
+      // Multiplier applied in damage calculation via calculateOffbeatMultiplier
       break
   }
 
@@ -175,4 +201,46 @@ export function upgradeDice(dice: Dice): Dice {
     ...dice,
     type: nextTier,
   }
+}
+
+/**
+ * Calculate harmonize bonus if any slot has harmonize effect
+ * and 2+ dice rolled the same value
+ */
+export function calculateHarmonizeBonus(
+  slots: SongSlot[],
+  rolls: DiceRoll[]
+): number {
+  // Check if any slot has harmonize effect
+  const harmonizeEffect = slots.find(
+    (slot) => slot.effect?.type === 'harmonize'
+  )?.effect
+
+  if (!harmonizeEffect || harmonizeEffect.type !== 'harmonize') {
+    return 0
+  }
+
+  // Check if 2+ dice rolled the same value
+  const values = rolls.map((r) => r.value)
+  const hasDuplicates = values.some(
+    (val, idx) => values.indexOf(val) !== idx
+  )
+
+  return hasDuplicates ? harmonizeEffect.bonusDamage : 0
+}
+
+/**
+ * Calculate offbeat multiplier for a single roll
+ * Odd rolls = 2x, Even rolls = 0.5x
+ */
+export function calculateOffbeatMultiplier(
+  roll: DiceRoll,
+  slot: SongSlot
+): number {
+  if (slot.effect?.type !== 'offbeat') {
+    return 1
+  }
+
+  // Odd values get 2x, even values get 0.5x
+  return roll.value % 2 === 1 ? 2 : 0.5
 }

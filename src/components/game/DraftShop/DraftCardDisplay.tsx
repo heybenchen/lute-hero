@@ -89,28 +89,28 @@ export function DraftCardDisplay({
       {/* Song preview */}
       {card.type === 'song' && (
         <div className="mb-4">
-          <div className="text-base font-bold text-center mb-3 text-parchment-200">
+          <div className="text-base font-bold text-center mb-3 text-parchment-200 truncate">
             {card.songName}
           </div>
-          <div className="space-y-1.5 text-xs">
+          <div className="space-y-1 text-xs">
             {card.songEffect && (
-              <div className="p-2 rounded"
+              <div className="p-1.5 rounded flex items-center gap-2"
                 style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
               >
-                <div className="font-bold text-classical mb-0.5">Slot 3:</div>
-                <div className="text-classical/80">
+                <span className="font-bold text-classical shrink-0">3:</span>
+                <span className="text-classical/80 truncate">
                   {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type] || card.songEffect.type}
-                </div>
+                </span>
               </div>
             )}
             {card.songEffect2 && (
-              <div className="p-2 rounded"
+              <div className="p-1.5 rounded flex items-center gap-2"
                 style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
               >
-                <div className="font-bold text-classical mb-0.5">Slot 4:</div>
-                <div className="text-classical/80">
+                <span className="font-bold text-classical shrink-0">4:</span>
+                <span className="text-classical/80 truncate">
                   {TRACK_EFFECT_DESCRIPTIONS[card.songEffect2.type] || card.songEffect2.type}
-                </div>
+                </span>
               </div>
             )}
           </div>
@@ -119,32 +119,32 @@ export function DraftCardDisplay({
 
       {/* Tooltip for songs */}
       {showTooltip && card.type === 'song' && (card.songEffect || card.songEffect2) && (
-        <div className="absolute z-50 p-3 rounded-lg shadow-2xl left-1/2 transform -translate-x-1/2 -top-2 -translate-y-full w-68 animate-fade-in"
+        <div className="absolute z-50 p-3 rounded-lg shadow-2xl left-1/2 transform -translate-x-1/2 -top-2 -translate-y-full w-52 animate-fade-in"
           style={{
             background: 'linear-gradient(135deg, #2a2118, #1a1410)',
             border: '1px solid rgba(212, 168, 83, 0.3)',
           }}
         >
-          <div className="font-bold mb-2 text-center text-gold-400 text-sm">{card.songName}</div>
-          <div className="text-xs space-y-2 text-parchment-300">
+          <div className="font-bold mb-2 text-center text-gold-400 text-sm truncate">{card.songName}</div>
+          <div className="text-xs space-y-1.5 text-parchment-300">
             {card.songEffect && (
-              <div>
-                <div className="text-classical font-bold mb-1">Slot 3 Effect:</div>
-                <div className="p-1.5 rounded text-[11px]" style={{ background: 'rgba(176, 124, 255, 0.08)' }}>
+              <div className="flex items-start gap-2">
+                <span className="text-classical font-bold shrink-0">Slot 3:</span>
+                <span className="text-[11px]">
                   {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type] || card.songEffect.type}
-                </div>
+                </span>
               </div>
             )}
             {card.songEffect2 && (
-              <div>
-                <div className="text-classical font-bold mb-1">Slot 4 Effect:</div>
-                <div className="p-1.5 rounded text-[11px]" style={{ background: 'rgba(176, 124, 255, 0.08)' }}>
+              <div className="flex items-start gap-2">
+                <span className="text-classical font-bold shrink-0">Slot 4:</span>
+                <span className="text-[11px]">
                   {TRACK_EFFECT_DESCRIPTIONS[card.songEffect2.type] || card.songEffect2.type}
-                </div>
+                </span>
               </div>
             )}
-            <div className="text-[10px] text-parchment-400 mt-2 pt-2" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.15)' }}>
-              Slots 1-2 are empty and can be filled with any dice
+            <div className="text-[10px] text-parchment-400 pt-2" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.15)' }}>
+              Slots 1-2 can be filled with dice
             </div>
           </div>
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">
