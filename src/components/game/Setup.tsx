@@ -176,7 +176,7 @@ export function Setup() {
             <li>Play songs to deal damage (AOE to all monsters)</li>
             <li>Defeat monsters to gain Fame and EXP</li>
             <li>Vulnerable genres deal 2x damage, resistant 0.5x</li>
-            <li>Rolling max value = Critical Hit (+5 bonus!)</li>
+            <li>Rolling max value = Critical Hit (double damage!)</li>
           </ul>
         </div>
       </div>

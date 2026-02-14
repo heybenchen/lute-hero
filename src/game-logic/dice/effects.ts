@@ -45,7 +45,7 @@ export function applyTrackEffect(
 
     case 'doubleCrit':
       if (roll.isCrit) {
-        modifiedRoll.critBonus = 10 // Instead of 5
+        modifiedRoll.critBonus = roll.value * 2 // Quadruple total instead of double
       }
       break
 
@@ -59,7 +59,7 @@ export function applyTrackEffect(
       // Recalculate crit after flip
       if (modifiedRoll.value === getMaxValue(dice.type)) {
         modifiedRoll.isCrit = true
-        modifiedRoll.critBonus = 5
+        modifiedRoll.critBonus = modifiedRoll.value
       } else {
         modifiedRoll.isCrit = false
         modifiedRoll.critBonus = 0
@@ -84,7 +84,7 @@ export function applyTrackEffect(
       if (!effect.used) {
         modifiedRoll.value = getMaxValue(dice.type)
         modifiedRoll.isCrit = true
-        modifiedRoll.critBonus = 5
+        modifiedRoll.critBonus = modifiedRoll.value
         updatedEffect = { ...effect, used: true }
       }
       break
@@ -128,7 +128,7 @@ export function applyTrackEffect(
         // Check if gamble roll is a crit (rolled 12)
         if (gambleRoll === 12) {
           modifiedRoll.isCrit = true
-          modifiedRoll.critBonus = 5
+          modifiedRoll.critBonus = gambleRoll
         } else {
           modifiedRoll.isCrit = false
           modifiedRoll.critBonus = 0

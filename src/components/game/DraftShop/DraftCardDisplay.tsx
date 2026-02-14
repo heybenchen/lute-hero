@@ -76,7 +76,7 @@ export function DraftCardDisplay({
             ))}
             <div className="pt-2 mt-2" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.15)' }}>
               <div className="text-[10px] text-parchment-400">
-                Rolling max value grants <span className="text-gold-400 font-bold">+5 crit bonus</span>
+                Rolling max value grants <span className="text-gold-400 font-bold">double damage</span>
               </div>
             </div>
           </div>

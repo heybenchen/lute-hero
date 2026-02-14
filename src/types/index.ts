@@ -22,7 +22,7 @@ export interface DiceRoll {
   diceId: string
   value: number
   isCrit: boolean // True if rolled max value
-  critBonus: number // +5 if crit
+  critBonus: number // Equals roll value if crit (double damage)
 }
 
 // Track effects that modify dice behavior

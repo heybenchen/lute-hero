@@ -68,7 +68,7 @@ describe('Dice Roller', () => {
       expect(result.value).toBeLessThanOrEqual(6)
     })
 
-    it('should add +5 crit bonus on max roll', () => {
+    it('should double damage on max roll (crit)', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd6',
@@ -82,7 +82,7 @@ describe('Dice Roller', () => {
 
       expect(result.value).toBe(6)
       expect(result.isCrit).toBe(true)
-      expect(result.critBonus).toBe(5)
+      expect(result.critBonus).toBe(6)
 
       vi.restoreAllMocks()
     })
@@ -136,12 +136,12 @@ describe('Dice Roller', () => {
   describe('calculateCritBonuses', () => {
     it('should sum up crit bonuses', () => {
       const rolls = [
-        { diceId: '1', value: 6, isCrit: true, critBonus: 5 },
+        { diceId: '1', value: 6, isCrit: true, critBonus: 6 },
         { diceId: '2', value: 4, isCrit: false, critBonus: 0 },
-        { diceId: '3', value: 12, isCrit: true, critBonus: 5 },
+        { diceId: '3', value: 12, isCrit: true, critBonus: 12 },
       ]
 
-      expect(calculateCritBonuses(rolls)).toBe(10)
+      expect(calculateCritBonuses(rolls)).toBe(18)
     })
 
     it('should return 0 when no crits', () => {

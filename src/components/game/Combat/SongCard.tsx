@@ -10,15 +10,15 @@ interface SongCardProps {
 
 export function SongCard({ song, onPlay, disabled }: SongCardProps) {
   return (
-    <div className={`card min-w-[200px] p-2 transition-all duration-200 ${song.used ? 'opacity-40' : ''}`}>
-      <div className="font-medieval text-sm font-bold text-gold-400 mb-2 pb-1 truncate"
+    <div className={`card min-w-[240px] p-3 transition-all duration-200 ${song.used ? 'opacity-40' : ''}`}>
+      <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-1.5 truncate"
         style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
       >
         {song.name}
       </div>
 
       {/* Dice slots */}
-      <div className="grid grid-cols-4 gap-1 mb-2">
+      <div className="grid grid-cols-4 gap-1.5 mb-3">
         {song.slots.map((slot, idx) => (
           <div key={idx} className="relative">
             {slot.dice ? (
@@ -54,7 +54,7 @@ export function SongCard({ song, onPlay, disabled }: SongCardProps) {
       </div>
 
       {/* Track effects list - compact */}
-      <div className="text-[9px] mb-2 space-y-0.5 max-h-12 overflow-hidden">
+      <div className="text-xs mb-3 space-y-0.5 max-h-16 overflow-hidden">
         {song.slots.map((slot, idx) => {
           if (!slot.effect) return null
 
@@ -73,7 +73,7 @@ export function SongCard({ song, onPlay, disabled }: SongCardProps) {
       <button
         onClick={onPlay}
         disabled={disabled || song.used}
-        className={`w-full py-1.5 font-medieval font-bold rounded-lg transition-all duration-200 text-xs disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`w-full py-2 font-medieval font-bold rounded-lg transition-all duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed ${
           song.used ? '' : ''
         }`}
         style={{

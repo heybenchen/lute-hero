@@ -8,6 +8,9 @@ function generateCardId(): string {
 }
 
 // Dice pair configurations with costs
+// Pricing is based on total dice face value (sum of max faces).
+// A total value of 18 (e.g. d6+d12) is "average" at 15 EXP.
+// Two d20s are never sold.
 export const DICE_PAIR_TEMPLATES: Array<{
   genre: Genre
   dice1: DiceType
@@ -15,40 +18,68 @@ export const DICE_PAIR_TEMPLATES: Array<{
   cost: number
   name: string
 }> = [
-  // Balanced pairs (mid-tier)
-  { genre: 'Pop', dice1: 'd6', dice2: 'd6', cost: 5, name: 'Pop Duo' },
-  { genre: 'Rock', dice1: 'd6', dice2: 'd6', cost: 5, name: 'Rock Duo' },
-  { genre: 'Electronic', dice1: 'd6', dice2: 'd6', cost: 5, name: 'Electronic Duo' },
-  { genre: 'Classical', dice1: 'd6', dice2: 'd6', cost: 5, name: 'Classical Duo' },
-  { genre: 'HipHop', dice1: 'd6', dice2: 'd6', cost: 5, name: 'Hip-Hop Duo' },
+  // d4 + d4 (value 8) — 7 EXP, cheapest
+  { genre: 'Pop', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Pop Warmup' },
+  { genre: 'Rock', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Rock Warmup' },
+  { genre: 'Electronic', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Electronic Warmup' },
+  { genre: 'Classical', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Classical Warmup' },
+  { genre: 'HipHop', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Hip-Hop Warmup' },
 
-  // High-low pairs (higher variance)
-  { genre: 'Pop', dice1: 'd20', dice2: 'd4', cost: 10, name: 'Pop Power Ballad' },
-  { genre: 'Rock', dice1: 'd20', dice2: 'd4', cost: 10, name: 'Rock Anthem' },
-  { genre: 'Electronic', dice1: 'd20', dice2: 'd4', cost: 10, name: 'Electronic Drop' },
-  { genre: 'Classical', dice1: 'd20', dice2: 'd4', cost: 10, name: 'Classical Crescendo' },
-  { genre: 'HipHop', dice1: 'd20', dice2: 'd4', cost: 10, name: 'Hip-Hop Banger' },
+  // d4 + d6 (value 10) — 8 EXP
+  { genre: 'Pop', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Pop Opener' },
+  { genre: 'Rock', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Rock Opener' },
+  { genre: 'Electronic', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Electronic Opener' },
+  { genre: 'Classical', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Classical Opener' },
+  { genre: 'HipHop', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Hip-Hop Opener' },
 
-  // Mid-range pairs
-  { genre: 'Pop', dice1: 'd12', dice2: 'd6', cost: 8, name: 'Pop Hit' },
-  { genre: 'Rock', dice1: 'd12', dice2: 'd6', cost: 8, name: 'Rock Riff' },
-  { genre: 'Electronic', dice1: 'd12', dice2: 'd6', cost: 8, name: 'Electronic Beat' },
-  { genre: 'Classical', dice1: 'd12', dice2: 'd6', cost: 8, name: 'Classical Movement' },
-  { genre: 'HipHop', dice1: 'd12', dice2: 'd6', cost: 8, name: 'Hip-Hop Flow' },
+  // d6 + d6 (value 12) — 10 EXP
+  { genre: 'Pop', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Pop Duo' },
+  { genre: 'Rock', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Rock Duo' },
+  { genre: 'Electronic', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Electronic Duo' },
+  { genre: 'Classical', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Classical Duo' },
+  { genre: 'HipHop', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Hip-Hop Duo' },
 
-  // High-risk high-reward
-  { genre: 'Pop', dice1: 'd12', dice2: 'd12', cost: 12, name: 'Pop Megahit' },
-  { genre: 'Rock', dice1: 'd12', dice2: 'd12', cost: 12, name: 'Rock Solo' },
-  { genre: 'Electronic', dice1: 'd12', dice2: 'd12', cost: 12, name: 'Electronic Remix' },
-  { genre: 'Classical', dice1: 'd12', dice2: 'd12', cost: 12, name: 'Classical Symphony' },
-  { genre: 'HipHop', dice1: 'd12', dice2: 'd12', cost: 12, name: 'Hip-Hop Cypher' },
+  // d4 + d12 (value 16) — 12 EXP
+  { genre: 'Pop', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Pop Gambit' },
+  { genre: 'Rock', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Rock Gambit' },
+  { genre: 'Electronic', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Electronic Gambit' },
+  { genre: 'Classical', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Classical Gambit' },
+  { genre: 'HipHop', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Hip-Hop Gambit' },
 
-  // Ultra rare
-  { genre: 'Pop', dice1: 'd20', dice2: 'd12', cost: 15, name: 'Pop Legendary' },
-  { genre: 'Rock', dice1: 'd20', dice2: 'd12', cost: 15, name: 'Rock Legendary' },
-  { genre: 'Electronic', dice1: 'd20', dice2: 'd12', cost: 15, name: 'Electronic Legendary' },
-  { genre: 'Classical', dice1: 'd20', dice2: 'd12', cost: 15, name: 'Classical Legendary' },
-  { genre: 'HipHop', dice1: 'd20', dice2: 'd12', cost: 15, name: 'Hip-Hop Legendary' },
+  // d6 + d12 (value 18) — 15 EXP, the "average" baseline
+  { genre: 'Pop', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Pop Hit' },
+  { genre: 'Rock', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Rock Riff' },
+  { genre: 'Electronic', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Electronic Beat' },
+  { genre: 'Classical', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Classical Movement' },
+  { genre: 'HipHop', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Hip-Hop Flow' },
+
+  // d4 + d20 (value 24) — 18 EXP, high variance
+  { genre: 'Pop', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Pop Power Ballad' },
+  { genre: 'Rock', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Rock Anthem' },
+  { genre: 'Electronic', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Electronic Drop' },
+  { genre: 'Classical', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Classical Crescendo' },
+  { genre: 'HipHop', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Hip-Hop Banger' },
+
+  // d12 + d12 (value 24) — 20 EXP
+  { genre: 'Pop', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Pop Megahit' },
+  { genre: 'Rock', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Rock Solo' },
+  { genre: 'Electronic', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Electronic Remix' },
+  { genre: 'Classical', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Classical Symphony' },
+  { genre: 'HipHop', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Hip-Hop Cypher' },
+
+  // d20 + d6 (value 26) — 20 EXP
+  { genre: 'Pop', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Pop Showstopper' },
+  { genre: 'Rock', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Rock Showstopper' },
+  { genre: 'Electronic', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Electronic Showstopper' },
+  { genre: 'Classical', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Classical Showstopper' },
+  { genre: 'HipHop', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Hip-Hop Showstopper' },
+
+  // d20 + d12 (value 32) — 25 EXP, most expensive
+  { genre: 'Pop', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Pop Legendary' },
+  { genre: 'Rock', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Rock Legendary' },
+  { genre: 'Electronic', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Electronic Legendary' },
+  { genre: 'Classical', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Classical Legendary' },
+  { genre: 'HipHop', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Hip-Hop Legendary' },
 ]
 
 export function generateDicePairCard(playerId: string): DraftCard {

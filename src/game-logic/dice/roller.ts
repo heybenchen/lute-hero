@@ -38,7 +38,7 @@ export function rollDiceWithCrit(dice: Dice): DiceRoll {
   const value = rollDie(dice.type)
   const maxValue = getMaxValue(dice.type)
   const isCrit = value === maxValue
-  const critBonus = isCrit ? 5 : 0
+  const critBonus = isCrit ? value : 0
 
   return {
     diceId: dice.id,

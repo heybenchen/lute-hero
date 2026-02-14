@@ -124,7 +124,7 @@ export function CurrentPlayerDisplay() {
                             <GenreBadge genre={slot.dice.genre} className="text-[7px] px-1 py-0" />
                           </div>
                           <div className="text-[10px] text-parchment-400">
-                            Roll: 1-{getMaxValue(slot.dice.type)} (+5 on max)
+                            Roll: 1-{getMaxValue(slot.dice.type)} (2x on max)
                           </div>
                         </div>
                       )}
