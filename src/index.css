@@ -38,14 +38,14 @@
      DICE DISPLAY
      ============================================= */
   .die {
-    @apply w-14 h-14 rounded-lg flex items-center justify-center text-xl font-bold;
+    @apply w-16 h-16 rounded-lg flex items-center justify-center text-2xl font-bold;
     background: #2e2419;
     border: 1px solid rgba(212, 168, 83, 0.3);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 
   .die-sm {
-    @apply w-10 h-10 rounded flex items-center justify-center text-sm font-bold;
+    @apply w-12 h-12 rounded flex items-center justify-center text-base font-bold;
     background: #2e2419;
     border: 1px solid rgba(212, 168, 83, 0.3);
   }

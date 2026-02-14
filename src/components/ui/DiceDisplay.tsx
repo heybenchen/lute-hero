@@ -26,24 +26,24 @@ export function DiceDisplay({
   if (compact) {
     return (
       <div
-        className={`die p-1 ${className}`}
+        className={`die p-1.5 ${className}`}
         style={{
           boxShadow: isCrit
-            ? '0 0 8px rgba(230, 195, 90, 0.5), 0 0 3px rgba(230, 195, 90, 0.3)'
+            ? '0 0 10px rgba(230, 195, 90, 0.5), 0 0 4px rgba(230, 195, 90, 0.3)'
             : undefined,
           borderColor: isCrit ? 'rgba(230, 195, 90, 0.7)' : undefined,
-          minWidth: '40px',
-          minHeight: '40px',
+          minWidth: '52px',
+          minHeight: '52px',
         }}
       >
         <div className="flex flex-col items-center">
-          <div className="text-base text-gold-400">{diceIcons[dice.type]}</div>
+          <div className="text-lg text-gold-400">{diceIcons[dice.type]}</div>
           {value !== undefined && (
-            <div className={`text-sm font-bold ${isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
+            <div className={`text-base font-bold ${isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
               {value}
             </div>
           )}
-          <GenreBadge genre={dice.genre} className="text-[6px] px-0.5 py-0" />
+          <GenreBadge genre={dice.genre} className="text-[8px] px-1 py-0" />
         </div>
       </div>
     )
