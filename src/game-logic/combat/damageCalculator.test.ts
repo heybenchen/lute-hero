@@ -15,7 +15,6 @@ describe('Damage Calculator', () => {
     maxHP: 50,
     vulnerability: 'Rock',
     resistance: 'Classical',
-    isElite: false,
     isBoss: false,
     level: 1,
   })

@@ -58,11 +58,6 @@ export function MonsterCard({ monster, index = 0 }: MonsterCardProps) {
                 {monster.name}
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                {monster.isElite && (
-                  <span className="text-xs font-bold text-gold-500 bg-gold-500/10 px-2 py-0.5 rounded" style={{ border: '1px solid rgba(212, 168, 83, 0.2)' }}>
-                    ELITE
-                  </span>
-                )}
                 {monster.isBoss && (
                   <span className="text-xs font-bold text-classical bg-classical/10 px-2 py-0.5 rounded" style={{ border: '1px solid rgba(176, 124, 255, 0.2)' }}>
                     BOSS

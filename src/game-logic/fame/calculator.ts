@@ -1,4 +1,4 @@
-import { Player } from '@/types'
+import { Player, Monster } from '@/types'
 import { calculateFameMultiplier } from '@/data/startingData'
 
 /**
@@ -12,6 +12,21 @@ export function calculateFameEarned(
   const multiplier = calculateFameMultiplier(totalDefeated)
 
   return newMonstersDefeated * multiplier * 10
+}
+
+/**
+ * Calculate EXP reward for a single monster based on level
+ * Formula: 5 + level * 5 (Lv1=10, Lv2=15, Lv3=20, Lv4=25)
+ */
+export function calculateMonsterExp(level: number): number {
+  return 5 + level * 5
+}
+
+/**
+ * Calculate total EXP from an array of monsters
+ */
+export function calculateTotalMonsterExp(monsters: Monster[]): number {
+  return monsters.reduce((total, m) => total + calculateMonsterExp(m.level), 0)
 }
 
 /**

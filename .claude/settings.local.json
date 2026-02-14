@@ -13,7 +13,9 @@
       "Bash(npm run build:*)",
       "mcp__claude_ai_Figma__create_design_system_rules",
       "Bash(tree:*)",
-      "Bash(claude install:*)"
+      "Bash(claude install:*)",
+      "Bash(npx vitest:*)",
+      "WebSearch"
     ]
   }
 }

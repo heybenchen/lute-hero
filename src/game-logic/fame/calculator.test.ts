@@ -5,8 +5,10 @@ import {
   calculateCollectiveFame,
   calculateTotalMonstersDefeated,
   calculateFinalRankings,
+  calculateMonsterExp,
+  calculateTotalMonsterExp,
 } from './calculator'
-import { Player } from '@/types'
+import { Player, Monster } from '@/types'
 
 describe('Fame Calculator', () => {
   const createTestPlayer = (overrides: Partial<Player> = {}): Player => ({
@@ -124,6 +126,39 @@ describe('Fame Calculator', () => {
       calculateFinalRankings(players)
 
       expect(players.map((p) => p.id)).toEqual(originalOrder)
+    })
+  })
+
+  describe('calculateMonsterExp', () => {
+    it('should return 5 + level * 5', () => {
+      expect(calculateMonsterExp(1)).toBe(10)
+      expect(calculateMonsterExp(2)).toBe(15)
+      expect(calculateMonsterExp(3)).toBe(20)
+      expect(calculateMonsterExp(4)).toBe(25)
+    })
+  })
+
+  describe('calculateTotalMonsterExp', () => {
+    const createTestMonster = (level: number): Monster => ({
+      id: `m-${level}`,
+      templateId: 'test',
+      name: 'Test',
+      currentHP: 0,
+      maxHP: 20,
+      vulnerability: null,
+      resistance: null,
+      isBoss: false,
+      level,
+    })
+
+    it('should sum EXP across all monsters', () => {
+      const monsters = [createTestMonster(1), createTestMonster(2), createTestMonster(3)]
+      // 10 + 15 + 20 = 45
+      expect(calculateTotalMonsterExp(monsters)).toBe(45)
+    })
+
+    it('should return 0 for empty array', () => {
+      expect(calculateTotalMonsterExp([])).toBe(0)
     })
   })
 })

@@ -3,7 +3,7 @@ import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
 import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { DamageBreakdown } from './DamageBreakdown'
-import { calculateFameEarned, calculateFailureBonus } from '@/game-logic/fame/calculator'
+import { calculateFameEarned, calculateFailureBonus, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
 import { Monster } from '@/types'
 
 export function CombatModal() {
@@ -31,10 +31,10 @@ export function CombatModal() {
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
   const canContinue = songsUsed.length < player.songs.length
-  const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
+  const defeatedMonsters = monsters.filter((m: Monster) => m.currentHP <= 0)
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
-  const victoryExp = monstersDefeatedCount * 10
-  const retreatExp = Math.floor(monsters.length * 10 * 1.5)
+  const victoryExp = calculateTotalMonsterExp(defeatedMonsters)
+  const retreatExp = Math.floor(calculateTotalMonsterExp(monsters) * 1.5)
   const isCombatOver = allMonstersDefeated || !canContinue
 
   const handlePlaySong = (songId: string) => {
@@ -54,13 +54,13 @@ export function CombatModal() {
         result.monstersDefeated
       )
       awardPlayerFame(player.id, fameEarned)
-      awardPlayerExp(player.id, result.monstersDefeated * 10)
+      awardPlayerExp(player.id, calculateTotalMonsterExp(monsters))
       incrementPlayerMonstersDefeated(player.id, result.monstersDefeated)
       if (spaceId !== null) {
         clearSpaceAfterCombat(spaceId)
       }
     } else {
-      const baseExp = monsters.length * 10
+      const baseExp = calculateTotalMonsterExp(monsters)
       const bonusExp = calculateFailureBonus(baseExp)
       awardPlayerExp(player.id, bonusExp)
     }
@@ -193,8 +193,8 @@ export function CombatModal() {
                 </div>
                 <div className="text-base text-parchment-500 mt-1.5">
                   {allMonstersDefeated
-                    ? <>{monstersDefeatedCount} monster{monstersDefeatedCount !== 1 ? 's' : ''} &times; 10 EXP</>
-                    : <>{monsters.length} monster{monsters.length !== 1 ? 's' : ''} &times; 15 EXP <span className="text-parchment-600">(50% failure bonus)</span></>
+                    ? <>{defeatedMonsters.map((m, i) => <span key={m.id}>{i > 0 && ' + '}{calculateTotalMonsterExp([m])} <span className="text-parchment-600">(Lv.{m.level})</span></span>)}</>
+                    : <>Level-scaled EXP &times; 1.5 <span className="text-parchment-600">(50% failure bonus)</span></>
                   }
                 </div>
               </div>

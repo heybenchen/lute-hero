@@ -2,14 +2,6 @@ import { BoardSpace, Monster, Genre, MonsterTemplate } from '@/types'
 import { getMonsterByGenre } from '@/data/monsters'
 
 /**
- * Determine how many monsters should spawn based on genre tags
- * Rule: Every 2 genre tags = 1 monster
- */
-export function calculateMonsterSpawnCount(genreTags: Genre[]): number {
-  return Math.floor(genreTags.length / 2)
-}
-
-/**
  * Count tags by genre and find the dominant genre
  */
 export function countTagsByGenre(genreTags: Genre[]): Map<Genre, number> {
@@ -42,10 +34,10 @@ export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: num
 
 /**
  * Calculate HP multiplier based on monster level
- * Level 1 = 1x, Level 2 = 1.5x, Level 3 = 2x, etc.
+ * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 2.5x, Level 4 = 3.25x
  */
 export function getHPMultiplier(level: number): number {
-  return 1 + (level - 1) * 0.5
+  return 1 + (level - 1) * 0.75
 }
 
 /**
@@ -54,36 +46,29 @@ export function getHPMultiplier(level: number): number {
 export function getMonsterNameWithLevel(baseName: string, level: number): string {
   if (level === 1) return baseName
   if (level === 2) return `Strong ${baseName}`
-  if (level === 3) return `Elite ${baseName}`
+  if (level === 3) return `Veteran ${baseName}`
   return `Legendary ${baseName}`
 }
 
 /**
- * Randomly select monsters from available genre tags
+ * Spawn one monster per unique genre present in tags.
+ * Duplicate tags of the same genre increase that monster's level.
+ * e.g. [Pop, Pop, Rock] -> 1 Lv2 Pop monster + 1 Lv1 Rock monster
  */
 export function spawnMonstersFromTags(
   genreTags: Genre[],
   spaceId: number
 ): Monster[] {
-  const spawnCount = calculateMonsterSpawnCount(genreTags)
-
-  if (spawnCount === 0) {
-    return []
-  }
-
+  const counts = countTagsByGenre(genreTags)
   const monsters: Monster[] = []
+  let index = 0
 
-  for (let i = 0; i < spawnCount; i++) {
-    // Randomly select a genre from available tags
-    const randomGenre = genreTags[Math.floor(Math.random() * genreTags.length)]
-
-    // Get monster template with that vulnerability
-    const template = getMonsterByGenre(randomGenre)
-
-    // Create monster instance (level 1 for standard spawning)
-    const monster = createMonsterFromTemplate(template, spaceId, i, 1)
+  counts.forEach((count, genre) => {
+    const template = getMonsterByGenre(genre)
+    const monster = createMonsterFromTemplate(template, spaceId, index, count)
     monsters.push(monster)
-  }
+    index++
+  })
 
   return monsters
 }
@@ -138,7 +123,6 @@ export function createMonsterFromTemplate(
     maxHP: scaledHP,
     vulnerability: template.vulnerability,
     resistance: template.resistance,
-    isElite: template.isElite || false,
     isBoss: template.isBoss || false,
     level,
   }
@@ -153,13 +137,4 @@ export function clearSpace(space: BoardSpace): BoardSpace {
     monsters: [],
     genreTags: [],
   }
-}
-
-/**
- * Check if a space should become more powerful (ignored for multiple rounds)
- * Returns true if it should spawn extra monsters
- */
-export function shouldSpawnExtraMonsters(genreTags: Genre[]): boolean {
-  // If there are 4+ tags (ignored for 2+ rounds), spawn extra
-  return genreTags.length >= 4
 }

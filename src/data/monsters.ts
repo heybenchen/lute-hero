@@ -61,53 +61,6 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
     description: 'Only respects the classics',
   },
 
-  // Elite Monsters (Underground Scene) - Single weakness/resistance
-  {
-    id: 'elite_pop_star',
-    name: 'Fallen Pop Star',
-    baseHP: 50,
-    vulnerability: 'Pop',
-    resistance: 'Rock',
-    description: 'A former idol seeking redemption',
-    isElite: true,
-  },
-  {
-    id: 'elite_rockstar',
-    name: 'Legendary Rockstar',
-    baseHP: 55,
-    vulnerability: 'Rock',
-    resistance: 'Pop',
-    description: 'The ghost of rock and roll past',
-    isElite: true,
-  },
-  {
-    id: 'elite_dj',
-    name: 'Rogue AI DJ',
-    baseHP: 52,
-    vulnerability: 'Electronic',
-    resistance: 'Classical',
-    description: 'Sentient music software gone wild',
-    isElite: true,
-  },
-  {
-    id: 'elite_conductor',
-    name: 'Mad Conductor',
-    baseHP: 58,
-    vulnerability: 'Classical',
-    resistance: 'Electronic',
-    description: 'Orchestrating chaos itself',
-    isElite: true,
-  },
-  {
-    id: 'elite_mc',
-    name: 'Battle MC Supreme',
-    baseHP: 54,
-    vulnerability: 'HipHop',
-    resistance: 'Rock',
-    description: 'The final word in verbal combat',
-    isElite: true,
-  },
-
   // Final Boss - No weakness or resistance
   {
     id: 'boss_silence',
@@ -121,23 +74,18 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
 ]
 
 // Helper to get random monster by genre weakness
-export function getMonsterByGenre(genre: Genre, isElite = false): MonsterTemplate {
+export function getMonsterByGenre(genre: Genre): MonsterTemplate {
   const candidates = MONSTER_TEMPLATES.filter(
-    (m) => m.vulnerability === genre && m.isElite === isElite && !m.isBoss
+    (m) => m.vulnerability === genre && !m.isBoss
   )
 
   if (candidates.length === 0) {
-    // Fallback to any monster with that vulnerability
-    const anyMatch = MONSTER_TEMPLATES.filter((m) => m.vulnerability === genre && !m.isBoss)
+    // Fallback to any non-boss monster
+    const anyMatch = MONSTER_TEMPLATES.filter((m) => !m.isBoss)
     return anyMatch[Math.floor(Math.random() * anyMatch.length)]
   }
 
   return candidates[Math.floor(Math.random() * candidates.length)]
-}
-
-// Helper to get elite monster by genre
-export function getEliteMonster(genre: Genre): MonsterTemplate {
-  return getMonsterByGenre(genre, true)
 }
 
 // Helper to get final boss

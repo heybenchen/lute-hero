@@ -62,7 +62,6 @@ export interface MonsterTemplate {
   vulnerability: Genre | null; // Single weakness - 2x damage
   resistance: Genre | null; // Single resistance - 0.5x damage
   description: string;
-  isElite?: boolean;
   isBoss?: boolean;
 }
 
@@ -74,7 +73,6 @@ export interface Monster {
   maxHP: number;
   vulnerability: Genre | null;
   resistance: Genre | null;
-  isElite: boolean;
   isBoss: boolean;
   level: number; // Monster level (higher = more HP)
 }
@@ -91,7 +89,7 @@ export interface BoardSpace {
   id: number;
   name: string;
   connections: number[]; // IDs of connected spaces
-  genreTags: Genre[]; // Accumulates each round, 2 tags = 1 monster
+  genreTags: Genre[]; // Accumulates each round, each unique genre = 1 monster
   monsters: Monster[];
   isEdge: boolean; // Players start on edge spaces
 }
@@ -164,7 +162,7 @@ export interface GameState {
 
   // Phase-specific state
   undergroundSceneProgress: {
-    [playerId: string]: boolean; // Has defeated elite monster
+    [playerId: string]: boolean; // Has completed underground scene
   };
 
   finalBoss: Monster | null;
