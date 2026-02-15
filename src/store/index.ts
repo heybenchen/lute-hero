@@ -4,9 +4,10 @@ import { createGameSlice, GameSlice } from './slices/gameSlice'
 import { createBoardSlice, BoardSlice } from './slices/boardSlice'
 import { createPlayersSlice, PlayersSlice } from './slices/playersSlice'
 import { createCombatSlice, CombatSlice } from './slices/combatSlice'
+import { createShopSlice, ShopSlice } from './slices/shopSlice'
 
 // Combined store type
-export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice
+export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice & ShopSlice
 
 // Create the store with all slices
 export const useGameStore = create<GameStore>()(
@@ -16,6 +17,7 @@ export const useGameStore = create<GameStore>()(
       ...createBoardSlice(...args),
       ...createPlayersSlice(...args),
       ...createCombatSlice(...args),
+      ...createShopSlice(...args),
     }),
     { name: 'LuteHeroStore' }
   )
