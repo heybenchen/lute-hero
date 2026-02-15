@@ -1,5 +1,5 @@
-import { Player, Monster } from '@/types'
-import { calculateFameMultiplier } from '@/data/startingData'
+import { Player, Monster, GamePhase } from '@/types'
+import { calculateFameMultiplier, FAME_THRESHOLDS } from '@/data/startingData'
 
 /**
  * Calculate fame earned from defeating monsters
@@ -84,6 +84,20 @@ export function incrementMonstersDefeated(
     ...player,
     monstersDefeated: player.monstersDefeated + count,
   }
+}
+
+/**
+ * Determine the next game phase based on collective fame.
+ * Returns the new phase if a transition should occur, or null if no change.
+ */
+export function getNextPhase(currentPhase: GamePhase, collectiveFame: number): GamePhase | null {
+  if (currentPhase === 'main' && collectiveFame >= FAME_THRESHOLDS.undergroundScene) {
+    return 'underground'
+  }
+  if (currentPhase === 'underground' && collectiveFame >= FAME_THRESHOLDS.finalBoss) {
+    return 'finalBoss'
+  }
+  return null
 }
 
 /**
