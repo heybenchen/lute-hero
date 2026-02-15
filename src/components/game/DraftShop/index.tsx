@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
 import { DraftCard, Song, DiceType } from '@/types'
-import { generateDicePairCard, generateSongCard } from '@/data/draftCards'
+import { generateDicePairCard, generateSongCard, getStudioLevel } from '@/data/draftCards'
 import { DraftCardDisplay } from './DraftCardDisplay'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
@@ -33,15 +33,16 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     cardId: string
   } | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
+  const studioLevel = getStudioLevel(player?.monstersDefeated ?? 0)
 
   // Initialize cards only once when component mounts
   useEffect(() => {
     if (!isInitialized) {
       setDiceCards([
-        generateDicePairCard(playerId),
-        generateDicePairCard(playerId),
-        generateDicePairCard(playerId),
-        generateDicePairCard(playerId),
+        generateDicePairCard(playerId, studioLevel),
+        generateDicePairCard(playerId, studioLevel),
+        generateDicePairCard(playerId, studioLevel),
+        generateDicePairCard(playerId, studioLevel),
       ])
       setSongCards([
         generateSongCard(),
@@ -56,10 +57,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
     awardPlayerExp(playerId, -REFRESH_COST)
     setDiceCards([
-      generateDicePairCard(playerId),
-      generateDicePairCard(playerId),
-      generateDicePairCard(playerId),
-      generateDicePairCard(playerId),
+      generateDicePairCard(playerId, studioLevel),
+      generateDicePairCard(playerId, studioLevel),
+      generateDicePairCard(playerId, studioLevel),
+      generateDicePairCard(playerId, studioLevel),
     ])
   }
 
@@ -87,7 +88,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
       setDiceCards((prev) => {
         const newCards = prev.filter((c) => c.id !== card.id)
-        newCards.push(generateDicePairCard(playerId))
+        newCards.push(generateDicePairCard(playerId, studioLevel))
         return newCards
       })
     } else if (card.type === 'song') {
@@ -141,6 +142,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             <div>
               <div className="font-display text-2xl text-gold-400">
                 Studio
+                <span className="text-sm font-medieval text-parchment-400 ml-2">Lv.{studioLevel}</span>
               </div>
               <p className="text-sm text-parchment-400">
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span> Available

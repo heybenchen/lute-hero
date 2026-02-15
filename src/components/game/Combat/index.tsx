@@ -22,6 +22,7 @@ export function CombatModal() {
   const incrementPlayerMonstersDefeated = useGameStore(
     (state) => state.incrementPlayerMonstersDefeated
   )
+  const checkPhaseTransition = useGameStore((state) => state.checkPhaseTransition)
 
   const player = useGameStore(
     selectPlayerById(playerId || '')
@@ -59,6 +60,7 @@ export function CombatModal() {
       if (spaceId !== null) {
         clearSpaceAfterCombat(spaceId)
       }
+      checkPhaseTransition()
     } else {
       const baseExp = calculateTotalMonsterExp(monsters)
       const bonusExp = calculateFailureBonus(baseExp)

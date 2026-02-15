@@ -82,8 +82,63 @@ export const DICE_PAIR_TEMPLATES: Array<{
   { genre: 'HipHop', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Hip-Hop Legendary' },
 ]
 
-export function generateDicePairCard(playerId: string): DraftCard {
-  const template = DICE_PAIR_TEMPLATES[Math.floor(Math.random() * DICE_PAIR_TEMPLATES.length)]
+/**
+ * Calculate studio level from monsters defeated.
+ * Level 1 (0-4 kills): prioritizes cheap dice
+ * Level 2 (5-9 kills): balanced mix
+ * Level 3 (10+ kills): prioritizes expensive dice
+ */
+export function getStudioLevel(monstersDefeated: number): number {
+  if (monstersDefeated >= 10) return 3
+  if (monstersDefeated >= 5) return 2
+  return 1
+}
+
+// Cost tier boundaries
+const COST_TIERS = {
+  cheap: { min: 0, max: 10 },    // d4+d4(7), d4+d6(8), d6+d6(10)
+  mid: { min: 11, max: 15 },     // d4+d12(12), d6+d12(15)
+  expensive: { min: 16, max: 99 }, // d4+d20(18), d12+d12(20), d20+d6(20), d20+d12(25)
+}
+
+// Weights per studio level: [cheap, mid, expensive]
+const TIER_WEIGHTS: Record<number, [number, number, number]> = {
+  1: [60, 30, 10],
+  2: [25, 50, 25],
+  3: [10, 30, 60],
+}
+
+function getTemplatesByTier() {
+  return {
+    cheap: DICE_PAIR_TEMPLATES.filter((t) => t.cost <= COST_TIERS.cheap.max),
+    mid: DICE_PAIR_TEMPLATES.filter((t) => t.cost > COST_TIERS.cheap.max && t.cost <= COST_TIERS.mid.max),
+    expensive: DICE_PAIR_TEMPLATES.filter((t) => t.cost > COST_TIERS.mid.max),
+  }
+}
+
+function pickWeightedTemplate(studioLevel: number) {
+  const weights = TIER_WEIGHTS[studioLevel] || TIER_WEIGHTS[1]
+  const tiers = getTemplatesByTier()
+  const tierArrays = [tiers.cheap, tiers.mid, tiers.expensive]
+
+  // Weighted random selection of tier
+  const roll = Math.random() * 100
+  let tierIndex = 0
+  let cumulative = 0
+  for (let i = 0; i < weights.length; i++) {
+    cumulative += weights[i]
+    if (roll < cumulative) {
+      tierIndex = i
+      break
+    }
+  }
+
+  const selectedTier = tierArrays[tierIndex]
+  return selectedTier[Math.floor(Math.random() * selectedTier.length)]
+}
+
+export function generateDicePairCard(playerId: string, studioLevel: number = 1): DraftCard {
+  const template = pickWeightedTemplate(studioLevel)
 
   const dice: Dice[] = [
     {

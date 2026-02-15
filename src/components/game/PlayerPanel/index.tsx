@@ -27,7 +27,10 @@ export function PlayerPanel() {
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
   const canFight = hasMonsters && fightsRemaining > 0
-  const fameProgress = Math.min((collectiveFame / FAME_THRESHOLDS.undergroundScene) * 100, 100)
+  const currentThreshold = phase === 'main'
+    ? FAME_THRESHOLDS.undergroundScene
+    : FAME_THRESHOLDS.finalBoss
+  const fameProgress = Math.min((collectiveFame / currentThreshold) * 100, 100)
 
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
@@ -64,21 +67,23 @@ export function PlayerPanel() {
         </div>
 
         {/* Fame progress bar */}
-        <div className="mt-3">
-          <div className="flex justify-between text-[10px] text-parchment-400 mb-1">
-            <span>Collective Fame</span>
-            <span className="text-gold-400 font-bold">{collectiveFame} / {FAME_THRESHOLDS.undergroundScene}</span>
+        {(phase === 'main' || phase === 'underground') && (
+          <div className="mt-3">
+            <div className="flex justify-between text-[10px] text-parchment-400 mb-1">
+              <span>{phase === 'main' ? 'Fame to Underground' : 'Fame to Final Boss'}</span>
+              <span className="text-gold-400 font-bold">{collectiveFame} / {currentThreshold}</span>
+            </div>
+            <div className="hp-bar h-2">
+              <div
+                className="hp-fill rounded-full"
+                style={{
+                  width: `${fameProgress}%`,
+                  background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
+                }}
+              />
+            </div>
           </div>
-          <div className="hp-bar h-2">
-            <div
-              className="hp-fill rounded-full"
-              style={{
-                width: `${fameProgress}%`,
-                background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
-              }}
-            />
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="divider-ornate" />

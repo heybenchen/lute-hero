@@ -2,11 +2,11 @@
 
 ## High Priority
 
-- [ ] Rework `undergroundSceneProgress` — was gated on defeating elite monsters, needs a new trigger condition
+(none)
 
 ## Medium Priority
 
-- [ ] Verify boardSlice spawning integration — `spawnMonstersFromTags` behavior changed under same API, needs E2E validation
+(none)
 
 ## Low Priority
 
@@ -15,8 +15,6 @@
 ## Completed
 
 - [x] Remove elite monsters & rework spawning (types, data, spawner, calculator, UI, tests)
-
-## Wishlist
-
-- [ ] Add concept of studio level that affects what EXP cost of dice are shown
-      in the store. Level 1 should prioritize cheap dice sets.
+- [x] Rework `undergroundSceneProgress` — now driven by collective fame thresholds (300 → underground, 500 → finalBoss), checked after combat via `checkPhaseTransition`
+- [x] Verify boardSlice spawning integration — added integration tests for `spawnMonstersAtSpace`, `spawnInitialMonstersOnBoard`, `clearSpaceAfterCombat`, and full round flow
+- [x] Add studio level concept — `getStudioLevel(monstersDefeated)` returns Lv1-3, weighted dice tier selection in DraftShop (Lv1 favors cheap, Lv3 favors expensive)
