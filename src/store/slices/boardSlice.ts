@@ -19,6 +19,11 @@ export interface BoardSlice {
   updateSpace: (spaceId: number, updates: Partial<BoardSpace>) => void
 }
 
+// Helper to read currentRound from the combined store (all slices share one object)
+function getRound(get: () => BoardSlice): number {
+  return (get() as BoardSlice & { currentRound?: number }).currentRound || 1
+}
+
 export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
   // Initial state
   spaces: [],
@@ -35,10 +40,11 @@ export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
   },
 
   spawnMonstersAtSpace: (spaceId) => {
+    const round = getRound(get)
     const space = get().spaces.find((s) => s.id === spaceId)
     if (!space) return
 
-    const monsters = spawnMonstersFromTags(space.genreTags, spaceId)
+    const monsters = spawnMonstersFromTags(space.genreTags, spaceId, round)
 
     set({
       spaces: get().spaces.map((s) =>
@@ -48,10 +54,11 @@ export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
   },
 
   spawnInitialMonstersOnBoard: () => {
+    const round = getRound(get)
     const updatedSpaces = get().spaces.map((space) => {
       if (space.genreTags.length === 0) return space
 
-      const monsters = spawnInitialMonsters(space.genreTags, space.id)
+      const monsters = spawnInitialMonsters(space.genreTags, space.id, round)
       return { ...space, monsters }
     })
 

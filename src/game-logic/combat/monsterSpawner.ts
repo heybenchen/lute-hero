@@ -1,5 +1,5 @@
 import { BoardSpace, Monster, Genre, MonsterTemplate } from '@/types'
-import { getMonsterByGenre } from '@/data/monsters'
+import { getMonsterByGenre, getRoundLevelBonus } from '@/data/monsters'
 
 /**
  * Count tags by genre and find the dominant genre
@@ -53,19 +53,22 @@ export function getMonsterNameWithLevel(baseName: string, level: number): string
 /**
  * Spawn one monster per unique genre present in tags.
  * Duplicate tags of the same genre increase that monster's level.
+ * The round parameter selects tougher templates and adds a level bonus in later rounds.
  * e.g. [Pop, Pop, Rock] -> 1 Lv2 Pop monster + 1 Lv1 Rock monster
  */
 export function spawnMonstersFromTags(
   genreTags: Genre[],
-  spaceId: number
+  spaceId: number,
+  round: number = 1
 ): Monster[] {
   const counts = countTagsByGenre(genreTags)
   const monsters: Monster[] = []
+  const levelBonus = getRoundLevelBonus(round)
   let index = 0
 
   counts.forEach((count, genre) => {
-    const template = getMonsterByGenre(genre)
-    const monster = createMonsterFromTemplate(template, spaceId, index, count)
+    const template = getMonsterByGenre(genre, round)
+    const monster = createMonsterFromTemplate(template, spaceId, index, count + levelBonus)
     monsters.push(monster)
     index++
   })
@@ -80,13 +83,15 @@ export function spawnMonstersFromTags(
 export function spawnMonsterFromDominantTag(
   genreTags: Genre[],
   spaceId: number,
-  index: number = 0
+  index: number = 0,
+  round: number = 1
 ): Monster | null {
   const dominant = getDominantGenre(genreTags)
   if (!dominant) return null
 
-  const template = getMonsterByGenre(dominant.genre)
-  return createMonsterFromTemplate(template, spaceId, index, dominant.count)
+  const levelBonus = getRoundLevelBonus(round)
+  const template = getMonsterByGenre(dominant.genre, round)
+  return createMonsterFromTemplate(template, spaceId, index, dominant.count + levelBonus)
 }
 
 /**
@@ -95,11 +100,12 @@ export function spawnMonsterFromDominantTag(
  */
 export function spawnInitialMonsters(
   genreTags: Genre[],
-  spaceId: number
+  spaceId: number,
+  round: number = 1
 ): Monster[] {
   if (genreTags.length === 0) return []
 
-  const monster = spawnMonsterFromDominantTag(genreTags, spaceId, 0)
+  const monster = spawnMonsterFromDominantTag(genreTags, spaceId, 0, round)
   return monster ? [monster] : []
 }
 

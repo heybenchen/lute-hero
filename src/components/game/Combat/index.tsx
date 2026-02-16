@@ -1,8 +1,10 @@
+import { useState, useCallback } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
 import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { DamageBreakdown } from './DamageBreakdown'
+import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateFameEarned, calculateFailureBonus, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
 import { Monster } from '@/types'
 
@@ -27,6 +29,12 @@ export function CombatModal() {
     selectPlayerById(playerId || '')
   )
 
+  const [popups, setPopups] = useState<DamagePopupEntry[]>([])
+
+  const handlePopupComplete = useCallback((id: string) => {
+    setPopups((prev) => prev.filter((p) => p.id !== id))
+  }, [])
+
   if (!isActive || !player) return null
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
@@ -41,7 +49,18 @@ export function CombatModal() {
     const song = player.songs.find((s) => s.id === songId)
     if (!song || songsUsed.includes(songId)) return
 
-    playSong(song)
+    // Snapshot monsters before damage
+    const monstersBefore = monsters.map((m) => ({ ...m }))
+
+    const result = playSong(song)
+
+    // Create floating damage popups
+    const newPopups = createDamagePopups(
+      result.damageCalculations,
+      monstersBefore,
+      result.updatedMonsters,
+    )
+    setPopups((prev) => [...prev, ...newPopups])
   }
 
   const handleEndCombat = () => {
@@ -68,6 +87,7 @@ export function CombatModal() {
 
   return (
     <div className="modal-overlay">
+      <DamagePopups entries={popups} onComplete={handlePopupComplete} />
       <div className="modal-content max-w-6xl animate-scale-in">
         {/* Atmospheric top gradient */}
         <div className="h-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.4), transparent)' }} />
