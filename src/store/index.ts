@@ -4,9 +4,10 @@ import { createGameSlice, GameSlice } from './slices/gameSlice'
 import { createBoardSlice, BoardSlice } from './slices/boardSlice'
 import { createPlayersSlice, PlayersSlice } from './slices/playersSlice'
 import { createCombatSlice, CombatSlice } from './slices/combatSlice'
+import { createShopSlice, ShopSlice } from './slices/shopSlice'
 
 // Combined store type
-export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice
+export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice & ShopSlice
 
 const STORAGE_KEY = 'lute-hero-save'
 const STORAGE_VERSION = 1
@@ -41,6 +42,7 @@ export const useGameStore = create<GameStore>()(
         ...createBoardSlice(...args),
         ...createPlayersSlice(...args),
         ...createCombatSlice(...args),
+        ...createShopSlice(...args),
       }),
       persistOptions,
     ),

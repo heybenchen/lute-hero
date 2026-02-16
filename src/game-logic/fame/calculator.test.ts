@@ -7,6 +7,7 @@ import {
   calculateFinalRankings,
   calculateMonsterExp,
   calculateTotalMonsterExp,
+  getNextPhase,
 } from './calculator'
 import { Player, Monster } from '@/types'
 
@@ -159,6 +160,34 @@ describe('Fame Calculator', () => {
 
     it('should return 0 for empty array', () => {
       expect(calculateTotalMonsterExp([])).toBe(0)
+    })
+  })
+
+  describe('getNextPhase', () => {
+    it('should transition from main to underground at fame threshold', () => {
+      expect(getNextPhase('main', 300)).toBe('underground')
+      expect(getNextPhase('main', 500)).toBe('underground')
+    })
+
+    it('should not transition from main below threshold', () => {
+      expect(getNextPhase('main', 299)).toBeNull()
+      expect(getNextPhase('main', 0)).toBeNull()
+    })
+
+    it('should transition from underground to finalBoss at fame threshold', () => {
+      expect(getNextPhase('underground', 500)).toBe('finalBoss')
+      expect(getNextPhase('underground', 600)).toBe('finalBoss')
+    })
+
+    it('should not transition from underground below threshold', () => {
+      expect(getNextPhase('underground', 499)).toBeNull()
+      expect(getNextPhase('underground', 300)).toBeNull()
+    })
+
+    it('should not transition from setup, finalBoss, or gameOver', () => {
+      expect(getNextPhase('setup', 1000)).toBeNull()
+      expect(getNextPhase('finalBoss', 1000)).toBeNull()
+      expect(getNextPhase('gameOver', 1000)).toBeNull()
     })
   })
 })

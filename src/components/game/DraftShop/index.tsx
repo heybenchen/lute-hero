@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
 import { DraftCard, Song, DiceType } from '@/types'
-import { generateDicePairCard, generateSongCard } from '@/data/draftCards'
+import { getStudioLevel } from '@/data/draftCards'
 import { DraftCardDisplay } from './DraftCardDisplay'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
@@ -26,51 +26,33 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const awardPlayerExp = useGameStore((state) => state.awardPlayerExp)
   const addSongToPlayer = useGameStore((state) => state.addSongToPlayer)
 
-  const [diceCards, setDiceCards] = useState<DraftCard[]>([])
-  const [songCards, setSongCards] = useState<DraftCard[]>([])
+  // Shared pool from store
+  const dicePool = useGameStore((state) => state.dicePool)
+  const songPool = useGameStore((state) => state.songPool)
+  const purchaseFromDicePool = useGameStore((state) => state.purchaseFromDicePool)
+  const purchaseFromSongPool = useGameStore((state) => state.purchaseFromSongPool)
+  const refreshDicePool = useGameStore((state) => state.refreshDicePool)
+  const refreshSongPool = useGameStore((state) => state.refreshSongPool)
+
   const [selectedDice, setSelectedDice] = useState<{
     dice: any[]
     cardId: string
   } | null>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Initialize cards only once when component mounts
-  useEffect(() => {
-    if (!isInitialized) {
-      setDiceCards([
-        generateDicePairCard(playerId),
-        generateDicePairCard(playerId),
-        generateDicePairCard(playerId),
-        generateDicePairCard(playerId),
-      ])
-      setSongCards([
-        generateSongCard(),
-        generateSongCard(),
-      ])
-      setIsInitialized(true)
-    }
-  }, [playerId, isInitialized])
+  const studioLevel = getStudioLevel(player?.monstersDefeated ?? 0)
 
   const handleRefreshDice = () => {
     if (!player || player.exp < REFRESH_COST) return
 
     awardPlayerExp(playerId, -REFRESH_COST)
-    setDiceCards([
-      generateDicePairCard(playerId),
-      generateDicePairCard(playerId),
-      generateDicePairCard(playerId),
-      generateDicePairCard(playerId),
-    ])
+    refreshDicePool(studioLevel)
   }
 
   const handleRefreshSongs = () => {
     if (!player || player.exp < REFRESH_COST) return
 
     awardPlayerExp(playerId, -REFRESH_COST)
-    setSongCards([
-      generateSongCard(),
-      generateSongCard(),
-    ])
+    refreshSongPool()
   }
 
   if (!player) return null
@@ -84,12 +66,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
     if (card.type === 'dice' && card.dice) {
       setSelectedDice({ dice: card.dice, cardId: card.id })
-
-      setDiceCards((prev) => {
-        const newCards = prev.filter((c) => c.id !== card.id)
-        newCards.push(generateDicePairCard(playerId))
-        return newCards
-      })
+      purchaseFromDicePool(card.id, studioLevel)
     } else if (card.type === 'song') {
       const newSong: Song = {
         id: `${playerId}-song-${Date.now()}`,
@@ -103,12 +80,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
         used: false,
       }
       addSongToPlayer(playerId, newSong)
-
-      setSongCards((prev) => {
-        const newCards = prev.filter((c) => c.id !== card.id)
-        newCards.push(generateSongCard())
-        return newCards
-      })
+      purchaseFromSongPool(card.id)
     }
   }
 
@@ -141,6 +113,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             <div>
               <div className="font-display text-2xl text-gold-400">
                 Studio
+                <span className="text-sm font-medieval text-parchment-400 ml-2">Lv.{studioLevel}</span>
               </div>
               <p className="text-sm text-parchment-400">
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span> Available
@@ -177,7 +150,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
                   Dice Pairs
                 </div>
-                <div className="text-xs text-parchment-500">(4 available)</div>
+                <div className="text-xs text-parchment-500">({dicePool.length} available)</div>
               </div>
               <button
                 onClick={handleRefreshDice}
@@ -189,7 +162,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              {diceCards.map((card) => (
+              {dicePool.map((card) => (
                 <DraftCardDisplay
                   key={card.id}
                   card={card}
@@ -207,7 +180,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
                   Song Tracks
                 </div>
-                <div className="text-xs text-parchment-500">(2 available)</div>
+                <div className="text-xs text-parchment-500">({songPool.length} available)</div>
               </div>
               <button
                 onClick={handleRefreshSongs}
@@ -219,7 +192,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {songCards.map((card) => (
+              {songPool.map((card) => (
                 <DraftCardDisplay
                   key={card.id}
                   card={card}

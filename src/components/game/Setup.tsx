@@ -15,6 +15,7 @@ export function Setup() {
   const addGenreTags = useGameStore((state) => state.addGenreTags)
   const spawnInitialMonstersOnBoard = useGameStore((state) => state.spawnInitialMonstersOnBoard)
   const startGame = useGameStore((state) => state.startGame)
+  const initializeShop = useGameStore((state) => state.initializeShop)
 
   const handleStart = () => {
     const configs = []
@@ -45,6 +46,7 @@ export function Setup() {
 
     addGenreTags()
     spawnInitialMonstersOnBoard()
+    initializeShop(1) // Start at studio level 1
     startGame()
   }
 
