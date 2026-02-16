@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameStore } from '@/store'
+import { useGameStore, hasSavedGame, clearSavedGame } from '@/store'
 import { Genre } from '@/types'
 
 const GENRES: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
@@ -155,14 +155,41 @@ export function Setup() {
           </div>
         </div>
 
-        {/* Start button */}
-        <button onClick={handleStart} className="btn-primary w-full text-lg py-4"
-          style={{
-            boxShadow: '0 0 20px rgba(212, 168, 83, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
-          }}
-        >
-          Start Game
-        </button>
+        {/* Start / Continue buttons */}
+        <div className="space-y-3">
+          {hasSavedGame() && (
+            <button
+              onClick={() => {
+                // Hydration already happened — just flip to the game phase
+                const state = useGameStore.getState()
+                if (state.phase !== 'setup') {
+                  // Store was already hydrated with the saved game; nothing to do
+                  // But we need to trigger a re-render — setPhase to current phase
+                  useGameStore.getState().setPhase(state.phase)
+                }
+              }}
+              className="w-full text-lg py-4 font-medieval font-bold rounded-lg transition-all duration-200"
+              style={{
+                background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
+                border: '1px solid rgba(100, 220, 100, 0.4)',
+                color: '#d4ffd6',
+                textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
+                boxShadow: '0 0 20px rgba(100, 220, 100, 0.12), 0 4px 15px rgba(0,0,0,0.3)',
+              }}
+            >
+              Continue Saved Game
+            </button>
+          )}
+          <button
+            onClick={() => { clearSavedGame(); handleStart() }}
+            className="btn-primary w-full text-lg py-4"
+            style={{
+              boxShadow: '0 0 20px rgba(212, 168, 83, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
+            }}
+          >
+            {hasSavedGame() ? 'New Game' : 'Start Game'}
+          </button>
+        </div>
 
         {/* How to play */}
         <div className="mt-6 p-4 rounded-lg text-sm"

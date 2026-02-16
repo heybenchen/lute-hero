@@ -46,7 +46,7 @@ describe('boardSlice spawning integration', () => {
       // Manually set tags on space 0 to control the test
       const spaces = useGameStore.getState().spaces
       const updatedSpaces = spaces.map((s) =>
-        s.id === 0 ? { ...s, genreTags: ['Pop', 'Rock'] as Genre[] } : s
+        s.id === 0 ? { ...s, genreTags: ['Ballad', 'Folk'] as Genre[] } : s
       )
       useGameStore.setState({ spaces: updatedSpaces })
 
@@ -63,14 +63,14 @@ describe('boardSlice spawning integration', () => {
 
       const spaces = useGameStore.getState().spaces
       const updatedSpaces = spaces.map((s) =>
-        s.id === 0 ? { ...s, genreTags: ['Pop', 'Pop', 'Rock'] as Genre[] } : s
+        s.id === 0 ? { ...s, genreTags: ['Ballad', 'Ballad', 'Folk'] as Genre[] } : s
       )
       useGameStore.setState({ spaces: updatedSpaces })
 
       useGameStore.getState().spawnMonstersAtSpace(0)
 
       const space = useGameStore.getState().spaces.find((s) => s.id === 0)!
-      expect(space.monsters).toHaveLength(2) // 1 Pop + 1 Rock
+      expect(space.monsters).toHaveLength(2) // 1 Ballad + 1 Folk
 
       const leveled = space.monsters.find((m) => m.level === 2)
       const basic = space.monsters.find((m) => m.level === 1)
@@ -92,7 +92,7 @@ describe('boardSlice spawning integration', () => {
 
       const spaces = useGameStore.getState().spaces
       const updatedSpaces = spaces.map((s) =>
-        s.id === 0 ? { ...s, genreTags: ['Pop'] as Genre[] } : s
+        s.id === 0 ? { ...s, genreTags: ['Ballad'] as Genre[] } : s
       )
       useGameStore.setState({ spaces: updatedSpaces })
 
@@ -112,7 +112,7 @@ describe('boardSlice spawning integration', () => {
       // Set up a space with tags and monsters
       const spaces = useGameStore.getState().spaces
       const updatedSpaces = spaces.map((s) =>
-        s.id === 0 ? { ...s, genreTags: ['Pop', 'Rock'] as Genre[] } : s
+        s.id === 0 ? { ...s, genreTags: ['Ballad', 'Folk'] as Genre[] } : s
       )
       useGameStore.setState({ spaces: updatedSpaces })
       useGameStore.getState().spawnMonstersAtSpace(0)
