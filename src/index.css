@@ -86,11 +86,10 @@
   /* =============================================
      GENRE BADGES
      ============================================= */
-  .genre-pop { @apply bg-pop text-white; }
-  .genre-rock { @apply bg-rock text-white; }
-  .genre-electronic { @apply bg-electronic text-gray-900; }
-  .genre-classical { @apply bg-classical text-white; }
-  .genre-hiphop { @apply bg-hiphop text-gray-900; }
+  .genre-ballad { @apply bg-ballad text-white; }
+  .genre-folk { @apply bg-folk text-white; }
+  .genre-hymn { @apply bg-hymn text-white; }
+  .genre-shanty { @apply bg-shanty text-white; }
 
   /* =============================================
      HP BAR

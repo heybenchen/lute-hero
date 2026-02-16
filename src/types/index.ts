@@ -2,7 +2,7 @@
 // CORE GAME TYPES
 // ============================================
 
-export type Genre = "Pop" | "Rock" | "Electronic" | "Classical" | "HipHop";
+export type Genre = "Ballad" | "Folk" | "Hymn" | "Shanty";
 
 export type DiceType = "d4" | "d6" | "d12" | "d20";
 

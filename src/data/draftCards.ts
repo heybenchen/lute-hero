@@ -19,67 +19,58 @@ export const DICE_PAIR_TEMPLATES: Array<{
   name: string
 }> = [
   // d4 + d4 (value 8) — 7 EXP, cheapest
-  { genre: 'Pop', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Pop Warmup' },
-  { genre: 'Rock', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Rock Warmup' },
-  { genre: 'Electronic', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Electronic Warmup' },
-  { genre: 'Classical', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Classical Warmup' },
-  { genre: 'HipHop', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Hip-Hop Warmup' },
+  { genre: 'Ballad', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Ballad Warmup' },
+  { genre: 'Folk', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Folk Warmup' },
+  { genre: 'Hymn', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Hymn Warmup' },
+  { genre: 'Shanty', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Shanty Warmup' },
 
   // d4 + d6 (value 10) — 8 EXP
-  { genre: 'Pop', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Pop Opener' },
-  { genre: 'Rock', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Rock Opener' },
-  { genre: 'Electronic', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Electronic Opener' },
-  { genre: 'Classical', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Classical Opener' },
-  { genre: 'HipHop', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Hip-Hop Opener' },
+  { genre: 'Ballad', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Ballad Opener' },
+  { genre: 'Folk', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Folk Opener' },
+  { genre: 'Hymn', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Hymn Opener' },
+  { genre: 'Shanty', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Shanty Opener' },
 
   // d6 + d6 (value 12) — 10 EXP
-  { genre: 'Pop', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Pop Duo' },
-  { genre: 'Rock', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Rock Duo' },
-  { genre: 'Electronic', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Electronic Duo' },
-  { genre: 'Classical', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Classical Duo' },
-  { genre: 'HipHop', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Hip-Hop Duo' },
+  { genre: 'Ballad', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Ballad Duo' },
+  { genre: 'Folk', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Folk Duo' },
+  { genre: 'Hymn', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Hymn Duo' },
+  { genre: 'Shanty', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Shanty Duo' },
 
   // d4 + d12 (value 16) — 12 EXP
-  { genre: 'Pop', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Pop Gambit' },
-  { genre: 'Rock', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Rock Gambit' },
-  { genre: 'Electronic', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Electronic Gambit' },
-  { genre: 'Classical', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Classical Gambit' },
-  { genre: 'HipHop', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Hip-Hop Gambit' },
+  { genre: 'Ballad', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Ballad Gambit' },
+  { genre: 'Folk', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Folk Gambit' },
+  { genre: 'Hymn', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Hymn Gambit' },
+  { genre: 'Shanty', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Shanty Gambit' },
 
   // d6 + d12 (value 18) — 15 EXP, the "average" baseline
-  { genre: 'Pop', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Pop Hit' },
-  { genre: 'Rock', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Rock Riff' },
-  { genre: 'Electronic', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Electronic Beat' },
-  { genre: 'Classical', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Classical Movement' },
-  { genre: 'HipHop', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Hip-Hop Flow' },
+  { genre: 'Ballad', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Ballad Verse' },
+  { genre: 'Folk', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Folk Reel' },
+  { genre: 'Hymn', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Hymn Chant' },
+  { genre: 'Shanty', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Shanty Call' },
 
   // d4 + d20 (value 24) — 18 EXP, high variance
-  { genre: 'Pop', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Pop Power Ballad' },
-  { genre: 'Rock', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Rock Anthem' },
-  { genre: 'Electronic', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Electronic Drop' },
-  { genre: 'Classical', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Classical Crescendo' },
-  { genre: 'HipHop', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Hip-Hop Banger' },
+  { genre: 'Ballad', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Ballad of Flames' },
+  { genre: 'Folk', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Folk Anthem' },
+  { genre: 'Hymn', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Hymn Crescendo' },
+  { genre: 'Shanty', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Shanty Storm' },
 
   // d12 + d12 (value 24) — 20 EXP
-  { genre: 'Pop', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Pop Megahit' },
-  { genre: 'Rock', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Rock Solo' },
-  { genre: 'Electronic', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Electronic Remix' },
-  { genre: 'Classical', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Classical Symphony' },
-  { genre: 'HipHop', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Hip-Hop Cypher' },
+  { genre: 'Ballad', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Ballad Inferno' },
+  { genre: 'Folk', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Folk Harvest' },
+  { genre: 'Hymn', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Hymn Gale' },
+  { genre: 'Shanty', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Shanty Maelstrom' },
 
   // d20 + d6 (value 26) — 20 EXP
-  { genre: 'Pop', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Pop Showstopper' },
-  { genre: 'Rock', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Rock Showstopper' },
-  { genre: 'Electronic', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Electronic Showstopper' },
-  { genre: 'Classical', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Classical Showstopper' },
-  { genre: 'HipHop', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Hip-Hop Showstopper' },
+  { genre: 'Ballad', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Ballad Showstopper' },
+  { genre: 'Folk', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Folk Showstopper' },
+  { genre: 'Hymn', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Hymn Showstopper' },
+  { genre: 'Shanty', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Shanty Showstopper' },
 
   // d20 + d12 (value 32) — 25 EXP, most expensive
-  { genre: 'Pop', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Pop Legendary' },
-  { genre: 'Rock', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Rock Legendary' },
-  { genre: 'Electronic', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Electronic Legendary' },
-  { genre: 'Classical', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Classical Legendary' },
-  { genre: 'HipHop', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Hip-Hop Legendary' },
+  { genre: 'Ballad', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Ballad Legendary' },
+  { genre: 'Folk', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Folk Legendary' },
+  { genre: 'Hymn', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Hymn Legendary' },
+  { genre: 'Shanty', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Shanty Legendary' },
 ]
 
 /**

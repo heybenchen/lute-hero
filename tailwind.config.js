@@ -41,12 +41,11 @@ export default {
           600: '#b8922e',
           700: '#9a7a20',
         },
-        // Genre colors (richer, more saturated)
-        pop: '#ff5caa',
-        rock: '#e82040',
-        electronic: '#00e5ff',
-        classical: '#b07cff',
-        hiphop: '#ff9d1b',
+        // Genre colors (element-themed)
+        ballad: '#e82040',   // Fire red
+        folk: '#4caf50',     // Earth green
+        hymn: '#00b8d4',     // Wind cyan
+        shanty: '#2979ff',   // Water blue
       },
       fontFamily: {
         'medieval': ['Cinzel', 'serif'],
@@ -55,11 +54,10 @@ export default {
       },
       boxShadow: {
         'glow-gold': '0 0 15px rgba(212, 168, 83, 0.3), 0 0 30px rgba(212, 168, 83, 0.1)',
-        'glow-pop': '0 0 12px rgba(255, 92, 170, 0.4)',
-        'glow-rock': '0 0 12px rgba(232, 32, 64, 0.4)',
-        'glow-electronic': '0 0 12px rgba(0, 229, 255, 0.4)',
-        'glow-classical': '0 0 12px rgba(176, 124, 255, 0.4)',
-        'glow-hiphop': '0 0 12px rgba(255, 157, 27, 0.4)',
+        'glow-ballad': '0 0 12px rgba(232, 32, 64, 0.4)',
+        'glow-folk': '0 0 12px rgba(76, 175, 80, 0.4)',
+        'glow-hymn': '0 0 12px rgba(0, 184, 212, 0.4)',
+        'glow-shanty': '0 0 12px rgba(41, 121, 255, 0.4)',
         'inner-glow': 'inset 0 0 20px rgba(212, 168, 83, 0.15)',
         'card-depth': '0 4px 6px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3)',
         'card-hover': '0 8px 25px rgba(0,0,0,0.5), 0 0 15px rgba(212, 168, 83, 0.15)',

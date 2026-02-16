@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { useGameStore } from '@/store'
 import { Genre } from '@/types'
 
-const GENRES: Genre[] = ['Pop', 'Rock', 'Electronic', 'Classical', 'HipHop']
+const GENRES: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
 
 export function Setup() {
   const [playerCount, setPlayerCount] = useState(2)
   const [playerNames, setPlayerNames] = useState(['Player 1', 'Player 2', 'Player 3', 'Player 4'])
-  const [selectedGenres, setSelectedGenres] = useState<Genre[]>(['Pop', 'Rock', 'Electronic', 'Classical'])
+  const [selectedGenres, setSelectedGenres] = useState<Genre[]>(['Ballad', 'Folk', 'Hymn', 'Shanty'])
 
   const initializePlayers = useGameStore((state) => state.initializePlayers)
   const initializeBoard = useGameStore((state) => state.initializeBoard)
@@ -38,7 +38,7 @@ export function Setup() {
       if (playerSpace) {
         playerSpace.connections.forEach((connId) => {
           useGameStore.getState().updateSpace(connId, {
-            genreTags: [...(board.find((s) => s.id === connId)?.genreTags || []), player.songs[0].slots[0].dice?.genre || 'Pop']
+            genreTags: [...(board.find((s) => s.id === connId)?.genreTags || []), player.songs[0].slots[0].dice?.genre || 'Ballad']
           })
         })
       }

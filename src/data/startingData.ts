@@ -3,25 +3,21 @@ import { TRACK_EFFECTS } from "./trackEffects";
 
 // Starter dice for each genre
 export const STARTER_DICE: { [key in Genre]: Dice[] } = {
-  Pop: [
-    { id: "pop-starter-1", type: "d6", genre: "Pop" },
-    { id: "pop-starter-2", type: "d6", genre: "Pop" },
+  Ballad: [
+    { id: "ballad-starter-1", type: "d6", genre: "Ballad" },
+    { id: "ballad-starter-2", type: "d6", genre: "Ballad" },
   ],
-  Rock: [
-    { id: "rock-starter-1", type: "d6", genre: "Rock" },
-    { id: "rock-starter-2", type: "d6", genre: "Rock" },
+  Folk: [
+    { id: "folk-starter-1", type: "d6", genre: "Folk" },
+    { id: "folk-starter-2", type: "d6", genre: "Folk" },
   ],
-  Electronic: [
-    { id: "electronic-starter-1", type: "d6", genre: "Electronic" },
-    { id: "electronic-starter-2", type: "d6", genre: "Electronic" },
+  Hymn: [
+    { id: "hymn-starter-1", type: "d6", genre: "Hymn" },
+    { id: "hymn-starter-2", type: "d6", genre: "Hymn" },
   ],
-  Classical: [
-    { id: "classical-starter-1", type: "d6", genre: "Classical" },
-    { id: "classical-starter-2", type: "d6", genre: "Classical" },
-  ],
-  HipHop: [
-    { id: "hiphop-starter-1", type: "d6", genre: "HipHop" },
-    { id: "hiphop-starter-2", type: "d6", genre: "HipHop" },
+  Shanty: [
+    { id: "shanty-starter-1", type: "d6", genre: "Shanty" },
+    { id: "shanty-starter-2", type: "d6", genre: "Shanty" },
   ],
 };
 
