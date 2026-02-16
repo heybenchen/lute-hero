@@ -40,9 +40,8 @@ export function CombatModal() {
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
   const canContinue = songsUsed.length < player.songs.length
-  const defeatedMonsters = monsters.filter((m: Monster) => m.currentHP <= 0)
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
-  const victoryExp = calculateTotalMonsterExp(defeatedMonsters)
+  const totalExp = calculateTotalMonsterExp(monsters)
   const isCombatOver = allMonstersDefeated || !canContinue
 
   const handlePlaySong = (songId: string) => {
@@ -67,13 +66,16 @@ export function CombatModal() {
     const success = allMonstersDefeated
     const result = endCombat(success)
 
+    // EXP is always awarded for the full encounter
+    awardPlayerExp(player.id, calculateTotalMonsterExp(monsters))
+
     if (success) {
+      // Fame and progression only on victory
       const fameEarned = calculateFameEarned(
         player.monstersDefeated,
         result.monstersDefeated
       )
       awardPlayerFame(player.id, fameEarned)
-      awardPlayerExp(player.id, calculateTotalMonsterExp(monsters))
       incrementPlayerMonstersDefeated(player.id, result.monstersDefeated)
       if (spaceId !== null) {
         clearSpaceAfterCombat(spaceId)
@@ -187,48 +189,35 @@ export function CombatModal() {
             </div>
           )}
 
-          {/* EXP Reward — only on victory */}
-          {isCombatOver && allMonstersDefeated && (
+          {/* EXP Reward — always shown when combat is over */}
+          {isCombatOver && (
             <div
               className="mb-8 rounded-xl overflow-hidden animate-slide-up"
               style={{
-                background: 'linear-gradient(135deg, rgba(45, 140, 48, 0.08), rgba(42, 33, 24, 0.5))',
-                border: '1px solid rgba(76, 175, 80, 0.2)',
-                boxShadow: '0 0 30px rgba(76, 175, 80, 0.08)',
+                background: allMonstersDefeated
+                  ? 'linear-gradient(135deg, rgba(45, 140, 48, 0.08), rgba(42, 33, 24, 0.5))'
+                  : 'rgba(42, 33, 24, 0.5)',
+                border: `1px solid ${allMonstersDefeated ? 'rgba(76, 175, 80, 0.2)' : 'rgba(212, 168, 83, 0.12)'}`,
+                boxShadow: allMonstersDefeated ? '0 0 30px rgba(76, 175, 80, 0.08)' : undefined,
               }}
             >
               <div className="px-8 py-5 text-center">
                 <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-1.5">
-                  Victory Reward
+                  {allMonstersDefeated ? 'Victory — Fame & EXP Earned' : 'Retreat — EXP Earned'}
                 </div>
                 <div className="text-3xl font-bold text-gold-400 tabular-nums"
                   style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
                 >
-                  +{victoryExp} EXP
+                  +{totalExp} EXP
                 </div>
                 <div className="text-base text-parchment-500 mt-1.5">
-                  {defeatedMonsters.map((m, i) => <span key={m.id}>{i > 0 && ' + '}{calculateTotalMonsterExp([m])} <span className="text-parchment-600">(Lv.{m.level})</span></span>)}
+                  {monsters.map((m, i) => <span key={m.id}>{i > 0 && ' + '}{calculateTotalMonsterExp([m])} <span className="text-parchment-600">(Lv.{m.level})</span></span>)}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Defeat message — no EXP on failure */}
-          {isCombatOver && !allMonstersDefeated && (
-            <div
-              className="mb-8 rounded-xl overflow-hidden animate-slide-up"
-              style={{
-                background: 'rgba(42, 33, 24, 0.5)',
-                border: '1px solid rgba(212, 168, 83, 0.12)',
-              }}
-            >
-              <div className="px-8 py-5 text-center">
-                <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-1.5">
-                  Retreat
-                </div>
-                <div className="text-base text-parchment-500 mt-1.5">
-                  The monsters proved too strong. No EXP earned.
-                </div>
+                {!allMonstersDefeated && (
+                  <div className="text-sm text-parchment-500 mt-2 italic">
+                    No fame earned — monsters not defeated
+                  </div>
+                )}
               </div>
             </div>
           )}
