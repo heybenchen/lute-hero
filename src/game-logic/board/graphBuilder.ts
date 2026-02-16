@@ -78,7 +78,7 @@ export function createBoardGraph(): BoardSpace[] {
  * Add a random genre tag to each space
  */
 export function addGenreTagsToBoard(spaces: BoardSpace[]): BoardSpace[] {
-  const genres: Genre[] = ['Pop', 'Rock', 'Electronic', 'Classical', 'HipHop']
+  const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
 
   return spaces.map((space) => ({
     ...space,

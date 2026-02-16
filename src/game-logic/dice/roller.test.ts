@@ -55,7 +55,7 @@ describe('Dice Roller', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd6',
-        genre: 'Rock',
+        genre: 'Ballad',
       }
 
       const result = rollDiceWithCrit(dice)
@@ -72,7 +72,7 @@ describe('Dice Roller', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd6',
-        genre: 'Rock',
+        genre: 'Ballad',
       }
 
       // Mock Math.random to always return max
@@ -91,7 +91,7 @@ describe('Dice Roller', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd6',
-        genre: 'Rock',
+        genre: 'Ballad',
       }
 
       // Mock Math.random to return non-max

@@ -1,64 +1,76 @@
 import { MonsterTemplate, Genre } from '@/types'
 
 export const MONSTER_TEMPLATES: MonsterTemplate[] = [
-  // Regular Monsters - Each with 1 weakness and 1 resistance
+  // Fire monsters — vulnerable to Ballad (Fire), resistant to Shanty (Water)
   {
-    id: 'groupie',
-    name: 'Wandering Groupie',
+    id: 'ember_wraith',
+    name: 'Ember Wraith',
     baseHP: 15,
-    vulnerability: 'Pop',
-    resistance: 'Classical',
-    description: 'A lost fan searching for their favorite band',
+    vulnerability: 'Ballad',
+    resistance: 'Shanty',
+    description: 'A smoldering spirit drawn to passionate melodies',
   },
   {
-    id: 'headbanger',
-    name: 'Wild Headbanger',
-    baseHP: 20,
-    vulnerability: 'Rock',
-    resistance: 'Electronic',
-    description: 'An aggressive fan who only respects heavy music',
-  },
-  {
-    id: 'raver',
-    name: 'Hyperactive Raver',
-    baseHP: 18,
-    vulnerability: 'Electronic',
-    resistance: 'Classical',
-    description: 'Dancing non-stop to beats only they can hear',
-  },
-  {
-    id: 'critic',
-    name: 'Pretentious Critic',
-    baseHP: 25,
-    vulnerability: 'Classical',
-    resistance: 'Pop',
-    description: 'Only appreciates "real" music',
-  },
-  {
-    id: 'freestyler',
-    name: 'Battle Freestyler',
+    id: 'cinder_drake',
+    name: 'Cinder Drake',
     baseHP: 22,
-    vulnerability: 'HipHop',
-    resistance: 'Rock',
-    description: 'Ready to throw down in a rap battle',
+    vulnerability: 'Ballad',
+    resistance: 'Shanty',
+    description: 'A fiery beast that feeds on silence',
   },
 
-  // More variety
+  // Earth monsters — vulnerable to Folk (Earth), resistant to Hymn (Wind)
   {
-    id: 'pop_reject',
-    name: 'Pop Reject',
-    baseHP: 18,
-    vulnerability: 'Rock',
-    resistance: 'Pop',
-    description: 'Hates mainstream music',
+    id: 'stone_troll',
+    name: 'Stone Troll',
+    baseHP: 20,
+    vulnerability: 'Folk',
+    resistance: 'Hymn',
+    description: 'A lumbering creature of root and rock',
   },
   {
-    id: 'classical_snob',
-    name: 'Classical Snob',
+    id: 'moss_golem',
+    name: 'Moss Golem',
+    baseHP: 25,
+    vulnerability: 'Folk',
+    resistance: 'Hymn',
+    description: 'An ancient guardian overgrown with moss',
+  },
+
+  // Wind monsters — vulnerable to Hymn (Wind), resistant to Folk (Earth)
+  {
+    id: 'gale_phantom',
+    name: 'Gale Phantom',
+    baseHP: 18,
+    vulnerability: 'Hymn',
+    resistance: 'Folk',
+    description: 'A howling specter born of restless winds',
+  },
+  {
+    id: 'storm_harpy',
+    name: 'Storm Harpy',
+    baseHP: 22,
+    vulnerability: 'Hymn',
+    resistance: 'Folk',
+    description: 'A shrieking creature riding the tempest',
+  },
+
+  // Water monsters — vulnerable to Shanty (Water), resistant to Ballad (Fire)
+  {
+    id: 'tide_lurker',
+    name: 'Tide Lurker',
+    baseHP: 18,
+    vulnerability: 'Shanty',
+    resistance: 'Ballad',
+    description: 'A creature of the deep that surfaces at high tide',
+  },
+  {
+    id: 'fog_serpent',
+    name: 'Fog Serpent',
     baseHP: 24,
-    vulnerability: 'Classical',
-    resistance: 'HipHop',
-    description: 'Only respects the classics',
+    vulnerability: 'Shanty',
+    resistance: 'Ballad',
+    description: 'A mist-wreathed serpent from the harbor depths',
   },
 
   // Final Boss - No weakness or resistance

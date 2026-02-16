@@ -1,11 +1,10 @@
 import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
 
 const genreEmojis: Record<Genre, string> = {
-  Pop: '🎵',
-  Rock: '🎸',
-  Electronic: '⚡',
-  Classical: '🎻',
-  HipHop: '🎤',
+  Ballad: '🔥',
+  Folk: '🌿',
+  Hymn: '💨',
+  Shanty: '🌊',
 }
 
 interface BoardSpaceProps {

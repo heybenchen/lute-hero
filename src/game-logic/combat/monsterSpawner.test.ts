@@ -14,8 +14,8 @@ describe('Monster Spawner', () => {
         id: 'test-template',
         name: 'Test Monster',
         baseHP: 30,
-        vulnerability: 'Rock',
-        resistance: 'Classical',
+        vulnerability: 'Ballad',
+        resistance: 'Shanty',
         description: 'A test monster',
       }
 
@@ -25,8 +25,8 @@ describe('Monster Spawner', () => {
       expect(monster.name).toBe('Test Monster')
       expect(monster.currentHP).toBe(30)
       expect(monster.maxHP).toBe(30)
-      expect(monster.vulnerability).toBe('Rock')
-      expect(monster.resistance).toBe('Classical')
+      expect(monster.vulnerability).toBe('Ballad')
+      expect(monster.resistance).toBe('Shanty')
       expect(monster.isBoss).toBe(false)
     })
 
@@ -115,7 +115,7 @@ describe('Monster Spawner', () => {
     })
 
     it('should spawn one monster per unique genre', () => {
-      const tags: Genre[] = ['Pop', 'Rock']
+      const tags: Genre[] = ['Ballad', 'Folk']
       const monsters = spawnMonstersFromTags(tags, 1)
 
       expect(monsters).toHaveLength(2)
@@ -124,19 +124,19 @@ describe('Monster Spawner', () => {
     })
 
     it('should increase level for duplicate genre tags', () => {
-      const tags: Genre[] = ['Pop', 'Pop', 'Rock']
+      const tags: Genre[] = ['Ballad', 'Ballad', 'Folk']
       const monsters = spawnMonstersFromTags(tags, 1)
 
       expect(monsters).toHaveLength(2)
-      // Pop has 2 tags -> level 2
+      // Ballad has 2 tags -> level 2
       const popMonster = monsters.find(m => m.level === 2)
-      const rockMonster = monsters.find(m => m.level === 1)
+      const folkMonster = monsters.find(m => m.level === 1)
       expect(popMonster).toBeDefined()
-      expect(rockMonster).toBeDefined()
+      expect(folkMonster).toBeDefined()
     })
 
     it('should spawn single high-level monster for one genre with many tags', () => {
-      const tags: Genre[] = ['Electronic', 'Electronic', 'Electronic']
+      const tags: Genre[] = ['Hymn', 'Hymn', 'Hymn']
       const monsters = spawnMonstersFromTags(tags, 1)
 
       expect(monsters).toHaveLength(1)
@@ -146,13 +146,13 @@ describe('Monster Spawner', () => {
 
   describe('countTagsByGenre', () => {
     it('should count each genre occurrence', () => {
-      const tags: Genre[] = ['Pop', 'Pop', 'Rock', 'Electronic', 'Rock']
+      const tags: Genre[] = ['Ballad', 'Ballad', 'Folk', 'Hymn', 'Folk']
       const counts = countTagsByGenre(tags)
 
-      expect(counts.get('Pop')).toBe(2)
-      expect(counts.get('Rock')).toBe(2)
-      expect(counts.get('Electronic')).toBe(1)
-      expect(counts.has('Classical')).toBe(false)
+      expect(counts.get('Ballad')).toBe(2)
+      expect(counts.get('Folk')).toBe(2)
+      expect(counts.get('Hymn')).toBe(1)
+      expect(counts.has('Shanty')).toBe(false)
     })
   })
 })

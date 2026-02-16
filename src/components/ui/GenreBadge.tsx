@@ -6,11 +6,10 @@ interface GenreBadgeProps {
 }
 
 const genreStyles: Record<Genre, string> = {
-  Pop: 'genre-pop',
-  Rock: 'genre-rock',
-  Electronic: 'genre-electronic',
-  Classical: 'genre-classical',
-  HipHop: 'genre-hiphop',
+  Ballad: 'genre-ballad',
+  Folk: 'genre-folk',
+  Hymn: 'genre-hymn',
+  Shanty: 'genre-shanty',
 }
 
 export function GenreBadge({ genre, className = '' }: GenreBadgeProps) {
