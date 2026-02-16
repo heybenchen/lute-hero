@@ -163,8 +163,9 @@ export function Setup() {
                 // Hydration already happened — just flip to the game phase
                 const state = useGameStore.getState()
                 if (state.phase !== 'setup') {
-                  // Store was already hydrated with the saved game; nothing to do
-                  // But we need to trigger a re-render — setPhase to current phase
+                  // Re-initialize shop (not persisted, so it's empty after reload)
+                  state.initializeShop(1)
+                  // Trigger a re-render — setPhase to current phase
                   useGameStore.getState().setPhase(state.phase)
                 }
               }}
