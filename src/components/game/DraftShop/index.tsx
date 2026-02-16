@@ -6,6 +6,7 @@ import { DraftCardDisplay } from './DraftCardDisplay'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
+import { MAX_SONGS } from '@/store/slices/playersSlice'
 
 const diceIcons: Record<DiceType, string> = {
   d4: '\u25B3',
@@ -25,6 +26,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const player = useGameStore(selectPlayerById(playerId))
   const awardPlayerExp = useGameStore((state) => state.awardPlayerExp)
   const addSongToPlayer = useGameStore((state) => state.addSongToPlayer)
+  const replaceSongForPlayer = useGameStore((state) => state.replaceSongForPlayer)
 
   // Shared pool from store
   const dicePool = useGameStore((state) => state.dicePool)
@@ -36,6 +38,12 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
   const [selectedDice, setSelectedDice] = useState<{
     dice: any[]
+    cardId: string
+  } | null>(null)
+
+  // Pending song that needs a replacement target (remaster)
+  const [pendingSong, setPendingSong] = useState<{
+    song: Song
     cardId: string
   } | null>(null)
 
@@ -57,14 +65,15 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
   if (!player) return null
 
+  const isAtMaxSongs = player.songs.length >= MAX_SONGS
+
   const handlePurchase = (card: DraftCard) => {
     // Check if player has enough EXP
     if (!player || player.exp < card.cost) return
 
-    // Consume EXP
-    awardPlayerExp(playerId, -card.cost)
-
     if (card.type === 'dice' && card.dice) {
+      // Consume EXP
+      awardPlayerExp(playerId, -card.cost)
       setSelectedDice({ dice: card.dice, cardId: card.id })
       purchaseFromDicePool(card.id, studioLevel)
     } else if (card.type === 'song') {
@@ -79,16 +88,35 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
         ],
         used: false,
       }
-      addSongToPlayer(playerId, newSong)
-      purchaseFromSongPool(card.id)
+
+      if (isAtMaxSongs) {
+        // At max songs — consume EXP and prompt for replacement (remaster)
+        awardPlayerExp(playerId, -card.cost)
+        setPendingSong({ song: newSong, cardId: card.id })
+        purchaseFromSongPool(card.id)
+      } else {
+        // Under limit — add directly
+        awardPlayerExp(playerId, -card.cost)
+        addSongToPlayer(playerId, newSong)
+        purchaseFromSongPool(card.id)
+      }
     }
   }
 
-  const handleSlotDice = (songId: string, slotIndex: number) => {
+  const handleReplaceSong = (oldSongId: string) => {
+    if (!pendingSong) return
+    replaceSongForPlayer(playerId, oldSongId, pendingSong.song)
+    setPendingSong(null)
+  }
+
+  const handleSlotDice = (songId: string, slotIndex: number, isReplacement: boolean = false) => {
     if (!selectedDice || selectedDice.dice.length === 0) return
 
     const song = player.songs.find((s) => s.id === songId)
-    if (!song || song.slots[slotIndex].dice) return
+    if (!song) return
+
+    // Allow slotting into empty slots or replacing existing dice (remix)
+    if (!isReplacement && song.slots[slotIndex].dice) return
 
     // Slot only the first die
     useGameStore.getState().addDiceToPlayer(playerId, selectedDice.dice[0], songId, slotIndex)
@@ -124,6 +152,46 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </button>
           </div>
 
+          {/* Pending song replacement (remaster) */}
+          {pendingSong && (
+            <div className="rounded-lg p-4 mb-6 animate-fade-in"
+              style={{
+                background: 'rgba(200, 100, 0, 0.1)',
+                border: '1px solid rgba(255, 180, 100, 0.3)',
+              }}
+            >
+              <div className="font-bold text-orange-300 mb-2 text-sm">
+                Remaster: Choose a song to replace with "{pendingSong.song.name}":
+              </div>
+              <div className="flex gap-3">
+                {player.songs.map((song) => (
+                  <button
+                    key={song.id}
+                    onClick={() => handleReplaceSong(song.id)}
+                    className="px-4 py-2 rounded-lg font-medieval text-sm transition-all duration-150 hover:scale-105"
+                    style={{
+                      background: 'rgba(200, 100, 0, 0.15)',
+                      border: '1px solid rgba(255, 180, 100, 0.4)',
+                      color: '#ffd4a0',
+                    }}
+                  >
+                    {song.name}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPendingSong(null)}
+                  className="px-4 py-2 rounded-lg font-medieval text-sm text-parchment-500"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Selected dice to slot */}
           {selectedDice && (
             <div className="rounded-lg p-4 mb-6 animate-fade-in"
@@ -133,7 +201,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               }}
             >
               <div className="font-bold text-blue-300 mb-2 text-sm">
-                Click an empty slot below to place your new dice:
+                Click a slot below to place your new dice (Remix: you can replace existing dice):
               </div>
               <div className="flex gap-3">
                 {selectedDice.dice.map((dice: any, idx: number) => (
@@ -180,7 +248,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
                   Song Tracks
                 </div>
-                <div className="text-xs text-parchment-500">({songPool.length} available)</div>
+                <div className="text-xs text-parchment-500">
+                  ({songPool.length} available)
+                  {isAtMaxSongs && <span className="text-orange-400 ml-1">&mdash; Max {MAX_SONGS} songs (buy to remaster)</span>}
+                </div>
               </div>
               <button
                 onClick={handleRefreshSongs}
@@ -209,7 +280,13 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
                 Your Songs
               </div>
-              <div className="text-xs text-parchment-500">(click empty slots to add dice)</div>
+              <div className="text-xs text-parchment-500">
+                ({player.songs.length}/{MAX_SONGS})
+                {selectedDice
+                  ? ' — click any slot to place dice (replace existing = remix)'
+                  : ' — click empty slots to add dice'
+                }
+              </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -236,56 +313,68 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   </div>
 
                   <div className="grid grid-cols-4 gap-2">
-                    {song.slots.map((slot, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSlotDice(song.id, idx)}
-                        disabled={!selectedDice || !!slot.dice}
-                        className="h-20 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
-                        style={{
-                          background: slot.dice
-                            ? 'rgba(212, 168, 83, 0.1)'
-                            : selectedDice && !slot.dice
-                            ? 'rgba(0, 100, 200, 0.1)'
-                            : 'rgba(255, 255, 255, 0.02)',
-                          border: slot.dice
-                            ? '1px solid rgba(212, 168, 83, 0.25)'
-                            : selectedDice && !slot.dice
-                            ? '1px solid rgba(100, 180, 255, 0.4)'
-                            : '1px dashed rgba(212, 168, 83, 0.12)',
-                          cursor: selectedDice && !slot.dice ? 'pointer' : slot.dice ? 'not-allowed' : 'default',
-                        }}
-                      >
-                        {slot.dice ? (
-                          <div className="text-center relative">
-                            <div className="text-2xl mb-0.5 text-gold-400">{diceIcons[slot.dice.type]}</div>
-                            <div className="absolute -top-1 -right-3 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                    {song.slots.map((slot, idx) => {
+                      const canSlotHere = selectedDice && (!slot.dice || true) // Can always slot when dice selected (remix)
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => handleSlotDice(song.id, idx, !!slot.dice)}
+                          disabled={!selectedDice}
+                          className="h-20 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
+                          style={{
+                            background: slot.dice
+                              ? selectedDice
+                                ? 'rgba(200, 100, 0, 0.1)'
+                                : 'rgba(212, 168, 83, 0.1)'
+                              : selectedDice && !slot.dice
+                              ? 'rgba(0, 100, 200, 0.1)'
+                              : 'rgba(255, 255, 255, 0.02)',
+                            border: slot.dice
+                              ? selectedDice
+                                ? '1px solid rgba(255, 180, 100, 0.4)'
+                                : '1px solid rgba(212, 168, 83, 0.25)'
+                              : canSlotHere
+                              ? '1px solid rgba(100, 180, 255, 0.4)'
+                              : '1px dashed rgba(212, 168, 83, 0.12)',
+                            cursor: selectedDice ? 'pointer' : 'default',
+                          }}
+                        >
+                          {slot.dice ? (
+                            <div className="text-center relative">
+                              <div className="text-2xl mb-0.5 text-gold-400">{diceIcons[slot.dice.type]}</div>
+                              <div className="absolute -top-1 -right-3 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                                style={{
+                                  background: 'linear-gradient(135deg, #b8922e, #d4a853)',
+                                  color: '#1a1410',
+                                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                                }}
+                              >
+                                {getMaxValue(slot.dice.type)}
+                              </div>
+                              <GenreBadge genre={slot.dice.genre} className="text-[7px] px-1 py-0" />
+                            </div>
+                          ) : (
+                            <div className="text-parchment-500/30 text-[10px]">Empty</div>
+                          )}
+                          {slot.effect && (
+                            <div className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px]"
                               style={{
-                                background: 'linear-gradient(135deg, #b8922e, #d4a853)',
-                                color: '#1a1410',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(176, 124, 255, 0.3)',
+                                border: '1px solid rgba(176, 124, 255, 0.4)',
+                                color: '#e8d0ff',
                               }}
                             >
-                              {getMaxValue(slot.dice.type)}
+                              &#x2728;
                             </div>
-                            <GenreBadge genre={slot.dice.genre} className="text-[7px] px-1 py-0" />
-                          </div>
-                        ) : (
-                          <div className="text-parchment-500/30 text-[10px]">Empty</div>
-                        )}
-                        {slot.effect && (
-                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px]"
-                            style={{
-                              background: 'rgba(176, 124, 255, 0.3)',
-                              border: '1px solid rgba(176, 124, 255, 0.4)',
-                              color: '#e8d0ff',
-                            }}
-                          >
-                            &#x2728;
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                          )}
+                          {selectedDice && slot.dice && (
+                            <div className="absolute bottom-1 text-[8px] text-orange-400 font-bold">
+                              Remix
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               ))}

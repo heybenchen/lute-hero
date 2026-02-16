@@ -27,8 +27,8 @@ describe('Studio Level', () => {
         const card = generateDicePairCard('test-player', level)
         expect(card.type).toBe('dice')
         expect(card.dice).toHaveLength(2)
-        expect(card.cost).toBeGreaterThanOrEqual(7)
-        expect(card.cost).toBeLessThanOrEqual(25)
+        expect(card.cost).toBeGreaterThanOrEqual(10)
+        expect(card.cost).toBeLessThanOrEqual(30)
       }
     })
 
@@ -38,7 +38,7 @@ describe('Studio Level', () => {
         const card = generateDicePairCard('test-player', 1)
         costs.push(card.cost)
       }
-      const cheapCount = costs.filter((c) => c <= 10).length
+      const cheapCount = costs.filter((c) => c <= 14).length
       // At level 1, ~60% should be cheap (allow margin for randomness)
       expect(cheapCount).toBeGreaterThan(80) // At least 40% of 200
     })
@@ -49,7 +49,7 @@ describe('Studio Level', () => {
         const card = generateDicePairCard('test-player', 3)
         costs.push(card.cost)
       }
-      const expensiveCount = costs.filter((c) => c > 15).length
+      const expensiveCount = costs.filter((c) => c >= 20).length
       // At level 3, ~60% should be expensive (allow margin for randomness)
       expect(expensiveCount).toBeGreaterThan(80) // At least 40% of 200
     })

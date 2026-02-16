@@ -3,6 +3,7 @@ import { BoardSpace } from '@/types'
 import {
   createBoardGraph,
   addGenreTagsToBoard,
+  addGenreTagsToNeighbors,
 } from '@/game-logic/board/graphBuilder'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '@/game-logic/combat/monsterSpawner'
 
@@ -13,6 +14,7 @@ export interface BoardSlice {
   // Actions
   initializeBoard: () => void
   addGenreTags: () => void
+  addGenreTagsAroundPlayer: (spaceId: number) => void
   spawnMonstersAtSpace: (spaceId: number) => void
   spawnInitialMonstersOnBoard: () => void
   clearSpaceAfterCombat: (spaceId: number) => void
@@ -36,6 +38,11 @@ export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
 
   addGenreTags: () => {
     const updatedSpaces = addGenreTagsToBoard(get().spaces)
+    set({ spaces: updatedSpaces })
+  },
+
+  addGenreTagsAroundPlayer: (spaceId) => {
+    const updatedSpaces = addGenreTagsToNeighbors(get().spaces, spaceId)
     set({ spaces: updatedSpaces })
   },
 

@@ -13,7 +13,7 @@ export function PlayerPanel() {
   const currentRound = useGameStore((state) => state.currentRound)
   const nextTurn = useGameStore((state) => state.nextTurn)
   const nextRound = useGameStore((state) => state.nextRound)
-  const addGenreTags = useGameStore((state) => state.addGenreTags)
+  const addGenreTagsAroundPlayer = useGameStore((state) => state.addGenreTagsAroundPlayer)
   const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
   const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
   const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
@@ -33,6 +33,9 @@ export function PlayerPanel() {
   const fameProgress = Math.min((collectiveFame / currentThreshold) * 100, 100)
 
   const handleEndTurn = () => {
+    // Add genre tags to neighboring spaces of current player's position
+    addGenreTagsAroundPlayer(currentPlayer.position)
+
     resetPlayerMoves(currentPlayer.id)
     resetPlayerFights(currentPlayer.id)
 
@@ -42,7 +45,6 @@ export function PlayerPanel() {
         resetPlayerFights(p.id)
       })
       nextRound()
-      addGenreTags()
     } else {
       nextTurn()
     }
@@ -227,10 +229,8 @@ export function PlayerPanel() {
         <button
           onClick={() => setShowDraftShop(true)}
           className="btn-secondary w-full text-sm"
-          disabled={currentPlayer.fightsThisTurn === 0}
         >
           Studio ({currentPlayer.exp} EXP)
-          {currentPlayer.fightsThisTurn === 0 && ' (Fight first)'}
         </button>
         <button onClick={handleEndTurn} className="btn-primary w-full text-sm">
           End Turn

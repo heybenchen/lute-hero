@@ -165,23 +165,23 @@ describe('Fame Calculator', () => {
 
   describe('getNextPhase', () => {
     it('should transition from main to underground at fame threshold', () => {
+      expect(getNextPhase('main', 150)).toBe('underground')
       expect(getNextPhase('main', 300)).toBe('underground')
-      expect(getNextPhase('main', 500)).toBe('underground')
     })
 
     it('should not transition from main below threshold', () => {
-      expect(getNextPhase('main', 299)).toBeNull()
+      expect(getNextPhase('main', 149)).toBeNull()
       expect(getNextPhase('main', 0)).toBeNull()
     })
 
     it('should transition from underground to finalBoss at fame threshold', () => {
-      expect(getNextPhase('underground', 500)).toBe('finalBoss')
-      expect(getNextPhase('underground', 600)).toBe('finalBoss')
+      expect(getNextPhase('underground', 300)).toBe('finalBoss')
+      expect(getNextPhase('underground', 400)).toBe('finalBoss')
     })
 
     it('should not transition from underground below threshold', () => {
-      expect(getNextPhase('underground', 499)).toBeNull()
-      expect(getNextPhase('underground', 300)).toBeNull()
+      expect(getNextPhase('underground', 299)).toBeNull()
+      expect(getNextPhase('underground', 150)).toBeNull()
     })
 
     it('should not transition from setup, finalBoss, or gameOver', () => {

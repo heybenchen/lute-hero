@@ -9,7 +9,7 @@ function generateCardId(): string {
 
 // Dice pair configurations with costs
 // Pricing is based on total dice face value (sum of max faces).
-// A total value of 18 (e.g. d6+d12) is "average" at 15 EXP.
+// Costs are higher to balance against rising EXP from harder monsters.
 // Two d20s are never sold.
 export const DICE_PAIR_TEMPLATES: Array<{
   genre: Genre
@@ -18,59 +18,59 @@ export const DICE_PAIR_TEMPLATES: Array<{
   cost: number
   name: string
 }> = [
-  // d4 + d4 (value 8) — 7 EXP, cheapest
-  { genre: 'Ballad', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Ballad Warmup' },
-  { genre: 'Folk', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Folk Warmup' },
-  { genre: 'Hymn', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Hymn Warmup' },
-  { genre: 'Shanty', dice1: 'd4', dice2: 'd4', cost: 7, name: 'Shanty Warmup' },
+  // d4 + d4 (value 8) — 10 EXP, cheapest
+  { genre: 'Ballad', dice1: 'd4', dice2: 'd4', cost: 10, name: 'Ballad Warmup' },
+  { genre: 'Folk', dice1: 'd4', dice2: 'd4', cost: 10, name: 'Folk Warmup' },
+  { genre: 'Hymn', dice1: 'd4', dice2: 'd4', cost: 10, name: 'Hymn Warmup' },
+  { genre: 'Shanty', dice1: 'd4', dice2: 'd4', cost: 10, name: 'Shanty Warmup' },
 
-  // d4 + d6 (value 10) — 8 EXP
-  { genre: 'Ballad', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Ballad Opener' },
-  { genre: 'Folk', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Folk Opener' },
-  { genre: 'Hymn', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Hymn Opener' },
-  { genre: 'Shanty', dice1: 'd4', dice2: 'd6', cost: 8, name: 'Shanty Opener' },
+  // d4 + d6 (value 10) — 12 EXP
+  { genre: 'Ballad', dice1: 'd4', dice2: 'd6', cost: 12, name: 'Ballad Opener' },
+  { genre: 'Folk', dice1: 'd4', dice2: 'd6', cost: 12, name: 'Folk Opener' },
+  { genre: 'Hymn', dice1: 'd4', dice2: 'd6', cost: 12, name: 'Hymn Opener' },
+  { genre: 'Shanty', dice1: 'd4', dice2: 'd6', cost: 12, name: 'Shanty Opener' },
 
-  // d6 + d6 (value 12) — 10 EXP
-  { genre: 'Ballad', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Ballad Duo' },
-  { genre: 'Folk', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Folk Duo' },
-  { genre: 'Hymn', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Hymn Duo' },
-  { genre: 'Shanty', dice1: 'd6', dice2: 'd6', cost: 10, name: 'Shanty Duo' },
+  // d6 + d6 (value 12) — 14 EXP
+  { genre: 'Ballad', dice1: 'd6', dice2: 'd6', cost: 14, name: 'Ballad Duo' },
+  { genre: 'Folk', dice1: 'd6', dice2: 'd6', cost: 14, name: 'Folk Duo' },
+  { genre: 'Hymn', dice1: 'd6', dice2: 'd6', cost: 14, name: 'Hymn Duo' },
+  { genre: 'Shanty', dice1: 'd6', dice2: 'd6', cost: 14, name: 'Shanty Duo' },
 
-  // d4 + d12 (value 16) — 12 EXP
-  { genre: 'Ballad', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Ballad Gambit' },
-  { genre: 'Folk', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Folk Gambit' },
-  { genre: 'Hymn', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Hymn Gambit' },
-  { genre: 'Shanty', dice1: 'd4', dice2: 'd12', cost: 12, name: 'Shanty Gambit' },
+  // d4 + d12 (value 16) — 16 EXP
+  { genre: 'Ballad', dice1: 'd4', dice2: 'd12', cost: 16, name: 'Ballad Gambit' },
+  { genre: 'Folk', dice1: 'd4', dice2: 'd12', cost: 16, name: 'Folk Gambit' },
+  { genre: 'Hymn', dice1: 'd4', dice2: 'd12', cost: 16, name: 'Hymn Gambit' },
+  { genre: 'Shanty', dice1: 'd4', dice2: 'd12', cost: 16, name: 'Shanty Gambit' },
 
-  // d6 + d12 (value 18) — 15 EXP, the "average" baseline
-  { genre: 'Ballad', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Ballad Verse' },
-  { genre: 'Folk', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Folk Reel' },
-  { genre: 'Hymn', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Hymn Chant' },
-  { genre: 'Shanty', dice1: 'd6', dice2: 'd12', cost: 15, name: 'Shanty Call' },
+  // d6 + d12 (value 18) — 19 EXP, the "average" baseline
+  { genre: 'Ballad', dice1: 'd6', dice2: 'd12', cost: 19, name: 'Ballad Verse' },
+  { genre: 'Folk', dice1: 'd6', dice2: 'd12', cost: 19, name: 'Folk Reel' },
+  { genre: 'Hymn', dice1: 'd6', dice2: 'd12', cost: 19, name: 'Hymn Chant' },
+  { genre: 'Shanty', dice1: 'd6', dice2: 'd12', cost: 19, name: 'Shanty Call' },
 
-  // d4 + d20 (value 24) — 18 EXP, high variance
-  { genre: 'Ballad', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Ballad of Flames' },
-  { genre: 'Folk', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Folk Anthem' },
-  { genre: 'Hymn', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Hymn Crescendo' },
-  { genre: 'Shanty', dice1: 'd4', dice2: 'd20', cost: 18, name: 'Shanty Storm' },
+  // d4 + d20 (value 24) — 22 EXP, high variance
+  { genre: 'Ballad', dice1: 'd4', dice2: 'd20', cost: 22, name: 'Ballad of Flames' },
+  { genre: 'Folk', dice1: 'd4', dice2: 'd20', cost: 22, name: 'Folk Anthem' },
+  { genre: 'Hymn', dice1: 'd4', dice2: 'd20', cost: 22, name: 'Hymn Crescendo' },
+  { genre: 'Shanty', dice1: 'd4', dice2: 'd20', cost: 22, name: 'Shanty Storm' },
 
-  // d12 + d12 (value 24) — 20 EXP
-  { genre: 'Ballad', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Ballad Inferno' },
-  { genre: 'Folk', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Folk Harvest' },
-  { genre: 'Hymn', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Hymn Gale' },
-  { genre: 'Shanty', dice1: 'd12', dice2: 'd12', cost: 20, name: 'Shanty Maelstrom' },
+  // d12 + d12 (value 24) — 25 EXP
+  { genre: 'Ballad', dice1: 'd12', dice2: 'd12', cost: 25, name: 'Ballad Inferno' },
+  { genre: 'Folk', dice1: 'd12', dice2: 'd12', cost: 25, name: 'Folk Harvest' },
+  { genre: 'Hymn', dice1: 'd12', dice2: 'd12', cost: 25, name: 'Hymn Gale' },
+  { genre: 'Shanty', dice1: 'd12', dice2: 'd12', cost: 25, name: 'Shanty Maelstrom' },
 
-  // d20 + d6 (value 26) — 20 EXP
-  { genre: 'Ballad', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Ballad Showstopper' },
-  { genre: 'Folk', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Folk Showstopper' },
-  { genre: 'Hymn', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Hymn Showstopper' },
-  { genre: 'Shanty', dice1: 'd20', dice2: 'd6', cost: 20, name: 'Shanty Showstopper' },
+  // d20 + d6 (value 26) — 25 EXP
+  { genre: 'Ballad', dice1: 'd20', dice2: 'd6', cost: 25, name: 'Ballad Showstopper' },
+  { genre: 'Folk', dice1: 'd20', dice2: 'd6', cost: 25, name: 'Folk Showstopper' },
+  { genre: 'Hymn', dice1: 'd20', dice2: 'd6', cost: 25, name: 'Hymn Showstopper' },
+  { genre: 'Shanty', dice1: 'd20', dice2: 'd6', cost: 25, name: 'Shanty Showstopper' },
 
-  // d20 + d12 (value 32) — 25 EXP, most expensive
-  { genre: 'Ballad', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Ballad Legendary' },
-  { genre: 'Folk', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Folk Legendary' },
-  { genre: 'Hymn', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Hymn Legendary' },
-  { genre: 'Shanty', dice1: 'd20', dice2: 'd12', cost: 25, name: 'Shanty Legendary' },
+  // d20 + d12 (value 32) — 30 EXP, most expensive
+  { genre: 'Ballad', dice1: 'd20', dice2: 'd12', cost: 30, name: 'Ballad Legendary' },
+  { genre: 'Folk', dice1: 'd20', dice2: 'd12', cost: 30, name: 'Folk Legendary' },
+  { genre: 'Hymn', dice1: 'd20', dice2: 'd12', cost: 30, name: 'Hymn Legendary' },
+  { genre: 'Shanty', dice1: 'd20', dice2: 'd12', cost: 30, name: 'Shanty Legendary' },
 ]
 
 /**
@@ -87,9 +87,9 @@ export function getStudioLevel(monstersDefeated: number): number {
 
 // Cost tier boundaries
 const COST_TIERS = {
-  cheap: { min: 0, max: 10 },    // d4+d4(7), d4+d6(8), d6+d6(10)
-  mid: { min: 11, max: 15 },     // d4+d12(12), d6+d12(15)
-  expensive: { min: 16, max: 99 }, // d4+d20(18), d12+d12(20), d20+d6(20), d20+d12(25)
+  cheap: { min: 0, max: 14 },    // d4+d4(10), d4+d6(12), d6+d6(14)
+  mid: { min: 15, max: 19 },     // d4+d12(16), d6+d12(19)
+  expensive: { min: 20, max: 99 }, // d4+d20(22), d12+d12(25), d20+d6(25), d20+d12(30)
 }
 
 // Weights per studio level: [cheap, mid, expensive]
@@ -173,7 +173,7 @@ export function generateSongCard(): DraftCard {
   return {
     id: generateCardId(),
     type: 'song',
-    cost: 5,
+    cost: 10,
     songName: songNames[Math.floor(Math.random() * songNames.length)],
     songEffect: TRACK_EFFECTS[randomEffect1],
     songEffect2: TRACK_EFFECTS[randomEffect2], // All songs now have 2 effects

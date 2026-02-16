@@ -26,9 +26,6 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
 
   // Actions
   initializeShop: (studioLevel) => {
-    // Only initialize if pool is empty (idempotent)
-    if (get().dicePool.length > 0) return
-
     const dicePool: DraftCard[] = []
     for (let i = 0; i < DICE_POOL_SIZE; i++) {
       dicePool.push(generateDicePairCard('shop', studioLevel))

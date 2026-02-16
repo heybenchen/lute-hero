@@ -5,7 +5,7 @@ import { SongCard } from './SongCard'
 import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { DamageBreakdown } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
-import { calculateFameEarned, calculateFailureBonus, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
+import { calculateFameEarned, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
 import { Monster } from '@/types'
 
 export function CombatModal() {
@@ -40,10 +40,8 @@ export function CombatModal() {
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
   const canContinue = songsUsed.length < player.songs.length
-  const defeatedMonsters = monsters.filter((m: Monster) => m.currentHP <= 0)
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
-  const victoryExp = calculateTotalMonsterExp(defeatedMonsters)
-  const retreatExp = Math.floor(calculateTotalMonsterExp(monsters) * 1.5)
+  const totalExp = calculateTotalMonsterExp(monsters)
   const isCombatOver = allMonstersDefeated || !canContinue
 
   const handlePlaySong = (songId: string) => {
@@ -68,22 +66,21 @@ export function CombatModal() {
     const success = allMonstersDefeated
     const result = endCombat(success)
 
+    // EXP is always awarded for the full encounter
+    awardPlayerExp(player.id, calculateTotalMonsterExp(monsters))
+
     if (success) {
+      // Fame and progression only on victory
       const fameEarned = calculateFameEarned(
         player.monstersDefeated,
         result.monstersDefeated
       )
       awardPlayerFame(player.id, fameEarned)
-      awardPlayerExp(player.id, calculateTotalMonsterExp(monsters))
       incrementPlayerMonstersDefeated(player.id, result.monstersDefeated)
       if (spaceId !== null) {
         clearSpaceAfterCombat(spaceId)
       }
       checkPhaseTransition()
-    } else {
-      const baseExp = calculateTotalMonsterExp(monsters)
-      const bonusExp = calculateFailureBonus(baseExp)
-      awardPlayerExp(player.id, bonusExp)
     }
   }
 
@@ -192,7 +189,7 @@ export function CombatModal() {
             </div>
           )}
 
-          {/* EXP Reward — only when combat is over */}
+          {/* EXP Reward — always shown when combat is over */}
           {isCombatOver && (
             <div
               className="mb-8 rounded-xl overflow-hidden animate-slide-up"
@@ -206,19 +203,21 @@ export function CombatModal() {
             >
               <div className="px-8 py-5 text-center">
                 <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-1.5">
-                  {allMonstersDefeated ? 'Victory Reward' : 'Consolation Prize'}
+                  {allMonstersDefeated ? 'Victory — Fame & EXP Earned' : 'Retreat — EXP Earned'}
                 </div>
                 <div className="text-3xl font-bold text-gold-400 tabular-nums"
                   style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
                 >
-                  +{allMonstersDefeated ? victoryExp : retreatExp} EXP
+                  +{totalExp} EXP
                 </div>
                 <div className="text-base text-parchment-500 mt-1.5">
-                  {allMonstersDefeated
-                    ? <>{defeatedMonsters.map((m, i) => <span key={m.id}>{i > 0 && ' + '}{calculateTotalMonsterExp([m])} <span className="text-parchment-600">(Lv.{m.level})</span></span>)}</>
-                    : <>Level-scaled EXP &times; 1.5 <span className="text-parchment-600">(50% failure bonus)</span></>
-                  }
+                  {monsters.map((m, i) => <span key={m.id}>{i > 0 && ' + '}{calculateTotalMonsterExp([m])} <span className="text-parchment-600">(Lv.{m.level})</span></span>)}
                 </div>
+                {!allMonstersDefeated && (
+                  <div className="text-sm text-parchment-500 mt-2 italic">
+                    No fame earned — monsters not defeated
+                  </div>
+                )}
               </div>
             </div>
           )}

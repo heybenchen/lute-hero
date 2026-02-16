@@ -1,9 +1,21 @@
+import { useState } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { PlayerPanel } from './PlayerPanel'
 import { CurrentPlayerDisplay } from './CurrentPlayerDisplay'
+import { useGameStore, selectCurrentPlayer, clearSavedGame } from '@/store'
 
 export function GameView() {
+  const players = useGameStore((state) => state.players)
+  const currentPlayer = useGameStore(selectCurrentPlayer)
+  const resetGame = useGameStore((state) => state.resetGame)
+  const [showMenu, setShowMenu] = useState(false)
+
+  const handleNewGame = () => {
+    clearSavedGame()
+    resetGame()
+  }
+
   return (
     <div className="h-screen flex flex-col overflow-hidden relative">
       {/* Atmospheric background gradient */}
@@ -18,9 +30,19 @@ export function GameView() {
         }}
       />
 
-      {/* Title bar */}
-      <div className="relative z-10 flex items-center justify-center py-3 px-6">
+      {/* Title bar with all-players scoreboard */}
+      <div className="relative z-10 flex items-center justify-between py-3 px-6">
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowMenu(true)}
+            className="px-3 py-1.5 rounded-lg font-medieval text-xs text-parchment-400 transition-all duration-150 hover:text-gold-400"
+            style={{
+              background: 'rgba(61, 48, 32, 0.4)',
+              border: '1px solid rgba(212, 168, 83, 0.15)',
+            }}
+          >
+            Menu
+          </button>
           <div
             className="h-px w-16"
             style={{
@@ -37,7 +59,73 @@ export function GameView() {
             }}
           />
         </div>
+
+        {/* All players fame & EXP scoreboard */}
+        <div className="flex gap-3">
+          {players.map((player) => (
+            <div
+              key={player.id}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+              style={{
+                background: player.id === currentPlayer?.id
+                  ? 'rgba(100, 220, 100, 0.08)'
+                  : 'rgba(61, 48, 32, 0.4)',
+                border: player.id === currentPlayer?.id
+                  ? '1px solid rgba(100, 220, 100, 0.25)'
+                  : '1px solid rgba(212, 168, 83, 0.1)',
+              }}
+            >
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                style={{ backgroundColor: player.color }}
+              >
+                {player.name.charAt(0)}
+              </div>
+              <div className="text-[10px] leading-tight">
+                <div className="font-bold text-parchment-200 truncate max-w-[60px]">{player.name}</div>
+                <div className="text-parchment-400">
+                  <span className="text-gold-400">{player.fame}</span> Fame
+                  {' '}
+                  <span className="text-parchment-200">{player.exp}</span> EXP
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Menu modal */}
+      {showMenu && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0, 0, 0, 0.6)' }}>
+          <div className="card-ornate max-w-sm w-full p-8 animate-scale-in">
+            <div className="text-center mb-6">
+              <div className="font-display text-2xl text-gold-400 mb-2">Menu</div>
+              <div className="h-px mx-auto w-32" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.4), transparent)' }} />
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => setShowMenu(false)}
+                className="btn-secondary w-full text-sm py-3"
+              >
+                Resume Game
+              </button>
+              <button
+                onClick={handleNewGame}
+                className="w-full text-sm py-3 font-medieval font-bold rounded-lg transition-all duration-200"
+                style={{
+                  background: 'linear-gradient(135deg, #8c3d3d, #6e2d2d)',
+                  border: '1px solid rgba(220, 100, 100, 0.4)',
+                  color: '#ffd4d4',
+                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
+                }}
+              >
+                New Game
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="relative z-10 flex gap-3 flex-1 min-h-0 px-3 pb-3">

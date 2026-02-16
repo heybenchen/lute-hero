@@ -75,7 +75,7 @@ export function createBoardGraph(): BoardSpace[] {
 }
 
 /**
- * Add a random genre tag to each space
+ * Add a random genre tag to each space (legacy — no longer called during gameplay)
  */
 export function addGenreTagsToBoard(spaces: BoardSpace[]): BoardSpace[] {
   const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
@@ -87,6 +87,32 @@ export function addGenreTagsToBoard(spaces: BoardSpace[]): BoardSpace[] {
       genres[Math.floor(Math.random() * genres.length)],
     ],
   }))
+}
+
+/**
+ * Add a random genre tag to all neighboring spaces of a given space.
+ * Called after each player's turn ends.
+ */
+export function addGenreTagsToNeighbors(
+  spaces: BoardSpace[],
+  spaceId: number
+): BoardSpace[] {
+  const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
+  const currentSpace = spaces.find((s) => s.id === spaceId)
+  if (!currentSpace) return spaces
+
+  const neighborIds = new Set(currentSpace.connections)
+
+  return spaces.map((space) => {
+    if (!neighborIds.has(space.id)) return space
+    return {
+      ...space,
+      genreTags: [
+        ...space.genreTags,
+        genres[Math.floor(Math.random() * genres.length)],
+      ],
+    }
+  })
 }
 
 /**
