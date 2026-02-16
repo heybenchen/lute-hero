@@ -7,6 +7,8 @@ import {
   incrementMonstersDefeated,
 } from '@/game-logic/fame/calculator'
 
+export const MAX_SONGS = 3
+
 export interface PlayersSlice {
   // State
   players: Player[]
@@ -17,6 +19,7 @@ export interface PlayersSlice {
   usePlayerFight: (playerId: string) => void
   updatePlayer: (playerId: string, updates: Partial<Player>) => void
   addSongToPlayer: (playerId: string, song: Song) => void
+  replaceSongForPlayer: (playerId: string, oldSongId: string, newSong: Song) => void
   addDiceToPlayer: (playerId: string, dice: Dice, songId: string, slotIndex: number) => void
   awardPlayerFame: (playerId: string, amount: number) => void
   awardPlayerExp: (playerId: string, amount: number) => void
@@ -89,6 +92,18 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
       players: get().players.map((p) =>
         p.id === playerId ? { ...p, songs: [...p.songs, song] } : p
       ),
+    })
+  },
+
+  replaceSongForPlayer: (playerId, oldSongId, newSong) => {
+    set({
+      players: get().players.map((p) => {
+        if (p.id !== playerId) return p
+        return {
+          ...p,
+          songs: p.songs.map((s) => (s.id === oldSongId ? newSong : s)),
+        }
+      }),
     })
   },
 

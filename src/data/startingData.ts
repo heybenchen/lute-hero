@@ -48,10 +48,10 @@ export const DICE_UPGRADE_PATH: { [key in DiceType]: DiceType | null } = {
   d20: null, // Max level
 };
 
-// Fame thresholds for phase transitions
+// Fame thresholds for phase transitions (tuned for ~6-8 round games)
 export const FAME_THRESHOLDS = {
-  undergroundScene: 300, // Total collective fame needed
-  finalBoss: 500, // Total collective fame needed
+  undergroundScene: 150, // Total collective fame needed
+  finalBoss: 300, // Total collective fame needed
 };
 
 // Fame multipliers based on total monsters defeated

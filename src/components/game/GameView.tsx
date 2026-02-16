@@ -2,8 +2,12 @@ import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { PlayerPanel } from './PlayerPanel'
 import { CurrentPlayerDisplay } from './CurrentPlayerDisplay'
+import { useGameStore, selectCurrentPlayer } from '@/store'
 
 export function GameView() {
+  const players = useGameStore((state) => state.players)
+  const currentPlayer = useGameStore(selectCurrentPlayer)
+
   return (
     <div className="h-screen flex flex-col overflow-hidden relative">
       {/* Atmospheric background gradient */}
@@ -18,8 +22,8 @@ export function GameView() {
         }}
       />
 
-      {/* Title bar */}
-      <div className="relative z-10 flex items-center justify-center py-3 px-6">
+      {/* Title bar with all-players scoreboard */}
+      <div className="relative z-10 flex items-center justify-between py-3 px-6">
         <div className="flex items-center gap-4">
           <div
             className="h-px w-16"
@@ -36,6 +40,39 @@ export function GameView() {
               background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.5))',
             }}
           />
+        </div>
+
+        {/* All players fame & EXP scoreboard */}
+        <div className="flex gap-3">
+          {players.map((player) => (
+            <div
+              key={player.id}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+              style={{
+                background: player.id === currentPlayer?.id
+                  ? 'rgba(100, 220, 100, 0.08)'
+                  : 'rgba(61, 48, 32, 0.4)',
+                border: player.id === currentPlayer?.id
+                  ? '1px solid rgba(100, 220, 100, 0.25)'
+                  : '1px solid rgba(212, 168, 83, 0.1)',
+              }}
+            >
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                style={{ backgroundColor: player.color }}
+              >
+                {player.name.charAt(0)}
+              </div>
+              <div className="text-[10px] leading-tight">
+                <div className="font-bold text-parchment-200 truncate max-w-[60px]">{player.name}</div>
+                <div className="text-parchment-400">
+                  <span className="text-gold-400">{player.fame}</span> Fame
+                  {' '}
+                  <span className="text-parchment-200">{player.exp}</span> EXP
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
