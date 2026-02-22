@@ -1,6 +1,11 @@
+import { useRef, useState, useCallback } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
+
+const MIN_ZOOM = 0.4
+const MAX_ZOOM = 2.5
+const ZOOM_STEP = 0.1
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)
@@ -8,6 +13,46 @@ export function Board() {
   const currentPlayer = useGameStore(selectCurrentPlayer)
   const movePlayer = useGameStore((state) => state.movePlayer)
   const spawnMonstersAtSpace = useGameStore((state) => state.spawnMonstersAtSpace)
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isPanning, setIsPanning] = useState(false)
+  const panStart = useRef({ x: 0, y: 0 })
+  const panOrigin = useRef({ x: 0, y: 0 })
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault()
+    setZoom((z) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z - Math.sign(e.deltaY) * ZOOM_STEP)))
+  }, [])
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    // Only pan on middle-click or when clicking the background (not space tiles)
+    if (e.button === 1 || (e.button === 0 && (e.target as HTMLElement).closest('[data-board-bg]'))) {
+      e.preventDefault()
+      setIsPanning(true)
+      panStart.current = { x: e.clientX, y: e.clientY }
+      panOrigin.current = { ...pan }
+      ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    }
+  }, [pan])
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isPanning) return
+    setPan({
+      x: panOrigin.current.x + (e.clientX - panStart.current.x),
+      y: panOrigin.current.y + (e.clientY - panStart.current.y),
+    })
+  }, [isPanning])
+
+  const handlePointerUp = useCallback(() => {
+    setIsPanning(false)
+  }, [])
+
+  const handleReset = useCallback(() => {
+    setZoom(1)
+    setPan({ x: 0, y: 0 })
+  }, [])
 
   if (!currentPlayer) return null
 
@@ -47,10 +92,18 @@ export function Board() {
   }
 
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
+    <div
+      ref={containerRef}
+      className="relative w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
       style={{
         background: 'linear-gradient(135deg, #1e1812 0%, #16120d 50%, #1e1812 100%)',
+        cursor: isPanning ? 'grabbing' : 'grab',
       }}
+      data-board-bg
+      onWheel={handleWheel}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
     >
 
       {/* Warm vignette */}
@@ -60,8 +113,51 @@ export function Board() {
         }}
       />
 
-      {/* Map container */}
-      <div className="relative">
+      {/* Zoom controls */}
+      <div className="absolute top-3 right-3 z-20 flex gap-1.5">
+        {(zoom !== 1 || pan.x !== 0 || pan.y !== 0) && (
+          <button
+            onClick={handleReset}
+            className="px-2 py-1 rounded-md font-medieval text-[10px] text-parchment-400 hover:text-gold-400 transition-colors"
+            style={{
+              background: 'rgba(42, 33, 24, 0.8)',
+              border: '1px solid rgba(212, 168, 83, 0.2)',
+            }}
+          >
+            Reset
+          </button>
+        )}
+        <button
+          onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + ZOOM_STEP))}
+          className="w-7 h-7 rounded-md font-bold text-sm text-parchment-400 hover:text-gold-400 transition-colors flex items-center justify-center"
+          style={{
+            background: 'rgba(42, 33, 24, 0.8)',
+            border: '1px solid rgba(212, 168, 83, 0.2)',
+          }}
+        >
+          +
+        </button>
+        <button
+          onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - ZOOM_STEP))}
+          className="w-7 h-7 rounded-md font-bold text-sm text-parchment-400 hover:text-gold-400 transition-colors flex items-center justify-center"
+          style={{
+            background: 'rgba(42, 33, 24, 0.8)',
+            border: '1px solid rgba(212, 168, 83, 0.2)',
+          }}
+        >
+          -
+        </button>
+      </div>
+
+      {/* Map container — pan & zoom transform */}
+      <div
+        className="relative"
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center center',
+          transition: isPanning ? 'none' : 'transform 0.15s ease-out',
+        }}
+      >
         <div className="relative p-6" style={{ width: '950px', height: '550px' }}>
           {/* Render connections - z-index 0 to ensure connectors are underneath tiles */}
           <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 0, position: 'absolute' }}>

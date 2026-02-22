@@ -62,25 +62,27 @@ export function CombatModal() {
     setPopups((prev) => [...prev, ...newPopups])
   }
 
+  const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
+  const fameEarned = monstersDefeatedCount > 0
+    ? calculateFameEarned(player.monstersDefeated, monstersDefeatedCount)
+    : 0
+
   const handleEndCombat = () => {
     const success = allMonstersDefeated
-    const result = endCombat(success)
+    endCombat(success)
 
     // EXP is always awarded for the full encounter
     awardPlayerExp(player.id, calculateTotalMonsterExp(monsters))
 
-    if (success) {
-      // Fame and progression only on victory
-      const fameEarned = calculateFameEarned(
-        player.monstersDefeated,
-        result.monstersDefeated
-      )
+    // Fame awarded for each monster defeated, even on retreat
+    if (monstersDefeatedCount > 0) {
       awardPlayerFame(player.id, fameEarned)
-      incrementPlayerMonstersDefeated(player.id, result.monstersDefeated)
-      if (spaceId !== null) {
-        clearSpaceAfterCombat(spaceId)
-      }
+      incrementPlayerMonstersDefeated(player.id, monstersDefeatedCount)
       checkPhaseTransition()
+    }
+
+    if (success && spaceId !== null) {
+      clearSpaceAfterCombat(spaceId)
     }
   }
 
@@ -189,7 +191,7 @@ export function CombatModal() {
             </div>
           )}
 
-          {/* EXP Reward — always shown when combat is over */}
+          {/* Rewards — always shown when combat is over */}
           {isCombatOver && (
             <div
               className="mb-8 rounded-xl overflow-hidden animate-slide-up"
@@ -203,21 +205,32 @@ export function CombatModal() {
             >
               <div className="px-8 py-5 text-center">
                 <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-1.5">
-                  {allMonstersDefeated ? 'Victory — Fame & EXP Earned' : 'Retreat — EXP Earned'}
+                  {allMonstersDefeated ? 'Victory' : 'Retreat'} — Rewards Earned
                 </div>
-                <div className="text-3xl font-bold text-gold-400 tabular-nums"
-                  style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
-                >
-                  +{totalExp} EXP
-                </div>
-                <div className="text-base text-parchment-500 mt-1.5">
-                  {monsters.map((m, i) => <span key={m.id}>{i > 0 && ' + '}{calculateTotalMonsterExp([m])} <span className="text-parchment-600">(Lv.{m.level})</span></span>)}
-                </div>
-                {!allMonstersDefeated && (
-                  <div className="text-sm text-parchment-500 mt-2 italic">
-                    No fame earned — monsters not defeated
+                <div className="flex items-center justify-center gap-6 mt-2">
+                  {fameEarned > 0 && (
+                    <div>
+                      <div className="text-3xl font-bold text-gold-400 tabular-nums"
+                        style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
+                      >
+                        +{fameEarned} Fame
+                      </div>
+                      <div className="text-xs text-parchment-500 mt-0.5">
+                        {monstersDefeatedCount} monster{monstersDefeatedCount !== 1 ? 's' : ''} defeated
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-3xl font-bold text-gold-400 tabular-nums"
+                      style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
+                    >
+                      +{totalExp} EXP
+                    </div>
+                    <div className="text-xs text-parchment-500 mt-0.5">
+                      {monsters.map((m, i) => <span key={m.id}>{i > 0 && ' + '}{calculateTotalMonsterExp([m])} <span className="text-parchment-600">(Lv.{m.level})</span></span>)}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
