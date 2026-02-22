@@ -2,7 +2,13 @@
 
 ## High Priority
 
-(none)
+- [ ] When starting the game, ensure all spaces only have one genre tag
+- [ ] Make the first inspiration seek free
+- [ ] Improve the UI that shows the players' stats
+- [ ] Change it back to adding 1 tag per round to all spaces
+- [ ] When all the monsters are defeated in a space, add 1 tag to all adjacent
+      spaces
+- [ ] Improve the layout of the map so it looks like an organized grid
 
 ## Medium Priority
 

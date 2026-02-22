@@ -1,50 +1,98 @@
 import { StateCreator } from 'zustand'
-import { DraftCard } from '@/types'
-import { generateDicePairCard, generateSongCard } from '@/data/draftCards'
+import { DraftCard, Dice, InspirationDie, Genre } from '@/types'
+import {
+  generateSongCard,
+  createInspirationPool,
+  drawInspirationDice,
+} from '@/data/draftCards'
 
-const DICE_POOL_SIZE = 4
 const SONG_POOL_SIZE = 2
 
 export interface ShopSlice {
   // State
-  dicePool: DraftCard[]
   songPool: DraftCard[]
+  inspirationPool: Dice[]
+  inspirationRevealed: InspirationDie[]
+  inspirationRollCount: number
 
   // Actions
-  initializeShop: (studioLevel: number) => void
-  purchaseFromDicePool: (cardId: string, studioLevel: number) => void
+  initializeShop: (numPlayers: number) => void
+  findInspiration: (playerGenreCounts?: Record<Genre, number>) => void
+  rerollInspiration: (playerGenreCounts?: Record<Genre, number>) => void
+  purchaseInspirationDie: (dieIndex: number) => Dice | null
+  closeInspiration: () => void
   purchaseFromSongPool: (cardId: string) => void
-  refreshDicePool: (studioLevel: number) => void
   refreshSongPool: () => void
   resetShop: () => void
 }
 
 export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
   // Initial state
-  dicePool: [],
   songPool: [],
+  inspirationPool: [],
+  inspirationRevealed: [],
+  inspirationRollCount: 0,
 
   // Actions
-  initializeShop: (studioLevel) => {
-    const dicePool: DraftCard[] = []
-    for (let i = 0; i < DICE_POOL_SIZE; i++) {
-      dicePool.push(generateDicePairCard('shop', studioLevel))
-    }
-
+  initializeShop: (numPlayers) => {
     const songPool: DraftCard[] = []
     for (let i = 0; i < SONG_POOL_SIZE; i++) {
       songPool.push(generateSongCard())
     }
 
-    set({ dicePool, songPool })
+    const inspirationPool = createInspirationPool(numPlayers)
+
+    set({ songPool, inspirationPool, inspirationRevealed: [], inspirationRollCount: 0 })
   },
 
-  purchaseFromDicePool: (cardId, studioLevel) => {
-    const pool = get().dicePool
+  findInspiration: (playerGenreCounts) => {
+    const pool = get().inspirationPool
+    const { drawn, remainingPool } = drawInspirationDice(pool, 3, playerGenreCounts)
+
     set({
-      dicePool: pool.map((card) =>
-        card.id === cardId ? generateDicePairCard('shop', studioLevel) : card
-      ),
+      inspirationPool: remainingPool,
+      inspirationRevealed: drawn,
+    })
+  },
+
+  rerollInspiration: (playerGenreCounts) => {
+    // Return currently revealed dice to pool
+    const pool = [...get().inspirationPool, ...get().inspirationRevealed.map((d) => d.dice)]
+    const rollCount = get().inspirationRollCount + 1
+
+    const { drawn, remainingPool } = drawInspirationDice(pool, 3, playerGenreCounts)
+
+    set({
+      inspirationPool: remainingPool,
+      inspirationRevealed: drawn,
+      inspirationRollCount: rollCount,
+    })
+  },
+
+  purchaseInspirationDie: (dieIndex) => {
+    const revealed = get().inspirationRevealed
+    if (dieIndex < 0 || dieIndex >= revealed.length) return null
+
+    const selected = revealed[dieIndex]
+    // Return unchosen dice to pool
+    const unchosen = revealed.filter((_, idx) => idx !== dieIndex).map((d) => d.dice)
+
+    set({
+      inspirationPool: [...get().inspirationPool, ...unchosen],
+      inspirationRevealed: [],
+      inspirationRollCount: 0,
+    })
+
+    return selected.dice
+  },
+
+  closeInspiration: () => {
+    // Return all revealed dice to pool
+    const revealed = get().inspirationRevealed
+    set({
+      inspirationPool: [...get().inspirationPool, ...revealed.map((d) => d.dice)],
+      inspirationRevealed: [],
+      inspirationRollCount: 0,
     })
   },
 
@@ -57,14 +105,6 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
     })
   },
 
-  refreshDicePool: (studioLevel) => {
-    const dicePool: DraftCard[] = []
-    for (let i = 0; i < DICE_POOL_SIZE; i++) {
-      dicePool.push(generateDicePairCard('shop', studioLevel))
-    }
-    set({ dicePool })
-  },
-
   refreshSongPool: () => {
     const songPool: DraftCard[] = []
     for (let i = 0; i < SONG_POOL_SIZE; i++) {
@@ -74,6 +114,11 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
   },
 
   resetShop: () => {
-    set({ dicePool: [], songPool: [] })
+    set({
+      songPool: [],
+      inspirationPool: [],
+      inspirationRevealed: [],
+      inspirationRollCount: 0,
+    })
   },
 })

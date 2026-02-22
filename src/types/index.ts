@@ -41,14 +41,19 @@ export type TrackEffect =
 
 export interface SongSlot {
   dice: Dice | null;
-  effect: TrackEffect | null;
 }
 
 export interface Song {
   id: string;
   name: string;
-  slots: [SongSlot, SongSlot, SongSlot, SongSlot]; // Always 4 slots
+  slots: [SongSlot, SongSlot]; // 2 dice slots
+  effects: TrackEffect[]; // Song effects (typically 2), separate from dice slots
   used: boolean; // Can only use each song once per combat
+}
+
+export interface InspirationDie {
+  dice: Dice;
+  cost: number; // Purchase cost based on die type
 }
 
 // ============================================
@@ -120,14 +125,11 @@ export interface Player {
 
 export interface DraftCard {
   id: string;
-  type: "dice" | "song";
+  type: "song";
   cost: number;
-  // For dice cards
-  dice?: Dice[];
-  // For song cards
   songName?: string;
   songEffect?: TrackEffect;
-  songEffect2?: TrackEffect; // All songs have 2 effects now
+  songEffect2?: TrackEffect;
 }
 
 // ============================================

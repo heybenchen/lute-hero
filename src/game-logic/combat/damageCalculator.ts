@@ -1,4 +1,4 @@
-import { Song, Monster, DiceRoll, Genre, DamageCalculation } from "@/types";
+import { Song, Monster, DiceRoll, Genre, DamageCalculation, SongSlot, TrackEffect } from "@/types";
 import { rollDiceWithCrit } from "../dice/roller";
 import {
   applyTrackEffect,
@@ -23,40 +23,46 @@ export function getGenreMultiplier(genre: Genre, monster: Monster): number {
 }
 
 /**
- * Roll all dice in a song and apply track effects
+ * Roll all dice in a song and apply track effects.
+ * Effects are paired positionally with slots (effect[i] applies to slot[i]'s die).
  */
 export function rollSong(song: Song): {
   rolls: DiceRoll[];
   updatedSong: Song;
 } {
   const allRolls: DiceRoll[] = [];
-  const updatedSlots = song.slots.map((slot) => {
+  const updatedEffects = [...song.effects];
+
+  const updatedSlots = song.slots.map((slot, idx) => {
     if (!slot.dice) return slot;
 
     // Roll the die
     const baseRoll = rollDiceWithCrit(slot.dice);
 
-    // Apply track effect
+    // Apply the corresponding effect (by position)
+    const effect = song.effects[idx] ?? null;
     const { modifiedRoll, updatedEffect, additionalRolls } = applyTrackEffect(
       baseRoll,
       slot.dice,
-      slot.effect,
+      effect,
     );
 
     allRolls.push(modifiedRoll);
     allRolls.push(...additionalRolls);
 
-    return {
-      ...slot,
-      effect: updatedEffect,
-    };
+    if (idx < updatedEffects.length && updatedEffect !== null) {
+      updatedEffects[idx] = updatedEffect;
+    }
+
+    return slot;
   });
 
   return {
     rolls: allRolls,
     updatedSong: {
       ...song,
-      slots: updatedSlots as [any, any, any, any],
+      slots: updatedSlots as [SongSlot, SongSlot],
+      effects: updatedEffects.filter((e): e is TrackEffect => e !== null),
     },
   };
 }
@@ -77,7 +83,7 @@ export function calculateDamage(
 
   // 3. Calculate effect bonuses (flat additions) + harmonize bonus
   const effectBonuses =
-    calculateEffectBonuses(song.slots) + calculateHarmonizeBonus(song.slots, rolls);
+    calculateEffectBonuses(song.effects) + calculateHarmonizeBonus(song.effects, rolls);
 
   // 4. Calculate genre multipliers for each die
   const genreMultipliers: { genre: Genre; multiplier: number }[] = [];
@@ -85,15 +91,18 @@ export function calculateDamage(
 
   rolls.forEach((roll) => {
     // Find the slot that created this roll
-    const slot = song.slots.find((s) => s.dice?.id === roll.diceId);
+    const slotIdx = song.slots.findIndex((s) => s.dice?.id === roll.diceId);
+    const slot = slotIdx >= 0 ? song.slots[slotIdx] : undefined;
     const dice = slot?.dice;
+    // Get the corresponding effect for offbeat check
+    const effect = slotIdx >= 0 ? (song.effects[slotIdx] ?? null) : null;
 
-    if (dice && slot) {
+    if (dice) {
       const genreMultiplier = getGenreMultiplier(dice.genre, monster);
       genreMultipliers.push({ genre: dice.genre, multiplier: genreMultiplier });
 
       // Calculate offbeat multiplier (odd = 2x, even = 0.5x)
-      const offbeatMultiplier = calculateOffbeatMultiplier(roll, slot);
+      const offbeatMultiplier = calculateOffbeatMultiplier(roll, effect);
 
       // Apply genre and offbeat multipliers to this specific die's damage
       genreAdjustedDamage += (roll.value + roll.critBonus) * genreMultiplier * offbeatMultiplier;

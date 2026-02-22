@@ -1,4 +1,4 @@
-import { TrackEffect, DiceRoll, Dice, SongSlot } from "@/types";
+import { TrackEffect, DiceRoll, Dice } from "@/types";
 import { getMaxValue, flipDiceValue, rollDiceWithCrit, rollDie } from "./roller";
 import { DICE_UPGRADE_PATH } from "@/data/startingData";
 
@@ -126,15 +126,13 @@ export function applyTrackEffect(
 
 /**
  * Calculate flat bonuses from effects
- * Only applies to slots that have dice
  */
-export function calculateEffectBonuses(slots: SongSlot[]): number {
+export function calculateEffectBonuses(effects: TrackEffect[]): number {
   let bonus = 0;
 
-  slots.forEach((slot) => {
-    // Only apply effect if there's a dice in the slot
-    if (slot.dice && slot.effect?.type === "addFlat") {
-      bonus += slot.effect.amount;
+  effects.forEach((effect) => {
+    if (effect.type === "addFlat") {
+      bonus += effect.amount;
     }
   });
 
@@ -158,12 +156,12 @@ export function upgradeDice(dice: Dice): Dice {
 }
 
 /**
- * Calculate harmonize bonus if any slot has harmonize effect
+ * Calculate harmonize bonus if any effect is harmonize
  * and 2+ dice rolled the same value
  */
-export function calculateHarmonizeBonus(slots: SongSlot[], rolls: DiceRoll[]): number {
-  // Check if any slot has harmonize effect
-  const harmonizeEffect = slots.find((slot) => slot.effect?.type === "harmonize")?.effect;
+export function calculateHarmonizeBonus(effects: TrackEffect[], rolls: DiceRoll[]): number {
+  // Check if any effect is harmonize
+  const harmonizeEffect = effects.find((effect) => effect.type === "harmonize");
 
   if (!harmonizeEffect || harmonizeEffect.type !== "harmonize") {
     return 0;
@@ -180,8 +178,8 @@ export function calculateHarmonizeBonus(slots: SongSlot[], rolls: DiceRoll[]): n
  * Calculate offbeat multiplier for a single roll
  * Odd rolls = 2x, Even rolls = 0.5x
  */
-export function calculateOffbeatMultiplier(roll: DiceRoll, slot: SongSlot): number {
-  if (slot.effect?.type !== "offbeat") {
+export function calculateOffbeatMultiplier(roll: DiceRoll, effect: TrackEffect | null): number {
+  if (effect?.type !== "offbeat") {
     return 1;
   }
 

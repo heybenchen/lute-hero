@@ -69,11 +69,9 @@ export function CurrentPlayerDisplay() {
                         background: slot.dice
                           ? "rgba(212, 168, 83, 0.15)"
                           : "rgba(255, 255, 255, 0.03)",
-                        border: slot.effect
-                          ? "1px solid rgba(176, 124, 255, 0.5)"
-                          : slot.dice
-                            ? "1px solid rgba(212, 168, 83, 0.25)"
-                            : "1px dashed rgba(212, 168, 83, 0.1)",
+                        border: slot.dice
+                          ? "1px solid rgba(212, 168, 83, 0.25)"
+                          : "1px dashed rgba(212, 168, 83, 0.1)",
                       }}
                     >
                       {slot.dice ? (
@@ -85,8 +83,6 @@ export function CurrentPlayerDisplay() {
                             {slot.dice.genre}
                           </div>
                         </>
-                      ) : slot.effect ? (
-                        <div className="text-classical text-[10px]">&#x2728;</div>
                       ) : (
                         <div className="text-parchment-500/30 text-[8px]">-</div>
                       )}
@@ -116,16 +112,17 @@ export function CurrentPlayerDisplay() {
               <>
                 <div className="font-medieval font-bold mb-2 text-gold-400">{song.name}</div>
                 <div className="space-y-2 text-xs">
+                  {/* Dice slots */}
                   {song.slots.map((slot, idx) => (
                     <div
-                      key={idx}
-                      className="pb-1 last:border-0"
+                      key={`slot-${idx}`}
+                      className="pb-1"
                       style={{
-                        borderBottom: idx < 3 ? "1px solid rgba(212, 168, 83, 0.12)" : "none",
+                        borderBottom: "1px solid rgba(212, 168, 83, 0.12)",
                       }}
                     >
                       <div className="font-bold text-parchment-400 text-[10px]">Slot {idx + 1}</div>
-                      {slot.dice && (
+                      {slot.dice ? (
                         <div className="mt-0.5">
                           <div className="flex items-center gap-1">
                             <span className="text-parchment-300 text-[11px]">{slot.dice.type}</span>
@@ -135,17 +132,22 @@ export function CurrentPlayerDisplay() {
                             Roll: 1-{getMaxValue(slot.dice.type)} (2x on max)
                           </div>
                         </div>
-                      )}
-                      {slot.effect && (
-                        <div className="mt-0.5 text-classical text-[10px]">
-                          &#x2728; {TRACK_EFFECT_DESCRIPTIONS[slot.effect.type] || slot.effect.type}
-                        </div>
-                      )}
-                      {!slot.dice && !slot.effect && (
+                      ) : (
                         <div className="text-parchment-500 text-[10px]">Empty slot</div>
                       )}
                     </div>
                   ))}
+                  {/* Effects */}
+                  {song.effects.length > 0 && (
+                    <div className="pt-1">
+                      <div className="font-bold text-parchment-400 text-[10px] mb-1">Effects</div>
+                      {song.effects.map((effect, idx) => (
+                        <div key={`fx-${idx}`} className="text-classical text-[10px]">
+                          &#x2728; {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             );

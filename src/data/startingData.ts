@@ -25,17 +25,16 @@ export const STARTER_DICE: { [key in Genre]: Dice[] } = {
 export function createStarterSong(genre: Genre, playerId: string): Song {
   const starterDice = STARTER_DICE[genre];
 
-  const slots: [SongSlot, SongSlot, SongSlot, SongSlot] = [
-    { dice: starterDice[0], effect: null },
-    { dice: starterDice[1], effect: null },
-    { dice: null, effect: TRACK_EFFECTS.addFlat }, // Slot 3 has effect 1
-    { dice: null, effect: TRACK_EFFECTS.rerollOnes }, // Slot 4 has effect 2 (all songs have 2 effects)
+  const slots: [SongSlot, SongSlot] = [
+    { dice: starterDice[0] },
+    { dice: starterDice[1] },
   ];
 
   return {
     id: `${playerId}-starter-song`,
     name: `${genre} Anthem`,
     slots,
+    effects: [TRACK_EFFECTS.addFlat, TRACK_EFFECTS.rerollOnes],
     used: false,
   };
 }

@@ -10,7 +10,7 @@ interface SongCardProps {
 }
 
 export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
-  const hasEffects = song.slots.some((s) => s.effect)
+  const hasEffects = song.effects.length > 0
   const filledSlots = song.slots.filter((s) => s.dice).length
 
   return (
@@ -46,12 +46,12 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
               {song.name}
             </div>
             <div className="text-sm text-parchment-500 flex-shrink-0 tabular-nums">
-              {filledSlots}/4
+              {filledSlots}/2
             </div>
           </div>
 
           {/* Dice slots - visual track */}
-          <div className="flex gap-2.5 mb-4">
+          <div className="flex gap-4 mb-4">
             {song.slots.map((slot, idx) => (
               <div key={idx} className="relative flex-1">
                 {slot.dice ? (
@@ -68,24 +68,9 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
                   </div>
                 )}
 
-                {/* Effect dot indicator */}
-                {slot.effect && (
-                  <div
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
-                    title={TRACK_EFFECT_DESCRIPTIONS[slot.effect.type] || slot.effect.type}
-                    style={{
-                      background: 'linear-gradient(135deg, #9040cc, #6a20aa)',
-                      border: '1px solid rgba(176, 124, 255, 0.5)',
-                      boxShadow: '0 0 6px rgba(176, 124, 255, 0.3)',
-                    }}
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full bg-white/80" />
-                  </div>
-                )}
-
                 {/* Slot connector line */}
-                {idx < 3 && (
-                  <div className="absolute top-1/2 -right-1.5 w-2.5 h-px bg-parchment-600/15" />
+                {idx < 1 && (
+                  <div className="absolute top-1/2 -right-2.5 w-4 h-px bg-parchment-600/15" />
                 )}
               </div>
             ))}
@@ -94,13 +79,21 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
           {/* Effects list */}
           {hasEffects && (
             <div className="mb-4 space-y-1.5">
-              {song.slots.map((slot, idx) => {
-                if (!slot.effect) return null
-                const name = TRACK_EFFECT_NAMES[slot.effect.type] || slot.effect.type
-                const desc = TRACK_EFFECT_DESCRIPTIONS[slot.effect.type] || slot.effect.type
+              {song.effects.map((effect, idx) => {
+                const name = TRACK_EFFECT_NAMES[effect.type] || effect.type
+                const desc = TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type
                 return (
                   <div key={idx} className="flex items-center gap-2 text-sm">
-                    <span className="text-classical font-bold w-5 text-right flex-shrink-0">{idx + 1}</span>
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: 'linear-gradient(135deg, #9040cc, #6a20aa)',
+                        border: '1px solid rgba(176, 124, 255, 0.5)',
+                        boxShadow: '0 0 6px rgba(176, 124, 255, 0.3)',
+                      }}
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-white/80" />
+                    </div>
                     <span className="text-classical/70 truncate" title={desc}>{name}</span>
                   </div>
                 )

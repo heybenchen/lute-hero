@@ -15,7 +15,8 @@
       "Bash(tree:*)",
       "Bash(claude install:*)",
       "Bash(npx vitest:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npm run lint)"
     ]
   }
 }

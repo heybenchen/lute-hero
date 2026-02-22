@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand'
-import { Player, Genre, Song, Dice } from '@/types'
+import { Player, Genre, Song, Dice, SongSlot } from '@/types'
 import { createStarterSong } from '@/data/startingData'
 import {
   awardFame,
@@ -123,7 +123,7 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
 
           return {
             ...song,
-            slots: updatedSlots as [any, any, any, any],
+            slots: updatedSlots as [SongSlot, SongSlot],
           }
         })
 
