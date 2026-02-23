@@ -13,7 +13,7 @@ export function PlayerPanel() {
   const currentRound = useGameStore((state) => state.currentRound)
   const nextTurn = useGameStore((state) => state.nextTurn)
   const nextRound = useGameStore((state) => state.nextRound)
-  const addGenreTagsAroundPlayer = useGameStore((state) => state.addGenreTagsAroundPlayer)
+  const addGenreTags = useGameStore((state) => state.addGenreTags)
   const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
   const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
   const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
@@ -33,9 +33,6 @@ export function PlayerPanel() {
   const fameProgress = Math.min((collectiveFame / currentThreshold) * 100, 100)
 
   const handleEndTurn = () => {
-    // Add genre tags to neighboring spaces of current player's position
-    addGenreTagsAroundPlayer(currentPlayer.position)
-
     resetPlayerMoves(currentPlayer.id)
     resetPlayerFights(currentPlayer.id)
 
@@ -44,6 +41,8 @@ export function PlayerPanel() {
         resetPlayerMoves(p.id)
         resetPlayerFights(p.id)
       })
+      // Add 1 genre tag to all spaces once per round
+      addGenreTags()
       nextRound()
     } else {
       nextTurn()
@@ -173,34 +172,66 @@ export function PlayerPanel() {
         <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider mb-2">
           All Players
         </div>
-        <div className="space-y-1.5">
-          {players.map((player) => (
-            <div
-              key={player.id}
-              className="p-2 rounded-lg transition-all duration-150 flex items-center gap-2.5"
-              style={{
-                background: player.id === currentPlayer.id
-                  ? 'rgba(100, 220, 100, 0.08)'
-                  : 'rgba(61, 48, 32, 0.3)',
-                border: player.id === currentPlayer.id
-                  ? '1px solid rgba(100, 220, 100, 0.25)'
-                  : '1px solid rgba(212, 168, 83, 0.08)',
-              }}
-            >
+        <div className="space-y-2">
+          {players.map((player) => {
+            const playerSpace = spaces.find((s) => s.id === player.position)
+            const playerFameProgress = Math.min((player.fame / currentThreshold) * 100, 100)
+            const diceCount = player.songs.reduce((n, s) => n + s.slots.filter((sl) => sl.dice).length, 0)
+            const isCurrentTurn = player.id === currentPlayer.id
+            return (
               <div
-                className="player-avatar w-8 h-8 text-xs flex-shrink-0"
-                style={{ backgroundColor: player.color }}
+                key={player.id}
+                className="p-2.5 rounded-lg transition-all duration-150"
+                style={{
+                  background: isCurrentTurn
+                    ? 'rgba(100, 220, 100, 0.08)'
+                    : 'rgba(61, 48, 32, 0.3)',
+                  border: isCurrentTurn
+                    ? '1px solid rgba(100, 220, 100, 0.25)'
+                    : '1px solid rgba(212, 168, 83, 0.08)',
+                }}
               >
-                {player.name.charAt(0)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-sm text-parchment-200 truncate">{player.name}</div>
-                <div className="text-[10px] text-parchment-400">
-                  Fame: {player.fame} &middot; EXP: {player.exp} &middot; Songs: {player.songs.length}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div
+                    className="player-avatar w-8 h-8 text-xs flex-shrink-0"
+                    style={{ backgroundColor: player.color }}
+                  >
+                    {player.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <div className="font-bold text-sm text-parchment-200 truncate">{player.name}</div>
+                      {isCurrentTurn && (
+                        <span className="text-[9px] font-medieval text-green-400 shrink-0">▶ Turn</span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-parchment-500 truncate">
+                      {playerSpace?.name ?? '—'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats row */}
+                <div className="flex gap-2 text-[10px] mb-1.5">
+                  <span className="text-gold-400 font-bold">⭐ {player.fame}</span>
+                  <span className="text-parchment-400">{player.exp} EXP</span>
+                  <span className="text-parchment-500">{player.songs.length} songs · {diceCount} dice</span>
+                </div>
+
+                {/* Mini fame progress */}
+                <div className="hp-bar h-1">
+                  <div
+                    className="hp-fill rounded-full"
+                    style={{
+                      width: `${playerFameProgress}%`,
+                      background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 

@@ -9,14 +9,14 @@ import {
 
 describe('Inspiration System', () => {
   describe('getInspirationCost', () => {
-    it('should return 10 for first roll', () => {
-      expect(getInspirationCost(0)).toBe(10)
+    it('should return 0 for first seek (free)', () => {
+      expect(getInspirationCost(0)).toBe(0)
     })
 
-    it('should escalate cost by 10 per roll', () => {
-      expect(getInspirationCost(1)).toBe(20)
-      expect(getInspirationCost(2)).toBe(30)
-      expect(getInspirationCost(3)).toBe(40)
+    it('should escalate cost by 10 per re-roll', () => {
+      expect(getInspirationCost(1)).toBe(10)
+      expect(getInspirationCost(2)).toBe(20)
+      expect(getInspirationCost(3)).toBe(30)
     })
   })
 
