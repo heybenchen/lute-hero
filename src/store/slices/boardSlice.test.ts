@@ -129,6 +129,30 @@ describe('boardSlice spawning integration', () => {
       expect(space.monsters).toEqual([])
       expect(space.genreTags).toEqual([])
     })
+
+    it('should spread 1 tag to each adjacent space after clearing', () => {
+      useGameStore.getState().initializeBoard()
+
+      // Space 0 connects to spaces 1, 3, 13
+      const spaces = useGameStore.getState().spaces
+      const updatedSpaces = spaces.map((s) =>
+        s.id === 0 ? { ...s, genreTags: ['Ballad'] as Genre[] } : s
+      )
+      useGameStore.setState({ spaces: updatedSpaces })
+      useGameStore.getState().spawnMonstersAtSpace(0)
+
+      const neighborIds = spaces.find((s) => s.id === 0)!.connections
+      const tagsBefore = neighborIds.map((id) =>
+        useGameStore.getState().spaces.find((s) => s.id === id)!.genreTags.length
+      )
+
+      useGameStore.getState().clearSpaceAfterCombat(0)
+
+      neighborIds.forEach((id, idx) => {
+        const neighbor = useGameStore.getState().spaces.find((s) => s.id === id)!
+        expect(neighbor.genreTags.length).toBe(tagsBefore[idx] + 1)
+      })
+    })
   })
 
   describe('addGenreTags', () => {
@@ -162,11 +186,15 @@ describe('boardSlice spawning integration', () => {
       let space = useGameStore.getState().spaces.find((s) => s.id === 0)!
       expect(space.monsters.length).toBeGreaterThanOrEqual(1)
 
-      // Combat: clear the space
+      // Combat: clear the space (space 0 gets cleared; its neighbors 1, 3, 13 each get +1 tag)
       useGameStore.getState().clearSpaceAfterCombat(0)
       space = useGameStore.getState().spaces.find((s) => s.id === 0)!
       expect(space.monsters).toEqual([])
       expect(space.genreTags).toEqual([])
+
+      // Space 1 (a neighbor of 0) should have gained a spread tag
+      const neighborAfterClear = useGameStore.getState().spaces.find((s) => s.id === 1)!
+      expect(neighborAfterClear.genreTags).toHaveLength(2) // 1 from addGenreTags + 1 spread
 
       // Round 2: add tags again — cleared space gets new tag, other spaces accumulate
       useGameStore.getState().addGenreTags()
@@ -174,7 +202,7 @@ describe('boardSlice spawning integration', () => {
       expect(space.genreTags).toHaveLength(1) // Fresh after clear
 
       const otherSpace = useGameStore.getState().spaces.find((s) => s.id === 1)!
-      expect(otherSpace.genreTags).toHaveLength(2) // Accumulated
+      expect(otherSpace.genreTags).toHaveLength(3) // 1 from round 1 + 1 spread + 1 from round 2
     })
   })
 })

@@ -13,6 +13,7 @@ export function Setup() {
   const initializePlayers = useGameStore((state) => state.initializePlayers)
   const initializeBoard = useGameStore((state) => state.initializeBoard)
   const addGenreTags = useGameStore((state) => state.addGenreTags)
+  const limitSpaceTags = useGameStore((state) => state.limitSpaceTags)
   const spawnInitialMonstersOnBoard = useGameStore((state) => state.spawnInitialMonstersOnBoard)
   const startGame = useGameStore((state) => state.startGame)
   const initializeShop = useGameStore((state) => state.initializeShop)
@@ -45,6 +46,7 @@ export function Setup() {
     })
 
     addGenreTags()
+    limitSpaceTags(1)
     spawnInitialMonstersOnBoard()
     initializeShop(playerCount)
     startGame()

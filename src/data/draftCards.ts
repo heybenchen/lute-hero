@@ -15,11 +15,11 @@ export const SINGLE_DICE_COSTS: Record<DiceType, number> = {
   d20: 18,
 };
 
-// Inspiration reveal cost: 10 * (rollCount + 1)
+// Inspiration reveal cost: free for first seek (rollCount=0), then 10 * rollCount for re-rolls
 export const INSPIRATION_BASE_COST = 10;
 
 export function getInspirationCost(rollCount: number): number {
-  return INSPIRATION_BASE_COST * (rollCount + 1);
+  return INSPIRATION_BASE_COST * rollCount;
 }
 
 /**

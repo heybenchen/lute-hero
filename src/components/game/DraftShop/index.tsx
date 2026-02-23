@@ -249,7 +249,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 disabled={!player || player.exp < inspirationCost}
                 className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Seek Inspiration ({inspirationCost} EXP)
+                Seek Inspiration ({inspirationCost === 0 ? 'Free' : `${inspirationCost} EXP`})
               </button>
             ) : (
               <div>

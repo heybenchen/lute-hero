@@ -15,6 +15,7 @@ export interface BoardSlice {
   initializeBoard: () => void
   addGenreTags: () => void
   addGenreTagsAroundPlayer: (spaceId: number) => void
+  limitSpaceTags: (max: number) => void
   spawnMonstersAtSpace: (spaceId: number) => void
   spawnInitialMonstersOnBoard: () => void
   clearSpaceAfterCombat: (spaceId: number) => void
@@ -46,6 +47,15 @@ export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
     set({ spaces: updatedSpaces })
   },
 
+  limitSpaceTags: (max) => {
+    set({
+      spaces: get().spaces.map((s) => ({
+        ...s,
+        genreTags: s.genreTags.slice(0, max),
+      })),
+    })
+  },
+
   spawnMonstersAtSpace: (spaceId) => {
     const round = getRound(get)
     const space = get().spaces.find((s) => s.id === spaceId)
@@ -73,11 +83,12 @@ export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
   },
 
   clearSpaceAfterCombat: (spaceId) => {
-    set({
-      spaces: get().spaces.map((s) =>
-        s.id === spaceId ? clearSpace(s) : s
-      ),
-    })
+    const cleared = get().spaces.map((s) =>
+      s.id === spaceId ? clearSpace(s) : s
+    )
+    // Spread 1 tag to each adjacent space when a space is cleared
+    const withSpread = addGenreTagsToNeighbors(cleared, spaceId)
+    set({ spaces: withSpread })
   },
 
   updateSpace: (spaceId, updates) => {
