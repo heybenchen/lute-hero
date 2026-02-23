@@ -2,13 +2,12 @@
 
 ## High Priority
 
-- [ ] When starting the game, ensure all spaces only have one genre tag
-- [ ] Make the first inspiration seek free
-- [ ] Improve the UI that shows the players' stats
-- [ ] Change it back to adding 1 tag per round to all spaces
-- [ ] When all the monsters are defeated in a space, add 1 tag to all adjacent
-      spaces
-- [ ] Improve the layout of the map so it looks like an organized grid
+- [] Change the colors to be more distinct from one another on the map
+- [] Only designate 4 starting spaces. Make each starting space as far away from
+  the others as possible.
+- [] Update all songs to only have one effect
+- [] Make it so that all players have 4 songs by default which they can slot
+  dice into, but with no effects or song titles. Buying the song title is what adds the effect.
 
 ## Medium Priority
 

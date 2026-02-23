@@ -1,10 +1,10 @@
 import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
 
-const genreEmojis: Record<Genre, string> = {
-  Ballad: '🔥',
-  Folk: '🌿',
-  Hymn: '💨',
-  Shanty: '🌊',
+const genreColors: Record<Genre, string> = {
+  Ballad: '#e82040',
+  Folk: '#4caf50',
+  Hymn: '#00b8d4',
+  Shanty: '#2979ff',
 }
 
 interface BoardSpaceProps {
@@ -26,6 +26,13 @@ export function BoardSpace({
   const hasMonsters = space.monsters.length > 0
   const potentialMonsters = Math.floor(space.genreTags.length / 2)
 
+  // Group genre tags by type for compact display
+  const genreTagCounts = space.genreTags.reduce<Partial<Record<Genre, number>>>((acc, g) => {
+    acc[g] = (acc[g] || 0) + 1
+    return acc
+  }, {})
+  const genreEntries = Object.entries(genreTagCounts) as [Genre, number][]
+
   return (
     <button
       onClick={onClick}
@@ -33,53 +40,58 @@ export function BoardSpace({
       className={`
         relative w-[90px] h-[90px] rounded-lg transition-all duration-200
         flex flex-col justify-between p-2
-        ${canMoveTo
-          ? 'cursor-pointer hover:scale-110'
-          : 'cursor-not-allowed'
-        }
+        ${canMoveTo ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}
         ${isCurrentPlayer ? 'scale-105' : ''}
         ${!canMoveTo && !isCurrentPlayer ? 'opacity-60' : ''}
       `}
       style={{
         background: hasMonsters
-          ? 'linear-gradient(135deg, rgba(232, 32, 64, 0.15) 0%, rgba(139, 30, 30, 0.2) 100%)'
+          ? 'linear-gradient(135deg, rgba(232, 32, 64, 0.15) 0%, rgba(139, 30, 30, 0.22) 100%)'
           : potentialMonsters > 0
-          ? 'linear-gradient(135deg, rgba(255, 157, 27, 0.1) 0%, rgba(180, 100, 20, 0.1) 100%)'
-          : 'linear-gradient(135deg, rgba(42, 33, 24, 0.9) 0%, rgba(61, 48, 32, 0.9) 100%)',
+          ? 'linear-gradient(135deg, rgba(255, 157, 27, 0.1) 0%, rgba(180, 100, 20, 0.12) 100%)'
+          : 'linear-gradient(135deg, rgba(42, 33, 24, 0.93) 0%, rgba(61, 48, 32, 0.93) 100%)',
         border: isCurrentPlayer
-          ? '2px solid rgba(100, 220, 100, 0.6)'
+          ? '2px solid rgba(100, 220, 100, 0.65)'
           : canMoveTo
-          ? '2px solid rgba(212, 168, 83, 0.5)'
+          ? '2px solid rgba(212, 168, 83, 0.55)'
           : hasMonsters
           ? '1px solid rgba(232, 32, 64, 0.4)'
-          : '1px solid rgba(212, 168, 83, 0.15)',
+          : space.isEdge
+          ? '1px solid rgba(212, 168, 83, 0.28)'
+          : '1px solid rgba(212, 168, 83, 0.13)',
         boxShadow: isCurrentPlayer
-          ? '0 0 15px rgba(100, 220, 100, 0.2), 0 4px 8px rgba(0,0,0,0.3)'
+          ? '0 0 16px rgba(100, 220, 100, 0.25), 0 4px 10px rgba(0,0,0,0.4)'
           : canMoveTo
-          ? '0 0 12px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(0,0,0,0.3)'
-          : '0 2px 6px rgba(0,0,0,0.3)',
+          ? '0 0 14px rgba(212, 168, 83, 0.18), 0 4px 10px rgba(0,0,0,0.4)'
+          : '0 2px 6px rgba(0,0,0,0.35)',
       }}
       title={space.name}
     >
-      {/* Edge indicator */}
+      {/* Edge/starting space indicator — green dot badge */}
       {space.isEdge && (
-        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+        <div
+          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center"
           style={{
-            background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-            color: '#d4ffd6',
+            background: 'linear-gradient(135deg, #2d6e30, #1e4820)',
+            border: '1px solid rgba(100,220,100,0.4)',
+            fontSize: '7px',
+            fontWeight: 'bold',
+            color: '#a0f0a4',
           }}
+          title="Starting space"
         >
           S
         </div>
       )}
 
       {/* Space ID badge */}
-      <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+      <div
+        className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full flex items-center justify-center"
         style={{
           background: 'linear-gradient(135deg, #4e3d2a, #3d3020)',
           border: '1px solid rgba(212, 168, 83, 0.3)',
+          fontSize: '7px',
+          fontWeight: 'bold',
           color: '#d4a853',
         }}
       >
@@ -87,7 +99,7 @@ export function BoardSpace({
       </div>
 
       {/* Space name */}
-      <div className="text-[7px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
+      <div className="text-[8px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-90 truncate w-full pt-0.5">
         {space.name}
       </div>
 
@@ -96,25 +108,31 @@ export function BoardSpace({
         {/* Monster indicator */}
         {hasMonsters && (
           <div className="flex flex-col items-center group relative">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
-              style={{ background: 'rgba(232, 32, 64, 0.25)', border: '1px solid rgba(232, 32, 64, 0.5)', color: '#ff6b6b' }}
+            <div
+              className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+              style={{
+                background: 'rgba(232, 32, 64, 0.2)',
+                border: '1px solid rgba(232, 32, 64, 0.5)',
+                color: '#ff7070',
+              }}
             >
-              &#x1F479;
+              ☠
             </div>
-            <div className="text-red-400 font-bold text-[10px]">
-              x{space.monsters.length}
+            <div className="text-red-400 font-bold text-[10px] leading-tight">
+              ×{space.monsters.length}
             </div>
             {/* Hover tooltip */}
-            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-48 rounded-lg p-2 shadow-xl text-xs pointer-events-none"
+            <div
+              className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-48 rounded-lg p-2 shadow-xl text-xs pointer-events-none"
               style={{
                 background: 'linear-gradient(135deg, #2a2118, #1a1410)',
                 border: '1px solid rgba(212, 168, 83, 0.3)',
               }}
             >
               {space.monsters.map((monster, idx) => (
-                <div key={monster.id} className={`${idx > 0 ? 'mt-2 pt-2 border-t border-gold-500/20' : ''}`}>
+                <div key={monster.id} className={idx > 0 ? 'mt-2 pt-2 border-t border-gold-500/20' : ''}>
                   <div className="font-bold text-gold-400">{monster.name}</div>
-                  <div className="text-[10px] mt-1 text-parchment-300">
+                  <div className="text-[10px] mt-0.5 text-parchment-300">
                     <div>HP: {monster.currentHP}/{monster.maxHP}</div>
                     {monster.vulnerability && (
                       <div className="text-green-400">Weak: {monster.vulnerability}</div>
@@ -129,27 +147,41 @@ export function BoardSpace({
           </div>
         )}
 
-        {/* Potential monsters indicator */}
+        {/* Potential monster warning */}
         {!hasMonsters && potentialMonsters > 0 && (
-          <div className="flex flex-col items-center opacity-60">
-            <div className="text-amber-400 text-sm">&#x26A0;</div>
-            <div className="text-amber-400 font-bold text-[9px]">
-              {potentialMonsters}
-            </div>
+          <div className="flex items-center gap-0.5 opacity-75">
+            <span className="text-amber-400 text-xs">⚠</span>
+            <span className="text-amber-400 font-bold text-[9px]">{potentialMonsters}</span>
           </div>
         )}
 
-        {/* Genre tags */}
-        {space.genreTags.length > 0 && (
-          <div className="flex flex-wrap gap-0.5 justify-center">
-            {space.genreTags.slice(0, 4).map((genre, idx) => (
-              <span key={idx} className="text-xs" title={genre}>
-                {genreEmojis[genre]}
-              </span>
+        {/* Genre tags — grouped colored dots with count */}
+        {genreEntries.length > 0 && (
+          <div className="flex flex-wrap gap-0.5 justify-center mt-0.5">
+            {genreEntries.map(([genre, count]) => (
+              <div
+                key={genre}
+                className="flex items-center gap-0.5 rounded-full px-1 py-px"
+                style={{
+                  background: `${genreColors[genre]}20`,
+                  border: `1px solid ${genreColors[genre]}50`,
+                }}
+                title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
+              >
+                <div
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: genreColors[genre] }}
+                />
+                {count > 1 && (
+                  <span
+                    className="text-[6px] font-bold leading-none"
+                    style={{ color: genreColors[genre] }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </div>
             ))}
-            {space.genreTags.length > 4 && (
-              <span className="text-[7px] text-gold-500">+{space.genreTags.length - 4}</span>
-            )}
           </div>
         )}
       </div>
@@ -174,7 +206,7 @@ export function BoardSpace({
       {canMoveTo && (
         <div
           className="absolute inset-0 rounded-lg pointer-events-none animate-glow-pulse"
-          style={{ boxShadow: '0 0 14px rgba(212, 168, 83, 0.4)' }}
+          style={{ boxShadow: '0 0 16px rgba(212, 168, 83, 0.45)' }}
         />
       )}
     </button>
