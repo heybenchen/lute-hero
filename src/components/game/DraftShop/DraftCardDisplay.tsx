@@ -25,7 +25,7 @@ export function DraftCardDisplay({
     >
       <div className="flex justify-between items-center mb-3 pb-2" style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}>
         <span className="font-medieval font-bold text-gold-400">
-          New Song
+          Song Name
         </span>
         <span className="text-gold-300 font-bold text-sm">{card.cost} EXP</span>
       </div>
@@ -86,7 +86,7 @@ export function DraftCardDisplay({
               </div>
             )}
             <div className="text-[10px] text-parchment-400 pt-2" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.15)' }}>
-              2 dice slots can be filled from inspiration
+              Apply this name to one of your songs to grant its effects
             </div>
           </div>
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">

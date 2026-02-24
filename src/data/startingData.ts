@@ -1,5 +1,4 @@
-import { Genre, DiceType, Dice, Song, SongSlot } from "@/types";
-import { TRACK_EFFECTS } from "./trackEffects";
+import { Genre, DiceType, Dice, Song } from "@/types";
 
 // Starter dice for each genre
 export const STARTER_DICE: { [key in Genre]: Dice[] } = {
@@ -21,22 +20,33 @@ export const STARTER_DICE: { [key in Genre]: Dice[] } = {
   ],
 };
 
-// Helper to create a starting song
-export function createStarterSong(genre: Genre, playerId: string): Song {
+// Create 3 starter songs: first has 2 dice, others are empty. All untitled with no effects.
+export function createStarterSongs(genre: Genre, playerId: string): Song[] {
   const starterDice = STARTER_DICE[genre];
 
-  const slots: [SongSlot, SongSlot] = [
-    { dice: starterDice[0] },
-    { dice: starterDice[1] },
+  return [
+    {
+      id: `${playerId}-song-1`,
+      name: '',
+      slots: [{ dice: starterDice[0] }, { dice: starterDice[1] }],
+      effects: [],
+      used: false,
+    },
+    {
+      id: `${playerId}-song-2`,
+      name: '',
+      slots: [{ dice: null }, { dice: null }],
+      effects: [],
+      used: false,
+    },
+    {
+      id: `${playerId}-song-3`,
+      name: '',
+      slots: [{ dice: null }, { dice: null }],
+      effects: [],
+      used: false,
+    },
   ];
-
-  return {
-    id: `${playerId}-starter-song`,
-    name: `${genre} Anthem`,
-    slots,
-    effects: [TRACK_EFFECTS.addFlat, TRACK_EFFECTS.rerollOnes],
-    used: false,
-  };
 }
 
 // Dice upgrade path

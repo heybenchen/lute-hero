@@ -118,7 +118,7 @@ export function drawInspirationDice(
   return { drawn, remainingPool: [...lockedPool, ...drawablePool] };
 }
 
-export function generateSongCard(): DraftCard {
+export function generateNameCard(): DraftCard {
   const effects = Object.keys(TRACK_EFFECTS);
   const randomEffect1 = effects[Math.floor(Math.random() * effects.length)];
   const randomEffect2 = effects[Math.floor(Math.random() * effects.length)];
@@ -138,7 +138,7 @@ export function generateSongCard(): DraftCard {
 
   return {
     id: generateCardId(),
-    type: "song",
+    type: "name",
     cost: 10,
     songName: songNames[Math.floor(Math.random() * songNames.length)],
     songEffect: TRACK_EFFECTS[randomEffect1],

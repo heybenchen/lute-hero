@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useGameStore, selectPlayerById, selectCollectiveFame } from '@/store'
-import { DraftCard, Song, DiceType, Genre, Dice } from '@/types'
+import { DraftCard, Song, DiceType, Genre, Dice, TrackEffect } from '@/types'
 import { DraftCardDisplay } from './DraftCardDisplay'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
-import { MAX_SONGS } from '@/store/slices/playersSlice'
 import { getInspirationCost, D12_FAME_THRESHOLD, D20_FAME_THRESHOLD } from '@/data/draftCards'
 
 const diceIcons: Record<DiceType, string> = {
@@ -44,13 +43,12 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const players = useGameStore((state) => state.players)
   const collectiveFame = useGameStore(selectCollectiveFame)
   const awardPlayerExp = useGameStore((state) => state.awardPlayerExp)
-  const addSongToPlayer = useGameStore((state) => state.addSongToPlayer)
-  const replaceSongForPlayer = useGameStore((state) => state.replaceSongForPlayer)
+  const applyNameToSong = useGameStore((state) => state.applyNameToSong)
 
   // Shop state
-  const songPool = useGameStore((state) => state.songPool)
-  const purchaseFromSongPool = useGameStore((state) => state.purchaseFromSongPool)
-  const refreshSongPool = useGameStore((state) => state.refreshSongPool)
+  const namePool = useGameStore((state) => state.namePool)
+  const purchaseFromNamePool = useGameStore((state) => state.purchaseFromNamePool)
+  const refreshNamePool = useGameStore((state) => state.refreshNamePool)
 
   // Inspiration state
   const inspirationRevealed = useGameStore((state) => state.inspirationRevealed)
@@ -60,23 +58,22 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
   const [selectedDie, setSelectedDie] = useState<Dice | null>(null)
 
-  // Pending song that needs a replacement target (remaster)
-  const [pendingSong, setPendingSong] = useState<{
-    song: Song
+  // Pending name that needs a target song
+  const [pendingName, setPendingName] = useState<{
+    name: string
+    effects: TrackEffect[]
     cardId: string
   } | null>(null)
 
   const rerollCost = getInspirationCost(inspirationRollCount)
 
-  const handleRefreshSongs = () => {
+  const handleRefreshNames = () => {
     if (!player || player.exp < REFRESH_COST) return
     awardPlayerExp(playerId, -REFRESH_COST)
-    refreshSongPool()
+    refreshNamePool()
   }
 
   if (!player) return null
-
-  const isAtMaxSongs = player.songs.length >= MAX_SONGS
 
   const handleRerollInspiration = () => {
     if (!player || player.exp < rerollCost) return
@@ -97,38 +94,23 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     }
   }
 
-  const handlePurchaseSong = (card: DraftCard) => {
+  const handlePurchaseName = (card: DraftCard) => {
     if (!player || player.exp < card.cost) return
 
-    const newSong: Song = {
-      id: `${playerId}-song-${Date.now()}`,
-      name: card.songName || 'New Song',
-      slots: [
-        { dice: null },
-        { dice: null },
-      ],
-      effects: [
-        ...(card.songEffect ? [card.songEffect] : []),
-        ...(card.songEffect2 ? [card.songEffect2] : []),
-      ],
-      used: false,
-    }
+    const effects: TrackEffect[] = [
+      ...(card.songEffect ? [card.songEffect] : []),
+      ...(card.songEffect2 ? [card.songEffect2] : []),
+    ]
 
-    if (isAtMaxSongs) {
-      awardPlayerExp(playerId, -card.cost)
-      setPendingSong({ song: newSong, cardId: card.id })
-      purchaseFromSongPool(card.id)
-    } else {
-      awardPlayerExp(playerId, -card.cost)
-      addSongToPlayer(playerId, newSong)
-      purchaseFromSongPool(card.id)
-    }
+    awardPlayerExp(playerId, -card.cost)
+    setPendingName({ name: card.songName || 'New Song', effects, cardId: card.id })
+    purchaseFromNamePool(card.id)
   }
 
-  const handleReplaceSong = (oldSongId: string) => {
-    if (!pendingSong) return
-    replaceSongForPlayer(playerId, oldSongId, pendingSong.song)
-    setPendingSong(null)
+  const handleApplyName = (songId: string) => {
+    if (!pendingName) return
+    applyNameToSong(playerId, songId, pendingName.name, pendingName.effects)
+    setPendingName(null)
   }
 
   const handleSlotDice = (songId: string, slotIndex: number, isReplacement: boolean = false) => {
@@ -166,34 +148,35 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </button>
           </div>
 
-          {/* Pending song replacement (remaster) */}
-          {pendingSong && (
+          {/* Pending name application */}
+          {pendingName && (
             <div className="rounded-lg p-4 mb-6 animate-fade-in"
               style={{
-                background: 'rgba(200, 100, 0, 0.1)',
-                border: '1px solid rgba(255, 180, 100, 0.3)',
+                background: 'rgba(176, 124, 255, 0.08)',
+                border: '1px solid rgba(176, 124, 255, 0.3)',
               }}
             >
-              <div className="font-bold text-orange-300 mb-2 text-sm">
-                Remaster: Choose a song to replace with "{pendingSong.song.name}":
+              <div className="font-bold text-classical mb-2 text-sm">
+                Choose a song to name "{pendingName.name}":
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 {player.songs.map((song) => (
                   <button
                     key={song.id}
-                    onClick={() => handleReplaceSong(song.id)}
+                    onClick={() => handleApplyName(song.id)}
                     className="px-4 py-2 rounded-lg font-medieval text-sm transition-all duration-150 hover:scale-105"
                     style={{
-                      background: 'rgba(200, 100, 0, 0.15)',
-                      border: '1px solid rgba(255, 180, 100, 0.4)',
-                      color: '#ffd4a0',
+                      background: 'rgba(176, 124, 255, 0.1)',
+                      border: '1px solid rgba(176, 124, 255, 0.3)',
+                      color: '#d4b0ff',
                     }}
                   >
-                    {song.name}
+                    {song.name || 'Untitled Song'}
+                    {song.name && <span className="text-xs text-parchment-500 ml-1">(rename)</span>}
                   </button>
                 ))}
                 <button
-                  onClick={() => setPendingSong(null)}
+                  onClick={() => setPendingName(null)}
                   className="px-4 py-2 rounded-lg font-medieval text-sm text-parchment-500"
                   style={{
                     background: 'rgba(255, 255, 255, 0.05)',
@@ -275,33 +258,32 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </div>
           </div>
 
-          {/* Song cards */}
+          {/* Song name cards */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
                 <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
-                  Song Tracks
+                  Song Names
                 </div>
                 <div className="text-xs text-parchment-500">
-                  ({songPool.length} available)
-                  {isAtMaxSongs && <span className="text-orange-400 ml-1">&mdash; Max {MAX_SONGS} songs (buy to remaster)</span>}
+                  ({namePool.length} available) &mdash; Names grant effects to your songs
                 </div>
               </div>
               <button
-                onClick={handleRefreshSongs}
+                onClick={handleRefreshNames}
                 disabled={!player || player.exp < REFRESH_COST}
                 className="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                title={`Refresh song selection for ${REFRESH_COST} EXP`}
+                title={`Refresh name selection for ${REFRESH_COST} EXP`}
               >
                 Refresh ({REFRESH_COST} EXP)
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {songPool.map((card) => (
+              {namePool.map((card) => (
                 <DraftCardDisplay
                   key={card.id}
                   card={card}
-                  onPurchase={() => handlePurchaseSong(card)}
+                  onPurchase={() => handlePurchaseName(card)}
                   canAfford={player.exp >= card.cost}
                 />
               ))}
@@ -315,7 +297,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 Your Songs
               </div>
               <div className="text-xs text-parchment-500">
-                ({player.songs.length}/{MAX_SONGS})
+                ({player.songs.length}/3)
                 {selectedDie
                   ? ' — click any slot to place die (replace existing = remix)'
                   : ' — take a die above to slot it here'
@@ -323,28 +305,36 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {player.songs.map((song) => (
                 <div key={song.id} className="card">
                   <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-2"
                     style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
                   >
-                    {song.name}
+                    {song.name || <span className="text-parchment-500 italic">Untitled</span>}
                   </div>
 
                   {/* Show song effects */}
-                  <div className="mb-2 space-y-0.5">
-                    {song.effects.map((effect, idx) => (
-                      <div key={idx} className="p-1 rounded text-[11px] flex items-center gap-1.5"
-                        style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
-                      >
-                        <span className="font-bold text-classical shrink-0">FX{idx + 1}:</span>
-                        <span className="text-classical/80 truncate">
-                          {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  {song.effects.length > 0 ? (
+                    <div className="mb-2 space-y-0.5">
+                      {song.effects.map((effect, idx) => (
+                        <div key={idx} className="p-1 rounded text-[11px] flex items-center gap-1.5"
+                          style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
+                        >
+                          <span className="font-bold text-classical shrink-0">FX{idx + 1}:</span>
+                          <span className="text-classical/80 truncate">
+                            {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mb-2 p-1 rounded text-[11px] text-parchment-500 italic"
+                      style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
+                    >
+                      No effects — buy a name to add effects
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     {song.slots.map((slot, idx) => {

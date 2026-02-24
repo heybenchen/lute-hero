@@ -125,7 +125,7 @@ export interface Player {
 
 export interface DraftCard {
   id: string;
-  type: "song";
+  type: "name";
   cost: number;
   songName?: string;
   songEffect?: TrackEffect;
