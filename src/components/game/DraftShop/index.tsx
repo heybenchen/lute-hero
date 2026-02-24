@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { useGameStore, selectPlayerById } from '@/store'
+import { useGameStore, selectPlayerById, selectCollectiveFame } from '@/store'
 import { DraftCard, Song, DiceType, Genre, Dice } from '@/types'
 import { DraftCardDisplay } from './DraftCardDisplay'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { MAX_SONGS } from '@/store/slices/playersSlice'
-import { getInspirationCost } from '@/data/draftCards'
+import { getInspirationCost, D12_FAME_THRESHOLD, D20_FAME_THRESHOLD } from '@/data/draftCards'
 
 const diceIcons: Record<DiceType, string> = {
   d4: '\u25B3',
@@ -42,6 +42,7 @@ function getPlayerGenreCounts(players: { songs: Song[] }[]): Record<Genre, numbe
 export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const player = useGameStore(selectPlayerById(playerId))
   const players = useGameStore((state) => state.players)
+  const collectiveFame = useGameStore(selectCollectiveFame)
   const awardPlayerExp = useGameStore((state) => state.awardPlayerExp)
   const addSongToPlayer = useGameStore((state) => state.addSongToPlayer)
   const replaceSongForPlayer = useGameStore((state) => state.replaceSongForPlayer)
@@ -54,10 +55,8 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   // Inspiration state
   const inspirationRevealed = useGameStore((state) => state.inspirationRevealed)
   const inspirationRollCount = useGameStore((state) => state.inspirationRollCount)
-  const findInspiration = useGameStore((state) => state.findInspiration)
   const rerollInspiration = useGameStore((state) => state.rerollInspiration)
   const purchaseInspirationDie = useGameStore((state) => state.purchaseInspirationDie)
-  const closeInspiration = useGameStore((state) => state.closeInspiration)
 
   const [selectedDie, setSelectedDie] = useState<Dice | null>(null)
 
@@ -67,9 +66,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     cardId: string
   } | null>(null)
 
-  const inspirationActive = inspirationRevealed.length > 0
-  const inspirationCost = getInspirationCost(inspirationRollCount)
-  const rerollCost = getInspirationCost(inspirationRollCount + 1)
+  const rerollCost = getInspirationCost(inspirationRollCount)
 
   const handleRefreshSongs = () => {
     if (!player || player.exp < REFRESH_COST) return
@@ -81,18 +78,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
   const isAtMaxSongs = player.songs.length >= MAX_SONGS
 
-  const handleFindInspiration = () => {
-    if (!player || player.exp < inspirationCost) return
-    awardPlayerExp(playerId, -inspirationCost)
-    const genreCounts = getPlayerGenreCounts(players)
-    findInspiration(genreCounts)
-  }
-
   const handleRerollInspiration = () => {
     if (!player || player.exp < rerollCost) return
     awardPlayerExp(playerId, -rerollCost)
     const genreCounts = getPlayerGenreCounts(players)
-    rerollInspiration(genreCounts)
+    rerollInspiration(genreCounts, collectiveFame)
   }
 
   const handleSelectInspirationDie = (index: number) => {
@@ -100,14 +90,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     if (!revealed || !player || player.exp < revealed.cost) return
 
     awardPlayerExp(playerId, -revealed.cost)
-    const die = purchaseInspirationDie(index)
+    const genreCounts = getPlayerGenreCounts(players)
+    const die = purchaseInspirationDie(index, genreCounts, collectiveFame)
     if (die) {
       setSelectedDie(die)
     }
-  }
-
-  const handleCancelInspiration = () => {
-    closeInspiration()
   }
 
   const handlePurchaseSong = (card: DraftCard) => {
@@ -155,6 +142,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     useGameStore.getState().addDiceToPlayer(playerId, selectedDie, songId, slotIndex)
     setSelectedDie(null)
   }
+
+  // Show which dice tiers are locked
+  const d12Locked = collectiveFame < D12_FAME_THRESHOLD
+  const d20Locked = collectiveFame < D20_FAME_THRESHOLD
 
   return (
     <div className="modal-overlay">
@@ -233,68 +224,55 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </div>
           )}
 
-          {/* Find Inspiration section */}
+          {/* Dice selection */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
                   Find Inspiration
                 </div>
+                {(d12Locked || d20Locked) && (
+                  <div className="text-[10px] text-parchment-500">
+                    {d12Locked && <span>d12 unlocks at {D12_FAME_THRESHOLD} fame</span>}
+                    {d12Locked && d20Locked && <span className="mx-1">&middot;</span>}
+                    {d20Locked && <span>d20 unlocks at {D20_FAME_THRESHOLD} fame</span>}
+                  </div>
+                )}
               </div>
+              <button
+                onClick={handleRerollInspiration}
+                disabled={player.exp < rerollCost}
+                className="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Seek New ({rerollCost} EXP)
+              </button>
             </div>
 
-            {!inspirationActive ? (
-              <button
-                onClick={handleFindInspiration}
-                disabled={!player || player.exp < inspirationCost}
-                className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Seek Inspiration ({inspirationCost === 0 ? 'Free' : `${inspirationCost} EXP`})
-              </button>
-            ) : (
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                  {inspirationRevealed.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className={`card relative transition-all duration-200 ${player.exp < item.cost ? 'opacity-40' : 'hover:shadow-card-hover cursor-pointer'}`}
-                      onClick={() => handleSelectInspirationDie(idx)}
-                    >
-                      <div className="flex justify-between items-center mb-3 pb-2" style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}>
-                        <GenreBadge genre={item.dice.genre} className="text-xs" />
-                        <span className="text-gold-300 font-bold text-sm">{item.cost} EXP</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-2 mb-3">
-                        <div className="text-4xl text-gold-400">{diceIcons[item.dice.type]}</div>
-                        <div className="text-sm font-medieval text-parchment-200">{item.dice.type}</div>
-                        <div className="text-xs text-parchment-400">Range: 1-{getMaxValue(item.dice.type)}</div>
-                      </div>
-                      <button
-                        disabled={player.exp < item.cost}
-                        className="btn-primary w-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {player.exp >= item.cost ? 'Take' : 'Not Available'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {inspirationRevealed.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`card relative transition-all duration-200 ${player.exp < item.cost ? 'opacity-40' : 'hover:shadow-card-hover cursor-pointer'}`}
+                  onClick={() => handleSelectInspirationDie(idx)}
+                >
+                  <div className="flex justify-between items-center mb-3 pb-2" style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}>
+                    <GenreBadge genre={item.dice.genre} className="text-xs" />
+                    <span className="text-gold-300 font-bold text-sm">{item.cost} EXP</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 mb-3">
+                    <div className="text-4xl text-gold-400">{diceIcons[item.dice.type]}</div>
+                    <div className="text-sm font-medieval text-parchment-200">{item.dice.type}</div>
+                    <div className="text-xs text-parchment-400">Range: 1-{getMaxValue(item.dice.type)}</div>
+                  </div>
                   <button
-                    onClick={handleRerollInspiration}
-                    disabled={player.exp < rerollCost}
-                    className="btn-secondary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={player.exp < item.cost}
+                    className="btn-primary w-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    Re-roll ({rerollCost} EXP)
-                  </button>
-                  <button
-                    onClick={handleCancelInspiration}
-                    className="btn-secondary text-sm"
-                  >
-                    Cancel
+                    {player.exp >= item.cost ? 'Take' : 'Not Available'}
                   </button>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
 
           {/* Song cards */}
@@ -340,7 +318,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 ({player.songs.length}/{MAX_SONGS})
                 {selectedDie
                   ? ' — click any slot to place die (replace existing = remix)'
-                  : ' — find inspiration to get dice'
+                  : ' — take a die above to slot it here'
                 }
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
