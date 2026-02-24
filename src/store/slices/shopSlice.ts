@@ -1,18 +1,18 @@
 import { StateCreator } from 'zustand'
 import { DraftCard, Dice, InspirationDie, Genre } from '@/types'
 import {
-  generateSongCard,
+  generateNameCard,
   createInspirationPool,
   drawInspirationDice,
   getAllowedDiceTypes,
 } from '@/data/draftCards'
 
-const SONG_POOL_SIZE = 2
+const NAME_POOL_SIZE = 2
 const INSPIRATION_DRAW_COUNT = 4
 
 export interface ShopSlice {
   // State
-  songPool: DraftCard[]
+  namePool: DraftCard[]
   inspirationPool: Dice[]
   inspirationRevealed: InspirationDie[]
   inspirationRollCount: number
@@ -23,30 +23,30 @@ export interface ShopSlice {
   rerollInspiration: (playerGenreCounts?: Record<Genre, number>, collectiveFame?: number) => void
   purchaseInspirationDie: (dieIndex: number, playerGenreCounts?: Record<Genre, number>, collectiveFame?: number) => Dice | null
   closeInspiration: () => void
-  purchaseFromSongPool: (cardId: string) => void
-  refreshSongPool: () => void
+  purchaseFromNamePool: (cardId: string) => void
+  refreshNamePool: () => void
   resetShop: () => void
 }
 
 export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
   // Initial state
-  songPool: [],
+  namePool: [],
   inspirationPool: [],
   inspirationRevealed: [],
   inspirationRollCount: 0,
 
   // Actions
   initializeShop: (numPlayers, collectiveFame = 0) => {
-    const songPool: DraftCard[] = []
-    for (let i = 0; i < SONG_POOL_SIZE; i++) {
-      songPool.push(generateSongCard())
+    const namePool: DraftCard[] = []
+    for (let i = 0; i < NAME_POOL_SIZE; i++) {
+      namePool.push(generateNameCard())
     }
 
     const fullPool = createInspirationPool(numPlayers)
     const allowedTypes = getAllowedDiceTypes(collectiveFame)
     const { drawn, remainingPool } = drawInspirationDice(fullPool, INSPIRATION_DRAW_COUNT, undefined, allowedTypes)
 
-    set({ songPool, inspirationPool: remainingPool, inspirationRevealed: drawn, inspirationRollCount: 0 })
+    set({ namePool, inspirationPool: remainingPool, inspirationRevealed: drawn, inspirationRollCount: 0 })
   },
 
   findInspiration: (playerGenreCounts, collectiveFame = 0) => {
@@ -110,26 +110,26 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
     })
   },
 
-  purchaseFromSongPool: (cardId) => {
-    const pool = get().songPool
+  purchaseFromNamePool: (cardId) => {
+    const pool = get().namePool
     set({
-      songPool: pool.map((card) =>
-        card.id === cardId ? generateSongCard() : card
+      namePool: pool.map((card) =>
+        card.id === cardId ? generateNameCard() : card
       ),
     })
   },
 
-  refreshSongPool: () => {
-    const songPool: DraftCard[] = []
-    for (let i = 0; i < SONG_POOL_SIZE; i++) {
-      songPool.push(generateSongCard())
+  refreshNamePool: () => {
+    const namePool: DraftCard[] = []
+    for (let i = 0; i < NAME_POOL_SIZE; i++) {
+      namePool.push(generateNameCard())
     }
-    set({ songPool })
+    set({ namePool })
   },
 
   resetShop: () => {
     set({
-      songPool: [],
+      namePool: [],
       inspirationPool: [],
       inspirationRevealed: [],
       inspirationRollCount: 0,

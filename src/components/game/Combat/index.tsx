@@ -39,7 +39,8 @@ export function CombatModal() {
   if (!isActive || !player) return null
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
-  const canContinue = songsUsed.length < player.songs.length
+  const playableSongs = player.songs.filter((s) => s.slots.some((slot) => slot.dice))
+  const canContinue = songsUsed.length < playableSongs.length
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
   const totalExp = calculateTotalMonsterExp(monsters)
   const isCombatOver = allMonstersDefeated || !canContinue
@@ -128,7 +129,7 @@ export function CombatModal() {
           <div className="mb-8">
             <SectionHeader
               label="Your Songs"
-              detail={`${player.songs.length - songsUsed.length} remaining`}
+              detail={`${playableSongs.length - songsUsed.length} remaining`}
               detailColor="text-gold-400"
             />
             <div className="flex gap-5 overflow-x-auto pb-2 -mx-1 px-1">

@@ -3,7 +3,7 @@ import {
   createInspirationPool,
   drawInspirationDice,
   getInspirationCost,
-  generateSongCard,
+  generateNameCard,
   getAllowedDiceTypes,
   SINGLE_DICE_COSTS,
   D12_FAME_THRESHOLD,
@@ -136,24 +136,24 @@ describe('Inspiration System', () => {
     })
   })
 
-  describe('generateSongCard', () => {
-    it('should generate a song card with correct type', () => {
-      const card = generateSongCard()
-      expect(card.type).toBe('song')
+  describe('generateNameCard', () => {
+    it('should generate a name card with correct type', () => {
+      const card = generateNameCard()
+      expect(card.type).toBe('name')
     })
 
     it('should cost 10 EXP', () => {
-      const card = generateSongCard()
+      const card = generateNameCard()
       expect(card.cost).toBe(10)
     })
 
     it('should have a song name', () => {
-      const card = generateSongCard()
+      const card = generateNameCard()
       expect(card.songName).toBeTruthy()
     })
 
     it('should have two effects', () => {
-      const card = generateSongCard()
+      const card = generateNameCard()
       expect(card.songEffect).toBeDefined()
       expect(card.songEffect2).toBeDefined()
     })

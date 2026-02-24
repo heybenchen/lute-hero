@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand'
-import { Player, Genre, Song, Dice, SongSlot } from '@/types'
-import { createStarterSong } from '@/data/startingData'
+import { Player, Genre, Dice, SongSlot, TrackEffect } from '@/types'
+import { createStarterSongs } from '@/data/startingData'
 import {
   awardFame,
   awardExp,
@@ -18,8 +18,7 @@ export interface PlayersSlice {
   movePlayer: (playerId: string, newSpaceId: number) => void
   usePlayerFight: (playerId: string) => void
   updatePlayer: (playerId: string, updates: Partial<Player>) => void
-  addSongToPlayer: (playerId: string, song: Song) => void
-  replaceSongForPlayer: (playerId: string, oldSongId: string, newSong: Song) => void
+  applyNameToSong: (playerId: string, songId: string, name: string, effects: TrackEffect[]) => void
   addDiceToPlayer: (playerId: string, dice: Dice, songId: string, slotIndex: number) => void
   awardPlayerFame: (playerId: string, amount: number) => void
   awardPlayerExp: (playerId: string, amount: number) => void
@@ -41,14 +40,14 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
   initializePlayers: (playerConfigs) => {
     const players: Player[] = playerConfigs.map((config, index) => {
       const playerId = `player-${index + 1}`
-      const starterSong = createStarterSong(config.starterGenre, playerId)
+      const starterSongs = createStarterSongs(config.starterGenre, playerId)
 
       return {
         id: playerId,
         name: config.name,
         color: config.color || PLAYER_COLORS[index] || '#888888',
         position: STARTING_POSITIONS[index] || 0,
-        songs: [starterSong],
+        songs: starterSongs,
         exp: 0,
         fame: 0,
         monstersDefeated: 0,
@@ -87,21 +86,16 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
     })
   },
 
-  addSongToPlayer: (playerId, song) => {
-    set({
-      players: get().players.map((p) =>
-        p.id === playerId ? { ...p, songs: [...p.songs, song] } : p
-      ),
-    })
-  },
-
-  replaceSongForPlayer: (playerId, oldSongId, newSong) => {
+  applyNameToSong: (playerId, songId, name, effects) => {
     set({
       players: get().players.map((p) => {
         if (p.id !== playerId) return p
         return {
           ...p,
-          songs: p.songs.map((s) => (s.id === oldSongId ? newSong : s)),
+          songs: p.songs.map((s) => {
+            if (s.id !== songId) return s
+            return { ...s, name, effects }
+          }),
         }
       }),
     })

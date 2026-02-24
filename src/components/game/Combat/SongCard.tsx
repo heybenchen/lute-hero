@@ -11,6 +11,7 @@ interface SongCardProps {
 
 export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
   const hasEffects = song.effects.length > 0
+  const hasDice = song.slots.some((s) => s.dice)
   const filledSlots = song.slots.filter((s) => s.dice).length
 
   return (
@@ -42,8 +43,8 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
         <div className="p-5">
           {/* Song title */}
           <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="font-medieval text-lg font-bold text-gold-400 truncate leading-tight flex-1">
-              {song.name}
+            <div className={`font-medieval text-lg font-bold truncate leading-tight flex-1 ${song.name ? 'text-gold-400' : 'text-parchment-500 italic'}`}>
+              {song.name || 'Untitled'}
             </div>
             <div className="text-sm text-parchment-500 flex-shrink-0 tabular-nums">
               {filledSlots}/2
@@ -104,7 +105,7 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
           {/* Play button */}
           <button
             onClick={onPlay}
-            disabled={disabled || song.used}
+            disabled={disabled || song.used || !hasDice}
             className="w-full py-3 font-medieval font-bold rounded-lg transition-all duration-200 text-base disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               background: song.used
@@ -118,7 +119,7 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
               boxShadow: song.used ? 'none' : '0 2px 8px rgba(0,0,0,0.3)',
             }}
           >
-            {song.used ? '\u2713 Played' : '\u266B Perform'}
+            {song.used ? '\u2713 Played' : !hasDice ? 'No Dice' : '\u266B Perform'}
           </button>
         </div>
 
