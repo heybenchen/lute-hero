@@ -4,9 +4,11 @@ import {
   generateSongCard,
   createInspirationPool,
   drawInspirationDice,
+  getAllowedDiceTypes,
 } from '@/data/draftCards'
 
 const SONG_POOL_SIZE = 2
+const INSPIRATION_DRAW_COUNT = 4
 
 export interface ShopSlice {
   // State
@@ -16,10 +18,10 @@ export interface ShopSlice {
   inspirationRollCount: number
 
   // Actions
-  initializeShop: (numPlayers: number) => void
-  findInspiration: (playerGenreCounts?: Record<Genre, number>) => void
-  rerollInspiration: (playerGenreCounts?: Record<Genre, number>) => void
-  purchaseInspirationDie: (dieIndex: number) => Dice | null
+  initializeShop: (numPlayers: number, collectiveFame?: number) => void
+  findInspiration: (playerGenreCounts?: Record<Genre, number>, collectiveFame?: number) => void
+  rerollInspiration: (playerGenreCounts?: Record<Genre, number>, collectiveFame?: number) => void
+  purchaseInspirationDie: (dieIndex: number, playerGenreCounts?: Record<Genre, number>, collectiveFame?: number) => Dice | null
   closeInspiration: () => void
   purchaseFromSongPool: (cardId: string) => void
   refreshSongPool: () => void
@@ -34,20 +36,23 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
   inspirationRollCount: 0,
 
   // Actions
-  initializeShop: (numPlayers) => {
+  initializeShop: (numPlayers, collectiveFame = 0) => {
     const songPool: DraftCard[] = []
     for (let i = 0; i < SONG_POOL_SIZE; i++) {
       songPool.push(generateSongCard())
     }
 
-    const inspirationPool = createInspirationPool(numPlayers)
+    const fullPool = createInspirationPool(numPlayers)
+    const allowedTypes = getAllowedDiceTypes(collectiveFame)
+    const { drawn, remainingPool } = drawInspirationDice(fullPool, INSPIRATION_DRAW_COUNT, undefined, allowedTypes)
 
-    set({ songPool, inspirationPool, inspirationRevealed: [], inspirationRollCount: 0 })
+    set({ songPool, inspirationPool: remainingPool, inspirationRevealed: drawn, inspirationRollCount: 0 })
   },
 
-  findInspiration: (playerGenreCounts) => {
+  findInspiration: (playerGenreCounts, collectiveFame = 0) => {
     const pool = get().inspirationPool
-    const { drawn, remainingPool } = drawInspirationDice(pool, 3, playerGenreCounts)
+    const allowedTypes = getAllowedDiceTypes(collectiveFame)
+    const { drawn, remainingPool } = drawInspirationDice(pool, INSPIRATION_DRAW_COUNT, playerGenreCounts, allowedTypes)
 
     set({
       inspirationPool: remainingPool,
@@ -55,12 +60,12 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
     })
   },
 
-  rerollInspiration: (playerGenreCounts) => {
-    // Return currently revealed dice to pool
+  rerollInspiration: (playerGenreCounts, collectiveFame = 0) => {
+    // Return currently revealed dice to pool before drawing new ones
     const pool = [...get().inspirationPool, ...get().inspirationRevealed.map((d) => d.dice)]
     const rollCount = get().inspirationRollCount + 1
-
-    const { drawn, remainingPool } = drawInspirationDice(pool, 3, playerGenreCounts)
+    const allowedTypes = getAllowedDiceTypes(collectiveFame)
+    const { drawn, remainingPool } = drawInspirationDice(pool, INSPIRATION_DRAW_COUNT, playerGenreCounts, allowedTypes)
 
     set({
       inspirationPool: remainingPool,
@@ -69,17 +74,26 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
     })
   },
 
-  purchaseInspirationDie: (dieIndex) => {
+  purchaseInspirationDie: (dieIndex, playerGenreCounts, collectiveFame = 0) => {
     const revealed = get().inspirationRevealed
     if (dieIndex < 0 || dieIndex >= revealed.length) return null
 
     const selected = revealed[dieIndex]
-    // Return unchosen dice to pool
-    const unchosen = revealed.filter((_, idx) => idx !== dieIndex).map((d) => d.dice)
+    const remainingRevealed = revealed.filter((_, idx) => idx !== dieIndex)
+
+    // Draw 1 replacement die to keep 4 shown
+    const pool = get().inspirationPool
+    const allowedTypes = getAllowedDiceTypes(collectiveFame)
+    const { drawn, remainingPool } = drawInspirationDice(pool, 1, playerGenreCounts, allowedTypes)
+    const replacement = drawn[0]
+
+    const newRevealed: InspirationDie[] = replacement
+      ? [...remainingRevealed, replacement]
+      : remainingRevealed
 
     set({
-      inspirationPool: [...get().inspirationPool, ...unchosen],
-      inspirationRevealed: [],
+      inspirationPool: remainingPool,
+      inspirationRevealed: newRevealed,
       inspirationRollCount: 0,
     })
 
