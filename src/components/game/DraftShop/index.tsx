@@ -148,7 +148,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </button>
           </div>
 
-          {/* Pending name application */}
+          {/* Pending name — click a song below to apply */}
           {pendingName && (
             <div className="rounded-lg p-4 mb-6 animate-fade-in"
               style={{
@@ -157,31 +157,17 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               }}
             >
               <div className="font-bold text-classical mb-2 text-sm">
-                Choose a song to name "{pendingName.name}":
+                Click a song below to name it "{pendingName.name}":
               </div>
-              <div className="flex gap-3 flex-wrap">
-                {player.songs.map((song) => (
-                  <button
-                    key={song.id}
-                    onClick={() => handleApplyName(song.id)}
-                    className="px-4 py-2 rounded-lg font-medieval text-sm transition-all duration-150 hover:scale-105"
-                    style={{
-                      background: 'rgba(176, 124, 255, 0.1)',
-                      border: '1px solid rgba(176, 124, 255, 0.3)',
-                      color: '#d4b0ff',
-                    }}
-                  >
-                    {song.name || 'Untitled Song'}
-                    {song.name && <span className="text-xs text-parchment-500 ml-1">(rename)</span>}
-                  </button>
+              <div className="flex gap-3 items-center">
+                {pendingName.effects.map((effect, idx) => (
+                  <span key={idx} className="text-xs text-classical/80">
+                    {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
+                  </span>
                 ))}
                 <button
                   onClick={() => setPendingName(null)}
-                  className="px-4 py-2 rounded-lg font-medieval text-sm text-parchment-500"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                  }}
+                  className="ml-auto text-xs text-parchment-500 hover:text-parchment-300"
                 >
                   Cancel
                 </button>
@@ -298,20 +284,33 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </div>
               <div className="text-xs text-parchment-500">
                 ({player.songs.length}/3)
-                {selectedDie
+                {pendingName
+                  ? ' — click a song to apply name'
+                  : selectedDie
                   ? ' — click any slot to place die (replace existing = remix)'
-                  : ' — take a die above to slot it here'
+                  : ' — take a die or name above to slot it here'
                 }
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {player.songs.map((song) => (
-                <div key={song.id} className="card">
+                <div
+                  key={song.id}
+                  className={`card transition-all duration-150 ${pendingName ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+                  style={pendingName ? {
+                    border: '1px solid rgba(176, 124, 255, 0.4)',
+                    boxShadow: '0 0 12px rgba(176, 124, 255, 0.1)',
+                  } : undefined}
+                  onClick={() => pendingName && handleApplyName(song.id)}
+                >
                   <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-2"
                     style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
                   >
                     {song.name || <span className="text-parchment-500 italic">Untitled</span>}
+                    {pendingName && song.name && (
+                      <span className="text-xs text-classical/60 font-normal ml-1">(rename)</span>
+                    )}
                   </div>
 
                   {/* Show song effects */}
