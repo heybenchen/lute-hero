@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { DraftCard } from '@/types'
-import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
+import { TRACK_EFFECT_NAMES, TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 
 interface DraftCardDisplayProps {
   card: DraftCard
@@ -37,22 +37,14 @@ export function DraftCardDisplay({
         </div>
         <div className="space-y-1 text-xs">
           {card.songEffect && (
-            <div className="p-1.5 rounded flex items-center gap-2"
+            <div className="p-2 rounded flex flex-col gap-0.5"
               style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
             >
-              <span className="font-bold text-classical shrink-0">1:</span>
-              <span className="text-classical/80 truncate">
-                {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type] || card.songEffect.type}
+              <span className="font-bold text-classical text-xs">
+                {TRACK_EFFECT_NAMES[card.songEffect.type] || card.songEffect.type}
               </span>
-            </div>
-          )}
-          {card.songEffect2 && (
-            <div className="p-1.5 rounded flex items-center gap-2"
-              style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
-            >
-              <span className="font-bold text-classical shrink-0">2:</span>
-              <span className="text-classical/80 truncate">
-                {TRACK_EFFECT_DESCRIPTIONS[card.songEffect2.type] || card.songEffect2.type}
+              <span className="text-parchment-400 text-[11px]">
+                {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type]}
               </span>
             </div>
           )}
@@ -60,7 +52,7 @@ export function DraftCardDisplay({
       </div>
 
       {/* Tooltip for songs */}
-      {showTooltip && (card.songEffect || card.songEffect2) && (
+      {showTooltip && card.songEffect && (
         <div className="absolute z-50 p-3 rounded-lg shadow-2xl left-1/2 transform -translate-x-1/2 -top-2 -translate-y-full w-52 animate-fade-in"
           style={{
             background: 'linear-gradient(135deg, #2a2118, #1a1410)',
@@ -69,24 +61,16 @@ export function DraftCardDisplay({
         >
           <div className="font-bold mb-2 text-center text-gold-400 text-sm truncate">{card.songName}</div>
           <div className="text-xs space-y-1.5 text-parchment-300">
-            {card.songEffect && (
-              <div className="flex items-start gap-2">
-                <span className="text-classical font-bold shrink-0">Effect 1:</span>
-                <span className="text-[11px]">
-                  {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type] || card.songEffect.type}
-                </span>
-              </div>
-            )}
-            {card.songEffect2 && (
-              <div className="flex items-start gap-2">
-                <span className="text-classical font-bold shrink-0">Effect 2:</span>
-                <span className="text-[11px]">
-                  {TRACK_EFFECT_DESCRIPTIONS[card.songEffect2.type] || card.songEffect2.type}
-                </span>
-              </div>
-            )}
+            <div className="flex flex-col gap-0.5">
+              <span className="text-classical font-bold">
+                {TRACK_EFFECT_NAMES[card.songEffect.type] || card.songEffect.type}
+              </span>
+              <span className="text-[11px] text-parchment-400">
+                {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type]}
+              </span>
+            </div>
             <div className="text-[10px] text-parchment-400 pt-2" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.15)' }}>
-              Apply this name to one of your songs to grant its effects
+              Apply this name to one of your songs to grant its effect
             </div>
           </div>
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">

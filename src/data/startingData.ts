@@ -52,9 +52,9 @@ export function createStarterSongs(genre: Genre, playerId: string): Song[] {
 // Dice upgrade path
 export const DICE_UPGRADE_PATH: { [key in DiceType]: DiceType | null } = {
   d4: "d6",
-  d6: "d12",
-  d12: "d20",
-  d20: null, // Max level
+  d6: "d8",
+  d8: "d12",
+  d12: null, // Max level
 };
 
 // Fame thresholds for phase transitions (tuned for ~6-8 round games)

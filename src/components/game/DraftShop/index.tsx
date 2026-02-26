@@ -5,13 +5,13 @@ import { DraftCardDisplay } from './DraftCardDisplay'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
-import { getInspirationCost, D12_FAME_THRESHOLD, D20_FAME_THRESHOLD } from '@/data/draftCards'
+import { getInspirationCost, D12_FAME_THRESHOLD, D8_FAME_THRESHOLD } from '@/data/draftCards'
 
 const diceIcons: Record<DiceType, string> = {
   d4: '\u25B3',
   d6: '\u2684',
+  d8: '\u2B21',
   d12: '\u2B22',
-  d20: '\u2B1F',
 }
 
 interface DraftShopProps {
@@ -97,10 +97,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const handlePurchaseName = (card: DraftCard) => {
     if (!player || player.exp < card.cost) return
 
-    const effects: TrackEffect[] = [
-      ...(card.songEffect ? [card.songEffect] : []),
-      ...(card.songEffect2 ? [card.songEffect2] : []),
-    ]
+    const effects: TrackEffect[] = card.songEffect ? [card.songEffect] : []
 
     awardPlayerExp(playerId, -card.cost)
     setPendingName({ name: card.songName || 'New Song', effects, cardId: card.id })
@@ -126,8 +123,8 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   }
 
   // Show which dice tiers are locked
+  const d8Locked = collectiveFame < D8_FAME_THRESHOLD
   const d12Locked = collectiveFame < D12_FAME_THRESHOLD
-  const d20Locked = collectiveFame < D20_FAME_THRESHOLD
 
   return (
     <div className="modal-overlay">
@@ -200,11 +197,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
                   Find Inspiration
                 </div>
-                {(d12Locked || d20Locked) && (
+                {(d8Locked || d12Locked) && (
                   <div className="text-[10px] text-parchment-500">
+                    {d8Locked && <span>d8 unlocks at {D8_FAME_THRESHOLD} fame</span>}
+                    {d8Locked && d12Locked && <span className="mx-1">&middot;</span>}
                     {d12Locked && <span>d12 unlocks at {D12_FAME_THRESHOLD} fame</span>}
-                    {d12Locked && d20Locked && <span className="mx-1">&middot;</span>}
-                    {d20Locked && <span>d20 unlocks at {D20_FAME_THRESHOLD} fame</span>}
                   </div>
                 )}
               </div>

@@ -15,8 +15,8 @@ describe('Dice Roller', () => {
     it('should return correct max values for each dice type', () => {
       expect(getMaxValue('d4')).toBe(4)
       expect(getMaxValue('d6')).toBe(6)
+      expect(getMaxValue('d8')).toBe(8)
       expect(getMaxValue('d12')).toBe(12)
-      expect(getMaxValue('d20')).toBe(20)
     })
   })
 
@@ -28,7 +28,7 @@ describe('Dice Roller', () => {
 
   describe('rollDie', () => {
     it('should return a value between 1 and max', () => {
-      const diceTypes: DiceType[] = ['d4', 'd6', 'd12', 'd20']
+      const diceTypes: DiceType[] = ['d4', 'd6', 'd8', 'd12']
 
       diceTypes.forEach((type) => {
         const max = getMaxValue(type)
@@ -43,7 +43,7 @@ describe('Dice Roller', () => {
     it('should produce different results over multiple rolls', () => {
       const results = new Set()
       for (let i = 0; i < 20; i++) {
-        results.add(rollDie('d20'))
+        results.add(rollDie('d12'))
       }
       // Should have at least some variety
       expect(results.size).toBeGreaterThan(1)
@@ -112,8 +112,8 @@ describe('Dice Roller', () => {
       expect(flipDiceValue(1, 'd6')).toBe(6)
       expect(flipDiceValue(6, 'd6')).toBe(1)
       expect(flipDiceValue(3, 'd6')).toBe(4)
-      expect(flipDiceValue(4, 'd20')).toBe(17)
-      expect(flipDiceValue(20, 'd20')).toBe(1)
+      expect(flipDiceValue(3, 'd8')).toBe(6)
+      expect(flipDiceValue(8, 'd8')).toBe(1)
     })
   })
 

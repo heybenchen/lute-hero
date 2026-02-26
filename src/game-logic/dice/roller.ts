@@ -9,10 +9,10 @@ export function getMaxValue(diceType: DiceType): number {
       return 4
     case 'd6':
       return 6
+    case 'd8':
+      return 8
     case 'd12':
       return 12
-    case 'd20':
-      return 20
   }
 }
 

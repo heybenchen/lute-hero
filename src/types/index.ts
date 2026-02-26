@@ -4,7 +4,7 @@
 
 export type Genre = "Ballad" | "Folk" | "Hymn" | "Shanty";
 
-export type DiceType = "d4" | "d6" | "d12" | "d20";
+export type DiceType = "d4" | "d6" | "d8" | "d12";
 
 export type GamePhase = "setup" | "main" | "underground" | "finalBoss" | "gameOver";
 
@@ -29,15 +29,21 @@ export interface DiceRoll {
 export type TrackEffect =
   | { type: "freeReroll"; used: boolean }
   | { type: "upgrade"; used: boolean } // d4 -> d6 -> d12 -> d20
-  | { type: "flip" } // Roll 3 on d20 becomes 17
+  | { type: "flip" } // Only flips if it nets a higher value
   | { type: "addFlat"; amount: number }
-  | { type: "rerollOnes" }
   | { type: "addDice"; diceType: DiceType; used: boolean }
   | { type: "rollTwiceKeepHigher" }
-  | { type: "explosive" } // Crit triggers another roll
+  | { type: "explosive" } // Max roll triggers another roll
   | { type: "harmonize"; bonusDamage: number } // Bonus if 2+ dice roll same value
-  | { type: "gamble" } // Roll d12; keep if higher, else deal 0
-  | { type: "offbeat" }; // Odd rolls 2x damage, even rolls 0.5x damage
+  | { type: "offbeat" } // Odd rolls 2x damage, even rolls 0.5x damage
+  | { type: "wildDice"; used: boolean } // Once per song: add one extra d4 roll
+  | { type: "tempo" } // Add the lowest die's result as bonus damage
+  | { type: "dynamicRange" } // |die1 - die2| >= 6: +4 damage
+  | { type: "dropTheBass" } // Both primary dice roll 1: +9 damage
+  | { type: "lucky7" } // Any die shows 7: +3 damage
+  | { type: "powerChord" } // Each 3 rolled deals double (6) damage
+  | { type: "crescendo" } // Total roll >= 15: +5 damage
+  | { type: "monoOut" }; // Roll once, apply to both slots (both must be filled)
 
 export interface SongSlot {
   dice: Dice | null;
@@ -129,7 +135,6 @@ export interface DraftCard {
   cost: number;
   songName?: string;
   songEffect?: TrackEffect;
-  songEffect2?: TrackEffect;
 }
 
 // ============================================

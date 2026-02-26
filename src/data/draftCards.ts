@@ -11,13 +11,13 @@ function generateCardId(): string {
 export const SINGLE_DICE_COSTS: Record<DiceType, number> = {
   d4: 4,
   d6: 6,
+  d8: 8,
   d12: 12,
-  d20: 18,
 };
 
 // Collective fame required to unlock higher dice tiers
-export const D12_FAME_THRESHOLD = 20;
-export const D20_FAME_THRESHOLD = 40;
+export const D12_FAME_THRESHOLD = 50;
+export const D8_FAME_THRESHOLD = 25;
 
 // Inspiration re-roll cost: 10 EXP for first seek, escalates by 10 each re-roll
 export const INSPIRATION_BASE_COST = 10;
@@ -28,12 +28,12 @@ export function getInspirationCost(rollCount: number): number {
 
 /**
  * Returns the dice types currently purchasable based on collective fame.
- * d12 unlocks at 20 fame, d20 at 40 fame.
+ * d8 unlocks at 25 fame, d12 at 50 fame.
  */
 export function getAllowedDiceTypes(collectiveFame: number): DiceType[] {
   const types: DiceType[] = ["d4", "d6"];
+  if (collectiveFame >= D8_FAME_THRESHOLD) types.push("d8");
   if (collectiveFame >= D12_FAME_THRESHOLD) types.push("d12");
-  if (collectiveFame >= D20_FAME_THRESHOLD) types.push("d20");
   return types;
 }
 
@@ -43,7 +43,7 @@ export function getAllowedDiceTypes(collectiveFame: number): DiceType[] {
  */
 export function createInspirationPool(numPlayers: number): Dice[] {
   const pool: Dice[] = [];
-  const diceTypes: DiceType[] = ["d4", "d6", "d12", "d20"];
+  const diceTypes: DiceType[] = ["d4", "d6", "d8", "d12"];
   const genres: Genre[] = ["Ballad", "Folk", "Hymn", "Shanty"];
   const copiesPerPlayer = 2;
 
@@ -120,8 +120,7 @@ export function drawInspirationDice(
 
 export function generateNameCard(): DraftCard {
   const effects = Object.keys(TRACK_EFFECTS);
-  const randomEffect1 = effects[Math.floor(Math.random() * effects.length)];
-  const randomEffect2 = effects[Math.floor(Math.random() * effects.length)];
+  const randomEffect = effects[Math.floor(Math.random() * effects.length)];
 
   const songNames = [
     "Acoustic Serenade",
@@ -141,7 +140,6 @@ export function generateNameCard(): DraftCard {
     type: "name",
     cost: 10,
     songName: songNames[Math.floor(Math.random() * songNames.length)],
-    songEffect: TRACK_EFFECTS[randomEffect1],
-    songEffect2: TRACK_EFFECTS[randomEffect2],
+    songEffect: TRACK_EFFECTS[randomEffect],
   };
 }
