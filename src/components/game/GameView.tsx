@@ -33,7 +33,7 @@ export function GameView() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setShowMenu(true)}
-            className="px-3 py-1.5 rounded-lg font-medieval text-xs text-parchment-400 transition-all duration-150 hover:text-gold-400"
+            className="px-3 py-1.5 rounded-lg font-medieval text-sm text-parchment-400 transition-all duration-150 hover:text-gold-400"
             style={{
               background: 'rgba(61, 48, 32, 0.4)',
               border: '1px solid rgba(212, 168, 83, 0.15)',
@@ -71,13 +71,13 @@ export function GameView() {
             <div className="space-y-3">
               <button
                 onClick={() => setShowMenu(false)}
-                className="btn-secondary w-full text-sm py-3"
+                className="btn-secondary w-full py-3"
               >
                 Resume Game
               </button>
               <button
                 onClick={handleNewGame}
-                className="w-full text-sm py-3 font-medieval font-bold rounded-lg transition-all duration-200"
+                className="w-full py-3 font-medieval font-bold rounded-lg transition-all duration-200"
                 style={{
                   background: 'linear-gradient(135deg, #8c3d3d, #6e2d2d)',
                   border: '1px solid rgba(220, 100, 100, 0.4)',

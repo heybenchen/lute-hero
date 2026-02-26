@@ -118,7 +118,7 @@ export function Board() {
         {(zoom !== 1 || pan.x !== 0 || pan.y !== 0) && (
           <button
             onClick={handleReset}
-            className="px-2 py-1 rounded-md font-medieval text-[10px] text-parchment-400 hover:text-gold-400 transition-colors"
+            className="px-2 py-1 rounded-md font-medieval text-xs text-parchment-400 hover:text-gold-400 transition-colors"
             style={{
               background: 'rgba(42, 33, 24, 0.8)',
               border: '1px solid rgba(212, 168, 83, 0.2)',

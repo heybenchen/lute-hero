@@ -32,8 +32,8 @@ export function CurrentPlayerDisplay() {
 
         {/* Player name */}
         <div className="flex-shrink-0">
-          <div className="font-medieval text-sm font-bold text-gold-400">{currentPlayer.name}</div>
-          <div className="text-[10px] text-parchment-400">Songs</div>
+          <div className="font-medieval text-base font-bold text-gold-400">{currentPlayer.name}</div>
+          <div className="text-xs text-parchment-400">Songs</div>
         </div>
 
         {/* Divider */}
@@ -57,14 +57,14 @@ export function CurrentPlayerDisplay() {
                 }}
                 onMouseLeave={() => setHoveredSong(null)}
               >
-                <div className="h-4 text-[12px] font-bold text-parchment-400 mb-1 truncate max-w-[120px]">
+                <div className="h-5 text-sm font-bold text-parchment-400 mb-1 truncate max-w-[140px]">
                   {song.name}
                 </div>
                 <div className="flex gap-1">
                   {song.slots.map((slot, idx) => (
                     <div
                       key={idx}
-                      className="w-12 h-12 rounded flex flex-col items-center justify-center text-[8px]"
+                      className="w-14 h-14 rounded flex flex-col items-center justify-center text-[10px]"
                       style={{
                         background: slot.dice
                           ? "rgba(212, 168, 83, 0.15)"
@@ -79,12 +79,12 @@ export function CurrentPlayerDisplay() {
                           <div className="text-gold-400 text-[24px] leading-none">
                             {diceIcons[slot.dice.type]}
                           </div>
-                          <div className="font-bold text-[8px] text-parchment-300">
+                          <div className="font-bold text-[10px] text-parchment-300">
                             {slot.dice.genre}
                           </div>
                         </>
                       ) : (
-                        <div className="text-parchment-500/30 text-[8px]">-</div>
+                        <div className="text-parchment-500/30 text-[10px]">-</div>
                       )}
                     </div>
                   ))}
@@ -111,7 +111,7 @@ export function CurrentPlayerDisplay() {
             return (
               <>
                 <div className="font-medieval font-bold mb-2 text-gold-400">{song.name}</div>
-                <div className="space-y-2 text-xs">
+                <div className="space-y-2 text-sm">
                   {/* Dice slots */}
                   {song.slots.map((slot, idx) => (
                     <div
@@ -121,28 +121,28 @@ export function CurrentPlayerDisplay() {
                         borderBottom: "1px solid rgba(212, 168, 83, 0.12)",
                       }}
                     >
-                      <div className="font-bold text-parchment-400 text-[10px]">Slot {idx + 1}</div>
+                      <div className="font-bold text-parchment-400 text-xs">Slot {idx + 1}</div>
                       {slot.dice ? (
                         <div className="mt-0.5">
                           <div className="flex items-center gap-1">
-                            <span className="text-parchment-300 text-[11px]">{slot.dice.type}</span>
-                            <GenreBadge genre={slot.dice.genre} className="text-[7px] px-1 py-0" />
+                            <span className="text-parchment-300 text-xs">{slot.dice.type}</span>
+                            <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
                           </div>
-                          <div className="text-[10px] text-parchment-400">
+                          <div className="text-xs text-parchment-400">
                             Roll: 1-{getMaxValue(slot.dice.type)} (2x on max)
                           </div>
                         </div>
                       ) : (
-                        <div className="text-parchment-500 text-[10px]">Empty slot</div>
+                        <div className="text-parchment-500 text-xs">Empty slot</div>
                       )}
                     </div>
                   ))}
                   {/* Effects */}
                   {song.effects.length > 0 && (
                     <div className="pt-1">
-                      <div className="font-bold text-parchment-400 text-[10px] mb-1">Effects</div>
+                      <div className="font-bold text-parchment-400 text-xs mb-1">Effects</div>
                       {song.effects.map((effect, idx) => (
-                        <div key={`fx-${idx}`} className="text-classical text-[10px]">
+                        <div key={`fx-${idx}`} className="text-classical text-xs">
                           &#x2728; {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
                         </div>
                       ))}

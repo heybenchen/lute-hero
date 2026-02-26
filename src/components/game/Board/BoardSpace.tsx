@@ -31,7 +31,7 @@ export function BoardSpace({
       onClick={onClick}
       disabled={!canMoveTo}
       className={`
-        relative w-[90px] h-[90px] rounded-lg transition-all duration-200
+        relative w-[100px] h-[100px] rounded-lg transition-all duration-200
         flex flex-col justify-between p-2
         ${canMoveTo
           ? 'cursor-pointer hover:scale-110'
@@ -63,7 +63,7 @@ export function BoardSpace({
     >
       {/* Edge indicator */}
       {space.isEdge && (
-        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
           style={{
             background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
             border: '1px solid rgba(255,255,255,0.2)',
@@ -76,7 +76,7 @@ export function BoardSpace({
       )}
 
       {/* Space ID badge */}
-      <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+      <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
         style={{
           background: 'linear-gradient(135deg, #4e3d2a, #3d3020)',
           border: '1px solid rgba(212, 168, 83, 0.3)',
@@ -87,7 +87,7 @@ export function BoardSpace({
       </div>
 
       {/* Space name */}
-      <div className="text-[7px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
+      <div className="text-[9px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
         {space.name}
       </div>
 
@@ -101,11 +101,11 @@ export function BoardSpace({
             >
               &#x1F479;
             </div>
-            <div className="text-red-400 font-bold text-[10px]">
+            <div className="text-red-400 font-bold text-xs">
               x{space.monsters.length}
             </div>
             {/* Hover tooltip */}
-            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-48 rounded-lg p-2 shadow-xl text-xs pointer-events-none"
+            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-52 rounded-lg p-2.5 shadow-xl text-sm pointer-events-none"
               style={{
                 background: 'linear-gradient(135deg, #2a2118, #1a1410)',
                 border: '1px solid rgba(212, 168, 83, 0.3)',
@@ -114,7 +114,7 @@ export function BoardSpace({
               {space.monsters.map((monster, idx) => (
                 <div key={monster.id} className={`${idx > 0 ? 'mt-2 pt-2 border-t border-gold-500/20' : ''}`}>
                   <div className="font-bold text-gold-400">{monster.name}</div>
-                  <div className="text-[10px] mt-1 text-parchment-300">
+                  <div className="text-xs mt-1 text-parchment-300">
                     <div>HP: {monster.currentHP}/{monster.maxHP}</div>
                     {monster.vulnerability && (
                       <div className="text-green-400">Weak: {monster.vulnerability}</div>
@@ -133,7 +133,7 @@ export function BoardSpace({
         {!hasMonsters && potentialMonsters > 0 && (
           <div className="flex flex-col items-center opacity-60">
             <div className="text-amber-400 text-sm">&#x26A0;</div>
-            <div className="text-amber-400 font-bold text-[9px]">
+            <div className="text-amber-400 font-bold text-[10px]">
               {potentialMonsters}
             </div>
           </div>
@@ -148,7 +148,7 @@ export function BoardSpace({
               </span>
             ))}
             {space.genreTags.length > 4 && (
-              <span className="text-[7px] text-gold-500">+{space.genreTags.length - 4}</span>
+              <span className="text-[9px] text-gold-500">+{space.genreTags.length - 4}</span>
             )}
           </div>
         )}
@@ -160,7 +160,7 @@ export function BoardSpace({
           {playersHere.map((player) => (
             <div
               key={player.id}
-              className="player-avatar w-5 h-5 text-[9px]"
+              className="player-avatar w-6 h-6 text-[10px]"
               style={{ backgroundColor: player.color }}
               title={player.name}
             >

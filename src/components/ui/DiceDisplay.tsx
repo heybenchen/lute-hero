@@ -12,8 +12,8 @@ interface DiceDisplayProps {
 const diceIcons: Record<DiceType, string> = {
   d4: '\u25B3',
   d6: '\u2684',
+  d8: '\u2B21',
   d12: '\u2B22',
-  d20: '\u2B1F',
 }
 
 export function DiceDisplay({
@@ -43,7 +43,7 @@ export function DiceDisplay({
               {value}
             </div>
           )}
-          <GenreBadge genre={dice.genre} className="text-[8px] px-1 py-0" />
+          <GenreBadge genre={dice.genre} className="text-[10px] px-1 py-0" />
         </div>
       </div>
     )
@@ -67,7 +67,7 @@ export function DiceDisplay({
           </div>
         )}
         <div className="text-xs mt-0.5">
-          <GenreBadge genre={dice.genre} className="text-[8px] px-1 py-0" />
+          <GenreBadge genre={dice.genre} className="text-[10px] px-1 py-0" />
         </div>
       </div>
     </div>

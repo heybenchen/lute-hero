@@ -136,7 +136,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               <div className="font-display text-2xl text-gold-400">
                 Studio
               </div>
-              <p className="text-sm text-parchment-400">
+              <p className="text-base text-parchment-400">
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span> Available
               </p>
             </div>
@@ -153,12 +153,12 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 border: '1px solid rgba(176, 124, 255, 0.3)',
               }}
             >
-              <div className="font-bold text-classical mb-2 text-sm">
+              <div className="font-bold text-classical mb-2 text-base">
                 Click a song below to name it "{pendingName.name}":
               </div>
               <div className="flex gap-3 items-center">
                 {pendingName.effects.map((effect, idx) => (
-                  <span key={idx} className="text-xs text-classical/80">
+                  <span key={idx} className="text-sm text-classical/80">
                     {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
                   </span>
                 ))}
@@ -180,7 +180,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 border: '1px solid rgba(100, 180, 255, 0.3)',
               }}
             >
-              <div className="font-bold text-blue-300 mb-2 text-sm">
+              <div className="font-bold text-blue-300 mb-2 text-base">
                 Click a slot below to place your new die (Remix: you can replace existing dice):
               </div>
               <div className="flex gap-3 items-center">
@@ -194,11 +194,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-3">
-                <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+                <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
                   Find Inspiration
                 </div>
                 {(d8Locked || d12Locked) && (
-                  <div className="text-[10px] text-parchment-500">
+                  <div className="text-xs text-parchment-500">
                     {d8Locked && <span>d8 unlocks at {D8_FAME_THRESHOLD} fame</span>}
                     {d8Locked && d12Locked && <span className="mx-1">&middot;</span>}
                     {d12Locked && <span>d12 unlocks at {D12_FAME_THRESHOLD} fame</span>}
@@ -208,7 +208,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               <button
                 onClick={handleRerollInspiration}
                 disabled={player.exp < rerollCost}
-                className="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Seek New ({rerollCost} EXP)
               </button>
@@ -245,17 +245,17 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
-                <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+                <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
                   Song Names
                 </div>
-                <div className="text-xs text-parchment-500">
+                <div className="text-sm text-parchment-500">
                   ({namePool.length} available) &mdash; Names grant effects to your songs
                 </div>
               </div>
               <button
                 onClick={handleRefreshNames}
                 disabled={!player || player.exp < REFRESH_COST}
-                className="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
                 title={`Refresh name selection for ${REFRESH_COST} EXP`}
               >
                 Refresh ({REFRESH_COST} EXP)
@@ -276,10 +276,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
           {/* Player's songs */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+              <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
                 Your Songs
               </div>
-              <div className="text-xs text-parchment-500">
+              <div className="text-sm text-parchment-500">
                 ({player.songs.length}/3)
                 {pendingName
                   ? ' — click a song to apply name'
@@ -314,7 +314,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   {song.effects.length > 0 ? (
                     <div className="mb-2 space-y-0.5">
                       {song.effects.map((effect, idx) => (
-                        <div key={idx} className="p-1 rounded text-[11px] flex items-center gap-1.5"
+                        <div key={idx} className="p-1.5 rounded text-xs flex items-center gap-1.5"
                           style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
                         >
                           <span className="font-bold text-classical shrink-0">FX{idx + 1}:</span>
@@ -325,7 +325,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                       ))}
                     </div>
                   ) : (
-                    <div className="mb-2 p-1 rounded text-[11px] text-parchment-500 italic"
+                    <div className="mb-2 p-1.5 rounded text-xs text-parchment-500 italic"
                       style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
                     >
                       No effects — buy a name to add effects
@@ -361,7 +361,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                           {slot.dice ? (
                             <div className="text-center relative">
                               <div className="text-2xl mb-0.5 text-gold-400">{diceIcons[slot.dice.type]}</div>
-                              <div className="absolute -top-1 -right-3 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                              <div className="absolute -top-1 -right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                                 style={{
                                   background: 'linear-gradient(135deg, #b8922e, #d4a853)',
                                   color: '#1a1410',
@@ -370,13 +370,13 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                               >
                                 {getMaxValue(slot.dice.type)}
                               </div>
-                              <GenreBadge genre={slot.dice.genre} className="text-[7px] px-1 py-0" />
+                              <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
                             </div>
                           ) : (
-                            <div className="text-parchment-500/30 text-[10px]">Empty</div>
+                            <div className="text-parchment-500/30 text-xs">Empty</div>
                           )}
                           {selectedDie && slot.dice && (
-                            <div className="absolute bottom-1 text-[8px] text-orange-400 font-bold">
+                            <div className="absolute bottom-1 text-[10px] text-orange-400 font-bold">
                               Remix
                             </div>
                           )}

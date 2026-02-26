@@ -1,4 +1,4 @@
-import { Song, Monster, DiceRoll, Genre, DamageCalculation, SongSlot, TrackEffect } from "@/types";
+import { Song, Monster, DiceRoll, Genre, DamageCalculation, TrackEffect } from "@/types";
 import { rollDiceWithCrit } from "../dice/roller";
 import {
   applyTrackEffect,

@@ -60,17 +60,17 @@ export function PlayerPanel() {
     <div className="card-ornate p-5 h-full flex flex-col">
       {/* Game info header */}
       <div className="text-center mb-4">
-        <div className="font-display text-lg text-gold-400 mb-1">
+        <div className="font-display text-xl text-gold-400 mb-1">
           Round {currentRound}
         </div>
-        <div className="text-xs text-parchment-400 uppercase tracking-widest font-medieval">
+        <div className="text-sm text-parchment-400 uppercase tracking-widest font-medieval">
           {phase} Phase
         </div>
 
         {/* Fame progress bar */}
         {(phase === 'main' || phase === 'underground') && (
           <div className="mt-3">
-            <div className="flex justify-between text-[10px] text-parchment-400 mb-1">
+            <div className="flex justify-between text-xs text-parchment-400 mb-1">
               <span>{phase === 'main' ? 'Fame to Underground' : 'Fame to Final Boss'}</span>
               <span className="text-gold-400 font-bold">{collectiveFame} / {currentThreshold}</span>
             </div>
@@ -99,8 +99,8 @@ export function PlayerPanel() {
             {currentPlayer.name.charAt(0)}
           </div>
           <div>
-            <div className="font-medieval text-base font-bold text-gold-300">{currentPlayer.name}</div>
-            <div className="text-xs text-parchment-400 flex gap-3 mt-0.5">
+            <div className="font-medieval text-lg font-bold text-gold-300">{currentPlayer.name}</div>
+            <div className="text-sm text-parchment-400 flex gap-3 mt-0.5">
               <span>Fame: <span className="text-gold-400 font-bold">{currentPlayer.fame}</span></span>
               <span>EXP: <span className="text-parchment-200 font-bold">{currentPlayer.exp}</span></span>
             </div>
@@ -111,7 +111,7 @@ export function PlayerPanel() {
         <div className="grid grid-cols-2 gap-2">
           {/* Movement tracker */}
           <div className="rounded-lg p-2" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-            <div className="text-[9px] font-medieval text-parchment-400 mb-1.5 text-center">
+            <div className="text-xs font-medieval text-parchment-400 mb-1.5 text-center">
               Moves
             </div>
             <div className="flex gap-1.5 justify-center">
@@ -138,7 +138,7 @@ export function PlayerPanel() {
 
           {/* Fight tracker */}
           <div className="rounded-lg p-2" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-            <div className="text-[9px] font-medieval text-parchment-400 mb-1.5 text-center">
+            <div className="text-xs font-medieval text-parchment-400 mb-1.5 text-center">
               Fights
             </div>
             <div className="flex gap-1.5 justify-center">
@@ -169,7 +169,7 @@ export function PlayerPanel() {
 
       {/* All players */}
       <div className="flex-1 min-h-0 overflow-auto mb-4">
-        <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider mb-2">
+        <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-2">
           All Players
         </div>
         <div className="space-y-2">
@@ -202,17 +202,17 @@ export function PlayerPanel() {
                     <div className="flex items-center gap-1.5">
                       <div className="font-bold text-sm text-parchment-200 truncate">{player.name}</div>
                       {isCurrentTurn && (
-                        <span className="text-[9px] font-medieval text-green-400 shrink-0">▶ Turn</span>
+                        <span className="text-xs font-medieval text-green-400 shrink-0">▶ Turn</span>
                       )}
                     </div>
-                    <div className="text-[10px] text-parchment-500 truncate">
+                    <div className="text-xs text-parchment-500 truncate">
                       {playerSpace?.name ?? '—'}
                     </div>
                   </div>
                 </div>
 
                 {/* Stats row */}
-                <div className="flex gap-2 text-[10px] mb-1.5">
+                <div className="flex gap-2 text-xs mb-1.5">
                   <span className="text-gold-400 font-bold">⭐ {player.fame}</span>
                   <span className="text-parchment-400">{player.exp} EXP</span>
                   <span className="text-parchment-500">{player.songs.length} songs · {diceCount} dice</span>
@@ -259,11 +259,11 @@ export function PlayerPanel() {
 
         <button
           onClick={() => setShowDraftShop(true)}
-          className="btn-secondary w-full text-sm"
+          className="btn-secondary w-full"
         >
           Studio ({currentPlayer.exp} EXP)
         </button>
-        <button onClick={handleEndTurn} className="btn-primary w-full text-sm">
+        <button onClick={handleEndTurn} className="btn-primary w-full">
           End Turn
         </button>
       </div>
