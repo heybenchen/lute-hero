@@ -8,8 +8,8 @@ import { DiceType } from "@/types";
 const diceIcons: Record<DiceType, string> = {
   d4: "\u25B3",
   d6: "\u2684",
+  d8: "\u2B21",
   d12: "\u2B22",
-  d20: "\u2B1F",
 };
 
 export function CurrentPlayerDisplay() {
@@ -57,7 +57,7 @@ export function CurrentPlayerDisplay() {
                 }}
                 onMouseLeave={() => setHoveredSong(null)}
               >
-                <div className="text-[12px] font-bold text-parchment-400 mb-1 truncate max-w-[120px]">
+                <div className="h-4 text-[12px] font-bold text-parchment-400 mb-1 truncate max-w-[120px]">
                   {song.name}
                 </div>
                 <div className="flex gap-1">

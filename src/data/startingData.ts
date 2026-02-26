@@ -59,7 +59,7 @@ export const DICE_UPGRADE_PATH: { [key in DiceType]: DiceType | null } = {
 
 // Fame thresholds for phase transitions (tuned for ~6-8 round games)
 export const FAME_THRESHOLDS = {
-  undergroundScene: 150, // Total collective fame needed
+  undergroundScene: 200, // Total collective fame needed
   finalBoss: 300, // Total collective fame needed
 };
 

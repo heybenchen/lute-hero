@@ -165,12 +165,12 @@ describe('Fame Calculator', () => {
 
   describe('getNextPhase', () => {
     it('should transition from main to underground at fame threshold', () => {
-      expect(getNextPhase('main', 150)).toBe('underground')
+      expect(getNextPhase('main', 200)).toBe('underground')
       expect(getNextPhase('main', 300)).toBe('underground')
     })
 
     it('should not transition from main below threshold', () => {
-      expect(getNextPhase('main', 149)).toBeNull()
+      expect(getNextPhase('main', 199)).toBeNull()
       expect(getNextPhase('main', 0)).toBeNull()
     })
 
