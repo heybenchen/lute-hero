@@ -4,6 +4,7 @@ import {
   getMinValue,
   rollDie,
   rollDiceWithCrit,
+  rollCascadeDice,
   flipDiceValue,
   calculateBaseDamage,
   calculateCritBonuses,
@@ -50,6 +51,44 @@ describe('Dice Roller', () => {
     })
   })
 
+  describe('rollCascadeDice', () => {
+    it('should return a single roll when not hitting max value', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5) // d6 → 4
+      const result = rollCascadeDice('d6')
+      expect(result).toEqual([4])
+      vi.restoreAllMocks()
+    })
+
+    it('should cascade when hitting max value', () => {
+      const mockRandom = vi.spyOn(Math, 'random')
+      // First cascade roll: max (6), second cascade roll: 3
+      mockRandom.mockReturnValueOnce(0.9999) // → 6
+      mockRandom.mockReturnValueOnce(0.4)    // → 3
+      const result = rollCascadeDice('d6')
+      expect(result).toEqual([6, 3])
+      vi.restoreAllMocks()
+    })
+
+    it('should cascade multiple times', () => {
+      const mockRandom = vi.spyOn(Math, 'random')
+      // Three max rolls then a non-max
+      mockRandom.mockReturnValueOnce(0.9999) // → 6
+      mockRandom.mockReturnValueOnce(0.9999) // → 6
+      mockRandom.mockReturnValueOnce(0.9999) // → 6
+      mockRandom.mockReturnValueOnce(0.3)    // → 2
+      const result = rollCascadeDice('d6')
+      expect(result).toEqual([6, 6, 6, 2])
+      vi.restoreAllMocks()
+    })
+
+    it('should respect max cascade limit', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.9999) // always max
+      const result = rollCascadeDice('d6', 5)
+      expect(result).toHaveLength(5)
+      vi.restoreAllMocks()
+    })
+  })
+
   describe('rollDiceWithCrit', () => {
     it('should return DiceRoll with correct structure', () => {
       const dice: Dice = {
@@ -64,30 +103,60 @@ describe('Dice Roller', () => {
       expect(result).toHaveProperty('value')
       expect(result).toHaveProperty('isCrit')
       expect(result).toHaveProperty('critBonus')
+      expect(result).toHaveProperty('cascadeRolls')
       expect(result.value).toBeGreaterThanOrEqual(1)
       expect(result.value).toBeLessThanOrEqual(6)
     })
 
-    it('should add flat +5 bonus on max roll (crit)', () => {
+    it('should cascade on max roll (crit) — roll additional die and add its value', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd6',
         genre: 'Ballad',
       }
 
-      // Mock Math.random to always return max
-      vi.spyOn(Math, 'random').mockReturnValue(0.9999)
+      const mockRandom = vi.spyOn(Math, 'random')
+      // Initial roll: 6 (max, crit)
+      mockRandom.mockReturnValueOnce(0.9999)
+      // Cascade roll: 3
+      mockRandom.mockReturnValueOnce(0.4)
 
       const result = rollDiceWithCrit(dice)
 
       expect(result.value).toBe(6)
       expect(result.isCrit).toBe(true)
-      expect(result.critBonus).toBe(4)
+      expect(result.cascadeRolls).toEqual([3])
+      expect(result.critBonus).toBe(3)
 
       vi.restoreAllMocks()
     })
 
-    it('should not add crit bonus on non-max roll', () => {
+    it('should cascade multiple times when cascade rolls also hit max', () => {
+      const dice: Dice = {
+        id: 'test-dice',
+        type: 'd6',
+        genre: 'Ballad',
+      }
+
+      const mockRandom = vi.spyOn(Math, 'random')
+      // Initial roll: 6 (max)
+      mockRandom.mockReturnValueOnce(0.9999)
+      // Cascade 1: 6 (max again!)
+      mockRandom.mockReturnValueOnce(0.9999)
+      // Cascade 2: 4 (stops)
+      mockRandom.mockReturnValueOnce(0.5)
+
+      const result = rollDiceWithCrit(dice)
+
+      expect(result.value).toBe(6)
+      expect(result.isCrit).toBe(true)
+      expect(result.cascadeRolls).toEqual([6, 4])
+      expect(result.critBonus).toBe(10) // 6 + 4
+
+      vi.restoreAllMocks()
+    })
+
+    it('should not cascade on non-max roll', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd6',
@@ -102,6 +171,7 @@ describe('Dice Roller', () => {
       expect(result.value).toBe(4) // Math.floor(0.5 * 6) + 1
       expect(result.isCrit).toBe(false)
       expect(result.critBonus).toBe(0)
+      expect(result.cascadeRolls).toEqual([])
 
       vi.restoreAllMocks()
     })
@@ -120,9 +190,9 @@ describe('Dice Roller', () => {
   describe('calculateBaseDamage', () => {
     it('should sum up roll values', () => {
       const rolls = [
-        { diceId: '1', value: 4, isCrit: false, critBonus: 0 },
-        { diceId: '2', value: 6, isCrit: false, critBonus: 0 },
-        { diceId: '3', value: 3, isCrit: false, critBonus: 0 },
+        { diceId: '1', value: 4, isCrit: false, critBonus: 0, cascadeRolls: [] },
+        { diceId: '2', value: 6, isCrit: false, critBonus: 0, cascadeRolls: [] },
+        { diceId: '3', value: 3, isCrit: false, critBonus: 0, cascadeRolls: [] },
       ]
 
       expect(calculateBaseDamage(rolls)).toBe(13)
@@ -134,20 +204,20 @@ describe('Dice Roller', () => {
   })
 
   describe('calculateCritBonuses', () => {
-    it('should sum up crit bonuses', () => {
+    it('should sum up crit bonuses from cascade rolls', () => {
       const rolls = [
-        { diceId: '1', value: 6, isCrit: true, critBonus: 4 },
-        { diceId: '2', value: 4, isCrit: false, critBonus: 0 },
-        { diceId: '3', value: 12, isCrit: true, critBonus: 4 },
+        { diceId: '1', value: 6, isCrit: true, critBonus: 3, cascadeRolls: [3] },
+        { diceId: '2', value: 4, isCrit: false, critBonus: 0, cascadeRolls: [] },
+        { diceId: '3', value: 12, isCrit: true, critBonus: 7, cascadeRolls: [7] },
       ]
 
-      expect(calculateCritBonuses(rolls)).toBe(8)
+      expect(calculateCritBonuses(rolls)).toBe(10)
     })
 
     it('should return 0 when no crits', () => {
       const rolls = [
-        { diceId: '1', value: 4, isCrit: false, critBonus: 0 },
-        { diceId: '2', value: 3, isCrit: false, critBonus: 0 },
+        { diceId: '1', value: 4, isCrit: false, critBonus: 0, cascadeRolls: [] },
+        { diceId: '2', value: 3, isCrit: false, critBonus: 0, cascadeRolls: [] },
       ]
 
       expect(calculateCritBonuses(rolls)).toBe(0)

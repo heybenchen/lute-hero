@@ -22,7 +22,8 @@ export interface DiceRoll {
   diceId: string;
   value: number;
   isCrit: boolean; // True if rolled max value
-  critBonus: number; // Equals roll value if crit (double damage)
+  critBonus: number; // Sum of cascade roll values
+  cascadeRolls: number[]; // Each additional die value from cascading crits
 }
 
 // Track effects that modify dice behavior
@@ -33,7 +34,6 @@ export type TrackEffect =
   | { type: "addFlat"; amount: number }
   | { type: "addDice"; diceType: DiceType; used: boolean }
   | { type: "rollTwiceKeepHigher" }
-  | { type: "explosive" } // Max roll triggers another roll
   | { type: "harmonize"; bonusDamage: number } // Bonus if 2+ dice roll same value
   | { type: "offbeat" } // Odd rolls 2x damage, even rolls 0.5x damage
   | { type: "wildDice"; used: boolean } // Once per song: add one extra d4 roll

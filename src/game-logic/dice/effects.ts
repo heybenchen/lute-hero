@@ -1,5 +1,5 @@
 import { TrackEffect, DiceRoll, Dice } from "@/types";
-import { getMaxValue, flipDiceValue, rollDiceWithCrit } from "./roller";
+import { getMaxValue, flipDiceValue, rollDiceWithCrit, rollCascadeDice } from "./roller";
 import { DICE_UPGRADE_PATH } from "@/data/startingData";
 
 /**
@@ -43,10 +43,14 @@ export function applyTrackEffect(
         modifiedRoll.value = flipped;
         if (modifiedRoll.value === getMaxValue(dice.type)) {
           modifiedRoll.isCrit = true;
-          modifiedRoll.critBonus = modifiedRoll.value;
+          // Trigger cascade rolls for the new crit
+          const cascadeRolls = rollCascadeDice(dice.type);
+          modifiedRoll.critBonus = cascadeRolls.reduce((sum, v) => sum + v, 0);
+          modifiedRoll.cascadeRolls = cascadeRolls;
         } else {
           modifiedRoll.isCrit = false;
           modifiedRoll.critBonus = 0;
+          modifiedRoll.cascadeRolls = [];
         }
       }
       break;
@@ -75,12 +79,6 @@ export function applyTrackEffect(
       }
       break;
     }
-
-    case "explosive":
-      if (roll.isCrit) {
-        additionalRolls.push(rollDiceWithCrit(dice));
-      }
-      break;
 
     case "harmonize":
       // Bonus calculated at song level in calculateHarmonizeBonus
