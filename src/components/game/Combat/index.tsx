@@ -174,6 +174,7 @@ export function CombatModal() {
                           dice={dice}
                           value={roll.value}
                           isCrit={roll.isCrit}
+                          cascadeRolls={roll.cascadeRolls}
                           compact
                         />
                       )

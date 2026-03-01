@@ -32,19 +32,44 @@ export function rollDie(diceType: DiceType): number {
 }
 
 /**
- * Roll a die and determine if it's a critical hit
+ * Roll cascade dice: keeps rolling while max value is hit.
+ * Returns array of additional roll values (not including the triggering roll).
+ */
+export function rollCascadeDice(diceType: DiceType, maxCascades: number = 10): number[] {
+  const maxValue = getMaxValue(diceType)
+  const rolls: number[] = []
+  let value = rollDie(diceType)
+  rolls.push(value)
+  while (value === maxValue && rolls.length < maxCascades) {
+    value = rollDie(diceType)
+    rolls.push(value)
+  }
+  return rolls
+}
+
+/**
+ * Roll a die and determine if it's a critical hit.
+ * Crits cascade: rolling max value triggers another roll of the same die,
+ * which itself can cascade indefinitely.
  */
 export function rollDiceWithCrit(dice: Dice): DiceRoll {
   const value = rollDie(dice.type)
   const maxValue = getMaxValue(dice.type)
   const isCrit = value === maxValue
-  const critBonus = isCrit ? 4 : 0
+
+  const cascadeRolls: number[] = []
+  if (isCrit) {
+    cascadeRolls.push(...rollCascadeDice(dice.type))
+  }
+
+  const critBonus = cascadeRolls.reduce((sum, v) => sum + v, 0)
 
   return {
     diceId: dice.id,
     value,
     isCrit,
     critBonus,
+    cascadeRolls,
   }
 }
 
