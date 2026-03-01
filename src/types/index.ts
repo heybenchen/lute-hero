@@ -4,9 +4,9 @@
 
 export type Genre = "Ballad" | "Folk" | "Hymn" | "Shanty";
 
-export type DiceType = "d4" | "d6" | "d8" | "d12";
+export type DiceType = "d4" | "d6" | "d12" | "d20";
 
-export type GamePhase = "setup" | "main" | "underground" | "finalBoss" | "gameOver";
+export type GamePhase = "setup" | "main" | "finalBoss" | "gameOver";
 
 // ============================================
 // DICE & COMBAT
@@ -167,16 +167,10 @@ export interface GameState {
   board: BoardSpace[];
   combat: CombatState;
 
-  // Phase-specific state
-  undergroundSceneProgress: {
-    [playerId: string]: boolean; // Has completed underground scene
-  };
-
   finalBoss: Monster | null;
 
   // Fame thresholds for progression
   fameThresholds: {
-    undergroundScene: number;
     finalBoss: number;
   };
 }

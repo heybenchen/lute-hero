@@ -19,9 +19,9 @@ export interface ShopSlice {
 
   // Actions
   initializeShop: (numPlayers: number, collectiveFame?: number) => void
-  findInspiration: (playerGenreCounts?: Record<Genre, number>, collectiveFame?: number) => void
-  rerollInspiration: (playerGenreCounts?: Record<Genre, number>, collectiveFame?: number) => void
-  purchaseInspirationDie: (dieIndex: number, playerGenreCounts?: Record<Genre, number>, collectiveFame?: number) => Dice | null
+  findInspiration: (playerGenreCounts?: Record<Genre, number>, collectiveFame?: number, numPlayers?: number) => void
+  rerollInspiration: (playerGenreCounts?: Record<Genre, number>, collectiveFame?: number, numPlayers?: number) => void
+  purchaseInspirationDie: (dieIndex: number, playerGenreCounts?: Record<Genre, number>, collectiveFame?: number, numPlayers?: number) => Dice | null
   closeInspiration: () => void
   purchaseFromNamePool: (cardId: string) => void
   refreshNamePool: () => void
@@ -43,15 +43,15 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
     }
 
     const fullPool = createInspirationPool(numPlayers)
-    const allowedTypes = getAllowedDiceTypes(collectiveFame)
+    const allowedTypes = getAllowedDiceTypes(collectiveFame, numPlayers)
     const { drawn, remainingPool } = drawInspirationDice(fullPool, INSPIRATION_DRAW_COUNT, undefined, allowedTypes)
 
     set({ namePool, inspirationPool: remainingPool, inspirationRevealed: drawn, inspirationRollCount: 0 })
   },
 
-  findInspiration: (playerGenreCounts, collectiveFame = 0) => {
+  findInspiration: (playerGenreCounts, collectiveFame = 0, numPlayers = 1) => {
     const pool = get().inspirationPool
-    const allowedTypes = getAllowedDiceTypes(collectiveFame)
+    const allowedTypes = getAllowedDiceTypes(collectiveFame, numPlayers)
     const { drawn, remainingPool } = drawInspirationDice(pool, INSPIRATION_DRAW_COUNT, playerGenreCounts, allowedTypes)
 
     set({
@@ -60,11 +60,11 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
     })
   },
 
-  rerollInspiration: (playerGenreCounts, collectiveFame = 0) => {
+  rerollInspiration: (playerGenreCounts, collectiveFame = 0, numPlayers = 1) => {
     // Return currently revealed dice to pool before drawing new ones
     const pool = [...get().inspirationPool, ...get().inspirationRevealed.map((d) => d.dice)]
     const rollCount = get().inspirationRollCount + 1
-    const allowedTypes = getAllowedDiceTypes(collectiveFame)
+    const allowedTypes = getAllowedDiceTypes(collectiveFame, numPlayers)
     const { drawn, remainingPool } = drawInspirationDice(pool, INSPIRATION_DRAW_COUNT, playerGenreCounts, allowedTypes)
 
     set({
@@ -74,7 +74,7 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
     })
   },
 
-  purchaseInspirationDie: (dieIndex, playerGenreCounts, collectiveFame = 0) => {
+  purchaseInspirationDie: (dieIndex, playerGenreCounts, collectiveFame = 0, numPlayers = 1) => {
     const revealed = get().inspirationRevealed
     if (dieIndex < 0 || dieIndex >= revealed.length) return null
 
@@ -83,7 +83,7 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
 
     // Draw 1 replacement die to keep 4 shown
     const pool = get().inspirationPool
-    const allowedTypes = getAllowedDiceTypes(collectiveFame)
+    const allowedTypes = getAllowedDiceTypes(collectiveFame, numPlayers)
     const { drawn, remainingPool } = drawInspirationDice(pool, 1, playerGenreCounts, allowedTypes)
     const replacement = drawn[0]
 

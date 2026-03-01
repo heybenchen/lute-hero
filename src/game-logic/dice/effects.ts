@@ -106,9 +106,9 @@ export function applyTrackEffect(
       break;
 
     case "powerChord":
-      // 3s deal double damage — replace value with 6
+      // 3s deal +5 bonus damage — replace value with 8
       if (roll.value === 3) {
-        modifiedRoll.value = 6;
+        modifiedRoll.value = 8;
         modifiedRoll.isCrit = false;
         modifiedRoll.critBonus = 0;
       }
@@ -170,7 +170,7 @@ export function calculateHarmonizeBonus(effects: TrackEffect[], rolls: DiceRoll[
 export function calculateTempoBonus(effects: TrackEffect[], rolls: DiceRoll[]): number {
   if (!effects.some((e) => e.type === "tempo")) return 0;
   if (rolls.length < 2) return 0;
-  return Math.min(...rolls.map((r) => r.value));
+  return Math.floor(Math.min(...rolls.map((r) => r.value)) * 1.5);
 }
 
 /**
@@ -179,7 +179,7 @@ export function calculateTempoBonus(effects: TrackEffect[], rolls: DiceRoll[]): 
 export function calculateCrescendoBonus(effects: TrackEffect[], rolls: DiceRoll[]): number {
   if (!effects.some((e) => e.type === "crescendo")) return 0;
   const total = rolls.reduce((sum, r) => sum + r.value, 0);
-  return total >= 15 ? 5 : 0;
+  return total >= 15 ? 8 : 0;
 }
 
 /**
@@ -193,7 +193,7 @@ export function calculateDynamicRangeBonus(
   if (primaryRolls.length < 2) return 0;
   const values = primaryRolls.map((r) => r.value);
   const spread = Math.max(...values) - Math.min(...values);
-  return spread >= 6 ? 4 : 0;
+  return spread >= 6 ? 6 : 0;
 }
 
 /**
@@ -206,7 +206,7 @@ export function calculateDropTheBassBonus(
   if (!effects.some((e) => e.type === "dropTheBass")) return 0;
   if (primaryRolls.length < 2) return 0;
   const allOnes = primaryRolls.every((r) => r.value === 1);
-  return allOnes ? 9 : 0;
+  return allOnes ? 14 : 0;
 }
 
 /**
@@ -214,7 +214,7 @@ export function calculateDropTheBassBonus(
  */
 export function calculateLucky7Bonus(effects: TrackEffect[], rolls: DiceRoll[]): number {
   if (!effects.some((e) => e.type === "lucky7")) return 0;
-  return rolls.some((r) => r.value === 7) ? 3 : 0;
+  return rolls.some((r) => r.value === 7) ? 5 : 0;
 }
 
 /**
@@ -223,5 +223,5 @@ export function calculateLucky7Bonus(effects: TrackEffect[], rolls: DiceRoll[]):
  */
 export function calculateOffbeatMultiplier(roll: DiceRoll, effect: TrackEffect | null): number {
   if (effect?.type !== "offbeat") return 1;
-  return roll.value % 2 === 1 ? 2 : 0.5;
+  return roll.value % 2 === 1 ? 3 : 0.5;
 }

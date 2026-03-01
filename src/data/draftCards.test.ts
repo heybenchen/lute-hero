@@ -6,8 +6,8 @@ import {
   generateNameCard,
   getAllowedDiceTypes,
   SINGLE_DICE_COSTS,
-  D12_FAME_THRESHOLD,
-  D8_FAME_THRESHOLD,
+  D12_FAME_PER_PLAYER,
+  D20_FAME_PER_PLAYER,
 } from './draftCards'
 
 describe('Inspiration System', () => {
@@ -25,20 +25,20 @@ describe('Inspiration System', () => {
 
   describe('getAllowedDiceTypes', () => {
     it('should return only d4 and d6 at low fame', () => {
-      expect(getAllowedDiceTypes(0)).toEqual(['d4', 'd6'])
-      expect(getAllowedDiceTypes(D8_FAME_THRESHOLD - 1)).toEqual(['d4', 'd6'])
+      expect(getAllowedDiceTypes(0, 4)).toEqual(['d4', 'd6'])
+      expect(getAllowedDiceTypes(D12_FAME_PER_PLAYER * 4 - 1, 4)).toEqual(['d4', 'd6'])
     })
 
-    it('should unlock d8 at D8_FAME_THRESHOLD', () => {
-      const types = getAllowedDiceTypes(D8_FAME_THRESHOLD)
-      expect(types).toContain('d8')
-      expect(types).not.toContain('d12')
-    })
-
-    it('should unlock d12 at D12_FAME_THRESHOLD', () => {
-      const types = getAllowedDiceTypes(D12_FAME_THRESHOLD)
-      expect(types).toContain('d8')
+    it('should unlock d12 at D12_FAME_PER_PLAYER * numPlayers', () => {
+      const types = getAllowedDiceTypes(D12_FAME_PER_PLAYER * 4, 4)
       expect(types).toContain('d12')
+      expect(types).not.toContain('d20')
+    })
+
+    it('should unlock d20 at D20_FAME_PER_PLAYER * numPlayers', () => {
+      const types = getAllowedDiceTypes(D20_FAME_PER_PLAYER * 4, 4)
+      expect(types).toContain('d12')
+      expect(types).toContain('d20')
     })
   })
 
@@ -60,7 +60,7 @@ describe('Inspiration System', () => {
       const types = new Set(pool.map((d) => d.type))
 
       expect(genres).toEqual(new Set(['Ballad', 'Folk', 'Hymn', 'Shanty']))
-      expect(types).toEqual(new Set(['d4', 'd6', 'd8', 'd12']))
+      expect(types).toEqual(new Set(['d4', 'd6', 'd12', 'd20']))
     })
   })
 
@@ -123,8 +123,8 @@ describe('Inspiration System', () => {
       drawn.forEach((item) => {
         expect(['d4', 'd6']).toContain(item.dice.type)
       })
-      // Locked dice (d8, d12) remain in the pool
-      const lockedInPool = remainingPool.filter((d) => d.type === 'd8' || d.type === 'd12')
+      // Locked dice (d12, d20) remain in the pool
+      const lockedInPool = remainingPool.filter((d) => d.type === 'd12' || d.type === 'd20')
       expect(lockedInPool.length).toBeGreaterThan(0)
     })
 

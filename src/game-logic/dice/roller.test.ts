@@ -16,8 +16,8 @@ describe('Dice Roller', () => {
     it('should return correct max values for each dice type', () => {
       expect(getMaxValue('d4')).toBe(4)
       expect(getMaxValue('d6')).toBe(6)
-      expect(getMaxValue('d8')).toBe(8)
       expect(getMaxValue('d12')).toBe(12)
+      expect(getMaxValue('d20')).toBe(20)
     })
   })
 
@@ -29,7 +29,7 @@ describe('Dice Roller', () => {
 
   describe('rollDie', () => {
     it('should return a value between 1 and max', () => {
-      const diceTypes: DiceType[] = ['d4', 'd6', 'd8', 'd12']
+      const diceTypes: DiceType[] = ['d4', 'd6', 'd12', 'd20']
 
       diceTypes.forEach((type) => {
         const max = getMaxValue(type)
@@ -182,8 +182,8 @@ describe('Dice Roller', () => {
       expect(flipDiceValue(1, 'd6')).toBe(6)
       expect(flipDiceValue(6, 'd6')).toBe(1)
       expect(flipDiceValue(3, 'd6')).toBe(4)
-      expect(flipDiceValue(3, 'd8')).toBe(6)
-      expect(flipDiceValue(8, 'd8')).toBe(1)
+      expect(flipDiceValue(3, 'd20')).toBe(18)
+      expect(flipDiceValue(20, 'd20')).toBe(1)
     })
   })
 
