@@ -4,9 +4,9 @@
 
 export type Genre = "Ballad" | "Folk" | "Hymn" | "Shanty";
 
-export type DiceType = "d4" | "d6" | "d8" | "d12";
+export type DiceType = "d4" | "d6" | "d12" | "d20";
 
-export type GamePhase = "setup" | "main" | "underground" | "finalBoss" | "gameOver";
+export type GamePhase = "setup" | "main" | "finalBoss" | "gameOver";
 
 // ============================================
 // DICE & COMBAT
@@ -22,7 +22,8 @@ export interface DiceRoll {
   diceId: string;
   value: number;
   isCrit: boolean; // True if rolled max value
-  critBonus: number; // Equals roll value if crit (double damage)
+  critBonus: number; // Sum of cascade roll values
+  cascadeRolls: number[]; // Each additional die value from cascading crits
 }
 
 // Track effects that modify dice behavior
@@ -33,7 +34,6 @@ export type TrackEffect =
   | { type: "addFlat"; amount: number }
   | { type: "addDice"; diceType: DiceType; used: boolean }
   | { type: "rollTwiceKeepHigher" }
-  | { type: "explosive" } // Max roll triggers another roll
   | { type: "harmonize"; bonusDamage: number } // Bonus if 2+ dice roll same value
   | { type: "offbeat" } // Odd rolls 2x damage, even rolls 0.5x damage
   | { type: "wildDice"; used: boolean } // Once per song: add one extra d4 roll
@@ -167,16 +167,10 @@ export interface GameState {
   board: BoardSpace[];
   combat: CombatState;
 
-  // Phase-specific state
-  undergroundSceneProgress: {
-    [playerId: string]: boolean; // Has completed underground scene
-  };
-
   finalBoss: Monster | null;
 
   // Fame thresholds for progression
   fameThresholds: {
-    undergroundScene: number;
     finalBoss: number;
   };
 }

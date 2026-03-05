@@ -5,13 +5,13 @@ import { DraftCardDisplay } from './DraftCardDisplay'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
-import { getInspirationCost, D12_FAME_THRESHOLD, D8_FAME_THRESHOLD } from '@/data/draftCards'
+import { getInspirationCost, D12_FAME_PER_PLAYER, D20_FAME_PER_PLAYER } from '@/data/draftCards'
 
 const diceIcons: Record<DiceType, string> = {
   d4: '\u25B3',
   d6: '\u2684',
-  d8: '\u2B21',
   d12: '\u2B22',
+  d20: '\u2B21',
 }
 
 interface DraftShopProps {
@@ -79,7 +79,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     if (!player || player.exp < rerollCost) return
     awardPlayerExp(playerId, -rerollCost)
     const genreCounts = getPlayerGenreCounts(players)
-    rerollInspiration(genreCounts, collectiveFame)
+    rerollInspiration(genreCounts, collectiveFame, players.length)
   }
 
   const handleSelectInspirationDie = (index: number) => {
@@ -88,7 +88,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
     awardPlayerExp(playerId, -revealed.cost)
     const genreCounts = getPlayerGenreCounts(players)
-    const die = purchaseInspirationDie(index, genreCounts, collectiveFame)
+    const die = purchaseInspirationDie(index, genreCounts, collectiveFame, players.length)
     if (die) {
       setSelectedDie(die)
     }
@@ -123,8 +123,8 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   }
 
   // Show which dice tiers are locked
-  const d8Locked = collectiveFame < D8_FAME_THRESHOLD
-  const d12Locked = collectiveFame < D12_FAME_THRESHOLD
+  const d12Locked = collectiveFame < D12_FAME_PER_PLAYER * players.length
+  const d20Locked = collectiveFame < D20_FAME_PER_PLAYER * players.length
 
   return (
     <div className="modal-overlay">
@@ -197,11 +197,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
                   Find Inspiration
                 </div>
-                {(d8Locked || d12Locked) && (
+                {(d12Locked || d20Locked) && (
                   <div className="text-xs text-parchment-500">
-                    {d8Locked && <span>d8 unlocks at {D8_FAME_THRESHOLD} fame</span>}
-                    {d8Locked && d12Locked && <span className="mx-1">&middot;</span>}
-                    {d12Locked && <span>d12 unlocks at {D12_FAME_THRESHOLD} fame</span>}
+                    {d12Locked && <span>d12 unlocks at {D12_FAME_PER_PLAYER * players.length} fame</span>}
+                    {d12Locked && d20Locked && <span className="mx-1">&middot;</span>}
+                    {d20Locked && !d12Locked && <span>d20 unlocks at {D20_FAME_PER_PLAYER * players.length} fame</span>}
                   </div>
                 )}
               </div>

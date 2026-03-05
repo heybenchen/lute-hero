@@ -58,7 +58,7 @@ export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
     if (!players) return
 
     const collectiveFame = players.reduce((total: number, p: { fame: number }) => total + p.fame, 0)
-    const nextPhase = getNextPhase(phase, collectiveFame)
+    const nextPhase = getNextPhase(phase, collectiveFame, players.length)
     if (nextPhase) {
       set({ phase: nextPhase })
     }

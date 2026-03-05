@@ -8,8 +8,8 @@ import { DiceType } from "@/types";
 const diceIcons: Record<DiceType, string> = {
   d4: "\u25B3",
   d6: "\u2684",
-  d8: "\u2B21",
   d12: "\u2B22",
+  d20: "\u2B21",
 };
 
 export function CurrentPlayerDisplay() {

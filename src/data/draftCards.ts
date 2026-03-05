@@ -9,15 +9,15 @@ function generateCardId(): string {
 
 // Single dice purchase costs by type
 export const SINGLE_DICE_COSTS: Record<DiceType, number> = {
-  d4: 4,
-  d6: 6,
-  d8: 8,
-  d12: 12,
+  d4: 5,
+  d6: 10,
+  d12: 15,
+  d20: 20,
 };
 
-// Collective fame required to unlock higher dice tiers
-export const D12_FAME_THRESHOLD = 50;
-export const D8_FAME_THRESHOLD = 25;
+// Per-player fame required to unlock higher dice tiers (multiply by numPlayers for threshold)
+export const D12_FAME_PER_PLAYER = 25;
+export const D20_FAME_PER_PLAYER = 50;
 
 // Inspiration re-roll cost: 10 EXP for first seek, escalates by 10 each re-roll
 export const INSPIRATION_BASE_COST = 10;
@@ -28,12 +28,12 @@ export function getInspirationCost(rollCount: number): number {
 
 /**
  * Returns the dice types currently purchasable based on collective fame.
- * d8 unlocks at 25 fame, d12 at 50 fame.
+ * d12 unlocks at 25 fame per player, d20 at 50 fame per player.
  */
-export function getAllowedDiceTypes(collectiveFame: number): DiceType[] {
+export function getAllowedDiceTypes(collectiveFame: number, numPlayers: number): DiceType[] {
   const types: DiceType[] = ["d4", "d6"];
-  if (collectiveFame >= D8_FAME_THRESHOLD) types.push("d8");
-  if (collectiveFame >= D12_FAME_THRESHOLD) types.push("d12");
+  if (collectiveFame >= D12_FAME_PER_PLAYER * numPlayers) types.push("d12");
+  if (collectiveFame >= D20_FAME_PER_PLAYER * numPlayers) types.push("d20");
   return types;
 }
 
@@ -43,7 +43,7 @@ export function getAllowedDiceTypes(collectiveFame: number): DiceType[] {
  */
 export function createInspirationPool(numPlayers: number): Dice[] {
   const pool: Dice[] = [];
-  const diceTypes: DiceType[] = ["d4", "d6", "d8", "d12"];
+  const diceTypes: DiceType[] = ["d4", "d6", "d12", "d20"];
   const genres: Genre[] = ["Ballad", "Folk", "Hymn", "Shanty"];
   const copiesPerPlayer = 2;
 

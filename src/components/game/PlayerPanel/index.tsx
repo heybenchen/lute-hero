@@ -27,9 +27,7 @@ export function PlayerPanel() {
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
   const canFight = hasMonsters && fightsRemaining > 0
-  const currentThreshold = phase === 'main'
-    ? FAME_THRESHOLDS.undergroundScene
-    : FAME_THRESHOLDS.finalBoss
+  const currentThreshold = FAME_THRESHOLDS.finalBoss * players.length
   const fameProgress = Math.min((collectiveFame / currentThreshold) * 100, 100)
 
   const handleEndTurn = () => {
@@ -68,10 +66,10 @@ export function PlayerPanel() {
         </div>
 
         {/* Fame progress bar */}
-        {(phase === 'main' || phase === 'underground') && (
+        {phase === 'main' && (
           <div className="mt-3">
             <div className="flex justify-between text-xs text-parchment-400 mb-1">
-              <span>{phase === 'main' ? 'Fame to Underground' : 'Fame to Final Boss'}</span>
+              <span>Fame to Final Boss</span>
               <span className="text-gold-400 font-bold">{collectiveFame} / {currentThreshold}</span>
             </div>
             <div className="hp-bar h-2">

@@ -164,30 +164,23 @@ describe('Fame Calculator', () => {
   })
 
   describe('getNextPhase', () => {
-    it('should transition from main to underground at fame threshold', () => {
-      expect(getNextPhase('main', 200)).toBe('underground')
-      expect(getNextPhase('main', 300)).toBe('underground')
+    it('should transition from main to finalBoss at fame threshold (100 per player)', () => {
+      // 4 players × 100 fame/player = 400 collective threshold
+      expect(getNextPhase('main', 400, 4)).toBe('finalBoss')
+      expect(getNextPhase('main', 500, 4)).toBe('finalBoss')
+      // 2 players × 100 = 200
+      expect(getNextPhase('main', 200, 2)).toBe('finalBoss')
     })
 
     it('should not transition from main below threshold', () => {
-      expect(getNextPhase('main', 199)).toBeNull()
-      expect(getNextPhase('main', 0)).toBeNull()
-    })
-
-    it('should transition from underground to finalBoss at fame threshold', () => {
-      expect(getNextPhase('underground', 300)).toBe('finalBoss')
-      expect(getNextPhase('underground', 400)).toBe('finalBoss')
-    })
-
-    it('should not transition from underground below threshold', () => {
-      expect(getNextPhase('underground', 299)).toBeNull()
-      expect(getNextPhase('underground', 150)).toBeNull()
+      expect(getNextPhase('main', 399, 4)).toBeNull()
+      expect(getNextPhase('main', 0, 4)).toBeNull()
     })
 
     it('should not transition from setup, finalBoss, or gameOver', () => {
-      expect(getNextPhase('setup', 1000)).toBeNull()
-      expect(getNextPhase('finalBoss', 1000)).toBeNull()
-      expect(getNextPhase('gameOver', 1000)).toBeNull()
+      expect(getNextPhase('setup', 1000, 4)).toBeNull()
+      expect(getNextPhase('finalBoss', 1000, 4)).toBeNull()
+      expect(getNextPhase('gameOver', 1000, 4)).toBeNull()
     })
   })
 })
