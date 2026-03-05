@@ -19,6 +19,7 @@ export function PlayerPanel() {
   const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
   const usePlayerFight = useGameStore((state) => state.usePlayerFight)
   const startCombat = useGameStore((state) => state.startCombat)
+  const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
 
   if (!currentPlayer) return null
 
@@ -41,6 +42,8 @@ export function PlayerPanel() {
       })
       // Add 1 genre tag to all spaces once per round
       addGenreTags()
+      // Apply any pending phase transition now that all players have had equal turns
+      applyPendingPhase()
       nextRound()
     } else {
       nextTurn()

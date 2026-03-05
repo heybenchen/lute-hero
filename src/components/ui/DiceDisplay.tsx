@@ -14,7 +14,7 @@ interface DiceDisplayProps {
 const diceIcons: Record<DiceType, string> = {
   d4: '\u25B3',
   d6: '\u2684',
-  d12: '\u2B22',
+  d12: '\u2B20',
   d20: '\u2B21',
 }
 

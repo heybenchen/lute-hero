@@ -7,7 +7,7 @@ import {
   getAllowedDiceTypes,
 } from '@/data/draftCards'
 
-const NAME_POOL_SIZE = 2
+const NAME_POOL_SIZE = 3
 const INSPIRATION_DRAW_COUNT = 4
 
 export interface ShopSlice {

@@ -21,7 +21,7 @@ export function getGenreMultiplier(genre: Genre, monster: Monster): number {
   }
 
   if (monster.resistance === genre) {
-    return 0.5; // Resistant: 0.5x damage
+    return 0; // Resistant: 0x damage (immune)
   }
 
   return 1.0; // Neutral

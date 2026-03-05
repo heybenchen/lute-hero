@@ -71,7 +71,7 @@ export interface MonsterTemplate {
   name: string;
   baseHP: number;
   vulnerability: Genre | null; // Single weakness - 2x damage
-  resistance: Genre | null; // Single resistance - 0.5x damage
+  resistance: Genre | null; // Single resistance - 0x damage (immune)
   description: string;
   isBoss?: boolean;
 }

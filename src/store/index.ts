@@ -13,13 +13,14 @@ const STORAGE_KEY = 'lute-hero-save'
 const STORAGE_VERSION = 4
 
 // Only persist the durable game state — skip transient combat mid-fight data
-const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'spaces' | 'players' | 'inspirationPool' | 'inspirationRevealed' | 'namePool'>> = {
+const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'inspirationPool' | 'inspirationRevealed' | 'namePool'>> = {
   name: STORAGE_KEY,
   version: STORAGE_VERSION,
   partialize: (state) => ({
     phase: state.phase,
     currentRound: state.currentRound,
     currentTurnPlayerIndex: state.currentTurnPlayerIndex,
+    pendingPhase: state.pendingPhase,
     spaces: state.spaces,
     players: state.players,
     inspirationPool: state.inspirationPool,

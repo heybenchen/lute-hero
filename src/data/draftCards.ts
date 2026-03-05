@@ -11,8 +11,8 @@ function generateCardId(): string {
 export const SINGLE_DICE_COSTS: Record<DiceType, number> = {
   d4: 5,
   d6: 10,
-  d12: 15,
-  d20: 20,
+  d12: 20,
+  d20: 30,
 };
 
 // Per-player fame required to unlock higher dice tiers (multiply by numPlayers for threshold)
