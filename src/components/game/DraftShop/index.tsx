@@ -10,7 +10,7 @@ import { getInspirationCost, D12_FAME_PER_PLAYER, D20_FAME_PER_PLAYER } from '@/
 const diceIcons: Record<DiceType, string> = {
   d4: '\u25B3',
   d6: '\u2684',
-  d12: '\u2B22',
+  d12: '\u2B20',
   d20: '\u2B21',
 }
 
@@ -261,7 +261,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 Refresh ({REFRESH_COST} EXP)
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {namePool.map((card) => (
                 <DraftCardDisplay
                   key={card.id}
