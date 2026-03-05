@@ -25,6 +25,7 @@ export function CombatModal() {
     (state) => state.incrementPlayerMonstersDefeated
   )
   const checkPhaseTransition = useGameStore((state) => state.checkPhaseTransition)
+  const addGenreTagsForMonsters = useGameStore((state) => state.addGenreTagsForMonsters)
 
   const player = useGameStore(
     selectPlayerById(playerId || '')
@@ -84,6 +85,16 @@ export function CombatModal() {
 
     if (success && spaceId !== null) {
       clearSpaceAfterCombat(spaceId)
+    }
+
+    // On retreat, add genre tags for surviving monsters
+    if (!success && spaceId !== null) {
+      const survivingGenres = monsters
+        .filter((m: Monster) => m.currentHP > 0 && m.vulnerability !== null)
+        .map((m: Monster) => m.vulnerability!)
+      if (survivingGenres.length > 0) {
+        addGenreTagsForMonsters(spaceId, survivingGenres)
+      }
     }
   }
 

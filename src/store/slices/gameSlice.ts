@@ -7,6 +7,7 @@ export interface GameSlice {
   phase: GamePhase
   currentRound: number
   currentTurnPlayerIndex: number
+  pendingPhase: GamePhase | null
 
   // Actions
   setPhase: (phase: GamePhase) => void
@@ -15,6 +16,7 @@ export interface GameSlice {
   startGame: () => void
   resetGame: () => void
   checkPhaseTransition: () => void
+  applyPendingPhase: () => void
 }
 
 export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
@@ -22,6 +24,7 @@ export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
   phase: 'setup',
   currentRound: 0,
   currentTurnPlayerIndex: 0,
+  pendingPhase: null,
 
   // Actions
   setPhase: (phase) => set({ phase }),
@@ -42,6 +45,7 @@ export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
       phase: 'main',
       currentRound: 1,
       currentTurnPlayerIndex: 0,
+      pendingPhase: null,
     }),
 
   resetGame: () =>
@@ -49,6 +53,7 @@ export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
       phase: 'setup',
       currentRound: 0,
       currentTurnPlayerIndex: 0,
+      pendingPhase: null,
     }),
 
   checkPhaseTransition: () => {
@@ -60,7 +65,14 @@ export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
     const collectiveFame = players.reduce((total: number, p: { fame: number }) => total + p.fame, 0)
     const nextPhase = getNextPhase(phase, collectiveFame, players.length)
     if (nextPhase) {
-      set({ phase: nextPhase })
+      set({ pendingPhase: nextPhase })
+    }
+  },
+
+  applyPendingPhase: () => {
+    const pending = get().pendingPhase
+    if (pending) {
+      set({ phase: pending, pendingPhase: null })
     }
   },
 })

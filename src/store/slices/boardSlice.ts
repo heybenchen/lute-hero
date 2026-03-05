@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand'
-import { BoardSpace } from '@/types'
+import { BoardSpace, Genre } from '@/types'
 import {
   createBoardGraph,
   addGenreTagsToBoard,
@@ -19,6 +19,7 @@ export interface BoardSlice {
   spawnMonstersAtSpace: (spaceId: number) => void
   spawnInitialMonstersOnBoard: () => void
   clearSpaceAfterCombat: (spaceId: number) => void
+  addGenreTagsForMonsters: (spaceId: number, genres: Genre[]) => void
   updateSpace: (spaceId: number, updates: Partial<BoardSpace>) => void
 }
 
@@ -80,6 +81,14 @@ export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
     })
 
     set({ spaces: updatedSpaces })
+  },
+
+  addGenreTagsForMonsters: (spaceId, genres) => {
+    set({
+      spaces: get().spaces.map((s) =>
+        s.id === spaceId ? { ...s, genreTags: [...s.genreTags, ...genres] } : s
+      ),
+    })
   },
 
   clearSpaceAfterCombat: (spaceId) => {

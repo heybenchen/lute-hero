@@ -26,10 +26,10 @@ describe('Damage Calculator', () => {
       expect(getGenreMultiplier('Ballad', monster)).toBe(2.0)
     })
 
-    it('should return 0.5x for resistant genre', () => {
+    it('should return 0x for resistant genre (immune)', () => {
       const monster = createTestMonster()
 
-      expect(getGenreMultiplier('Shanty', monster)).toBe(0.5)
+      expect(getGenreMultiplier('Shanty', monster)).toBe(0)
     })
 
     it('should return 1x for neutral genres', () => {
