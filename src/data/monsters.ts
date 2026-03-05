@@ -5,7 +5,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'ember_wraith',
     name: 'Ember Wraith',
-    baseHP: 9,
+    baseHP: 10,
     vulnerability: 'Ballad',
     resistance: 'Shanty',
     description: 'A smoldering spirit drawn to passionate melodies',
@@ -13,7 +13,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'cinder_drake',
     name: 'Cinder Drake',
-    baseHP: 13,
+    baseHP: 12,
     vulnerability: 'Ballad',
     resistance: 'Shanty',
     description: 'A fiery beast that feeds on silence',
@@ -21,7 +21,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'magma_imp',
     name: 'Magma Imp',
-    baseHP: 7,
+    baseHP: 8,
     vulnerability: 'Ballad',
     resistance: 'Shanty',
     description: 'A mischievous creature of living lava',
@@ -29,7 +29,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'inferno_choir',
     name: 'Inferno Choir',
-    baseHP: 17,
+    baseHP: 14,
     vulnerability: 'Ballad',
     resistance: 'Shanty',
     description: 'A chorus of flame spirits singing in unison',
@@ -39,7 +39,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'stone_troll',
     name: 'Stone Troll',
-    baseHP: 12,
+    baseHP: 11,
     vulnerability: 'Folk',
     resistance: 'Hymn',
     description: 'A lumbering creature of root and rock',
@@ -47,7 +47,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'moss_golem',
     name: 'Moss Golem',
-    baseHP: 15,
+    baseHP: 13,
     vulnerability: 'Folk',
     resistance: 'Hymn',
     description: 'An ancient guardian overgrown with moss',
@@ -63,7 +63,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'quake_beetle',
     name: 'Quake Beetle',
-    baseHP: 18,
+    baseHP: 14,
     vulnerability: 'Folk',
     resistance: 'Hymn',
     description: 'A colossal insect whose steps crack the ground',
@@ -73,7 +73,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'gale_phantom',
     name: 'Gale Phantom',
-    baseHP: 11,
+    baseHP: 10,
     vulnerability: 'Hymn',
     resistance: 'Folk',
     description: 'A howling specter born of restless winds',
@@ -81,7 +81,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'storm_harpy',
     name: 'Storm Harpy',
-    baseHP: 13,
+    baseHP: 12,
     vulnerability: 'Hymn',
     resistance: 'Folk',
     description: 'A shrieking creature riding the tempest',
@@ -89,7 +89,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'zephyr_wisp',
     name: 'Zephyr Wisp',
-    baseHP: 6,
+    baseHP: 8,
     vulnerability: 'Hymn',
     resistance: 'Folk',
     description: 'A flickering breeze given form and malice',
@@ -97,7 +97,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'thunder_roc',
     name: 'Thunder Roc',
-    baseHP: 19,
+    baseHP: 14,
     vulnerability: 'Hymn',
     resistance: 'Folk',
     description: 'A massive bird trailing bolts of lightning',
@@ -107,7 +107,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'tide_lurker',
     name: 'Tide Lurker',
-    baseHP: 11,
+    baseHP: 10,
     vulnerability: 'Shanty',
     resistance: 'Ballad',
     description: 'A creature of the deep that surfaces at high tide',
@@ -115,7 +115,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'fog_serpent',
     name: 'Fog Serpent',
-    baseHP: 14,
+    baseHP: 12,
     vulnerability: 'Shanty',
     resistance: 'Ballad',
     description: 'A mist-wreathed serpent from the harbor depths',
@@ -123,7 +123,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'coral_crab',
     name: 'Coral Crab',
-    baseHP: 10,
+    baseHP: 9,
     vulnerability: 'Shanty',
     resistance: 'Ballad',
     description: 'An armored crustacean encrusted with living reef',
@@ -131,7 +131,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'abyssal_leviathan',
     name: 'Abyssal Leviathan',
-    baseHP: 20,
+    baseHP: 14,
     vulnerability: 'Shanty',
     resistance: 'Ballad',
     description: 'An ancient terror from the ocean floor',
