@@ -50,6 +50,48 @@ export function CombatModal() {
     setPopups((prev) => prev.filter((p) => p.id !== id))
   }, [])
 
+  // All hooks must be called before any early return (Rules of Hooks)
+  const allAvailableSongs = useMemo(() => {
+    if (!player) return []
+    const songs = [...player.songs]
+    colocatedPlayers.forEach((p) => songs.push(...p.songs))
+    return songs
+  }, [player, colocatedPlayers])
+
+  const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
+  const totalFameEarned = player && monstersDefeatedCount > 0
+    ? calculateFameEarned(player.monstersDefeated, monstersDefeatedCount)
+    : 0
+
+  const fameBreakdown = useMemo(() => {
+    if (monstersDefeatedCount === 0 || totalFameEarned === 0) {
+      return { playerFame: 0, coverFameByPlayer: new Map<string, { name: string; fame: number }>() }
+    }
+
+    const ownKills = killCredits.filter((kc) => !kc.isCover).length
+    const coverKillsByOwner = new Map<string, number>()
+    killCredits.filter((kc) => kc.isCover).forEach((kc) => {
+      coverKillsByOwner.set(kc.songOwnerId, (coverKillsByOwner.get(kc.songOwnerId) || 0) + 1)
+    })
+
+    const famePerKill = monstersDefeatedCount > 0 ? totalFameEarned / monstersDefeatedCount : 0
+
+    let playerFame = Math.round(ownKills * famePerKill)
+    const coverFameByPlayer = new Map<string, { name: string; fame: number }>()
+
+    coverKillsByOwner.forEach((killCount, ownerId) => {
+      const coverFame = Math.round(killCount * famePerKill)
+      const splitShare = calculateCoverFameSplit(coverFame)
+      const ownerPlayer = colocatedPlayers.find((p: Player) => p.id === ownerId)
+      if (ownerPlayer && splitShare > 0) {
+        coverFameByPlayer.set(ownerId, { name: ownerPlayer.name, fame: splitShare })
+      }
+      playerFame += splitShare // Fighting player also gets their half
+    })
+
+    return { playerFame, coverFameByPlayer }
+  }, [killCredits, monstersDefeatedCount, totalFameEarned, colocatedPlayers])
+
   if (!isActive || !player) return null
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
@@ -72,13 +114,6 @@ export function CombatModal() {
   const totalExp = calculateTotalMonsterExp(monsters)
   const isCombatOver = allMonstersDefeated || !canContinue
 
-  // Collect all songs from player + co-located players for dice display lookup
-  const allAvailableSongs = useMemo(() => {
-    const songs = [...player.songs]
-    colocatedPlayers.forEach((p) => songs.push(...p.songs))
-    return songs
-  }, [player.songs, colocatedPlayers])
-
   const handlePlaySong = (songId: string, ownerId: string) => {
     // Find the song from the correct owner
     const owner = ownerId === player.id
@@ -100,42 +135,6 @@ export function CombatModal() {
     )
     setPopups((prev) => [...prev, ...newPopups])
   }
-
-  const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
-  const totalFameEarned = monstersDefeatedCount > 0
-    ? calculateFameEarned(player.monstersDefeated, monstersDefeatedCount)
-    : 0
-
-  // Calculate fame split based on kill credits
-  const fameBreakdown = useMemo(() => {
-    if (monstersDefeatedCount === 0 || totalFameEarned === 0) {
-      return { playerFame: 0, coverFameByPlayer: new Map<string, { name: string; fame: number }>() }
-    }
-
-    const ownKills = killCredits.filter((kc) => !kc.isCover).length
-    const coverKillsByOwner = new Map<string, number>()
-    killCredits.filter((kc) => kc.isCover).forEach((kc) => {
-      coverKillsByOwner.set(kc.songOwnerId, (coverKillsByOwner.get(kc.songOwnerId) || 0) + 1)
-    })
-
-    // Fame per monster kill (linear in the current formula)
-    const famePerKill = monstersDefeatedCount > 0 ? totalFameEarned / monstersDefeatedCount : 0
-
-    let playerFame = Math.round(ownKills * famePerKill)
-    const coverFameByPlayer = new Map<string, { name: string; fame: number }>()
-
-    coverKillsByOwner.forEach((killCount, ownerId) => {
-      const coverFame = Math.round(killCount * famePerKill)
-      const splitShare = calculateCoverFameSplit(coverFame)
-      const ownerPlayer = colocatedPlayers.find((p: Player) => p.id === ownerId)
-      if (ownerPlayer && splitShare > 0) {
-        coverFameByPlayer.set(ownerId, { name: ownerPlayer.name, fame: splitShare })
-      }
-      playerFame += splitShare // Fighting player also gets their half
-    })
-
-    return { playerFame, coverFameByPlayer }
-  }, [killCredits, monstersDefeatedCount, totalFameEarned, colocatedPlayers])
 
   const handleEndCombat = () => {
     const success = allMonstersDefeated
