@@ -108,6 +108,7 @@ export const createCombatSlice: StateCreator<CombatSlice> = (set, get) => ({
       currentSongId: null,
       rolls: [],
       totalDamage: 0,
+      lastDamageCalculations: [],
     })
 
     return { success, monstersDefeated }
