@@ -8,7 +8,7 @@ import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopu
 import { calculateFameEarned, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
 import { calculateCoverFameSplit } from '@/game-logic/fame/coverSongFame'
 import { MAX_SONGS_PER_COMBAT } from '@/store/slices/combatSlice'
-import { Monster, Player, SongUsage } from '@/types'
+import { Genre, Monster, Player, SongUsage } from '@/types'
 
 /** Check if a song ID has been used in this combat */
 function isSongUsed(songsUsed: SongUsage[], songId: string): boolean {
@@ -34,6 +34,7 @@ export function CombatModal() {
   )
   const checkPhaseTransition = useGameStore((state) => state.checkPhaseTransition)
   const addGenreTagsForMonsters = useGameStore((state) => state.addGenreTagsForMonsters)
+  const removeGenreTagsForDefeatedMonsters = useGameStore((state) => state.removeGenreTagsForDefeatedMonsters)
 
   const player = useGameStore(
     selectPlayerById(playerId || '')
@@ -162,8 +163,16 @@ export function CombatModal() {
       clearSpaceAfterCombat(spaceId)
     }
 
-    // On retreat, add genre tags for surviving monsters
+    // On retreat, remove genre tags for defeated monsters and add tags for surviving ones
     if (!success && spaceId !== null) {
+      // Remove genre tags equal to each defeated monster's level
+      const defeatedTags: Genre[] = monsters
+        .filter((m: Monster) => m.currentHP <= 0 && m.vulnerability !== null)
+        .flatMap((m: Monster) => Array(m.level).fill(m.vulnerability!))
+      if (defeatedTags.length > 0) {
+        removeGenreTagsForDefeatedMonsters(spaceId, defeatedTags)
+      }
+
       const survivingGenres = monsters
         .filter((m: Monster) => m.currentHP > 0 && m.vulnerability !== null)
         .map((m: Monster) => m.vulnerability!)

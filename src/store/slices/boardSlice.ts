@@ -20,6 +20,7 @@ export interface BoardSlice {
   spawnInitialMonstersOnBoard: () => void
   clearSpaceAfterCombat: (spaceId: number) => void
   addGenreTagsForMonsters: (spaceId: number, genres: Genre[]) => void
+  removeGenreTagsForDefeatedMonsters: (spaceId: number, genres: Genre[]) => void
   updateSpace: (spaceId: number, updates: Partial<BoardSpace>) => void
 }
 
@@ -88,6 +89,20 @@ export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
       spaces: get().spaces.map((s) =>
         s.id === spaceId ? { ...s, genreTags: [...s.genreTags, ...genres] } : s
       ),
+    })
+  },
+
+  removeGenreTagsForDefeatedMonsters: (spaceId, genres) => {
+    set({
+      spaces: get().spaces.map((s) => {
+        if (s.id !== spaceId) return s
+        const remaining = [...s.genreTags]
+        for (const genre of genres) {
+          const idx = remaining.indexOf(genre)
+          if (idx !== -1) remaining.splice(idx, 1)
+        }
+        return { ...s, genreTags: remaining }
+      }),
     })
   },
 
