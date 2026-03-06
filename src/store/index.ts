@@ -96,3 +96,9 @@ export const selectCollectiveFame = (state: GameStore) => {
 export const selectActivePlayers = (state: GameStore) => {
   return state.players.filter((p) => !p.isEliminated)
 }
+
+export const selectPlayersAtSpace = (spaceId: number, excludePlayerId?: string) => (state: GameStore) => {
+  return state.players.filter(
+    (p) => p.position === spaceId && p.id !== excludePlayerId && !p.isEliminated
+  )
+}

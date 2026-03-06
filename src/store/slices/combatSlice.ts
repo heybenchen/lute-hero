@@ -1,6 +1,8 @@
 import { StateCreator } from 'zustand'
-import { Monster, Song, DiceRoll, DamageCalculation } from '@/types'
+import { Monster, Song, SongUsage, KillCredit, DiceRoll, DamageCalculation } from '@/types'
 import { rollSong, calculateAOEDamage } from '@/game-logic/combat/damageCalculator'
+
+export const MAX_SONGS_PER_COMBAT = 3
 
 export interface CombatSlice {
   // State
@@ -8,7 +10,8 @@ export interface CombatSlice {
   playerId: string | null
   spaceId: number | null
   monsters: Monster[]
-  songsUsed: string[]
+  songsUsed: SongUsage[]
+  killCredits: KillCredit[]
   currentSongId: string | null
   rolls: DiceRoll[]
   totalDamage: number
@@ -16,7 +19,7 @@ export interface CombatSlice {
 
   // Actions
   startCombat: (playerId: string, spaceId: number, monsters: Monster[]) => void
-  playSong: (song: Song) => { rolls: DiceRoll[]; updatedMonsters: Monster[]; damageCalculations: DamageCalculation[] }
+  playSong: (song: Song, ownerId: string) => { rolls: DiceRoll[]; updatedMonsters: Monster[]; damageCalculations: DamageCalculation[] }
   endCombat: (success: boolean) => { success: boolean; monstersDefeated: number }
   resetCombat: () => void
 }
@@ -28,6 +31,7 @@ export const createCombatSlice: StateCreator<CombatSlice> = (set, get) => ({
   spaceId: null,
   monsters: [],
   songsUsed: [],
+  killCredits: [],
   currentSongId: null,
   rolls: [],
   totalDamage: 0,
@@ -41,6 +45,7 @@ export const createCombatSlice: StateCreator<CombatSlice> = (set, get) => ({
       spaceId,
       monsters,
       songsUsed: [],
+      killCredits: [],
       currentSongId: null,
       rolls: [],
       totalDamage: 0,
@@ -48,7 +53,13 @@ export const createCombatSlice: StateCreator<CombatSlice> = (set, get) => ({
     })
   },
 
-  playSong: (song) => {
+  playSong: (song, ownerId) => {
+    const state = get()
+    const isCover = ownerId !== state.playerId
+
+    // Snapshot monsters before damage
+    const monstersBefore = state.monsters
+
     // Roll the song
     const { rolls } = rollSong(song)
 
@@ -56,7 +67,7 @@ export const createCombatSlice: StateCreator<CombatSlice> = (set, get) => ({
     const { damageCalculations, updatedMonsters } = calculateAOEDamage(
       song,
       rolls,
-      get().monsters
+      monstersBefore
     )
 
     // Calculate total damage dealt
@@ -65,13 +76,19 @@ export const createCombatSlice: StateCreator<CombatSlice> = (set, get) => ({
       0
     )
 
+    // Track newly killed monsters (alive before, dead after)
+    const newKillCredits: KillCredit[] = updatedMonsters
+      .filter((m, i) => monstersBefore[i].currentHP > 0 && m.currentHP <= 0)
+      .map((m) => ({ monsterId: m.id, songOwnerId: ownerId, isCover }))
+
     // Update state
     set({
       monsters: updatedMonsters,
-      songsUsed: [...get().songsUsed, song.id],
+      songsUsed: [...state.songsUsed, { songId: song.id, ownerId, isCover }],
+      killCredits: [...state.killCredits, ...newKillCredits],
       currentSongId: song.id,
       rolls,
-      totalDamage: get().totalDamage + totalDamageDealt,
+      totalDamage: state.totalDamage + totalDamageDealt,
       lastDamageCalculations: damageCalculations,
     })
 
@@ -87,6 +104,7 @@ export const createCombatSlice: StateCreator<CombatSlice> = (set, get) => ({
       spaceId: null,
       monsters: [],
       songsUsed: [],
+      killCredits: [],
       currentSongId: null,
       rolls: [],
       totalDamage: 0,
@@ -102,6 +120,7 @@ export const createCombatSlice: StateCreator<CombatSlice> = (set, get) => ({
       spaceId: null,
       monsters: [],
       songsUsed: [],
+      killCredits: [],
       currentSongId: null,
       rolls: [],
       totalDamage: 0,
