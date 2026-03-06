@@ -141,12 +141,25 @@ export interface DraftCard {
 // COMBAT STATE
 // ============================================
 
+export interface SongUsage {
+  songId: string;
+  ownerId: string; // Player who owns the song
+  isCover: boolean; // True if played by someone other than the owner
+}
+
+export interface KillCredit {
+  monsterId: string;
+  songOwnerId: string; // Who owned the song that killed this monster
+  isCover: boolean;
+}
+
 export interface CombatState {
   isActive: boolean;
   playerId: string | null;
   spaceId: number | null;
   monsters: Monster[];
-  songsUsed: string[]; // Song IDs already played
+  songsUsed: SongUsage[]; // Songs played with ownership tracking
+  killCredits: KillCredit[]; // Which songs killed which monsters
   currentSongId: string | null;
   damageDealt: number;
   totalDamage: number;
