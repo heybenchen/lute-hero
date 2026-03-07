@@ -38,8 +38,9 @@ export function Setup() {
       const playerSpace = board.find((s) => s.id === player.position)
       if (playerSpace) {
         playerSpace.connections.forEach((connId) => {
+          const freshGenreTags = useGameStore.getState().spaces.find((s) => s.id === connId)?.genreTags || []
           useGameStore.getState().updateSpace(connId, {
-            genreTags: [...(board.find((s) => s.id === connId)?.genreTags || []), player.songs[0].slots[0].dice?.genre || 'Ballad']
+            genreTags: [...freshGenreTags, player.songs[0].slots[0].dice?.genre || 'Ballad']
           })
         })
       }
