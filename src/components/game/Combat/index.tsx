@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useGameStore, selectPlayerById, selectPlayersAtSpace } from '@/store'
+import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
 import { DiceDisplay } from '@/components/ui/DiceDisplay'
@@ -42,7 +43,7 @@ export function CombatModal() {
 
   // Get co-located players for cover songs
   const colocatedPlayers = useGameStore(
-    selectPlayersAtSpace(spaceId ?? -1, playerId ?? undefined)
+    useShallow(selectPlayersAtSpace(spaceId ?? -1, playerId ?? undefined))
   )
 
   const [popups, setPopups] = useState<DamagePopupEntry[]>([])
