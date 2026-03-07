@@ -14,6 +14,7 @@
 
 ## Completed
 
+- Retreat removes defeated monster genre tags: when retreating, genre tags equal to each defeated monster's level are removed from the space (e.g., defeating a level 4 wind monster removes 4 wind tags)
 - Fix app crash on load: node_modules was missing; running `npm install` restores all dependencies and resolves the build/load failure
 - Balance & UI polish: d12 icon changed to dodecahedron (pentagon), resistance deals 0x damage (immune), d12/d20 costs increased to 20/30 EXP, studio shows 3 song name cards in a row, retreat adds genre tags for surviving monsters, boss phase waits for equal turns
 - Game balance overhaul: replaced d8 with d20 (upgrade path d4→d6→d12→d20), starter dice changed to 1 d4 + 1 d6, dice costs rebalanced (5/10/15/20 EXP), d12/d20 gated behind 25/50 fame per player, removed underground phase (main→finalBoss at 100 fame/player), buffed all song effects ~50%

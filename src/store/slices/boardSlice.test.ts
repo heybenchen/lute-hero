@@ -174,6 +174,72 @@ describe('boardSlice spawning integration', () => {
     })
   })
 
+  describe('removeGenreTagsForDefeatedMonsters', () => {
+    it('should remove the specified genre tags from a space', () => {
+      useGameStore.getState().initializeBoard()
+
+      const spaces = useGameStore.getState().spaces
+      const updatedSpaces = spaces.map((s) =>
+        s.id === 0 ? { ...s, genreTags: ['Ballad', 'Ballad', 'Ballad', 'Ballad', 'Folk'] as Genre[] } : s
+      )
+      useGameStore.setState({ spaces: updatedSpaces })
+
+      // Simulate defeating a level 4 Ballad monster: remove 4 Ballad tags
+      useGameStore.getState().removeGenreTagsForDefeatedMonsters(0, ['Ballad', 'Ballad', 'Ballad', 'Ballad'])
+
+      const space = useGameStore.getState().spaces.find((s) => s.id === 0)!
+      expect(space.genreTags).toEqual(['Folk'])
+    })
+
+    it('should only remove as many tags as exist (no negative)', () => {
+      useGameStore.getState().initializeBoard()
+
+      const spaces = useGameStore.getState().spaces
+      const updatedSpaces = spaces.map((s) =>
+        s.id === 0 ? { ...s, genreTags: ['Ballad', 'Ballad'] as Genre[] } : s
+      )
+      useGameStore.setState({ spaces: updatedSpaces })
+
+      // Try to remove 4 Ballad tags when only 2 exist
+      useGameStore.getState().removeGenreTagsForDefeatedMonsters(0, ['Ballad', 'Ballad', 'Ballad', 'Ballad'])
+
+      const space = useGameStore.getState().spaces.find((s) => s.id === 0)!
+      expect(space.genreTags).toEqual([])
+    })
+
+    it('should remove tags for multiple defeated monsters of different genres', () => {
+      useGameStore.getState().initializeBoard()
+
+      const spaces = useGameStore.getState().spaces
+      const updatedSpaces = spaces.map((s) =>
+        s.id === 0 ? { ...s, genreTags: ['Ballad', 'Ballad', 'Folk', 'Folk', 'Folk', 'Pop'] as Genre[] } : s
+      )
+      useGameStore.setState({ spaces: updatedSpaces })
+
+      // Defeated a level 2 Ballad and a level 3 Folk
+      useGameStore.getState().removeGenreTagsForDefeatedMonsters(0, ['Ballad', 'Ballad', 'Folk', 'Folk', 'Folk'])
+
+      const space = useGameStore.getState().spaces.find((s) => s.id === 0)!
+      expect(space.genreTags).toEqual(['Pop'])
+    })
+
+    it('should not affect other spaces', () => {
+      useGameStore.getState().initializeBoard()
+
+      const spaces = useGameStore.getState().spaces
+      const updatedSpaces = spaces.map((s) =>
+        s.id === 0 ? { ...s, genreTags: ['Ballad', 'Ballad'] as Genre[] } :
+        s.id === 1 ? { ...s, genreTags: ['Ballad', 'Folk'] as Genre[] } : s
+      )
+      useGameStore.setState({ spaces: updatedSpaces })
+
+      useGameStore.getState().removeGenreTagsForDefeatedMonsters(0, ['Ballad', 'Ballad'])
+
+      const space1 = useGameStore.getState().spaces.find((s) => s.id === 1)!
+      expect(space1.genreTags).toEqual(['Ballad', 'Folk'])
+    })
+  })
+
   describe('full round flow: addGenreTags -> spawnMonstersAtSpace -> clearSpaceAfterCombat', () => {
     it('should support the complete gameplay loop', () => {
       useGameStore.getState().initializeBoard()
