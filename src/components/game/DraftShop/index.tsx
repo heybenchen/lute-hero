@@ -19,11 +19,12 @@ const diceIcons: Record<DiceType, string> = {
   d20: '⬡',
 }
 
-const ELEMENTS: { genre: Genre; emoji: string }[] = [
-  { genre: 'Ballad', emoji: '🔥' },
-  { genre: 'Folk', emoji: '🌿' },
-  { genre: 'Hymn', emoji: '💨' },
-  { genre: 'Shanty', emoji: '🌊' },
+// Element cards: per-genre color (rgb triplet) for gradients, borders, glows
+const ELEMENTS: { genre: Genre; emoji: string; rgb: string }[] = [
+  { genre: 'Ballad', emoji: '🔥', rgb: '232, 32, 64' },
+  { genre: 'Folk', emoji: '🌿', rgb: '76, 175, 80' },
+  { genre: 'Hymn', emoji: '💨', rgb: '0, 184, 212' },
+  { genre: 'Shanty', emoji: '🌊', rgb: '41, 121, 255' },
 ]
 
 interface DraftShopProps {
@@ -198,30 +199,54 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {ELEMENTS.map(({ genre, emoji }) => {
+              {ELEMENTS.map(({ genre, emoji, rgb }) => {
                 const isSelected = selectedElement === genre
                 return (
-                  <div
+                  <button
                     key={genre}
-                    className={`card relative transition-all duration-200 cursor-pointer ${isSelected ? '' : 'hover:shadow-card-hover'}`}
-                    style={isSelected ? {
-                      border: '1px solid rgba(212, 168, 83, 0.6)',
-                      boxShadow: '0 0 12px rgba(212, 168, 83, 0.2)',
-                    } : undefined}
+                    className="group relative rounded-lg p-3 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1"
+                    style={{
+                      background: isSelected
+                        ? `linear-gradient(160deg, rgba(${rgb}, 0.22) 0%, rgba(${rgb}, 0.06) 100%)`
+                        : `linear-gradient(160deg, rgba(${rgb}, 0.1) 0%, rgba(42, 33, 24, 0.9) 100%)`,
+                      border: isSelected
+                        ? `1px solid rgba(${rgb}, 0.7)`
+                        : `1px solid rgba(${rgb}, 0.25)`,
+                      boxShadow: isSelected
+                        ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 18px rgba(${rgb}, 0.3), 0 4px 10px rgba(0,0,0,0.4)`
+                        : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 4px rgba(0,0,0,0.3)',
+                    }}
                     onClick={() => setSelectedElement(isSelected ? null : genre)}
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <div className="text-4xl">{emoji}</div>
+                      <div
+                        className="text-4xl transition-transform duration-200 ease-out group-hover:scale-110"
+                        style={{ filter: `drop-shadow(0 0 8px rgba(${rgb}, ${isSelected ? 0.6 : 0.3}))` }}
+                      >
+                        {emoji}
+                      </div>
                       <GenreBadge genre={genre} className="text-xs" />
                     </div>
-                  </div>
+                    {isSelected && (
+                      <div
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold animate-scale-in"
+                        style={{
+                          background: `rgb(${rgb})`,
+                          color: '#fff',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+                        }}
+                      >
+                        ✓
+                      </div>
+                    )}
+                  </button>
                 )
               })}
             </div>
 
             {/* Options for the selected element */}
             {selectedElement && (
-              <div className="rounded-lg p-4 mt-3 animate-fade-in"
+              <div className="rounded-lg p-4 mt-3 animate-slide-up"
                 style={{
                   background: 'rgba(212, 168, 83, 0.05)',
                   border: '1px solid rgba(212, 168, 83, 0.25)',

@@ -14,6 +14,8 @@
 
 ## Completed
 
+- UI polish pass: staggered tile entrance + framed map with hover-to-preview path connections and hint line, gradient buttons with hover lift/press states and focus rings, blurred modal backdrop with springy entrance, per-element themed shop cards with selection glow, pulsing fight button and danger glow on monster tiles, bobbing player token, fame bar sheen; fixed monster tooltip rendering dim/under neighboring tiles
+
 - Board is now a static tile grid: removed all zoom/pan/wheel interactions and the SVG connection canvas; the 14 spaces render as fixed tiles in 3 rows mirroring the old map layout
 - Elemental dice store: replaced the random "Find Inspiration" dice market with 4 element cards (Ballad 🔥, Folk 🌿, Hymn 💨, Shanty 🌊); picking an element lets you buy a new d4 (5 EXP) or upgrade an existing die of that element (→d6: 10 EXP, →d12: 20 EXP, →d20: 20 EXP); removed the inspiration pool, re-roll costs, and fame-gated dice tiers
 

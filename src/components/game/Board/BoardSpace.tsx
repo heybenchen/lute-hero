@@ -12,6 +12,7 @@ interface BoardSpaceProps {
   players: Player[]
   isCurrentPlayer: boolean
   canMoveTo: boolean
+  isLinkedToHovered?: boolean
   onClick: () => void
 }
 
@@ -20,6 +21,7 @@ export function BoardSpace({
   players,
   isCurrentPlayer,
   canMoveTo,
+  isLinkedToHovered = false,
   onClick,
 }: BoardSpaceProps) {
   const playersHere = players.filter((p) => p.position === space.id)
@@ -31,36 +33,46 @@ export function BoardSpace({
       onClick={onClick}
       disabled={!canMoveTo}
       className={`
-        relative w-[100px] h-[100px] rounded-lg transition-all duration-200
+        relative hover:z-40 w-[104px] h-[104px] rounded-xl
         flex flex-col justify-between p-2
+        transition-all duration-200 ease-out
         ${canMoveTo
-          ? 'cursor-pointer hover:scale-110'
-          : 'cursor-not-allowed'
+          ? 'cursor-pointer hover:-translate-y-1 hover:brightness-110'
+          : 'cursor-default'
         }
-        ${isCurrentPlayer ? 'scale-105' : ''}
-        ${!canMoveTo && !isCurrentPlayer ? 'opacity-60' : ''}
+        ${hasMonsters && canMoveTo ? 'animate-danger-pulse' : ''}
       `}
       style={{
         background: hasMonsters
-          ? 'linear-gradient(135deg, rgba(232, 32, 64, 0.15) 0%, rgba(139, 30, 30, 0.2) 100%)'
+          ? 'linear-gradient(135deg, rgba(232, 32, 64, 0.16) 0%, rgba(139, 30, 30, 0.22) 100%)'
           : potentialMonsters > 0
           ? 'linear-gradient(135deg, rgba(255, 157, 27, 0.1) 0%, rgba(180, 100, 20, 0.1) 100%)'
           : 'linear-gradient(135deg, rgba(42, 33, 24, 0.9) 0%, rgba(61, 48, 32, 0.9) 100%)',
         border: isCurrentPlayer
-          ? '2px solid rgba(100, 220, 100, 0.6)'
+          ? '2px solid rgba(100, 220, 100, 0.65)'
           : canMoveTo
-          ? '2px solid rgba(212, 168, 83, 0.5)'
+          ? '2px solid rgba(212, 168, 83, 0.55)'
+          : isLinkedToHovered
+          ? '1px dashed rgba(212, 168, 83, 0.5)'
           : hasMonsters
           ? '1px solid rgba(232, 32, 64, 0.4)'
           : '1px solid rgba(212, 168, 83, 0.15)',
         boxShadow: isCurrentPlayer
-          ? '0 0 15px rgba(100, 220, 100, 0.2), 0 4px 8px rgba(0,0,0,0.3)'
+          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px rgba(100, 220, 100, 0.22), 0 4px 8px rgba(0,0,0,0.3)'
           : canMoveTo
-          ? '0 0 12px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(0,0,0,0.3)'
-          : '0 2px 6px rgba(0,0,0,0.3)',
+          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 12px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(0,0,0,0.3)'
+          : isLinkedToHovered
+          ? 'inset 0 1px 0 rgba(255,255,255,0.04), 0 0 10px rgba(212, 168, 83, 0.12), 0 2px 6px rgba(0,0,0,0.3)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 6px rgba(0,0,0,0.3)',
       }}
       title={space.name}
     >
+      {/* Dim overlay for out-of-reach tiles (kept off the container so
+          tooltips inside stay at full opacity) */}
+      {!canMoveTo && !isCurrentPlayer && (
+        <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
+      )}
+
       {/* Edge indicator */}
       {space.isEdge && (
         <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
@@ -105,7 +117,7 @@ export function BoardSpace({
               x{space.monsters.length}
             </div>
             {/* Hover tooltip */}
-            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-52 rounded-lg p-2.5 shadow-xl text-sm pointer-events-none"
+            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-52 rounded-lg p-2.5 shadow-xl text-sm pointer-events-none animate-fade-in"
               style={{
                 background: 'linear-gradient(135deg, #2a2118, #1a1410)',
                 border: '1px solid rgba(212, 168, 83, 0.3)',
@@ -156,25 +168,30 @@ export function BoardSpace({
 
       {/* Players on this space */}
       {playersHere.length > 0 && (
-        <div className="flex gap-0.5 justify-center flex-wrap">
-          {playersHere.map((player) => (
-            <div
-              key={player.id}
-              className="player-avatar w-6 h-6 text-[10px]"
-              style={{ backgroundColor: player.color }}
-              title={player.name}
-            >
-              {player.name.charAt(0)}
-            </div>
-          ))}
+        <div className="flex justify-center -space-x-1.5">
+          {playersHere.map((player) => {
+            const isActiveToken = isCurrentPlayer && playersHere.length > 0
+            return (
+              <div
+                key={player.id}
+                className={`player-avatar w-6 h-6 text-[10px] ${isActiveToken ? 'animate-token-bob' : ''}`}
+                style={{
+                  backgroundColor: player.color,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                }}
+                title={player.name}
+              >
+                {player.name.charAt(0)}
+              </div>
+            )
+          })}
         </div>
       )}
 
       {/* Move indicator glow */}
       {canMoveTo && (
         <div
-          className="absolute inset-0 rounded-lg pointer-events-none animate-glow-pulse"
-          style={{ boxShadow: '0 0 14px rgba(212, 168, 83, 0.4)' }}
+          className="absolute inset-0 rounded-xl pointer-events-none animate-ring-pulse"
         />
       )}
     </button>

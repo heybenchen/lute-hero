@@ -47,7 +47,10 @@ export function GameView() {
               background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.5))',
             }}
           />
-          <h1 className="font-display text-3xl text-gold-400 tracking-wide">
+          <h1
+            className="font-display text-3xl text-gold-400 tracking-wide"
+            style={{ textShadow: '0 0 20px rgba(212, 168, 83, 0.35), 0 2px 4px rgba(0, 0, 0, 0.5)' }}
+          >
             Lute Hero
           </h1>
           <div
