@@ -1,18 +1,17 @@
 import { useState } from 'react'
-import { useGameStore, selectPlayerById } from '@/store'
-import { DraftCard, Song, DiceType, Genre, Dice } from '@/types'
+import { useGameStore, selectPlayerById, selectCollectiveFame } from '@/store'
+import { DraftCard, Song, DiceType, Genre, Dice, TrackEffect } from '@/types'
 import { DraftCardDisplay } from './DraftCardDisplay'
 import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
-import { MAX_SONGS } from '@/store/slices/playersSlice'
-import { getInspirationCost } from '@/data/draftCards'
+import { getInspirationCost, D12_FAME_PER_PLAYER, D20_FAME_PER_PLAYER } from '@/data/draftCards'
 
 const diceIcons: Record<DiceType, string> = {
   d4: '\u25B3',
   d6: '\u2684',
-  d12: '\u2B22',
-  d20: '\u2B1F',
+  d12: '\u2B20',
+  d20: '\u2B21',
 }
 
 interface DraftShopProps {
@@ -42,57 +41,45 @@ function getPlayerGenreCounts(players: { songs: Song[] }[]): Record<Genre, numbe
 export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const player = useGameStore(selectPlayerById(playerId))
   const players = useGameStore((state) => state.players)
+  const collectiveFame = useGameStore(selectCollectiveFame)
   const awardPlayerExp = useGameStore((state) => state.awardPlayerExp)
-  const addSongToPlayer = useGameStore((state) => state.addSongToPlayer)
-  const replaceSongForPlayer = useGameStore((state) => state.replaceSongForPlayer)
+  const applyNameToSong = useGameStore((state) => state.applyNameToSong)
 
   // Shop state
-  const songPool = useGameStore((state) => state.songPool)
-  const purchaseFromSongPool = useGameStore((state) => state.purchaseFromSongPool)
-  const refreshSongPool = useGameStore((state) => state.refreshSongPool)
+  const namePool = useGameStore((state) => state.namePool)
+  const purchaseFromNamePool = useGameStore((state) => state.purchaseFromNamePool)
+  const refreshNamePool = useGameStore((state) => state.refreshNamePool)
 
   // Inspiration state
   const inspirationRevealed = useGameStore((state) => state.inspirationRevealed)
   const inspirationRollCount = useGameStore((state) => state.inspirationRollCount)
-  const findInspiration = useGameStore((state) => state.findInspiration)
   const rerollInspiration = useGameStore((state) => state.rerollInspiration)
   const purchaseInspirationDie = useGameStore((state) => state.purchaseInspirationDie)
-  const closeInspiration = useGameStore((state) => state.closeInspiration)
 
   const [selectedDie, setSelectedDie] = useState<Dice | null>(null)
 
-  // Pending song that needs a replacement target (remaster)
-  const [pendingSong, setPendingSong] = useState<{
-    song: Song
+  // Pending name that needs a target song
+  const [pendingName, setPendingName] = useState<{
+    name: string
+    effects: TrackEffect[]
     cardId: string
   } | null>(null)
 
-  const inspirationActive = inspirationRevealed.length > 0
-  const inspirationCost = getInspirationCost(inspirationRollCount)
-  const rerollCost = getInspirationCost(inspirationRollCount + 1)
+  const rerollCost = getInspirationCost(inspirationRollCount)
 
-  const handleRefreshSongs = () => {
+  const handleRefreshNames = () => {
     if (!player || player.exp < REFRESH_COST) return
     awardPlayerExp(playerId, -REFRESH_COST)
-    refreshSongPool()
+    refreshNamePool()
   }
 
   if (!player) return null
-
-  const isAtMaxSongs = player.songs.length >= MAX_SONGS
-
-  const handleFindInspiration = () => {
-    if (!player || player.exp < inspirationCost) return
-    awardPlayerExp(playerId, -inspirationCost)
-    const genreCounts = getPlayerGenreCounts(players)
-    findInspiration(genreCounts)
-  }
 
   const handleRerollInspiration = () => {
     if (!player || player.exp < rerollCost) return
     awardPlayerExp(playerId, -rerollCost)
     const genreCounts = getPlayerGenreCounts(players)
-    rerollInspiration(genreCounts)
+    rerollInspiration(genreCounts, collectiveFame, players.length)
   }
 
   const handleSelectInspirationDie = (index: number) => {
@@ -100,48 +87,27 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     if (!revealed || !player || player.exp < revealed.cost) return
 
     awardPlayerExp(playerId, -revealed.cost)
-    const die = purchaseInspirationDie(index)
+    const genreCounts = getPlayerGenreCounts(players)
+    const die = purchaseInspirationDie(index, genreCounts, collectiveFame, players.length)
     if (die) {
       setSelectedDie(die)
     }
   }
 
-  const handleCancelInspiration = () => {
-    closeInspiration()
-  }
-
-  const handlePurchaseSong = (card: DraftCard) => {
+  const handlePurchaseName = (card: DraftCard) => {
     if (!player || player.exp < card.cost) return
 
-    const newSong: Song = {
-      id: `${playerId}-song-${Date.now()}`,
-      name: card.songName || 'New Song',
-      slots: [
-        { dice: null },
-        { dice: null },
-      ],
-      effects: [
-        ...(card.songEffect ? [card.songEffect] : []),
-        ...(card.songEffect2 ? [card.songEffect2] : []),
-      ],
-      used: false,
-    }
+    const effects: TrackEffect[] = card.songEffect ? [card.songEffect] : []
 
-    if (isAtMaxSongs) {
-      awardPlayerExp(playerId, -card.cost)
-      setPendingSong({ song: newSong, cardId: card.id })
-      purchaseFromSongPool(card.id)
-    } else {
-      awardPlayerExp(playerId, -card.cost)
-      addSongToPlayer(playerId, newSong)
-      purchaseFromSongPool(card.id)
-    }
+    awardPlayerExp(playerId, -card.cost)
+    setPendingName({ name: card.songName || 'New Song', effects, cardId: card.id })
+    purchaseFromNamePool(card.id)
   }
 
-  const handleReplaceSong = (oldSongId: string) => {
-    if (!pendingSong) return
-    replaceSongForPlayer(playerId, oldSongId, pendingSong.song)
-    setPendingSong(null)
+  const handleApplyName = (songId: string) => {
+    if (!pendingName) return
+    applyNameToSong(playerId, songId, pendingName.name, pendingName.effects)
+    setPendingName(null)
   }
 
   const handleSlotDice = (songId: string, slotIndex: number, isReplacement: boolean = false) => {
@@ -156,6 +122,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     setSelectedDie(null)
   }
 
+  // Show which dice tiers are locked
+  const d12Locked = collectiveFame < D12_FAME_PER_PLAYER * players.length
+  const d20Locked = collectiveFame < D20_FAME_PER_PLAYER * players.length
+
   return (
     <div className="modal-overlay">
       <div className="modal-content max-w-6xl">
@@ -166,7 +136,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               <div className="font-display text-2xl text-gold-400">
                 Studio
               </div>
-              <p className="text-sm text-parchment-400">
+              <p className="text-base text-parchment-400">
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span> Available
               </p>
             </div>
@@ -175,39 +145,26 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </button>
           </div>
 
-          {/* Pending song replacement (remaster) */}
-          {pendingSong && (
+          {/* Pending name — click a song below to apply */}
+          {pendingName && (
             <div className="rounded-lg p-4 mb-6 animate-fade-in"
               style={{
-                background: 'rgba(200, 100, 0, 0.1)',
-                border: '1px solid rgba(255, 180, 100, 0.3)',
+                background: 'rgba(176, 124, 255, 0.08)',
+                border: '1px solid rgba(176, 124, 255, 0.3)',
               }}
             >
-              <div className="font-bold text-orange-300 mb-2 text-sm">
-                Remaster: Choose a song to replace with "{pendingSong.song.name}":
+              <div className="font-bold text-classical mb-2 text-base">
+                Click a song below to name it "{pendingName.name}":
               </div>
-              <div className="flex gap-3">
-                {player.songs.map((song) => (
-                  <button
-                    key={song.id}
-                    onClick={() => handleReplaceSong(song.id)}
-                    className="px-4 py-2 rounded-lg font-medieval text-sm transition-all duration-150 hover:scale-105"
-                    style={{
-                      background: 'rgba(200, 100, 0, 0.15)',
-                      border: '1px solid rgba(255, 180, 100, 0.4)',
-                      color: '#ffd4a0',
-                    }}
-                  >
-                    {song.name}
-                  </button>
+              <div className="flex gap-3 items-center">
+                {pendingName.effects.map((effect, idx) => (
+                  <span key={idx} className="text-sm text-classical/80">
+                    {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
+                  </span>
                 ))}
                 <button
-                  onClick={() => setPendingSong(null)}
-                  className="px-4 py-2 rounded-lg font-medieval text-sm text-parchment-500"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                  }}
+                  onClick={() => setPendingName(null)}
+                  className="ml-auto text-xs text-parchment-500 hover:text-parchment-300"
                 >
                   Cancel
                 </button>
@@ -223,7 +180,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 border: '1px solid rgba(100, 180, 255, 0.3)',
               }}
             >
-              <div className="font-bold text-blue-300 mb-2 text-sm">
+              <div className="font-bold text-blue-300 mb-2 text-base">
                 Click a slot below to place your new die (Remix: you can replace existing dice):
               </div>
               <div className="flex gap-3 items-center">
@@ -233,97 +190,83 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </div>
           )}
 
-          {/* Find Inspiration section */}
+          {/* Dice selection */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+              <div className="flex items-center gap-3">
+                <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
                   Find Inspiration
                 </div>
+                {(d12Locked || d20Locked) && (
+                  <div className="text-xs text-parchment-500">
+                    {d12Locked && <span>d12 unlocks at {D12_FAME_PER_PLAYER * players.length} fame</span>}
+                    {d12Locked && d20Locked && <span className="mx-1">&middot;</span>}
+                    {d20Locked && !d12Locked && <span>d20 unlocks at {D20_FAME_PER_PLAYER * players.length} fame</span>}
+                  </div>
+                )}
               </div>
+              <button
+                onClick={handleRerollInspiration}
+                disabled={player.exp < rerollCost}
+                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Seek New ({rerollCost} EXP)
+              </button>
             </div>
 
-            {!inspirationActive ? (
-              <button
-                onClick={handleFindInspiration}
-                disabled={!player || player.exp < inspirationCost}
-                className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Seek Inspiration ({inspirationCost === 0 ? 'Free' : `${inspirationCost} EXP`})
-              </button>
-            ) : (
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                  {inspirationRevealed.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className={`card relative transition-all duration-200 ${player.exp < item.cost ? 'opacity-40' : 'hover:shadow-card-hover cursor-pointer'}`}
-                      onClick={() => handleSelectInspirationDie(idx)}
-                    >
-                      <div className="flex justify-between items-center mb-3 pb-2" style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}>
-                        <GenreBadge genre={item.dice.genre} className="text-xs" />
-                        <span className="text-gold-300 font-bold text-sm">{item.cost} EXP</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-2 mb-3">
-                        <div className="text-4xl text-gold-400">{diceIcons[item.dice.type]}</div>
-                        <div className="text-sm font-medieval text-parchment-200">{item.dice.type}</div>
-                        <div className="text-xs text-parchment-400">Range: 1-{getMaxValue(item.dice.type)}</div>
-                      </div>
-                      <button
-                        disabled={player.exp < item.cost}
-                        className="btn-primary w-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {player.exp >= item.cost ? 'Take' : 'Not Available'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {inspirationRevealed.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`card relative transition-all duration-200 ${player.exp < item.cost ? 'opacity-40' : 'hover:shadow-card-hover cursor-pointer'}`}
+                  onClick={() => handleSelectInspirationDie(idx)}
+                >
+                  <div className="flex justify-between items-center mb-3 pb-2" style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}>
+                    <GenreBadge genre={item.dice.genre} className="text-xs" />
+                    <span className="text-gold-300 font-bold text-sm">{item.cost} EXP</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 mb-3">
+                    <div className="text-4xl text-gold-400">{diceIcons[item.dice.type]}</div>
+                    <div className="text-sm font-medieval text-parchment-200">{item.dice.type}</div>
+                    <div className="text-xs text-parchment-400">Range: 1-{getMaxValue(item.dice.type)}</div>
+                  </div>
                   <button
-                    onClick={handleRerollInspiration}
-                    disabled={player.exp < rerollCost}
-                    className="btn-secondary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={player.exp < item.cost}
+                    className="btn-primary w-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    Re-roll ({rerollCost} EXP)
-                  </button>
-                  <button
-                    onClick={handleCancelInspiration}
-                    className="btn-secondary text-sm"
-                  >
-                    Cancel
+                    {player.exp >= item.cost ? 'Take' : 'Not Available'}
                   </button>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
 
-          {/* Song cards */}
+          {/* Song name cards */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
-                <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
-                  Song Tracks
+                <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
+                  Song Names
                 </div>
-                <div className="text-xs text-parchment-500">
-                  ({songPool.length} available)
-                  {isAtMaxSongs && <span className="text-orange-400 ml-1">&mdash; Max {MAX_SONGS} songs (buy to remaster)</span>}
+                <div className="text-sm text-parchment-500">
+                  ({namePool.length} available) &mdash; Names grant effects to your songs
                 </div>
               </div>
               <button
-                onClick={handleRefreshSongs}
+                onClick={handleRefreshNames}
                 disabled={!player || player.exp < REFRESH_COST}
-                className="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                title={`Refresh song selection for ${REFRESH_COST} EXP`}
+                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                title={`Refresh name selection for ${REFRESH_COST} EXP`}
               >
                 Refresh ({REFRESH_COST} EXP)
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {songPool.map((card) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {namePool.map((card) => (
                 <DraftCardDisplay
                   key={card.id}
                   card={card}
-                  onPurchase={() => handlePurchaseSong(card)}
+                  onPurchase={() => handlePurchaseName(card)}
                   canAfford={player.exp >= card.cost}
                 />
               ))}
@@ -333,40 +276,61 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
           {/* Player's songs */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="text-[10px] font-medieval text-parchment-400 uppercase tracking-wider">
+              <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
                 Your Songs
               </div>
-              <div className="text-xs text-parchment-500">
-                ({player.songs.length}/{MAX_SONGS})
-                {selectedDie
+              <div className="text-sm text-parchment-500">
+                ({player.songs.length}/3)
+                {pendingName
+                  ? ' — click a song to apply name'
+                  : selectedDie
                   ? ' — click any slot to place die (replace existing = remix)'
-                  : ' — find inspiration to get dice'
+                  : ' — take a die or name above to slot it here'
                 }
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {player.songs.map((song) => (
-                <div key={song.id} className="card">
+                <div
+                  key={song.id}
+                  className={`card transition-all duration-150 ${pendingName ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+                  style={pendingName ? {
+                    border: '1px solid rgba(176, 124, 255, 0.4)',
+                    boxShadow: '0 0 12px rgba(176, 124, 255, 0.1)',
+                  } : undefined}
+                  onClick={() => pendingName && handleApplyName(song.id)}
+                >
                   <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-2"
                     style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
                   >
-                    {song.name}
+                    {song.name || <span className="text-parchment-500 italic">Untitled</span>}
+                    {pendingName && song.name && (
+                      <span className="text-xs text-classical/60 font-normal ml-1">(rename)</span>
+                    )}
                   </div>
 
                   {/* Show song effects */}
-                  <div className="mb-2 space-y-0.5">
-                    {song.effects.map((effect, idx) => (
-                      <div key={idx} className="p-1 rounded text-[11px] flex items-center gap-1.5"
-                        style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
-                      >
-                        <span className="font-bold text-classical shrink-0">FX{idx + 1}:</span>
-                        <span className="text-classical/80 truncate">
-                          {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  {song.effects.length > 0 ? (
+                    <div className="mb-2 space-y-0.5">
+                      {song.effects.map((effect, idx) => (
+                        <div key={idx} className="p-1.5 rounded text-xs flex items-center gap-1.5"
+                          style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
+                        >
+                          <span className="font-bold text-classical shrink-0">FX{idx + 1}:</span>
+                          <span className="text-classical/80 truncate">
+                            {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mb-2 p-1.5 rounded text-xs text-parchment-500 italic"
+                      style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
+                    >
+                      No effects — buy a name to add effects
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     {song.slots.map((slot, idx) => {
@@ -397,7 +361,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                           {slot.dice ? (
                             <div className="text-center relative">
                               <div className="text-2xl mb-0.5 text-gold-400">{diceIcons[slot.dice.type]}</div>
-                              <div className="absolute -top-1 -right-3 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                              <div className="absolute -top-1 -right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                                 style={{
                                   background: 'linear-gradient(135deg, #b8922e, #d4a853)',
                                   color: '#1a1410',
@@ -406,13 +370,13 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                               >
                                 {getMaxValue(slot.dice.type)}
                               </div>
-                              <GenreBadge genre={slot.dice.genre} className="text-[7px] px-1 py-0" />
+                              <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
                             </div>
                           ) : (
-                            <div className="text-parchment-500/30 text-[10px]">Empty</div>
+                            <div className="text-parchment-500/30 text-xs">Empty</div>
                           )}
                           {selectedDie && slot.dice && (
-                            <div className="absolute bottom-1 text-[8px] text-orange-400 font-bold">
+                            <div className="absolute bottom-1 text-[10px] text-orange-400 font-bold">
                               Remix
                             </div>
                           )}

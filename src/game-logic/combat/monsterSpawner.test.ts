@@ -62,7 +62,7 @@ describe('Monster Spawner', () => {
       expect(boss.isBoss).toBe(true)
     })
 
-    it('should scale HP by level using 0.75 curve', () => {
+    it('should scale HP by level with accelerating curve capped at level 5', () => {
       const template: MonsterTemplate = {
         id: 'test-template',
         name: 'Test Monster',
@@ -76,11 +76,15 @@ describe('Monster Spawner', () => {
       const lv2 = createMonsterFromTemplate(template, 1, 0, 2)
       const lv3 = createMonsterFromTemplate(template, 1, 0, 3)
       const lv4 = createMonsterFromTemplate(template, 1, 0, 4)
+      const lv5 = createMonsterFromTemplate(template, 1, 0, 5)
+      const lv6 = createMonsterFromTemplate(template, 1, 0, 6)
 
-      expect(lv1.maxHP).toBe(20)  // 20 * 1.0
-      expect(lv2.maxHP).toBe(35)  // 20 * 1.75
-      expect(lv3.maxHP).toBe(50)  // 20 * 2.5
-      expect(lv4.maxHP).toBe(65)  // 20 * 3.25
+      expect(lv1.maxHP).toBe(20)   // 20 * 1.0
+      expect(lv2.maxHP).toBe(35)   // 20 * 1.75
+      expect(lv3.maxHP).toBe(55)   // 20 * 2.75
+      expect(lv4.maxHP).toBe(80)   // 20 * 4.0
+      expect(lv5.maxHP).toBe(110)  // 20 * 5.5
+      expect(lv6.maxHP).toBe(110)  // capped at level 5
     })
 
     it('should prefix name based on level', () => {
@@ -97,15 +101,18 @@ describe('Monster Spawner', () => {
       expect(createMonsterFromTemplate(template, 1, 0, 2).name).toBe('Strong Goblin')
       expect(createMonsterFromTemplate(template, 1, 0, 3).name).toBe('Veteran Goblin')
       expect(createMonsterFromTemplate(template, 1, 0, 4).name).toBe('Legendary Goblin')
+      expect(createMonsterFromTemplate(template, 1, 0, 5).name).toBe('Mythic Goblin')
     })
   })
 
   describe('getHPMultiplier', () => {
-    it('should use 0.75 curve', () => {
+    it('should use accelerating curve capped at level 5', () => {
       expect(getHPMultiplier(1)).toBe(1)
       expect(getHPMultiplier(2)).toBe(1.75)
-      expect(getHPMultiplier(3)).toBe(2.5)
-      expect(getHPMultiplier(4)).toBe(3.25)
+      expect(getHPMultiplier(3)).toBe(2.75)
+      expect(getHPMultiplier(4)).toBe(4)
+      expect(getHPMultiplier(5)).toBe(5.5)
+      expect(getHPMultiplier(6)).toBe(5.5) // capped
     })
   })
 

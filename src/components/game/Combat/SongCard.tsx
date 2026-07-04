@@ -7,10 +7,13 @@ interface SongCardProps {
   onPlay: () => void
   disabled: boolean
   index?: number
+  isCover?: boolean
+  ownerName?: string
 }
 
-export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
+export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName }: SongCardProps) {
   const hasEffects = song.effects.length > 0
+  const hasDice = song.slots.some((s) => s.dice)
   const filledSlots = song.slots.filter((s) => s.dice).length
 
   return (
@@ -28,7 +31,9 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
             : 'linear-gradient(165deg, rgba(42, 33, 24, 0.95), rgba(30, 24, 18, 0.98))',
           border: song.used
             ? '1px solid rgba(100, 200, 100, 0.15)'
-            : '1px solid rgba(212, 168, 83, 0.25)',
+            : isCover
+              ? '1px solid rgba(0, 188, 212, 0.3)'
+              : '1px solid rgba(212, 168, 83, 0.25)',
           boxShadow: song.used
             ? 'none'
             : '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212, 168, 83, 0.08)',
@@ -40,10 +45,26 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
         )}
 
         <div className="p-5">
+          {/* Cover badge */}
+          {isCover && ownerName && (
+            <div className="mb-2 flex items-center gap-1.5">
+              <span
+                className="text-xs font-medieval font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  background: 'rgba(0, 188, 212, 0.12)',
+                  border: '1px solid rgba(0, 188, 212, 0.3)',
+                  color: '#4dd0e1',
+                }}
+              >
+                Cover from {ownerName}
+              </span>
+            </div>
+          )}
+
           {/* Song title */}
           <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="font-medieval text-lg font-bold text-gold-400 truncate leading-tight flex-1">
-              {song.name}
+            <div className={`font-medieval text-lg font-bold truncate leading-tight flex-1 ${song.name ? 'text-gold-400' : 'text-parchment-500 italic'}`}>
+              {song.name || 'Untitled'}
             </div>
             <div className="text-sm text-parchment-500 flex-shrink-0 tabular-nums">
               {filledSlots}/2
@@ -104,7 +125,7 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
           {/* Play button */}
           <button
             onClick={onPlay}
-            disabled={disabled || song.used}
+            disabled={disabled || song.used || !hasDice}
             className="w-full py-3 font-medieval font-bold rounded-lg transition-all duration-200 text-base disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               background: song.used
@@ -118,7 +139,7 @@ export function SongCard({ song, onPlay, disabled, index = 0 }: SongCardProps) {
               boxShadow: song.used ? 'none' : '0 2px 8px rgba(0,0,0,0.3)',
             }}
           >
-            {song.used ? '\u2713 Played' : '\u266B Perform'}
+            {song.used ? '\u2713 Played' : !hasDice ? 'No Dice' : '\u266B Perform'}
           </button>
         </div>
 

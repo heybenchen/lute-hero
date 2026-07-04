@@ -1,12 +1,20 @@
-import { useState, useCallback } from 'react'
-import { useGameStore, selectPlayerById } from '@/store'
+import { useState, useCallback, useMemo } from 'react'
+import { useGameStore, selectPlayerById, selectPlayersAtSpace } from '@/store'
+import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
 import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { DamageBreakdown } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateFameEarned, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
-import { Monster } from '@/types'
+import { calculateCoverFameSplit } from '@/game-logic/fame/coverSongFame'
+import { MAX_SONGS_PER_COMBAT } from '@/store/slices/combatSlice'
+import { Genre, Monster, Player, SongUsage } from '@/types'
+
+/** Check if a song ID has been used in this combat */
+function isSongUsed(songsUsed: SongUsage[], songId: string): boolean {
+  return songsUsed.some((su) => su.songId === songId)
+}
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
@@ -14,6 +22,7 @@ export function CombatModal() {
   const spaceId = useGameStore((state) => state.spaceId)
   const monsters = useGameStore((state) => state.monsters)
   const songsUsed = useGameStore((state) => state.songsUsed)
+  const killCredits = useGameStore((state) => state.killCredits)
   const rolls = useGameStore((state) => state.rolls)
   const lastDamageCalculations = useGameStore((state) => state.lastDamageCalculations)
   const playSong = useGameStore((state) => state.playSong)
@@ -25,9 +34,16 @@ export function CombatModal() {
     (state) => state.incrementPlayerMonstersDefeated
   )
   const checkPhaseTransition = useGameStore((state) => state.checkPhaseTransition)
+  const addGenreTagsForMonsters = useGameStore((state) => state.addGenreTagsForMonsters)
+  const removeGenreTagsForDefeatedMonsters = useGameStore((state) => state.removeGenreTagsForDefeatedMonsters)
 
   const player = useGameStore(
     selectPlayerById(playerId || '')
+  )
+
+  // Get co-located players for cover songs
+  const colocatedPlayers = useGameStore(
+    useShallow(selectPlayersAtSpace(spaceId ?? -1, playerId ?? undefined))
   )
 
   const [popups, setPopups] = useState<DamagePopupEntry[]>([])
@@ -36,22 +52,82 @@ export function CombatModal() {
     setPopups((prev) => prev.filter((p) => p.id !== id))
   }, [])
 
+  // All hooks must be called before any early return (Rules of Hooks)
+  const allAvailableSongs = useMemo(() => {
+    if (!player) return []
+    const songs = [...player.songs]
+    colocatedPlayers.forEach((p) => songs.push(...p.songs))
+    return songs
+  }, [player, colocatedPlayers])
+
+  const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
+  const totalFameEarned = player && monstersDefeatedCount > 0
+    ? calculateFameEarned(player.monstersDefeated, monstersDefeatedCount)
+    : 0
+
+  const fameBreakdown = useMemo(() => {
+    if (monstersDefeatedCount === 0 || totalFameEarned === 0) {
+      return { playerFame: 0, coverFameByPlayer: new Map<string, { name: string; fame: number }>() }
+    }
+
+    const ownKills = killCredits.filter((kc) => !kc.isCover).length
+    const coverKillsByOwner = new Map<string, number>()
+    killCredits.filter((kc) => kc.isCover).forEach((kc) => {
+      coverKillsByOwner.set(kc.songOwnerId, (coverKillsByOwner.get(kc.songOwnerId) || 0) + 1)
+    })
+
+    const famePerKill = monstersDefeatedCount > 0 ? totalFameEarned / monstersDefeatedCount : 0
+
+    let playerFame = Math.round(ownKills * famePerKill)
+    const coverFameByPlayer = new Map<string, { name: string; fame: number }>()
+
+    coverKillsByOwner.forEach((killCount, ownerId) => {
+      const coverFame = Math.round(killCount * famePerKill)
+      const splitShare = calculateCoverFameSplit(coverFame)
+      const ownerPlayer = colocatedPlayers.find((p: Player) => p.id === ownerId)
+      if (ownerPlayer && splitShare > 0) {
+        coverFameByPlayer.set(ownerId, { name: ownerPlayer.name, fame: splitShare })
+      }
+      playerFame += splitShare // Fighting player also gets their half
+    })
+
+    return { playerFame, coverFameByPlayer }
+  }, [killCredits, monstersDefeatedCount, totalFameEarned, colocatedPlayers])
+
   if (!isActive || !player) return null
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
-  const canContinue = songsUsed.length < player.songs.length
+  const playableSongs = player.songs.filter((s) => s.slots.some((slot) => slot.dice))
+  const ownSongsRemaining = playableSongs.filter((s) => !isSongUsed(songsUsed, s.id)).length
+
+  // Cover songs available from co-located players
+  const coverPlayersWithSongs = colocatedPlayers
+    .map((p) => ({
+      player: p,
+      songs: p.songs.filter((s) => s.slots.some((slot) => slot.dice) && !isSongUsed(songsUsed, s.id)),
+    }))
+    .filter((entry) => entry.songs.length > 0)
+
+  const hasCoverSongsLeft = coverPlayersWithSongs.length > 0
+  const hasReachedSongLimit = songsUsed.length >= MAX_SONGS_PER_COMBAT
+  const canContinue = !hasReachedSongLimit && (ownSongsRemaining > 0 || hasCoverSongsLeft)
+
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
   const totalExp = calculateTotalMonsterExp(monsters)
   const isCombatOver = allMonstersDefeated || !canContinue
 
-  const handlePlaySong = (songId: string) => {
-    const song = player.songs.find((s) => s.id === songId)
-    if (!song || songsUsed.includes(songId)) return
+  const handlePlaySong = (songId: string, ownerId: string) => {
+    // Find the song from the correct owner
+    const owner = ownerId === player.id
+      ? player
+      : colocatedPlayers.find((p: Player) => p.id === ownerId)
+    const song = owner?.songs.find((s) => s.id === songId)
+    if (!song || isSongUsed(songsUsed, songId)) return
 
     // Snapshot monsters before damage
     const monstersBefore = monsters.map((m) => ({ ...m }))
 
-    const result = playSong(song)
+    const result = playSong(song, ownerId)
 
     // Create floating damage popups
     const newPopups = createDamagePopups(
@@ -62,13 +138,9 @@ export function CombatModal() {
     setPopups((prev) => [...prev, ...newPopups])
   }
 
-  const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
-  const fameEarned = monstersDefeatedCount > 0
-    ? calculateFameEarned(player.monstersDefeated, monstersDefeatedCount)
-    : 0
-
   const handleEndCombat = () => {
     const success = allMonstersDefeated
+    const { playerFame, coverFameByPlayer } = fameBreakdown
     endCombat(success)
 
     // EXP is always awarded for the full encounter
@@ -76,13 +148,38 @@ export function CombatModal() {
 
     // Fame awarded for each monster defeated, even on retreat
     if (monstersDefeatedCount > 0) {
-      awardPlayerFame(player.id, fameEarned)
+      // Award fighting player their share
+      if (playerFame > 0) {
+        awardPlayerFame(player.id, playerFame)
+      }
+      // Award cover source players their share
+      coverFameByPlayer.forEach(({ fame }, ownerId) => {
+        awardPlayerFame(ownerId, fame)
+      })
       incrementPlayerMonstersDefeated(player.id, monstersDefeatedCount)
       checkPhaseTransition()
     }
 
     if (success && spaceId !== null) {
       clearSpaceAfterCombat(spaceId)
+    }
+
+    // On retreat, remove genre tags for defeated monsters and add tags for surviving ones
+    if (!success && spaceId !== null) {
+      // Remove genre tags equal to each defeated monster's level
+      const defeatedTags: Genre[] = monsters
+        .filter((m: Monster) => m.currentHP <= 0 && m.vulnerability !== null)
+        .flatMap((m: Monster) => Array(m.level).fill(m.vulnerability!))
+      if (defeatedTags.length > 0) {
+        removeGenreTagsForDefeatedMonsters(spaceId, defeatedTags)
+      }
+
+      const survivingGenres = monsters
+        .filter((m: Monster) => m.currentHP > 0 && m.vulnerability !== null)
+        .map((m: Monster) => m.vulnerability!)
+      if (survivingGenres.length > 0) {
+        addGenreTagsForMonsters(spaceId, survivingGenres)
+      }
     }
   }
 
@@ -128,21 +225,60 @@ export function CombatModal() {
           <div className="mb-8">
             <SectionHeader
               label="Your Songs"
-              detail={`${player.songs.length - songsUsed.length} remaining`}
+              detail={`${ownSongsRemaining} remaining · ${songsUsed.length}/${MAX_SONGS_PER_COMBAT} played`}
               detailColor="text-gold-400"
             />
             <div className="flex gap-5 overflow-x-auto pb-2 -mx-1 px-1">
               {player.songs.map((song, idx) => (
                 <SongCard
                   key={song.id}
-                  song={{ ...song, used: songsUsed.includes(song.id) }}
-                  onPlay={() => handlePlaySong(song.id)}
-                  disabled={songsUsed.includes(song.id)}
+                  song={{ ...song, used: isSongUsed(songsUsed, song.id) }}
+                  onPlay={() => handlePlaySong(song.id, player.id)}
+                  disabled={isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
                   index={idx}
                 />
               ))}
             </div>
           </div>
+
+          {/* Cover Songs Section */}
+          {coverPlayersWithSongs.length > 0 && (
+            <div className="mb-8">
+              <SectionHeader
+                label="Cover Songs"
+                detail={`${coverPlayersWithSongs.reduce((n, e) => n + e.songs.length, 0)} available`}
+                detailColor="text-cyan-400"
+              />
+              {coverPlayersWithSongs.map(({ player: coverPlayer, songs }) => (
+                <div key={coverPlayer.id} className="mb-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                      style={{ backgroundColor: coverPlayer.color, color: '#1a1410' }}
+                    >
+                      {coverPlayer.name[0]}
+                    </div>
+                    <span className="text-sm font-medieval text-parchment-400">
+                      {coverPlayer.name}'s Songs
+                    </span>
+                  </div>
+                  <div className="flex gap-5 overflow-x-auto pb-2 -mx-1 px-1">
+                    {songs.map((song, idx) => (
+                      <SongCard
+                        key={song.id}
+                        song={{ ...song, used: isSongUsed(songsUsed, song.id) }}
+                        onPlay={() => handlePlaySong(song.id, coverPlayer.id)}
+                        disabled={isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
+                        index={idx}
+                        isCover
+                        ownerName={coverPlayer.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Last Roll + Damage — side by side when both present */}
           {(rolls.length > 0 || lastDamageCalculations.length > 0) && (
@@ -161,7 +297,7 @@ export function CombatModal() {
                   </div>
                   <div className="flex gap-3 items-center flex-wrap">
                     {rolls.map((roll, idx) => {
-                      const dice = player.songs
+                      const dice = allAvailableSongs
                         .flatMap((s) => s.slots)
                         .find((slot) => slot.dice?.id === roll.diceId)?.dice
 
@@ -173,6 +309,7 @@ export function CombatModal() {
                           dice={dice}
                           value={roll.value}
                           isCrit={roll.isCrit}
+                          cascadeRolls={roll.cascadeRolls}
                           compact
                         />
                       )
@@ -208,16 +345,25 @@ export function CombatModal() {
                   {allMonstersDefeated ? 'Victory' : 'Retreat'} — Rewards Earned
                 </div>
                 <div className="flex items-center justify-center gap-6 mt-2">
-                  {fameEarned > 0 && (
+                  {totalFameEarned > 0 && (
                     <div>
                       <div className="text-3xl font-bold text-gold-400 tabular-nums"
                         style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
                       >
-                        +{fameEarned} Fame
+                        +{fameBreakdown.playerFame} Fame
                       </div>
                       <div className="text-xs text-parchment-500 mt-0.5">
                         {monstersDefeatedCount} monster{monstersDefeatedCount !== 1 ? 's' : ''} defeated
                       </div>
+                      {fameBreakdown.coverFameByPlayer.size > 0 && (
+                        <div className="mt-1.5 space-y-0.5">
+                          {Array.from(fameBreakdown.coverFameByPlayer.entries()).map(([ownerId, { name, fame }]) => (
+                            <div key={ownerId} className="text-xs" style={{ color: '#4dd0e1' }}>
+                              +{fame} Fame to {name} (cover)
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                   <div>

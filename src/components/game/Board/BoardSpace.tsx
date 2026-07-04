@@ -38,7 +38,7 @@ export function BoardSpace({
       onClick={onClick}
       disabled={!canMoveTo}
       className={`
-        relative w-[90px] h-[90px] rounded-lg transition-all duration-200
+        relative w-[100px] h-[100px] rounded-lg transition-all duration-200
         flex flex-col justify-between p-2
         ${canMoveTo ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}
         ${isCurrentPlayer ? 'scale-105' : ''}
@@ -192,7 +192,7 @@ export function BoardSpace({
           {playersHere.map((player) => (
             <div
               key={player.id}
-              className="player-avatar w-5 h-5 text-[9px]"
+              className="player-avatar w-6 h-6 text-[10px]"
               style={{ backgroundColor: player.color }}
               title={player.name}
             >

@@ -33,11 +33,14 @@ export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: num
 }
 
 /**
- * Calculate HP multiplier based on monster level
- * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 2.5x, Level 4 = 3.25x
+ * Calculate HP multiplier based on monster level (capped at level 5)
+ * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 2.75x, Level 4 = 4x, Level 5 = 5.5x
  */
+const HP_MULTIPLIERS = [1, 1.75, 2.75, 4, 5.5]
+
 export function getHPMultiplier(level: number): number {
-  return 1 + (level - 1) * 0.75
+  const capped = Math.min(level, 5)
+  return HP_MULTIPLIERS[capped - 1]
 }
 
 /**
@@ -47,7 +50,8 @@ export function getMonsterNameWithLevel(baseName: string, level: number): string
   if (level === 1) return baseName
   if (level === 2) return `Strong ${baseName}`
   if (level === 3) return `Veteran ${baseName}`
-  return `Legendary ${baseName}`
+  if (level === 4) return `Legendary ${baseName}`
+  return `Mythic ${baseName}`
 }
 
 /**

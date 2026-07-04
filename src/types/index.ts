@@ -6,7 +6,7 @@ export type Genre = "Ballad" | "Folk" | "Hymn" | "Shanty";
 
 export type DiceType = "d4" | "d6" | "d12" | "d20";
 
-export type GamePhase = "setup" | "main" | "underground" | "finalBoss" | "gameOver";
+export type GamePhase = "setup" | "main" | "finalBoss" | "gameOver";
 
 // ============================================
 // DICE & COMBAT
@@ -22,22 +22,28 @@ export interface DiceRoll {
   diceId: string;
   value: number;
   isCrit: boolean; // True if rolled max value
-  critBonus: number; // Equals roll value if crit (double damage)
+  critBonus: number; // Sum of cascade roll values
+  cascadeRolls: number[]; // Each additional die value from cascading crits
 }
 
 // Track effects that modify dice behavior
 export type TrackEffect =
   | { type: "freeReroll"; used: boolean }
   | { type: "upgrade"; used: boolean } // d4 -> d6 -> d12 -> d20
-  | { type: "flip" } // Roll 3 on d20 becomes 17
+  | { type: "flip" } // Only flips if it nets a higher value
   | { type: "addFlat"; amount: number }
-  | { type: "rerollOnes" }
   | { type: "addDice"; diceType: DiceType; used: boolean }
   | { type: "rollTwiceKeepHigher" }
-  | { type: "explosive" } // Crit triggers another roll
   | { type: "harmonize"; bonusDamage: number } // Bonus if 2+ dice roll same value
-  | { type: "gamble" } // Roll d12; keep if higher, else deal 0
-  | { type: "offbeat" }; // Odd rolls 2x damage, even rolls 0.5x damage
+  | { type: "offbeat" } // Odd rolls 2x damage, even rolls 0.5x damage
+  | { type: "wildDice"; used: boolean } // Once per song: add one extra d4 roll
+  | { type: "tempo" } // Add the lowest die's result as bonus damage
+  | { type: "dynamicRange" } // |die1 - die2| >= 6: +4 damage
+  | { type: "dropTheBass" } // Both primary dice roll 1: +9 damage
+  | { type: "lucky7" } // Any die shows 7: +3 damage
+  | { type: "powerChord" } // Each 3 rolled deals double (6) damage
+  | { type: "crescendo" } // Total roll >= 15: +5 damage
+  | { type: "monoOut" }; // Roll once, apply to both slots (both must be filled)
 
 export interface SongSlot {
   dice: Dice | null;
@@ -65,7 +71,7 @@ export interface MonsterTemplate {
   name: string;
   baseHP: number;
   vulnerability: Genre | null; // Single weakness - 2x damage
-  resistance: Genre | null; // Single resistance - 0.5x damage
+  resistance: Genre | null; // Single resistance - 0x damage (immune)
   description: string;
   isBoss?: boolean;
 }
@@ -125,23 +131,35 @@ export interface Player {
 
 export interface DraftCard {
   id: string;
-  type: "song";
+  type: "name";
   cost: number;
   songName?: string;
   songEffect?: TrackEffect;
-  songEffect2?: TrackEffect;
 }
 
 // ============================================
 // COMBAT STATE
 // ============================================
 
+export interface SongUsage {
+  songId: string;
+  ownerId: string; // Player who owns the song
+  isCover: boolean; // True if played by someone other than the owner
+}
+
+export interface KillCredit {
+  monsterId: string;
+  songOwnerId: string; // Who owned the song that killed this monster
+  isCover: boolean;
+}
+
 export interface CombatState {
   isActive: boolean;
   playerId: string | null;
   spaceId: number | null;
   monsters: Monster[];
-  songsUsed: string[]; // Song IDs already played
+  songsUsed: SongUsage[]; // Songs played with ownership tracking
+  killCredits: KillCredit[]; // Which songs killed which monsters
   currentSongId: string | null;
   damageDealt: number;
   totalDamage: number;
@@ -162,16 +180,10 @@ export interface GameState {
   board: BoardSpace[];
   combat: CombatState;
 
-  // Phase-specific state
-  undergroundSceneProgress: {
-    [playerId: string]: boolean; // Has completed underground scene
-  };
-
   finalBoss: Monster | null;
 
   // Fame thresholds for progression
   fameThresholds: {
-    undergroundScene: number;
     finalBoss: number;
   };
 }

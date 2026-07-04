@@ -9,17 +9,32 @@ function generateCardId(): string {
 
 // Single dice purchase costs by type
 export const SINGLE_DICE_COSTS: Record<DiceType, number> = {
-  d4: 4,
-  d6: 6,
-  d12: 12,
-  d20: 18,
+  d4: 5,
+  d6: 10,
+  d12: 20,
+  d20: 30,
 };
 
-// Inspiration reveal cost: free for first seek (rollCount=0), then 10 * rollCount for re-rolls
+// Per-player fame required to unlock higher dice tiers (multiply by numPlayers for threshold)
+export const D12_FAME_PER_PLAYER = 25;
+export const D20_FAME_PER_PLAYER = 50;
+
+// Inspiration re-roll cost: 10 EXP for first seek, escalates by 10 each re-roll
 export const INSPIRATION_BASE_COST = 10;
 
 export function getInspirationCost(rollCount: number): number {
-  return INSPIRATION_BASE_COST * rollCount;
+  return INSPIRATION_BASE_COST * (rollCount + 1);
+}
+
+/**
+ * Returns the dice types currently purchasable based on collective fame.
+ * d12 unlocks at 25 fame per player, d20 at 50 fame per player.
+ */
+export function getAllowedDiceTypes(collectiveFame: number, numPlayers: number): DiceType[] {
+  const types: DiceType[] = ["d4", "d6"];
+  if (collectiveFame >= D12_FAME_PER_PLAYER * numPlayers) types.push("d12");
+  if (collectiveFame >= D20_FAME_PER_PLAYER * numPlayers) types.push("d20");
+  return types;
 }
 
 /**
@@ -49,22 +64,34 @@ export function createInspirationPool(numPlayers: number): Dice[] {
 /**
  * Draw dice from the inspiration pool with genre weighting.
  * Genres that players already own many of are less likely to appear.
+ * Dice types not yet unlocked by fame are held back in the pool.
  * Unchosen dice are returned to pool by the caller.
  */
 export function drawInspirationDice(
   pool: Dice[],
   count: number,
   playerGenreCounts?: Record<Genre, number>,
+  allowedTypes?: DiceType[],
 ): { drawn: InspirationDie[]; remainingPool: Dice[] } {
   if (pool.length === 0) return { drawn: [], remainingPool: [] };
 
-  const remainingPool = [...pool];
+  // Separate dice available for drawing from those locked by fame gating
+  const drawablePool: Dice[] = [];
+  const lockedPool: Dice[] = [];
+  for (const die of pool) {
+    if (!allowedTypes || allowedTypes.includes(die.type)) {
+      drawablePool.push(die);
+    } else {
+      lockedPool.push(die);
+    }
+  }
+
   const drawn: InspirationDie[] = [];
-  const drawCount = Math.min(count, remainingPool.length);
+  const drawCount = Math.min(count, drawablePool.length);
 
   for (let i = 0; i < drawCount; i++) {
-    // Calculate weights for remaining dice
-    const weights = remainingPool.map((die) => {
+    // Calculate weights for remaining drawable dice
+    const weights = drawablePool.map((die) => {
       const genreCount = playerGenreCounts?.[die.genre] ?? 0;
       return Math.max(1, 10 - genreCount);
     });
@@ -81,20 +108,19 @@ export function drawInspirationDice(
       }
     }
 
-    const selected = remainingPool.splice(selectedIdx, 1)[0];
+    const selected = drawablePool.splice(selectedIdx, 1)[0];
     drawn.push({
       dice: selected,
       cost: SINGLE_DICE_COSTS[selected.type],
     });
   }
 
-  return { drawn, remainingPool };
+  return { drawn, remainingPool: [...lockedPool, ...drawablePool] };
 }
 
-export function generateSongCard(): DraftCard {
+export function generateNameCard(): DraftCard {
   const effects = Object.keys(TRACK_EFFECTS);
-  const randomEffect1 = effects[Math.floor(Math.random() * effects.length)];
-  const randomEffect2 = effects[Math.floor(Math.random() * effects.length)];
+  const randomEffect = effects[Math.floor(Math.random() * effects.length)];
 
   const songNames = [
     "Acoustic Serenade",
@@ -111,10 +137,9 @@ export function generateSongCard(): DraftCard {
 
   return {
     id: generateCardId(),
-    type: "song",
+    type: "name",
     cost: 10,
     songName: songNames[Math.floor(Math.random() * songNames.length)],
-    songEffect: TRACK_EFFECTS[randomEffect1],
-    songEffect2: TRACK_EFFECTS[randomEffect2],
+    songEffect: TRACK_EFFECTS[randomEffect],
   };
 }

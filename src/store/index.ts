@@ -10,20 +10,22 @@ import { createShopSlice, ShopSlice } from './slices/shopSlice'
 export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice & ShopSlice
 
 const STORAGE_KEY = 'lute-hero-save'
-const STORAGE_VERSION = 2
+const STORAGE_VERSION = 4
 
 // Only persist the durable game state — skip transient combat mid-fight data
-const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'spaces' | 'players' | 'inspirationPool' | 'songPool'>> = {
+const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'inspirationPool' | 'inspirationRevealed' | 'namePool'>> = {
   name: STORAGE_KEY,
   version: STORAGE_VERSION,
   partialize: (state) => ({
     phase: state.phase,
     currentRound: state.currentRound,
     currentTurnPlayerIndex: state.currentTurnPlayerIndex,
+    pendingPhase: state.pendingPhase,
     spaces: state.spaces,
     players: state.players,
     inspirationPool: state.inspirationPool,
-    songPool: state.songPool,
+    inspirationRevealed: state.inspirationRevealed,
+    namePool: state.namePool,
   }),
   // Only hydrate if saved game is in a non-setup phase (i.e. a real game was in progress)
   merge: (persisted, current) => {
@@ -93,4 +95,10 @@ export const selectCollectiveFame = (state: GameStore) => {
 
 export const selectActivePlayers = (state: GameStore) => {
   return state.players.filter((p) => !p.isEliminated)
+}
+
+export const selectPlayersAtSpace = (spaceId: number, excludePlayerId?: string) => (state: GameStore) => {
+  return state.players.filter(
+    (p) => p.position === spaceId && p.id !== excludePlayerId && !p.isEliminated
+  )
 }

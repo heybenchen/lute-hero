@@ -3,20 +3,42 @@ import {
   createInspirationPool,
   drawInspirationDice,
   getInspirationCost,
-  generateSongCard,
+  generateNameCard,
+  getAllowedDiceTypes,
   SINGLE_DICE_COSTS,
+  D12_FAME_PER_PLAYER,
+  D20_FAME_PER_PLAYER,
 } from './draftCards'
 
 describe('Inspiration System', () => {
   describe('getInspirationCost', () => {
-    it('should return 0 for first seek (free)', () => {
-      expect(getInspirationCost(0)).toBe(0)
+    it('should cost 10 EXP for first seek (rollCount 0)', () => {
+      expect(getInspirationCost(0)).toBe(10)
     })
 
     it('should escalate cost by 10 per re-roll', () => {
-      expect(getInspirationCost(1)).toBe(10)
-      expect(getInspirationCost(2)).toBe(20)
-      expect(getInspirationCost(3)).toBe(30)
+      expect(getInspirationCost(1)).toBe(20)
+      expect(getInspirationCost(2)).toBe(30)
+      expect(getInspirationCost(3)).toBe(40)
+    })
+  })
+
+  describe('getAllowedDiceTypes', () => {
+    it('should return only d4 and d6 at low fame', () => {
+      expect(getAllowedDiceTypes(0, 4)).toEqual(['d4', 'd6'])
+      expect(getAllowedDiceTypes(D12_FAME_PER_PLAYER * 4 - 1, 4)).toEqual(['d4', 'd6'])
+    })
+
+    it('should unlock d12 at D12_FAME_PER_PLAYER * numPlayers', () => {
+      const types = getAllowedDiceTypes(D12_FAME_PER_PLAYER * 4, 4)
+      expect(types).toContain('d12')
+      expect(types).not.toContain('d20')
+    })
+
+    it('should unlock d20 at D20_FAME_PER_PLAYER * numPlayers', () => {
+      const types = getAllowedDiceTypes(D20_FAME_PER_PLAYER * 4, 4)
+      expect(types).toContain('d12')
+      expect(types).toContain('d20')
     })
   })
 
@@ -93,28 +115,46 @@ describe('Inspiration System', () => {
       // Ballad should appear much less frequently since players own 10
       expect(balladCount).toBeLessThan(otherCount)
     })
+
+    it('should only draw allowed dice types when allowedTypes is provided', () => {
+      const pool = createInspirationPool(2)
+      const { drawn, remainingPool } = drawInspirationDice(pool, 4, undefined, ['d4', 'd6'])
+
+      drawn.forEach((item) => {
+        expect(['d4', 'd6']).toContain(item.dice.type)
+      })
+      // Locked dice (d12, d20) remain in the pool
+      const lockedInPool = remainingPool.filter((d) => d.type === 'd12' || d.type === 'd20')
+      expect(lockedInPool.length).toBeGreaterThan(0)
+    })
+
+    it('should keep total dice count consistent when filtering by type', () => {
+      const pool = createInspirationPool(2)
+      const { drawn, remainingPool } = drawInspirationDice(pool, 4, undefined, ['d4', 'd6'])
+
+      expect(drawn.length + remainingPool.length).toBe(pool.length)
+    })
   })
 
-  describe('generateSongCard', () => {
-    it('should generate a song card with correct type', () => {
-      const card = generateSongCard()
-      expect(card.type).toBe('song')
+  describe('generateNameCard', () => {
+    it('should generate a name card with correct type', () => {
+      const card = generateNameCard()
+      expect(card.type).toBe('name')
     })
 
     it('should cost 10 EXP', () => {
-      const card = generateSongCard()
+      const card = generateNameCard()
       expect(card.cost).toBe(10)
     })
 
     it('should have a song name', () => {
-      const card = generateSongCard()
+      const card = generateNameCard()
       expect(card.songName).toBeTruthy()
     })
 
-    it('should have two effects', () => {
-      const card = generateSongCard()
+    it('should have one effect', () => {
+      const card = generateNameCard()
       expect(card.songEffect).toBeDefined()
-      expect(card.songEffect2).toBeDefined()
     })
   })
 })

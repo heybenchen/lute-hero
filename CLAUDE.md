@@ -45,6 +45,10 @@ All slices merge into one store (`src/store/index.ts`) with devtools middleware.
 - **Dice upgrade path**: d4 → d6 → d12 → d20
 - **Turn structure**: Move up to 2 spaces, fight 1 combat, then shop (unlimited purchases after fighting)
 
+## Task Tracking
+
+All tasks, bugs, and feature requests are tracked in `TODO.md` at the repo root. At the start of every session, read `TODO.md` to understand outstanding work. When tasks are completed, move them to the **Completed** section. When new tasks are identified, add them under the appropriate priority section (**High**, **Medium**, or **Low**). Keep `TODO.md` up to date as work progresses.
+
 ## Styling
 
 Tailwind with custom theme: `parchment-*` and `wood-*` color palettes for medieval aesthetic, per-genre colors (pop pink, rock crimson, electronic cyan, classical purple, hiphop orange). Custom CSS component classes (`.card`, `.btn-primary`, `.genre-*`) in `src/index.css`. Fonts: Cinzel (headers) and Barlow (body) via Google Fonts.
