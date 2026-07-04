@@ -57,11 +57,6 @@ export interface Song {
   used: boolean; // Can only use each song once per combat
 }
 
-export interface InspirationDie {
-  dice: Dice;
-  cost: number; // Purchase cost based on die type
-}
-
 // ============================================
 // MONSTERS
 // ============================================

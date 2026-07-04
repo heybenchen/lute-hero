@@ -6,13 +6,16 @@
 
 ## Medium Priority
 
-(none)
+- Fix `npm run lint`: ESLint 9 is installed but the repo has no `eslint.config.js` (flat config), so lint fails before checking any files
 
 ## Low Priority
 
 (none)
 
 ## Completed
+
+- Board is now a static tile grid: removed all zoom/pan/wheel interactions and the SVG connection canvas; the 14 spaces render as fixed tiles in 3 rows mirroring the old map layout
+- Elemental dice store: replaced the random "Find Inspiration" dice market with 4 element cards (Ballad 🔥, Folk 🌿, Hymn 💨, Shanty 🌊); picking an element lets you buy a new d4 (5 EXP) or upgrade an existing die of that element (→d6: 10 EXP, →d12: 20 EXP, →d20: 20 EXP); removed the inspiration pool, re-roll costs, and fame-gated dice tiers
 
 - Retreat removes defeated monster genre tags: when retreating, genre tags equal to each defeated monster's level are removed from the space (e.g., defeating a level 4 wind monster removes 4 wind tags)
 - Fix app crash on load: node_modules was missing; running `npm install` restores all dependencies and resolves the build/load failure

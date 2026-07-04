@@ -1,5 +1,6 @@
-import { DraftCard, Dice, Genre, DiceType, InspirationDie } from "@/types";
+import { DraftCard, Dice, Genre, DiceType } from "@/types";
 import { TRACK_EFFECTS } from "./trackEffects";
+import { DICE_UPGRADE_PATH } from "./startingData";
 
 let cardIdCounter = 0;
 
@@ -7,115 +8,44 @@ function generateCardId(): string {
   return `card-${Date.now()}-${cardIdCounter++}`;
 }
 
-// Single dice purchase costs by type
-export const SINGLE_DICE_COSTS: Record<DiceType, number> = {
-  d4: 5,
+let dieIdCounter = 0;
+
+// Buying an element grants the right to add a new d4 of that element
+export const NEW_D4_COST = 5;
+
+// Cost to upgrade an existing die TO the given type (via DICE_UPGRADE_PATH)
+export const UPGRADE_COSTS: Record<Exclude<DiceType, "d4">, number> = {
   d6: 10,
   d12: 20,
-  d20: 30,
+  d20: 20,
 };
 
-// Per-player fame required to unlock higher dice tiers (multiply by numPlayers for threshold)
-export const D12_FAME_PER_PLAYER = 25;
-export const D20_FAME_PER_PLAYER = 50;
-
-// Inspiration re-roll cost: 10 EXP for first seek, escalates by 10 each re-roll
-export const INSPIRATION_BASE_COST = 10;
-
-export function getInspirationCost(rollCount: number): number {
-  return INSPIRATION_BASE_COST * (rollCount + 1);
+/**
+ * The die type an existing die upgrades into, or null if already maxed (d20).
+ */
+export function getNextDiceType(type: DiceType): DiceType | null {
+  return DICE_UPGRADE_PATH[type];
 }
 
 /**
- * Returns the dice types currently purchasable based on collective fame.
- * d12 unlocks at 25 fame per player, d20 at 50 fame per player.
+ * EXP cost to upgrade a die of the given type to the next tier,
+ * or null if the die is already maxed.
  */
-export function getAllowedDiceTypes(collectiveFame: number, numPlayers: number): DiceType[] {
-  const types: DiceType[] = ["d4", "d6"];
-  if (collectiveFame >= D12_FAME_PER_PLAYER * numPlayers) types.push("d12");
-  if (collectiveFame >= D20_FAME_PER_PLAYER * numPlayers) types.push("d20");
-  return types;
+export function getUpgradeCost(type: DiceType): number | null {
+  const next = getNextDiceType(type);
+  if (!next) return null;
+  return UPGRADE_COSTS[next as Exclude<DiceType, "d4">];
 }
 
 /**
- * Create the finite inspiration pool for the game.
- * 2 copies of each (diceType x genre) per player.
+ * Create a fresh d4 die of the purchased element.
  */
-export function createInspirationPool(numPlayers: number): Dice[] {
-  const pool: Dice[] = [];
-  const diceTypes: DiceType[] = ["d4", "d6", "d12", "d20"];
-  const genres: Genre[] = ["Ballad", "Folk", "Hymn", "Shanty"];
-  const copiesPerPlayer = 2;
-
-  for (const genre of genres) {
-    for (const diceType of diceTypes) {
-      for (let copy = 0; copy < copiesPerPlayer * numPlayers; copy++) {
-        pool.push({
-          id: `pool-${genre}-${diceType}-${copy}`,
-          type: diceType,
-          genre,
-        });
-      }
-    }
-  }
-  return pool;
-}
-
-/**
- * Draw dice from the inspiration pool with genre weighting.
- * Genres that players already own many of are less likely to appear.
- * Dice types not yet unlocked by fame are held back in the pool.
- * Unchosen dice are returned to pool by the caller.
- */
-export function drawInspirationDice(
-  pool: Dice[],
-  count: number,
-  playerGenreCounts?: Record<Genre, number>,
-  allowedTypes?: DiceType[],
-): { drawn: InspirationDie[]; remainingPool: Dice[] } {
-  if (pool.length === 0) return { drawn: [], remainingPool: [] };
-
-  // Separate dice available for drawing from those locked by fame gating
-  const drawablePool: Dice[] = [];
-  const lockedPool: Dice[] = [];
-  for (const die of pool) {
-    if (!allowedTypes || allowedTypes.includes(die.type)) {
-      drawablePool.push(die);
-    } else {
-      lockedPool.push(die);
-    }
-  }
-
-  const drawn: InspirationDie[] = [];
-  const drawCount = Math.min(count, drawablePool.length);
-
-  for (let i = 0; i < drawCount; i++) {
-    // Calculate weights for remaining drawable dice
-    const weights = drawablePool.map((die) => {
-      const genreCount = playerGenreCounts?.[die.genre] ?? 0;
-      return Math.max(1, 10 - genreCount);
-    });
-
-    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-    let roll = Math.random() * totalWeight;
-    let selectedIdx = 0;
-
-    for (let j = 0; j < weights.length; j++) {
-      roll -= weights[j];
-      if (roll <= 0) {
-        selectedIdx = j;
-        break;
-      }
-    }
-
-    const selected = drawablePool.splice(selectedIdx, 1)[0];
-    drawn.push({
-      dice: selected,
-      cost: SINGLE_DICE_COSTS[selected.type],
-    });
-  }
-
-  return { drawn, remainingPool: [...lockedPool, ...drawablePool] };
+export function createElementalDie(genre: Genre): Dice {
+  return {
+    id: `die-${Date.now()}-${dieIdCounter++}`,
+    type: "d4",
+    genre,
+  };
 }
 
 export function generateNameCard(): DraftCard {

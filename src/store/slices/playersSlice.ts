@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand'
 import { Player, Genre, Dice, SongSlot, TrackEffect } from '@/types'
-import { createStarterSongs } from '@/data/startingData'
+import { createStarterSongs, DICE_UPGRADE_PATH } from '@/data/startingData'
 import {
   awardFame,
   awardExp,
@@ -20,6 +20,7 @@ export interface PlayersSlice {
   updatePlayer: (playerId: string, updates: Partial<Player>) => void
   applyNameToSong: (playerId: string, songId: string, name: string, effects: TrackEffect[]) => void
   addDiceToPlayer: (playerId: string, dice: Dice, songId: string, slotIndex: number) => void
+  upgradeDice: (playerId: string, diceId: string) => void
   awardPlayerFame: (playerId: string, amount: number) => void
   awardPlayerExp: (playerId: string, amount: number) => void
   incrementPlayerMonstersDefeated: (playerId: string, count: number) => void
@@ -119,6 +120,26 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
             ...song,
             slots: updatedSlots as [SongSlot, SongSlot],
           }
+        })
+
+        return { ...p, songs: updatedSongs }
+      }),
+    })
+  },
+
+  upgradeDice: (playerId, diceId) => {
+    set({
+      players: get().players.map((p) => {
+        if (p.id !== playerId) return p
+
+        const updatedSongs = p.songs.map((song) => {
+          const updatedSlots = song.slots.map((slot) => {
+            if (!slot.dice || slot.dice.id !== diceId) return slot
+            const nextType = DICE_UPGRADE_PATH[slot.dice.type]
+            if (!nextType) return slot
+            return { ...slot, dice: { ...slot.dice, type: nextType } }
+          })
+          return { ...song, slots: updatedSlots as [SongSlot, SongSlot] }
         })
 
         return { ...p, songs: updatedSongs }

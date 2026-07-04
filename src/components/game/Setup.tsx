@@ -49,7 +49,7 @@ export function Setup() {
     addGenreTags()
     limitSpaceTags(1)
     spawnInitialMonstersOnBoard()
-    initializeShop(playerCount)
+    initializeShop()
     startGame()
   }
 
@@ -167,7 +167,7 @@ export function Setup() {
                 const state = useGameStore.getState()
                 if (state.phase !== 'setup') {
                   // Re-initialize shop (not persisted, so it's empty after reload)
-                  state.initializeShop(state.players.length)
+                  state.initializeShop()
                   // Trigger a re-render — setPhase to current phase
                   useGameStore.getState().setPhase(state.phase)
                 }
