@@ -11,6 +11,7 @@ import {
   getNextDiceType,
   getUpgradeCost,
 } from '@/data/draftCards'
+import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 
 const diceIcons: Record<DiceType, string> = {
   d4: '△',
@@ -19,13 +20,12 @@ const diceIcons: Record<DiceType, string> = {
   d20: '⬡',
 }
 
-// Element cards: per-genre color (rgb triplet) for gradients, borders, glows
-const ELEMENTS: { genre: Genre; emoji: string; rgb: string }[] = [
-  { genre: 'Ballad', emoji: '🔥', rgb: '232, 32, 64' },
-  { genre: 'Folk', emoji: '🌿', rgb: '76, 175, 80' },
-  { genre: 'Hymn', emoji: '💨', rgb: '0, 184, 212' },
-  { genre: 'Shanty', emoji: '🌊', rgb: '41, 121, 255' },
-]
+// Element cards: emoji + rgb triplet from the shared genre theme
+const ELEMENTS: { genre: Genre; emoji: string; rgb: string }[] = ALL_GENRES.map((genre) => ({
+  genre,
+  emoji: GENRE_THEME[genre].emoji,
+  rgb: GENRE_THEME[genre].rgb,
+}))
 
 interface DraftShopProps {
   playerId: string

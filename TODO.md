@@ -2,7 +2,9 @@
 
 ## High Priority
 
-(none)
+- [ ] Only designate 4 starting spaces. Make each starting space as far away from the others as possible.
+- [ ] Update all songs to only have one effect
+- [ ] Make it so that all players have 4 songs by default which they can slot dice into, but with no effects or song titles. Buying the song title is what adds the effect.
 
 ## Medium Priority
 
@@ -13,6 +15,8 @@
 (none)
 
 ## Completed
+
+- Board readability pass (ported from PR #16 onto the tile board): genre tags render as color-coded dot chips grouped with counts instead of emoji piles (addresses "make map colors more distinct"), board legend explains tile states and genre colors, dot-grid map texture, starting spaces get a distinct border + smaller S badge, skull monster icon, shared genre theme module (`src/data/genreTheme.ts`) keeps board and shop colors/emojis in sync
 
 - UI polish pass: staggered tile entrance + framed map with hover-to-preview path connections and hint line, gradient buttons with hover lift/press states and focus rings, blurred modal backdrop with springy entrance, per-element themed shop cards with selection glow, pulsing fight button and danger glow on monster tiles, bobbing player token, fame bar sheen; fixed monster tooltip rendering dim/under neighboring tiles
 

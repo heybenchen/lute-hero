@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
+import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 
 // Static tile grid: rows of space IDs arranged to roughly mirror the board graph.
 // null = empty grid cell.
@@ -65,16 +66,69 @@ export function Board() {
         background: `
           radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.04) 0%, transparent 45%),
           radial-gradient(ellipse at 70% 80%, rgba(139, 111, 71, 0.05) 0%, transparent 45%),
-          linear-gradient(135deg, #1e1812 0%, #16120d 50%, #1e1812 100%)
+          linear-gradient(160deg, #1b1510 0%, #131009 45%, #1b1510 100%)
         `,
       }}
     >
+      {/* Subtle dot-grid map texture */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(212, 168, 83, 0.08) 0.8px, transparent 0.8px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
+
       {/* Warm vignette */}
       <div className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(13, 10, 7, 0.6) 100%)',
+          background: 'radial-gradient(ellipse at center, transparent 35%, rgba(9, 6, 3, 0.65) 100%)',
         }}
       />
+
+      {/* Legend — bottom-left */}
+      <div
+        className="absolute bottom-3 left-3 z-20 rounded-lg p-2.5 animate-fade-in"
+        style={{
+          background: 'rgba(18, 13, 8, 0.9)',
+          border: '1px solid rgba(212, 168, 83, 0.18)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 10px rgba(0,0,0,0.4)',
+        }}
+      >
+        <div className="text-[9px] font-medieval text-gold-500 tracking-widest mb-1.5 uppercase opacity-80">
+          Legend
+        </div>
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: 'rgba(100, 220, 100, 0.2)', border: '1px solid rgba(100, 220, 100, 0.45)' }} />
+            <span className="text-[9px] text-parchment-400">Starting space</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: 'rgba(232, 32, 64, 0.18)', border: '1px solid rgba(232, 32, 64, 0.4)' }} />
+            <span className="text-[9px] text-parchment-400">Has monsters</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: 'rgba(255, 157, 27, 0.12)', border: '1px solid rgba(255, 157, 27, 0.3)' }} />
+            <span className="text-[9px] text-parchment-400">Danger building</span>
+          </div>
+          <div className="pt-1 mt-1" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.12)' }}>
+            {ALL_GENRES.map((genre) => {
+              const { color, emoji } = GENRE_THEME[genre]
+              return (
+                <div key={genre} className="flex items-center gap-1.5 py-0.5">
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}88` }}
+                  />
+                  <span className="text-[9px] text-parchment-400">
+                    {genre} <span className="opacity-60">{emoji}</span>
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
 
       <div className="relative p-8">
         {/* Map frame corners */}
@@ -86,7 +140,7 @@ export function Board() {
         {/* Map title decoration */}
         <div className="flex items-center justify-center gap-3 mb-5 pointer-events-none">
           <div className="h-px w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
-          <div className="font-display text-xl text-gold-500 opacity-40 tracking-widest text-center">
+          <div className="font-display text-xl text-gold-500 opacity-45 tracking-[0.25em] text-center select-none">
             The Bardic Realm
           </div>
           <div className="h-px w-16" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
