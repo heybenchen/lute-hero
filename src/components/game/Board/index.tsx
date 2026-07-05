@@ -27,7 +27,6 @@ export function Board() {
   const currentPlayer = useGameStore(selectCurrentPlayer)
   const movePlayer = useGameStore((state) => state.movePlayer)
   const spawnMonstersAtSpace = useGameStore((state) => state.spawnMonstersAtSpace)
-  const updatePlayer = useGameStore((state) => state.updatePlayer)
   const spendInspiration = useGameStore((state) => state.spendInspiration)
 
   const [hoveredSpaceId, setHoveredSpaceId] = useState<number | null>(null)
@@ -39,15 +38,17 @@ export function Board() {
   const canMove = currentPlayer.movesThisTurn < 2
   const validMoves = canMove ? getValidMoves(currentPlayer.position, spaces) : []
 
-  const canTravel = currentPlayer.inspiration > 0
+  // Travel spends 1 Inspiration and 1 movement, so it needs a move available
+  const canTravel = currentPlayer.inspiration > 0 && canMove
   const hoveredSpace = hoveredSpaceId !== null ? spaces.find((s) => s.id === hoveredSpaceId) : null
 
   const handleSpaceClick = (spaceId: number) => {
-    // Inspiration travel: hop to any space (not the current one) for 1 Inspiration
+    // Inspiration travel: hop to any space (not the current one) for 1 Inspiration + 1 move
     if (travelMode) {
-      if (spaceId === currentPlayer.position) return
+      if (spaceId === currentPlayer.position || !canMove) return
       if (!spendInspiration(currentPlayer.id, 1)) return
-      updatePlayer(currentPlayer.id, { position: spaceId })
+      // movePlayer consumes a movement (and sets position, ignoring adjacency)
+      movePlayer(currentPlayer.id, spaceId)
       spawnMonstersAtSpace(spaceId)
       setTravelMode(false)
       return
@@ -104,7 +105,7 @@ export function Board() {
             color: '#e6d9ff',
             boxShadow: travelMode ? '0 0 14px rgba(176, 124, 255, 0.35)' : undefined,
           }}
-          title="Spend 1 Inspiration to travel to any space"
+          title="Spend 1 Inspiration and 1 move to travel to any space"
         >
           {travelMode ? '✖ Cancel Travel' : `✨ Travel (1)`}
         </button>
@@ -200,7 +201,7 @@ export function Board() {
         {/* Hover hint */}
         <div className="mt-3 sm:mt-4 text-center text-[11px] sm:text-xs pointer-events-none min-h-[1rem]">
           {travelMode ? (
-            <span className="text-classical font-bold">Click any space to travel there — costs 1 Inspiration</span>
+            <span className="text-classical font-bold">Click any space to travel there — costs 1 Inspiration and 1 move</span>
           ) : (
             <span className="text-parchment-500">
               {hoveredSpace
