@@ -115,7 +115,7 @@
      ============================================= */
   .genre-ballad { @apply bg-ballad text-white; }
   .genre-folk { @apply bg-folk text-white; }
-  .genre-hymn { @apply bg-hymn text-white; }
+  .genre-hymn { @apply bg-hymn; color: #2a2118; }
   .genre-shanty { @apply bg-shanty text-white; }
 
   /* =============================================

@@ -44,7 +44,7 @@ export default {
         // Genre colors (element-themed)
         ballad: '#e82040',   // Fire red
         folk: '#4caf50',     // Earth green
-        hymn: '#00b8d4',     // Wind cyan
+        hymn: '#facc15',     // Wind yellow
         shanty: '#2979ff',   // Water blue
       },
       fontFamily: {
@@ -56,7 +56,7 @@ export default {
         'glow-gold': '0 0 15px rgba(212, 168, 83, 0.3), 0 0 30px rgba(212, 168, 83, 0.1)',
         'glow-ballad': '0 0 12px rgba(232, 32, 64, 0.4)',
         'glow-folk': '0 0 12px rgba(76, 175, 80, 0.4)',
-        'glow-hymn': '0 0 12px rgba(0, 184, 212, 0.4)',
+        'glow-hymn': '0 0 12px rgba(250, 204, 21, 0.4)',
         'glow-shanty': '0 0 12px rgba(41, 121, 255, 0.4)',
         'inner-glow': 'inset 0 0 20px rgba(212, 168, 83, 0.15)',
         'card-depth': '0 4px 6px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3)',

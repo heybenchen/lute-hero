@@ -57,8 +57,6 @@ export function BoardSpace({
           ? '1px dashed rgba(212, 168, 83, 0.5)'
           : hasMonsters
           ? '1px solid rgba(232, 32, 64, 0.4)'
-          : space.isEdge
-          ? '1px solid rgba(212, 168, 83, 0.3)'
           : '1px solid rgba(212, 168, 83, 0.15)',
         boxShadow: isCurrentPlayer
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px rgba(100, 220, 100, 0.22), 0 4px 8px rgba(0,0,0,0.3)'
@@ -76,32 +74,24 @@ export function BoardSpace({
         <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
       )}
 
-      {/* Edge/starting space indicator */}
-      {space.isEdge && (
-        <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
-          style={{
-            background: 'linear-gradient(135deg, #2d6e30, #1e4820)',
-            border: '1px solid rgba(100, 220, 100, 0.4)',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-            color: '#a0f0a4',
-          }}
-          title="Starting space"
-        >
-          S
+      {/* Player indicator — top-left corner */}
+      {playersHere.length > 0 && (
+        <div className="absolute top-1 left-1 z-20 flex -space-x-1.5">
+          {playersHere.map((player) => (
+            <div
+              key={player.id}
+              className={`player-avatar w-6 h-6 text-[10px] ${isCurrentPlayer ? 'animate-token-bob' : ''}`}
+              style={{
+                backgroundColor: player.color,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              }}
+              title={player.name}
+            >
+              {player.name.charAt(0)}
+            </div>
+          ))}
         </div>
       )}
-
-      {/* Space ID badge */}
-      <div className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
-        style={{
-          background: 'linear-gradient(135deg, #4e3d2a, #3d3020)',
-          border: '1px solid rgba(212, 168, 83, 0.3)',
-          color: '#d4a853',
-        }}
-        title={`Space ${space.id}`}
-      >
-        {space.id}
-      </div>
 
       {/* Space name */}
       <div className="text-[9px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
@@ -112,13 +102,13 @@ export function BoardSpace({
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden">
         {/* Monster indicator */}
         {hasMonsters && (
-          <div className="flex flex-col items-center group relative">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+          <div className="flex items-center gap-1 group relative">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0"
               style={{ background: 'rgba(232, 32, 64, 0.2)', border: '1px solid rgba(232, 32, 64, 0.5)', color: '#ff7070' }}
             >
               &#x2620;
             </div>
-            <div className="text-red-400 font-bold text-[10px] leading-tight">
+            <div className="text-red-400 font-bold text-xs leading-none">
               &times;{space.monsters.length}
             </div>
             {/* Hover tooltip */}
@@ -148,11 +138,11 @@ export function BoardSpace({
 
         {/* Potential monsters indicator */}
         {!hasMonsters && potentialMonsters > 0 && (
-          <div className="flex flex-col items-center opacity-60">
-            <div className="text-amber-400 text-sm">&#x26A0;</div>
-            <div className="text-amber-400 font-bold text-[10px]">
+          <div className="flex items-center gap-1 opacity-70">
+            <span className="text-amber-400 text-sm leading-none">&#x26A0;</span>
+            <span className="text-amber-400 font-bold text-xs leading-none">
               {potentialMonsters}
-            </div>
+            </span>
           </div>
         )}
 
@@ -191,28 +181,6 @@ export function BoardSpace({
           </div>
         )}
       </div>
-
-      {/* Players on this space */}
-      {playersHere.length > 0 && (
-        <div className="flex justify-center -space-x-1.5">
-          {playersHere.map((player) => {
-            const isActiveToken = isCurrentPlayer && playersHere.length > 0
-            return (
-              <div
-                key={player.id}
-                className={`player-avatar w-6 h-6 text-[10px] ${isActiveToken ? 'animate-token-bob' : ''}`}
-                style={{
-                  backgroundColor: player.color,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                }}
-                title={player.name}
-              >
-                {player.name.charAt(0)}
-              </div>
-            )
-          })}
-        </div>
-      )}
 
       {/* Move indicator glow */}
       {canMoveTo && (

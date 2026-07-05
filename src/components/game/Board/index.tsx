@@ -92,10 +92,6 @@ export function Board() {
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: 'rgba(100, 220, 100, 0.2)', border: '1px solid rgba(100, 220, 100, 0.45)' }} />
-            <span className="text-[9px] text-parchment-400">Starting space</span>
-          </div>
-          <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: 'rgba(232, 32, 64, 0.18)', border: '1px solid rgba(232, 32, 64, 0.4)' }} />
             <span className="text-[9px] text-parchment-400">Has monsters</span>
           </div>

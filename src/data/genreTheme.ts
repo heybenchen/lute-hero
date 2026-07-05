@@ -8,7 +8,7 @@ import { Genre } from "@/types";
 export const GENRE_THEME: Record<Genre, { emoji: string; color: string; rgb: string }> = {
   Ballad: { emoji: "🔥", color: "#e82040", rgb: "232, 32, 64" },
   Folk: { emoji: "🌿", color: "#4caf50", rgb: "76, 175, 80" },
-  Hymn: { emoji: "💨", color: "#00b8d4", rgb: "0, 184, 212" },
+  Hymn: { emoji: "💨", color: "#facc15", rgb: "250, 204, 21" },
   Shanty: { emoji: "🌊", color: "#2979ff", rgb: "41, 121, 255" },
 };
 

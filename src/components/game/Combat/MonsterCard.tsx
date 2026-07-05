@@ -9,7 +9,7 @@ interface MonsterCardProps {
 const genreAccentColors: Record<Genre, { border: string; glow: string; bg: string }> = {
   Ballad: { border: 'rgba(232, 32, 64, 0.4)', glow: 'rgba(232, 32, 64, 0.15)', bg: 'rgba(232, 32, 64, 0.06)' },
   Folk: { border: 'rgba(76, 175, 80, 0.4)', glow: 'rgba(76, 175, 80, 0.15)', bg: 'rgba(76, 175, 80, 0.06)' },
-  Hymn: { border: 'rgba(0, 184, 212, 0.4)', glow: 'rgba(0, 184, 212, 0.15)', bg: 'rgba(0, 184, 212, 0.06)' },
+  Hymn: { border: 'rgba(250, 204, 21, 0.4)', glow: 'rgba(250, 204, 21, 0.15)', bg: 'rgba(250, 204, 21, 0.06)' },
   Shanty: { border: 'rgba(41, 121, 255, 0.4)', glow: 'rgba(41, 121, 255, 0.15)', bg: 'rgba(41, 121, 255, 0.06)' },
 }
 
@@ -58,7 +58,7 @@ export function MonsterCard({ monster, index = 0 }: MonsterCardProps) {
               </div>
               <div className="flex items-center gap-2 mt-1.5">
                 {monster.isBoss && (
-                  <span className="text-xs font-bold text-hymn bg-hymn/10 px-2 py-0.5 rounded" style={{ border: '1px solid rgba(0, 184, 212, 0.2)' }}>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: '#4dd0e1', background: 'rgba(0, 188, 212, 0.1)', border: '1px solid rgba(0, 184, 212, 0.2)' }}>
                     BOSS
                   </span>
                 )}

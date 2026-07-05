@@ -14,6 +14,8 @@
 
 ## Completed
 
+- Board tile cleanup: removed the space-number badge and the starting-space "S" indicator (and its legend row + edge border); the player token now sits in the top-left corner of its space; monster/threat counts render on the same line as their icon (no vertical overflow).
+- Hymn element recolored from cyan to yellow (`#facc15`) across the shared theme, Tailwind palette, genre badge (now dark text for contrast), and combat monster accents; the boss badge keeps its own cyan.
 - Songs now hold a single effect: `Song.effect: TrackEffect | null` (was `effects: TrackEffect[]`). Names grant exactly one effect; damage calc, shop, combat/song cards, and the current-player panel updated accordingly.
 - Dice upgrade costs rebalanced: new d4 = 5 EXP, d4→d6 = 5 EXP, d6→d12 = 15 EXP, d12→d20 = 30 EXP.
 - Purchased rewards queue: buying a new die or a song name enqueues a per-player reward (persisted) instead of a single pending slot, so buying a second thing no longer discards the first. An "Unclaimed Rewards" tray in the Studio lets you pick which to place; rewards survive closing the shop and ending the turn.
