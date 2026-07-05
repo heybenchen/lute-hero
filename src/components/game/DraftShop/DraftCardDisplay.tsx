@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { DraftCard } from '@/types'
-import { TRACK_EFFECT_NAMES, TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
+import { TRACK_EFFECT_NAMES, describeTrackEffect } from '@/data/trackEffects'
 
 interface DraftCardDisplayProps {
   card: DraftCard
@@ -44,7 +44,7 @@ export function DraftCardDisplay({
                 {TRACK_EFFECT_NAMES[card.songEffect.type] || card.songEffect.type}
               </span>
               <span className="text-parchment-400 text-[11px]">
-                {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type]}
+                {describeTrackEffect(card.songEffect)}
               </span>
             </div>
           )}
@@ -66,7 +66,7 @@ export function DraftCardDisplay({
                 {TRACK_EFFECT_NAMES[card.songEffect.type] || card.songEffect.type}
               </span>
               <span className="text-[11px] text-parchment-400">
-                {TRACK_EFFECT_DESCRIPTIONS[card.songEffect.type]}
+                {describeTrackEffect(card.songEffect)}
               </span>
             </div>
             <div className="text-[10px] text-parchment-400 pt-2" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.15)' }}>

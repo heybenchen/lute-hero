@@ -4,6 +4,7 @@ import {
   createBoardGraph,
   addGenreTagsToBoard,
   addGenreTagsToNeighbors,
+  addGenreTagToNeighbors,
 } from '@/game-logic/board/graphBuilder'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '@/game-logic/combat/monsterSpawner'
 
@@ -19,6 +20,7 @@ export interface BoardSlice {
   spawnMonstersAtSpace: (spaceId: number) => void
   spawnInitialMonstersOnBoard: () => void
   clearSpaceAfterCombat: (spaceId: number) => void
+  spreadElementToNeighbors: (spaceId: number, genre: Genre) => void
   addGenreTagsForMonsters: (spaceId: number, genres: Genre[]) => void
   removeGenreTagsForDefeatedMonsters: (spaceId: number, genres: Genre[]) => void
   updateSpace: (spaceId: number, updates: Partial<BoardSpace>) => void
@@ -107,12 +109,17 @@ export const createBoardSlice: StateCreator<BoardSlice> = (set, get) => ({
   },
 
   clearSpaceAfterCombat: (spaceId) => {
-    const cleared = get().spaces.map((s) =>
-      s.id === spaceId ? clearSpace(s) : s
-    )
-    // Spread 1 tag to each adjacent space when a space is cleared
-    const withSpread = addGenreTagsToNeighbors(cleared, spaceId)
-    set({ spaces: withSpread })
+    // Clear the fought space. The neighbor spread is now player-driven via
+    // spreadElementToNeighbors (the victor picks which element radiates out).
+    set({
+      spaces: get().spaces.map((s) =>
+        s.id === spaceId ? clearSpace(s) : s
+      ),
+    })
+  },
+
+  spreadElementToNeighbors: (spaceId, genre) => {
+    set({ spaces: addGenreTagToNeighbors(get().spaces, spaceId, genre) })
   },
 
   updateSpace: (spaceId, updates) => {

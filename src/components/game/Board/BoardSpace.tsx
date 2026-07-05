@@ -1,17 +1,12 @@
 import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
-
-const genreEmojis: Record<Genre, string> = {
-  Ballad: '🔥',
-  Folk: '🌿',
-  Hymn: '💨',
-  Shanty: '🌊',
-}
+import { GENRE_THEME } from '@/data/genreTheme'
 
 interface BoardSpaceProps {
   space: BoardSpaceType
   players: Player[]
   isCurrentPlayer: boolean
   canMoveTo: boolean
+  isLinkedToHovered?: boolean
   onClick: () => void
 }
 
@@ -20,71 +15,83 @@ export function BoardSpace({
   players,
   isCurrentPlayer,
   canMoveTo,
+  isLinkedToHovered = false,
   onClick,
 }: BoardSpaceProps) {
   const playersHere = players.filter((p) => p.position === space.id)
   const hasMonsters = space.monsters.length > 0
   const potentialMonsters = Math.floor(space.genreTags.length / 2)
 
+  // Group genre tags by type for compact chip display
+  const genreTagCounts = space.genreTags.reduce<Partial<Record<Genre, number>>>((acc, g) => {
+    acc[g] = (acc[g] || 0) + 1
+    return acc
+  }, {})
+  const genreEntries = Object.entries(genreTagCounts) as [Genre, number][]
+
   return (
     <button
       onClick={onClick}
       disabled={!canMoveTo}
       className={`
-        relative w-[100px] h-[100px] rounded-lg transition-all duration-200
-        flex flex-col justify-between p-2
+        relative hover:z-40 w-full aspect-square rounded-lg sm:rounded-xl
+        flex flex-col justify-between p-1.5 sm:p-2
+        transition-all duration-200 ease-out
         ${canMoveTo
-          ? 'cursor-pointer hover:scale-110'
-          : 'cursor-not-allowed'
+          ? 'cursor-pointer hover:-translate-y-1 hover:brightness-110'
+          : 'cursor-default'
         }
-        ${isCurrentPlayer ? 'scale-105' : ''}
-        ${!canMoveTo && !isCurrentPlayer ? 'opacity-60' : ''}
+        ${hasMonsters && canMoveTo ? 'animate-danger-pulse' : ''}
       `}
       style={{
         background: hasMonsters
-          ? 'linear-gradient(135deg, rgba(232, 32, 64, 0.15) 0%, rgba(139, 30, 30, 0.2) 100%)'
+          ? 'linear-gradient(135deg, rgba(232, 32, 64, 0.16) 0%, rgba(139, 30, 30, 0.22) 100%)'
           : potentialMonsters > 0
           ? 'linear-gradient(135deg, rgba(255, 157, 27, 0.1) 0%, rgba(180, 100, 20, 0.1) 100%)'
           : 'linear-gradient(135deg, rgba(42, 33, 24, 0.9) 0%, rgba(61, 48, 32, 0.9) 100%)',
         border: isCurrentPlayer
-          ? '2px solid rgba(100, 220, 100, 0.6)'
+          ? '2px solid rgba(100, 220, 100, 0.65)'
           : canMoveTo
-          ? '2px solid rgba(212, 168, 83, 0.5)'
+          ? '2px solid rgba(212, 168, 83, 0.55)'
+          : isLinkedToHovered
+          ? '1px dashed rgba(212, 168, 83, 0.5)'
           : hasMonsters
           ? '1px solid rgba(232, 32, 64, 0.4)'
           : '1px solid rgba(212, 168, 83, 0.15)',
         boxShadow: isCurrentPlayer
-          ? '0 0 15px rgba(100, 220, 100, 0.2), 0 4px 8px rgba(0,0,0,0.3)'
+          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px rgba(100, 220, 100, 0.22), 0 4px 8px rgba(0,0,0,0.3)'
           : canMoveTo
-          ? '0 0 12px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(0,0,0,0.3)'
-          : '0 2px 6px rgba(0,0,0,0.3)',
+          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 12px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(0,0,0,0.3)'
+          : isLinkedToHovered
+          ? 'inset 0 1px 0 rgba(255,255,255,0.04), 0 0 10px rgba(212, 168, 83, 0.12), 0 2px 6px rgba(0,0,0,0.3)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 6px rgba(0,0,0,0.3)',
       }}
       title={space.name}
     >
-      {/* Edge indicator */}
-      {space.isEdge && (
-        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-          style={{
-            background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-            color: '#d4ffd6',
-          }}
-        >
-          S
-        </div>
+      {/* Dim overlay for out-of-reach tiles (kept off the container so
+          tooltips inside stay at full opacity) */}
+      {!canMoveTo && !isCurrentPlayer && (
+        <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
       )}
 
-      {/* Space ID badge */}
-      <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-        style={{
-          background: 'linear-gradient(135deg, #4e3d2a, #3d3020)',
-          border: '1px solid rgba(212, 168, 83, 0.3)',
-          color: '#d4a853',
-        }}
-      >
-        {space.id}
-      </div>
+      {/* Player indicator — top-left corner */}
+      {playersHere.length > 0 && (
+        <div className="absolute top-1 left-1 z-20 flex -space-x-1.5">
+          {playersHere.map((player) => (
+            <div
+              key={player.id}
+              className={`player-avatar w-6 h-6 text-[10px] ${isCurrentPlayer ? 'animate-token-bob' : ''}`}
+              style={{
+                backgroundColor: player.color,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              }}
+              title={player.name}
+            >
+              {player.name.charAt(0)}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Space name */}
       <div className="text-[9px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
@@ -92,20 +99,20 @@ export function BoardSpace({
       </div>
 
       {/* Content area */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-0.5">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden">
         {/* Monster indicator */}
         {hasMonsters && (
-          <div className="flex flex-col items-center group relative">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
-              style={{ background: 'rgba(232, 32, 64, 0.25)', border: '1px solid rgba(232, 32, 64, 0.5)', color: '#ff6b6b' }}
+          <div className="flex items-center gap-1 group relative">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0"
+              style={{ background: 'rgba(232, 32, 64, 0.2)', border: '1px solid rgba(232, 32, 64, 0.5)', color: '#ff7070' }}
             >
-              &#x1F479;
+              &#x2620;
             </div>
-            <div className="text-red-400 font-bold text-xs">
-              x{space.monsters.length}
+            <div className="text-red-400 font-bold text-xs leading-none">
+              &times;{space.monsters.length}
             </div>
             {/* Hover tooltip */}
-            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-52 rounded-lg p-2.5 shadow-xl text-sm pointer-events-none"
+            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-52 rounded-lg p-2.5 shadow-xl text-sm pointer-events-none animate-fade-in"
               style={{
                 background: 'linear-gradient(135deg, #2a2118, #1a1410)',
                 border: '1px solid rgba(212, 168, 83, 0.3)',
@@ -131,50 +138,54 @@ export function BoardSpace({
 
         {/* Potential monsters indicator */}
         {!hasMonsters && potentialMonsters > 0 && (
-          <div className="flex flex-col items-center opacity-60">
-            <div className="text-amber-400 text-sm">&#x26A0;</div>
-            <div className="text-amber-400 font-bold text-[10px]">
+          <div className="flex items-center gap-1 opacity-70">
+            <span className="text-amber-400 text-sm leading-none">&#x26A0;</span>
+            <span className="text-amber-400 font-bold text-xs leading-none">
               {potentialMonsters}
-            </div>
+            </span>
           </div>
         )}
 
-        {/* Genre tags */}
-        {space.genreTags.length > 0 && (
-          <div className="flex flex-wrap gap-0.5 justify-center">
-            {space.genreTags.slice(0, 4).map((genre, idx) => (
-              <span key={idx} className="text-xs" title={genre}>
-                {genreEmojis[genre]}
-              </span>
-            ))}
-            {space.genreTags.length > 4 && (
-              <span className="text-[9px] text-gold-500">+{space.genreTags.length - 4}</span>
-            )}
+        {/* Genre tags — compact color-coded beads with counts */}
+        {genreEntries.length > 0 && (
+          <div className="flex flex-wrap gap-x-1 gap-y-0.5 justify-center max-w-full mt-0.5">
+            {genreEntries.map(([genre, count]) => {
+              const { color } = GENRE_THEME[genre]
+              return (
+                <div
+                  key={genre}
+                  className="flex items-center gap-0.5 rounded-md pl-1 pr-1.5 py-0.5 leading-none"
+                  style={{
+                    background: `linear-gradient(135deg, ${color}33, ${color}14)`,
+                    border: `1px solid ${color}66`,
+                    boxShadow: `inset 0 0 4px ${color}22`,
+                  }}
+                  title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{
+                      backgroundColor: color,
+                      boxShadow: `0 0 5px ${color}, inset 0 0 1px rgba(255,255,255,0.5)`,
+                    }}
+                  />
+                  <span
+                    className="text-[9px] font-bold tabular-nums"
+                    style={{ color, textShadow: '0 1px 1px rgba(0,0,0,0.5)' }}
+                  >
+                    {count}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
 
-      {/* Players on this space */}
-      {playersHere.length > 0 && (
-        <div className="flex gap-0.5 justify-center flex-wrap">
-          {playersHere.map((player) => (
-            <div
-              key={player.id}
-              className="player-avatar w-6 h-6 text-[10px]"
-              style={{ backgroundColor: player.color }}
-              title={player.name}
-            >
-              {player.name.charAt(0)}
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Move indicator glow */}
       {canMoveTo && (
         <div
-          className="absolute inset-0 rounded-lg pointer-events-none animate-glow-pulse"
-          style={{ boxShadow: '0 0 14px rgba(212, 168, 83, 0.4)' }}
+          className="absolute inset-0 rounded-xl pointer-events-none animate-ring-pulse"
         />
       )}
     </button>

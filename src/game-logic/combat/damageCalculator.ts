@@ -28,8 +28,8 @@ export function getGenreMultiplier(genre: Genre, monster: Monster): number {
 }
 
 /**
- * Roll all dice in a song and apply track effects.
- * A single effect (song.effects[0]) applies to every dice slot.
+ * Roll all dice in a song and apply its track effect.
+ * A song has at most one effect, which applies to every dice slot.
  * Special case: monoOut rolls once and shares that value across both slots.
  */
 export function rollSong(song: Song): {
@@ -37,7 +37,7 @@ export function rollSong(song: Song): {
   updatedSong: Song;
 } {
   // monoOut: roll one die for both slots (both must be filled)
-  if (song.effects[0]?.type === "monoOut") {
+  if (song.effect?.type === "monoOut") {
     const slot0 = song.slots[0];
     const slot1 = song.slots[1];
     if (slot0.dice && slot1.dice) {
@@ -53,7 +53,8 @@ export function rollSong(song: Song): {
   }
 
   const allRolls: DiceRoll[] = [];
-  const updatedEffects = [...song.effects];
+  // The single effect carries a used-flag for some types; thread it through slots
+  let currentEffect: TrackEffect | null = song.effect;
 
   for (let idx = 0; idx < song.slots.length; idx++) {
     const slot = song.slots[idx];
@@ -61,19 +62,17 @@ export function rollSong(song: Song): {
 
     const baseRoll = rollDiceWithCrit(slot.dice);
 
-    // Single effect shared across all slots; read the latest (may have used-flag updated)
-    const effect = updatedEffects[0] ?? null;
     const { modifiedRoll, updatedEffect, additionalRolls } = applyTrackEffect(
       baseRoll,
       slot.dice,
-      effect,
+      currentEffect,
     );
 
     allRolls.push(modifiedRoll);
     allRolls.push(...additionalRolls);
 
-    if (updatedEffect !== null && updatedEffects.length > 0) {
-      updatedEffects[0] = updatedEffect;
+    if (updatedEffect !== null) {
+      currentEffect = updatedEffect;
     }
   }
 
@@ -82,7 +81,7 @@ export function rollSong(song: Song): {
     updatedSong: {
       ...song,
       slots: song.slots,
-      effects: updatedEffects.filter((e): e is TrackEffect => e !== null),
+      effect: currentEffect,
     },
   };
 }
@@ -105,15 +104,17 @@ export function calculateDamage(
   // 2. Calculate crit bonuses
   const critBonuses = rolls.reduce((sum, roll) => sum + roll.critBonus, 0);
 
-  // 3. Calculate effect bonuses (flat + song-level effects)
+  // 3. Calculate effect bonuses (flat + song-level effects).
+  // The bonus helpers operate on an effect list; wrap the song's single effect.
+  const fx = song.effect ? [song.effect] : [];
   const effectBonuses =
-    calculateEffectBonuses(song.effects) +
-    calculateHarmonizeBonus(song.effects, rolls) +
-    calculateTempoBonus(song.effects, primaryRolls) +
-    calculateCrescendoBonus(song.effects, rolls) +
-    calculateDynamicRangeBonus(song.effects, primaryRolls) +
-    calculateDropTheBassBonus(song.effects, primaryRolls) +
-    calculateLucky7Bonus(song.effects, rolls);
+    calculateEffectBonuses(fx) +
+    calculateHarmonizeBonus(fx, rolls) +
+    calculateTempoBonus(fx, primaryRolls) +
+    calculateCrescendoBonus(fx, rolls) +
+    calculateDynamicRangeBonus(fx, primaryRolls) +
+    calculateDropTheBassBonus(fx, primaryRolls) +
+    calculateLucky7Bonus(fx, rolls);
 
   // 4. Calculate genre multipliers for each die
   const genreMultipliers: { genre: Genre; multiplier: number }[] = [];
@@ -129,9 +130,8 @@ export function calculateDamage(
       const genreMultiplier = getGenreMultiplier(dice.genre, monster);
       genreMultipliers.push({ genre: dice.genre, multiplier: genreMultiplier });
 
-      // Use shared song effect for offbeat multiplier
-      const sharedEffect = song.effects[0] ?? null;
-      const offbeatMultiplier = calculateOffbeatMultiplier(roll, sharedEffect);
+      // Use the song's single effect for the offbeat multiplier
+      const offbeatMultiplier = calculateOffbeatMultiplier(roll, song.effect);
 
       genreAdjustedDamage += (roll.value + roll.critBonus) * genreMultiplier * offbeatMultiplier;
     } else {

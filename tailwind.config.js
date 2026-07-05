@@ -44,7 +44,7 @@ export default {
         // Genre colors (element-themed)
         ballad: '#e82040',   // Fire red
         folk: '#4caf50',     // Earth green
-        hymn: '#00b8d4',     // Wind cyan
+        hymn: '#facc15',     // Wind yellow
         shanty: '#2979ff',   // Water blue
       },
       fontFamily: {
@@ -56,7 +56,7 @@ export default {
         'glow-gold': '0 0 15px rgba(212, 168, 83, 0.3), 0 0 30px rgba(212, 168, 83, 0.1)',
         'glow-ballad': '0 0 12px rgba(232, 32, 64, 0.4)',
         'glow-folk': '0 0 12px rgba(76, 175, 80, 0.4)',
-        'glow-hymn': '0 0 12px rgba(0, 184, 212, 0.4)',
+        'glow-hymn': '0 0 12px rgba(250, 204, 21, 0.4)',
         'glow-shanty': '0 0 12px rgba(41, 121, 255, 0.4)',
         'inner-glow': 'inset 0 0 20px rgba(212, 168, 83, 0.15)',
         'card-depth': '0 4px 6px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3)',
@@ -70,8 +70,29 @@ export default {
         'slide-up': 'slideUp 0.4s ease-out',
         'scale-in': 'scaleIn 0.3s ease-out',
         'glow-pulse': 'glowPulse 2s ease-in-out infinite alternate',
+        'tile-in': 'tileIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards',
+        'token-bob': 'tokenBob 2.4s ease-in-out infinite',
+        'ring-pulse': 'ringPulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'danger-pulse': 'dangerPulse 2.2s ease-in-out infinite',
       },
       keyframes: {
+        tileIn: {
+          '0%': { opacity: '0', transform: 'translateY(14px) scale(0.92)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        tokenBob: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-3px)' },
+        },
+        ringPulse: {
+          '0%': { boxShadow: '0 0 0 0 rgba(212, 168, 83, 0.45)' },
+          '70%': { boxShadow: '0 0 0 9px rgba(212, 168, 83, 0)' },
+          '100%': { boxShadow: '0 0 0 0 rgba(212, 168, 83, 0)' },
+        },
+        dangerPulse: {
+          '0%, 100%': { boxShadow: '0 0 6px rgba(232, 32, 64, 0.15)' },
+          '50%': { boxShadow: '0 0 18px rgba(232, 32, 64, 0.45)' },
+        },
         shimmer: {
           '0%, 100%': { opacity: '0.5' },
           '50%': { opacity: '0.8' },

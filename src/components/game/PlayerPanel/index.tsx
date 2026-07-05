@@ -20,6 +20,7 @@ export function PlayerPanel() {
   const usePlayerFight = useGameStore((state) => state.usePlayerFight)
   const startCombat = useGameStore((state) => state.startCombat)
   const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
+  const refillShopSlots = useGameStore((state) => state.refillShopSlots)
 
   if (!currentPlayer) return null
 
@@ -48,6 +49,9 @@ export function PlayerPanel() {
     } else {
       nextTurn()
     }
+
+    // Start the next player's turn with a full shop (fresh names, topped-up chips)
+    refillShopSlots()
   }
 
   const handleFight = () => {
@@ -58,7 +62,7 @@ export function PlayerPanel() {
   }
 
   return (
-    <div className="card-ornate p-5 h-full flex flex-col">
+    <div className="card-ornate p-4 sm:p-5 lg:h-full flex flex-col">
       {/* Game info header */}
       <div className="text-center mb-4">
         <div className="font-display text-xl text-gold-400 mb-1">
@@ -75,12 +79,13 @@ export function PlayerPanel() {
               <span>Fame to Final Boss</span>
               <span className="text-gold-400 font-bold">{collectiveFame} / {currentThreshold}</span>
             </div>
-            <div className="hp-bar h-2">
+            <div className="hp-bar h-2 bar-sheen">
               <div
                 className="hp-fill rounded-full"
                 style={{
                   width: `${fameProgress}%`,
                   background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
+                  boxShadow: fameProgress > 0 ? '0 0 6px rgba(240, 215, 140, 0.4)' : 'none',
                 }}
               />
             </div>
@@ -169,7 +174,7 @@ export function PlayerPanel() {
       <div className="divider-ornate" />
 
       {/* All players */}
-      <div className="flex-1 min-h-0 overflow-auto mb-4">
+      <div className="lg:flex-1 lg:min-h-0 lg:overflow-auto mb-4">
         <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-2">
           All Players
         </div>
@@ -203,7 +208,15 @@ export function PlayerPanel() {
                     <div className="flex items-center gap-1.5">
                       <div className="font-bold text-sm text-parchment-200 truncate">{player.name}</div>
                       {isCurrentTurn && (
-                        <span className="text-xs font-medieval text-green-400 shrink-0">▶ Turn</span>
+                        <span
+                          className="text-[10px] font-medieval font-bold text-green-300 shrink-0 px-1.5 py-0.5 rounded-full animate-glow-pulse"
+                          style={{
+                            background: 'rgba(100, 220, 100, 0.12)',
+                            border: '1px solid rgba(100, 220, 100, 0.3)',
+                          }}
+                        >
+                          ▶ TURN
+                        </span>
                       )}
                     </div>
                     <div className="text-xs text-parchment-500 truncate">
@@ -242,7 +255,7 @@ export function PlayerPanel() {
           <button
             onClick={handleFight}
             disabled={!canFight}
-            className="w-full py-2.5 px-4 font-medieval font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+            className={`w-full py-2.5 px-4 font-medieval font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:brightness-110 hover:enabled:-translate-y-0.5 active:enabled:translate-y-0 ${canFight ? 'animate-danger-pulse' : ''}`}
             style={{
               background: canFight
                 ? 'linear-gradient(135deg, #c43030, #8c2020)'

@@ -1,112 +1,98 @@
 import { StateCreator } from 'zustand'
-import { DraftCard, Dice, InspirationDie, Genre } from '@/types'
-import {
-  generateNameCard,
-  createInspirationPool,
-  drawInspirationDice,
-  getAllowedDiceTypes,
-} from '@/data/draftCards'
+import { DraftCard, Genre, PendingReward } from '@/types'
+import { generateNameCard } from '@/data/draftCards'
+import { createElementBag, drawFromBag, ELEMENT_OFFER_COUNT } from '@/data/elementBag'
 
 const NAME_POOL_SIZE = 3
-const INSPIRATION_DRAW_COUNT = 4
 
 export interface ShopSlice {
   // State
   namePool: DraftCard[]
-  inspirationPool: Dice[]
-  inspirationRevealed: InspirationDie[]
-  inspirationRollCount: number
+  elementBag: Genre[] // Chips still in the bag
+  elementDiscard: Genre[] // Chips out of the bag (consumed or cycled out)
+  elementOffers: Genre[] // Chips currently on display in the store
+  pendingRewards: Record<string, PendingReward[]> // Unresolved rewards per player
 
   // Actions
-  initializeShop: (numPlayers: number, collectiveFame?: number) => void
-  findInspiration: (playerGenreCounts?: Record<Genre, number>, collectiveFame?: number, numPlayers?: number) => void
-  rerollInspiration: (playerGenreCounts?: Record<Genre, number>, collectiveFame?: number, numPlayers?: number) => void
-  purchaseInspirationDie: (dieIndex: number, playerGenreCounts?: Record<Genre, number>, collectiveFame?: number, numPlayers?: number) => Dice | null
-  closeInspiration: () => void
+  initializeShop: (numPlayers: number) => void
+  refillShopSlots: () => void
+  refreshElementOffers: () => void
+  consumeElementOffer: (offerIndex: number) => void
   purchaseFromNamePool: (cardId: string) => void
   refreshNamePool: () => void
+  enqueueReward: (playerId: string, reward: PendingReward) => void
+  removeReward: (playerId: string, rewardId: string) => void
   resetShop: () => void
+}
+
+function freshNamePool(): DraftCard[] {
+  const namePool: DraftCard[] = []
+  for (let i = 0; i < NAME_POOL_SIZE; i++) {
+    namePool.push(generateNameCard())
+  }
+  return namePool
 }
 
 export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
   // Initial state
   namePool: [],
-  inspirationPool: [],
-  inspirationRevealed: [],
-  inspirationRollCount: 0,
+  elementBag: [],
+  elementDiscard: [],
+  elementOffers: [],
+  pendingRewards: {},
 
   // Actions
-  initializeShop: (numPlayers, collectiveFame = 0) => {
-    const namePool: DraftCard[] = []
-    for (let i = 0; i < NAME_POOL_SIZE; i++) {
-      namePool.push(generateNameCard())
+  initializeShop: (numPlayers) => {
+    const fullBag = createElementBag(numPlayers)
+    const { drawn, bag, discard } = drawFromBag(fullBag, [], ELEMENT_OFFER_COUNT)
+
+    set({
+      namePool: freshNamePool(),
+      elementBag: bag,
+      elementDiscard: discard,
+      elementOffers: drawn,
+      pendingRewards: {},
+    })
+  },
+
+  // Called at the start of each player's turn: top the element offers back
+  // up to a full display and deal a fresh set of song names.
+  refillShopSlots: () => {
+    const needed = ELEMENT_OFFER_COUNT - get().elementOffers.length
+    if (needed > 0) {
+      const { drawn, bag, discard } = drawFromBag(get().elementBag, get().elementDiscard, needed)
+      set({
+        elementOffers: [...get().elementOffers, ...drawn],
+        elementBag: bag,
+        elementDiscard: discard,
+      })
     }
-
-    const fullPool = createInspirationPool(numPlayers)
-    const allowedTypes = getAllowedDiceTypes(collectiveFame, numPlayers)
-    const { drawn, remainingPool } = drawInspirationDice(fullPool, INSPIRATION_DRAW_COUNT, undefined, allowedTypes)
-
-    set({ namePool, inspirationPool: remainingPool, inspirationRevealed: drawn, inspirationRollCount: 0 })
+    set({ namePool: freshNamePool() })
   },
 
-  findInspiration: (playerGenreCounts, collectiveFame = 0, numPlayers = 1) => {
-    const pool = get().inspirationPool
-    const allowedTypes = getAllowedDiceTypes(collectiveFame, numPlayers)
-    const { drawn, remainingPool } = drawInspirationDice(pool, INSPIRATION_DRAW_COUNT, playerGenreCounts, allowedTypes)
+  refreshElementOffers: () => {
+    // Current offers leave the display and join the discard pile
+    const discard = [...get().elementDiscard, ...get().elementOffers]
+    const { drawn, bag, discard: remainingDiscard } = drawFromBag(
+      get().elementBag,
+      discard,
+      ELEMENT_OFFER_COUNT,
+    )
 
     set({
-      inspirationPool: remainingPool,
-      inspirationRevealed: drawn,
+      elementBag: bag,
+      elementDiscard: remainingDiscard,
+      elementOffers: drawn,
     })
   },
 
-  rerollInspiration: (playerGenreCounts, collectiveFame = 0, numPlayers = 1) => {
-    // Return currently revealed dice to pool before drawing new ones
-    const pool = [...get().inspirationPool, ...get().inspirationRevealed.map((d) => d.dice)]
-    const rollCount = get().inspirationRollCount + 1
-    const allowedTypes = getAllowedDiceTypes(collectiveFame, numPlayers)
-    const { drawn, remainingPool } = drawInspirationDice(pool, INSPIRATION_DRAW_COUNT, playerGenreCounts, allowedTypes)
+  consumeElementOffer: (offerIndex) => {
+    const offers = get().elementOffers
+    if (offerIndex < 0 || offerIndex >= offers.length) return
 
     set({
-      inspirationPool: remainingPool,
-      inspirationRevealed: drawn,
-      inspirationRollCount: rollCount,
-    })
-  },
-
-  purchaseInspirationDie: (dieIndex, playerGenreCounts, collectiveFame = 0, numPlayers = 1) => {
-    const revealed = get().inspirationRevealed
-    if (dieIndex < 0 || dieIndex >= revealed.length) return null
-
-    const selected = revealed[dieIndex]
-    const remainingRevealed = revealed.filter((_, idx) => idx !== dieIndex)
-
-    // Draw 1 replacement die to keep 4 shown
-    const pool = get().inspirationPool
-    const allowedTypes = getAllowedDiceTypes(collectiveFame, numPlayers)
-    const { drawn, remainingPool } = drawInspirationDice(pool, 1, playerGenreCounts, allowedTypes)
-    const replacement = drawn[0]
-
-    const newRevealed: InspirationDie[] = replacement
-      ? [...remainingRevealed, replacement]
-      : remainingRevealed
-
-    set({
-      inspirationPool: remainingPool,
-      inspirationRevealed: newRevealed,
-      inspirationRollCount: 0,
-    })
-
-    return selected.dice
-  },
-
-  closeInspiration: () => {
-    // Return all revealed dice to pool
-    const revealed = get().inspirationRevealed
-    set({
-      inspirationPool: [...get().inspirationPool, ...revealed.map((d) => d.dice)],
-      inspirationRevealed: [],
-      inspirationRollCount: 0,
+      elementOffers: offers.filter((_, idx) => idx !== offerIndex),
+      elementDiscard: [...get().elementDiscard, offers[offerIndex]],
     })
   },
 
@@ -120,19 +106,33 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
   },
 
   refreshNamePool: () => {
-    const namePool: DraftCard[] = []
-    for (let i = 0; i < NAME_POOL_SIZE; i++) {
-      namePool.push(generateNameCard())
-    }
-    set({ namePool })
+    set({ namePool: freshNamePool() })
+  },
+
+  enqueueReward: (playerId, reward) => {
+    const current = get().pendingRewards[playerId] ?? []
+    set({
+      pendingRewards: { ...get().pendingRewards, [playerId]: [...current, reward] },
+    })
+  },
+
+  removeReward: (playerId, rewardId) => {
+    const current = get().pendingRewards[playerId] ?? []
+    set({
+      pendingRewards: {
+        ...get().pendingRewards,
+        [playerId]: current.filter((r) => r.id !== rewardId),
+      },
+    })
   },
 
   resetShop: () => {
     set({
       namePool: [],
-      inspirationPool: [],
-      inspirationRevealed: [],
-      inspirationRollCount: 0,
+      elementBag: [],
+      elementDiscard: [],
+      elementOffers: [],
+      pendingRewards: {},
     })
   },
 })

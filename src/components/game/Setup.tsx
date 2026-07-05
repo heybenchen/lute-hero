@@ -166,8 +166,12 @@ export function Setup() {
                 // Hydration already happened — just flip to the game phase
                 const state = useGameStore.getState()
                 if (state.phase !== 'setup') {
-                  // Re-initialize shop (not persisted, so it's empty after reload)
-                  state.initializeShop(state.players.length)
+                  // The element bag persists with the save; only initialize the
+                  // shop if this save predates it (or has no shop state at all)
+                  const bagSize = state.elementBag.length + state.elementDiscard.length + state.elementOffers.length
+                  if (bagSize === 0) {
+                    state.initializeShop(state.players.length)
+                  }
                   // Trigger a re-render — setPhase to current phase
                   useGameStore.getState().setPhase(state.phase)
                 }

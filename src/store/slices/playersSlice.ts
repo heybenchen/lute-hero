@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand'
 import { Player, Genre, Dice, SongSlot, TrackEffect } from '@/types'
-import { createStarterSongs } from '@/data/startingData'
+import { createStarterSongs, DICE_UPGRADE_PATH } from '@/data/startingData'
 import {
   awardFame,
   awardExp,
@@ -18,8 +18,9 @@ export interface PlayersSlice {
   movePlayer: (playerId: string, newSpaceId: number) => void
   usePlayerFight: (playerId: string) => void
   updatePlayer: (playerId: string, updates: Partial<Player>) => void
-  applyNameToSong: (playerId: string, songId: string, name: string, effects: TrackEffect[]) => void
+  applyNameToSong: (playerId: string, songId: string, name: string, effect: TrackEffect | null) => void
   addDiceToPlayer: (playerId: string, dice: Dice, songId: string, slotIndex: number) => void
+  upgradeDice: (playerId: string, diceId: string) => void
   awardPlayerFame: (playerId: string, amount: number) => void
   awardPlayerExp: (playerId: string, amount: number) => void
   incrementPlayerMonstersDefeated: (playerId: string, count: number) => void
@@ -30,7 +31,7 @@ export interface PlayersSlice {
 }
 
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
-const STARTING_POSITIONS = [0, 2, 7, 13] // Edge spaces
+const STARTING_POSITIONS = [0, 3, 12, 15] // 4x4 grid corners — maximally far apart
 
 export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
   // Initial state
@@ -86,7 +87,7 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
     })
   },
 
-  applyNameToSong: (playerId, songId, name, effects) => {
+  applyNameToSong: (playerId, songId, name, effect) => {
     set({
       players: get().players.map((p) => {
         if (p.id !== playerId) return p
@@ -94,7 +95,7 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
           ...p,
           songs: p.songs.map((s) => {
             if (s.id !== songId) return s
-            return { ...s, name, effects }
+            return { ...s, name, effect }
           }),
         }
       }),
@@ -119,6 +120,26 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
             ...song,
             slots: updatedSlots as [SongSlot, SongSlot],
           }
+        })
+
+        return { ...p, songs: updatedSongs }
+      }),
+    })
+  },
+
+  upgradeDice: (playerId, diceId) => {
+    set({
+      players: get().players.map((p) => {
+        if (p.id !== playerId) return p
+
+        const updatedSongs = p.songs.map((song) => {
+          const updatedSlots = song.slots.map((slot) => {
+            if (!slot.dice || slot.dice.id !== diceId) return slot
+            const nextType = DICE_UPGRADE_PATH[slot.dice.type]
+            if (!nextType) return slot
+            return { ...slot, dice: { ...slot.dice, type: nextType } }
+          })
+          return { ...song, slots: updatedSlots as [SongSlot, SongSlot] }
         })
 
         return { ...p, songs: updatedSongs }

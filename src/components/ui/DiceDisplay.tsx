@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Dice, DiceType } from '@/types'
 import { GenreBadge } from './GenreBadge'
 import { getMaxValue } from '@/game-logic/dice/roller'
@@ -9,6 +10,8 @@ interface DiceDisplayProps {
   cascadeRolls?: number[]
   className?: string
   compact?: boolean
+  /** Play a tumbling roll animation before settling on the value (battle page) */
+  animateRoll?: boolean
 }
 
 const diceIcons: Record<DiceType, string> = {
@@ -18,6 +21,45 @@ const diceIcons: Record<DiceType, string> = {
   d20: '\u2B21',
 }
 
+/**
+ * Cycle through random face values for a beat, then settle on the real roll.
+ * Returns the number to show and whether the die is still tumbling.
+ */
+function useRollAnimation(value: number | undefined, maxValue: number, enabled: boolean) {
+  const [displayValue, setDisplayValue] = useState(value)
+  const [rolling, setRolling] = useState(false)
+
+  useEffect(() => {
+    if (value === undefined) {
+      setDisplayValue(undefined)
+      return
+    }
+    if (!enabled) {
+      setDisplayValue(value)
+      return
+    }
+
+    setRolling(true)
+    let ticks = 0
+    const maxTicks = 9
+    const interval = setInterval(() => {
+      ticks++
+      if (ticks >= maxTicks) {
+        clearInterval(interval)
+        setDisplayValue(value)
+        setRolling(false)
+      } else {
+        setDisplayValue(Math.floor(Math.random() * maxValue) + 1)
+      }
+    }, 55)
+
+    return () => clearInterval(interval)
+    // Re-run whenever the underlying roll changes
+  }, [value, maxValue, enabled])
+
+  return { displayValue, rolling }
+}
+
 export function DiceDisplay({
   dice,
   value,
@@ -25,29 +67,31 @@ export function DiceDisplay({
   cascadeRolls = [],
   className = '',
   compact = false,
+  animateRoll = false,
 }: DiceDisplayProps) {
   const maxValue = getMaxValue(dice.type)
+  const { displayValue, rolling } = useRollAnimation(value, maxValue, animateRoll)
 
   if (compact) {
     return (
       <div className={`flex items-center gap-1.5 ${className}`}>
         {/* Original die */}
         <div
-          className="die p-1.5"
+          className={`die p-1.5 ${rolling ? 'animate-dice-roll' : ''}`}
           style={{
-            boxShadow: isCrit
+            boxShadow: isCrit && !rolling
               ? '0 0 10px rgba(230, 195, 90, 0.5), 0 0 4px rgba(230, 195, 90, 0.3)'
               : undefined,
-            borderColor: isCrit ? 'rgba(230, 195, 90, 0.7)' : undefined,
+            borderColor: isCrit && !rolling ? 'rgba(230, 195, 90, 0.7)' : undefined,
             minWidth: '52px',
             minHeight: '52px',
           }}
         >
           <div className="flex flex-col items-center">
             <div className="text-lg text-gold-400">{diceIcons[dice.type]}</div>
-            {value !== undefined && (
-              <div className={`text-base font-bold ${isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
-                {value}
+            {displayValue !== undefined && (
+              <div className={`text-base font-bold tabular-nums ${rolling ? 'text-gold-400/80' : isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
+                {displayValue}
               </div>
             )}
             <GenreBadge genre={dice.genre} className="text-[10px] px-1 py-0" />
@@ -91,19 +135,19 @@ export function DiceDisplay({
     <div className={`flex items-center gap-2 ${className}`}>
       {/* Original die */}
       <div
-        className="die"
+        className={`die ${rolling ? 'animate-dice-roll' : ''}`}
         style={{
-          boxShadow: isCrit
+          boxShadow: isCrit && !rolling
             ? '0 0 12px rgba(230, 195, 90, 0.5), 0 0 4px rgba(230, 195, 90, 0.3)'
             : undefined,
-          borderColor: isCrit ? 'rgba(230, 195, 90, 0.7)' : undefined,
+          borderColor: isCrit && !rolling ? 'rgba(230, 195, 90, 0.7)' : undefined,
         }}
       >
         <div className="flex flex-col items-center">
           <div className="text-2xl text-gold-400">{diceIcons[dice.type]}</div>
-          {value !== undefined && (
-            <div className={`text-xl font-bold ${isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
-              {value}
+          {displayValue !== undefined && (
+            <div className={`text-xl font-bold tabular-nums ${rolling ? 'text-gold-400/80' : isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
+              {displayValue}
             </div>
           )}
           <div className="text-xs mt-0.5">

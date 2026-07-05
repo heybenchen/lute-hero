@@ -9,7 +9,7 @@ interface MonsterCardProps {
 const genreAccentColors: Record<Genre, { border: string; glow: string; bg: string }> = {
   Ballad: { border: 'rgba(232, 32, 64, 0.4)', glow: 'rgba(232, 32, 64, 0.15)', bg: 'rgba(232, 32, 64, 0.06)' },
   Folk: { border: 'rgba(76, 175, 80, 0.4)', glow: 'rgba(76, 175, 80, 0.15)', bg: 'rgba(76, 175, 80, 0.06)' },
-  Hymn: { border: 'rgba(0, 184, 212, 0.4)', glow: 'rgba(0, 184, 212, 0.15)', bg: 'rgba(0, 184, 212, 0.06)' },
+  Hymn: { border: 'rgba(250, 204, 21, 0.4)', glow: 'rgba(250, 204, 21, 0.15)', bg: 'rgba(250, 204, 21, 0.06)' },
   Shanty: { border: 'rgba(41, 121, 255, 0.4)', glow: 'rgba(41, 121, 255, 0.15)', bg: 'rgba(41, 121, 255, 0.06)' },
 }
 
@@ -27,7 +27,7 @@ export function MonsterCard({ monster, index = 0 }: MonsterCardProps) {
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
     >
       <div
-        className={`relative min-w-[260px] max-w-[300px] rounded-xl overflow-hidden transition-all duration-500 ${
+        className={`relative w-[220px] sm:w-[260px] rounded-xl overflow-hidden transition-all duration-500 ${
           isDefeated ? 'opacity-30 scale-[0.97] grayscale' : isLowHP ? 'animate-pulse-slow' : ''
         }`}
         style={{
@@ -49,7 +49,7 @@ export function MonsterCard({ monster, index = 0 }: MonsterCardProps) {
           <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${accent.border}, transparent)` }} />
         )}
 
-        <div className="p-5">
+        <div className="p-4 sm:p-5">
           {/* Header row */}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
@@ -58,7 +58,7 @@ export function MonsterCard({ monster, index = 0 }: MonsterCardProps) {
               </div>
               <div className="flex items-center gap-2 mt-1.5">
                 {monster.isBoss && (
-                  <span className="text-xs font-bold text-hymn bg-hymn/10 px-2 py-0.5 rounded" style={{ border: '1px solid rgba(0, 184, 212, 0.2)' }}>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: '#4dd0e1', background: 'rgba(0, 188, 212, 0.1)', border: '1px solid rgba(0, 184, 212, 0.2)' }}>
                     BOSS
                   </span>
                 )}
@@ -110,8 +110,9 @@ export function MonsterCard({ monster, index = 0 }: MonsterCardProps) {
             {monster.resistance && (
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm"
                 style={{ background: 'rgba(196, 48, 48, 0.1)', border: '1px solid rgba(232, 80, 80, 0.2)' }}
+                title="Immune — takes no damage from this genre"
               >
-                <span className="text-red-400 font-bold">.5x</span>
+                <span className="text-red-400 font-bold">0×</span>
                 <GenreBadge genre={monster.resistance} className="text-xs px-2 py-0.5 rounded" />
               </div>
             )}

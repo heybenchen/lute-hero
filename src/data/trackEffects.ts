@@ -39,7 +39,9 @@ export const TRACK_EFFECT_NAMES: { [key: string]: string } = {
   monoOut: "Mono Out",
 };
 
-// Descriptions for tooltips and shop
+// Descriptions for tooltips and shop.
+// Parameterized effects (addFlat/addDice/harmonize) are described dynamically
+// via describeTrackEffect below; the strings here are fallbacks for the rest.
 export const TRACK_EFFECT_DESCRIPTIONS: { [key: string]: string } = {
   freeReroll: "Reroll once",
   upgrade: "Die becomes stronger",
@@ -58,3 +60,21 @@ export const TRACK_EFFECT_DESCRIPTIONS: { [key: string]: string } = {
   crescendo: "Total ≥15: +8 damage",
   monoOut: "Roll once for both slots",
 };
+
+/**
+ * Describe an effect using its actual parameters, so the text always matches
+ * the effect's real values rather than a fixed default. Effects without stored
+ * parameters fall back to the static description map.
+ */
+export function describeTrackEffect(effect: TrackEffect): string {
+  switch (effect.type) {
+    case "addFlat":
+      return `+${effect.amount} damage`;
+    case "addDice":
+      return `Roll an extra ${effect.diceType}`;
+    case "harmonize":
+      return `Matching dice: +${effect.bonusDamage}`;
+    default:
+      return TRACK_EFFECT_DESCRIPTIONS[effect.type] ?? effect.type;
+  }
+}
