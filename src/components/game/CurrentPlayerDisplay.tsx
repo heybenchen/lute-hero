@@ -137,15 +137,13 @@ export function CurrentPlayerDisplay() {
                       )}
                     </div>
                   ))}
-                  {/* Effects */}
-                  {song.effects.length > 0 && (
+                  {/* Effect */}
+                  {song.effect && (
                     <div className="pt-1">
-                      <div className="font-bold text-parchment-400 text-xs mb-1">Effects</div>
-                      {song.effects.map((effect, idx) => (
-                        <div key={`fx-${idx}`} className="text-classical text-xs">
-                          &#x2728; {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
-                        </div>
-                      ))}
+                      <div className="font-bold text-parchment-400 text-xs mb-1">Effect</div>
+                      <div className="text-classical text-xs">
+                        &#x2728; {TRACK_EFFECT_DESCRIPTIONS[song.effect.type] || song.effect.type}
+                      </div>
                     </div>
                   )}
                 </div>

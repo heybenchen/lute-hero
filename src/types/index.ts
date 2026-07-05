@@ -53,7 +53,7 @@ export interface Song {
   id: string;
   name: string;
   slots: [SongSlot, SongSlot]; // 2 dice slots
-  effects: TrackEffect[]; // Song effects (typically 2), separate from dice slots
+  effect: TrackEffect | null; // A song has at most one effect (granted by its name)
   used: boolean; // Can only use each song once per combat
 }
 
@@ -135,7 +135,7 @@ export interface DraftCard {
 // A purchased-but-unresolved reward, queued so buying more never discards it.
 export type PendingReward =
   | { kind: "die"; id: string; dice: Dice }
-  | { kind: "name"; id: string; name: string; effects: TrackEffect[] };
+  | { kind: "name"; id: string; name: string; effect: TrackEffect | null };
 
 // ============================================
 // COMBAT STATE

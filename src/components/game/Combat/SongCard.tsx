@@ -12,7 +12,6 @@ interface SongCardProps {
 }
 
 export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName }: SongCardProps) {
-  const hasEffects = song.effects.length > 0
   const hasDice = song.slots.some((s) => s.dice)
   const filledSlots = song.slots.filter((s) => s.dice).length
 
@@ -97,28 +96,27 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
             ))}
           </div>
 
-          {/* Effects list */}
-          {hasEffects && (
-            <div className="mb-4 space-y-1.5">
-              {song.effects.map((effect, idx) => {
-                const name = TRACK_EFFECT_NAMES[effect.type] || effect.type
-                const desc = TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type
-                return (
-                  <div key={idx} className="flex items-center gap-2 text-sm">
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #9040cc, #6a20aa)',
-                        border: '1px solid rgba(176, 124, 255, 0.5)',
-                        boxShadow: '0 0 6px rgba(176, 124, 255, 0.3)',
-                      }}
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/80" />
-                    </div>
-                    <span className="text-classical/70 truncate" title={desc}>{name}</span>
-                  </div>
-                )
-              })}
+          {/* Effect */}
+          {song.effect && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 text-sm">
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #9040cc, #6a20aa)',
+                    border: '1px solid rgba(176, 124, 255, 0.5)',
+                    boxShadow: '0 0 6px rgba(176, 124, 255, 0.3)',
+                  }}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-white/80" />
+                </div>
+                <span
+                  className="text-classical/70 truncate"
+                  title={TRACK_EFFECT_DESCRIPTIONS[song.effect.type] || song.effect.type}
+                >
+                  {TRACK_EFFECT_NAMES[song.effect.type] || song.effect.type}
+                </span>
+              </div>
             </div>
           )}
 

@@ -15,8 +15,8 @@ export const NEW_D4_COST = 5;
 
 // Cost to upgrade an existing die TO the given type (via DICE_UPGRADE_PATH)
 export const UPGRADE_COSTS: Record<Exclude<DiceType, "d4">, number> = {
-  d6: 10,
-  d12: 20,
+  d6: 5,
+  d12: 15,
   d20: 30,
 };
 

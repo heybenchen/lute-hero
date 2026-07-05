@@ -128,7 +128,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
       kind: 'name',
       id: newRewardId(),
       name: card.songName || 'New Song',
-      effects: card.songEffect ? [card.songEffect] : [],
+      effect: card.songEffect ?? null,
     }
     enqueueReward(playerId, reward)
     setActiveRewardId(reward.id)
@@ -137,7 +137,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
   const handleApplyName = (songId: string) => {
     if (!activeName) return
-    applyNameToSong(playerId, songId, activeName.name, activeName.effects)
+    applyNameToSong(playerId, songId, activeName.name, activeName.effect)
     removeReward(playerId, activeName.id)
     setActiveRewardId(null)
   }
@@ -223,9 +223,9 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                     >
                       <span className="text-sm">🎵</span>
                       <span className="text-sm font-bold text-classical">"{reward.name}"</span>
-                      {reward.effects[0] && (
+                      {reward.effect && (
                         <span className="text-[10px] text-classical/70 hidden sm:inline">
-                          {TRACK_EFFECT_DESCRIPTIONS[reward.effects[0].type] || reward.effects[0].type}
+                          {TRACK_EFFECT_DESCRIPTIONS[reward.effect.type] || reward.effect.type}
                         </span>
                       )}
                     </button>
@@ -449,19 +449,17 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                     )}
                   </div>
 
-                  {/* Show song effects */}
-                  {song.effects.length > 0 ? (
-                    <div className="mb-2 space-y-0.5">
-                      {song.effects.map((effect, idx) => (
-                        <div key={idx} className="p-1.5 rounded text-xs flex items-center gap-1.5"
-                          style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
-                        >
-                          <span className="font-bold text-classical shrink-0">FX{idx + 1}:</span>
-                          <span className="text-classical/80 truncate">
-                            {TRACK_EFFECT_DESCRIPTIONS[effect.type] || effect.type}
-                          </span>
-                        </div>
-                      ))}
+                  {/* Show song effect */}
+                  {song.effect ? (
+                    <div className="mb-2">
+                      <div className="p-1.5 rounded text-xs flex items-center gap-1.5"
+                        style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
+                      >
+                        <span className="font-bold text-classical shrink-0">FX:</span>
+                        <span className="text-classical/80 truncate">
+                          {TRACK_EFFECT_DESCRIPTIONS[song.effect.type] || song.effect.type}
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <div className="mb-2 p-1.5 rounded text-xs text-parchment-500 italic"

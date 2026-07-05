@@ -2,8 +2,7 @@
 
 ## High Priority
 
-- [ ] Update all songs to only have one effect
-- [ ] Make it so that all players have 4 songs by default which they can slot dice into, but with no effects or song titles. Buying the song title is what adds the effect.
+(none)
 
 ## Medium Priority
 
@@ -15,6 +14,8 @@
 
 ## Completed
 
+- Songs now hold a single effect: `Song.effect: TrackEffect | null` (was `effects: TrackEffect[]`). Names grant exactly one effect; damage calc, shop, combat/song cards, and the current-player panel updated accordingly.
+- Dice upgrade costs rebalanced: new d4 = 5 EXP, d4→d6 = 5 EXP, d6→d12 = 15 EXP, d12→d20 = 30 EXP.
 - Purchased rewards queue: buying a new die or a song name enqueues a per-player reward (persisted) instead of a single pending slot, so buying a second thing no longer discards the first. An "Unclaimed Rewards" tray in the Studio lets you pick which to place; rewards survive closing the shop and ending the turn.
 - Shop slots refill at the start of each player's turn: element chips top back up to 4 (drawn from the bag) and a fresh set of song names is dealt.
 - Victory element choice: clearing all monsters in a space lets the victor pick an element that radiates 1 tag to every cardinally-adjacent space (replaces the old random neighbor spread). `clearSpaceAfterCombat` now only clears; `spreadElementToNeighbors` does the chosen spread.

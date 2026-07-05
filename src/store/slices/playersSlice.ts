@@ -18,7 +18,7 @@ export interface PlayersSlice {
   movePlayer: (playerId: string, newSpaceId: number) => void
   usePlayerFight: (playerId: string) => void
   updatePlayer: (playerId: string, updates: Partial<Player>) => void
-  applyNameToSong: (playerId: string, songId: string, name: string, effects: TrackEffect[]) => void
+  applyNameToSong: (playerId: string, songId: string, name: string, effect: TrackEffect | null) => void
   addDiceToPlayer: (playerId: string, dice: Dice, songId: string, slotIndex: number) => void
   upgradeDice: (playerId: string, diceId: string) => void
   awardPlayerFame: (playerId: string, amount: number) => void
@@ -87,7 +87,7 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
     })
   },
 
-  applyNameToSong: (playerId, songId, name, effects) => {
+  applyNameToSong: (playerId, songId, name, effect) => {
     set({
       players: get().players.map((p) => {
         if (p.id !== playerId) return p
@@ -95,7 +95,7 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
           ...p,
           songs: p.songs.map((s) => {
             if (s.id !== songId) return s
-            return { ...s, name, effects }
+            return { ...s, name, effect }
           }),
         }
       }),
