@@ -11,11 +11,11 @@ describe('boardSlice spawning integration', () => {
   })
 
   describe('initializeBoard + spawnInitialMonstersOnBoard', () => {
-    it('should create 14 spaces with no monsters initially', () => {
+    it('should create 16 spaces with no monsters initially', () => {
       useGameStore.getState().initializeBoard()
       const { spaces } = useGameStore.getState()
 
-      expect(spaces).toHaveLength(14)
+      expect(spaces).toHaveLength(16)
       spaces.forEach((space) => {
         expect(space.monsters).toEqual([])
         expect(space.genreTags).toEqual([])
@@ -133,7 +133,7 @@ describe('boardSlice spawning integration', () => {
     it('should spread 1 tag to each adjacent space after clearing', () => {
       useGameStore.getState().initializeBoard()
 
-      // Space 0 connects to spaces 1, 3, 13
+      // Space 0 (top-left grid corner) connects to spaces 1 and 4
       const spaces = useGameStore.getState().spaces
       const updatedSpaces = spaces.map((s) =>
         s.id === 0 ? { ...s, genreTags: ['Ballad'] as Genre[] } : s
@@ -252,7 +252,7 @@ describe('boardSlice spawning integration', () => {
       let space = useGameStore.getState().spaces.find((s) => s.id === 0)!
       expect(space.monsters.length).toBeGreaterThanOrEqual(1)
 
-      // Combat: clear the space (space 0 gets cleared; its neighbors 1, 3, 13 each get +1 tag)
+      // Combat: clear the space (space 0 gets cleared; its neighbors 1 and 4 each get +1 tag)
       useGameStore.getState().clearSpaceAfterCombat(0)
       space = useGameStore.getState().spaces.find((s) => s.id === 0)!
       expect(space.monsters).toEqual([])

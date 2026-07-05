@@ -11,7 +11,7 @@ import {
   getNextDiceType,
   getUpgradeCost,
 } from '@/data/draftCards'
-import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
+import { GENRE_THEME } from '@/data/genreTheme'
 
 const diceIcons: Record<DiceType, string> = {
   d4: '△',
@@ -20,19 +20,13 @@ const diceIcons: Record<DiceType, string> = {
   d20: '⬡',
 }
 
-// Element cards: emoji + rgb triplet from the shared genre theme
-const ELEMENTS: { genre: Genre; emoji: string; rgb: string }[] = ALL_GENRES.map((genre) => ({
-  genre,
-  emoji: GENRE_THEME[genre].emoji,
-  rgb: GENRE_THEME[genre].rgb,
-}))
-
 interface DraftShopProps {
   playerId: string
   onClose: () => void
 }
 
 const REFRESH_COST = 5
+const ELEMENT_REFRESH_COST = 5
 
 interface OwnedDie {
   dice: Dice
@@ -52,8 +46,17 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const purchaseFromNamePool = useGameStore((state) => state.purchaseFromNamePool)
   const refreshNamePool = useGameStore((state) => state.refreshNamePool)
 
-  const [selectedElement, setSelectedElement] = useState<Genre | null>(null)
+  // Element bag state
+  const elementOffers = useGameStore((state) => state.elementOffers)
+  const elementBag = useGameStore((state) => state.elementBag)
+  const refreshElementOffers = useGameStore((state) => state.refreshElementOffers)
+  const consumeElementOffer = useGameStore((state) => state.consumeElementOffer)
+
+  const [selectedOfferIdx, setSelectedOfferIdx] = useState<number | null>(null)
   const [selectedDie, setSelectedDie] = useState<Dice | null>(null)
+
+  const selectedElement: Genre | null =
+    selectedOfferIdx !== null ? elementOffers[selectedOfferIdx] ?? null : null
 
   // Pending name that needs a target song
   const [pendingName, setPendingName] = useState<{
@@ -82,17 +85,28 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     : []
 
   const handleBuyNewD4 = () => {
-    if (!selectedElement || player.exp < NEW_D4_COST) return
+    if (selectedOfferIdx === null || !selectedElement || player.exp < NEW_D4_COST) return
     awardPlayerExp(playerId, -NEW_D4_COST)
+    consumeElementOffer(selectedOfferIdx)
     setSelectedDie(createElementalDie(selectedElement))
-    setSelectedElement(null)
+    setSelectedOfferIdx(null)
   }
 
   const handleUpgradeDie = (die: Dice) => {
+    if (selectedOfferIdx === null) return
     const cost = getUpgradeCost(die.type)
     if (cost === null || player.exp < cost) return
     awardPlayerExp(playerId, -cost)
+    consumeElementOffer(selectedOfferIdx)
     upgradeDice(playerId, die.id)
+    setSelectedOfferIdx(null)
+  }
+
+  const handleRefreshElements = () => {
+    if (player.exp < ELEMENT_REFRESH_COST) return
+    awardPlayerExp(playerId, -ELEMENT_REFRESH_COST)
+    setSelectedOfferIdx(null)
+    refreshElementOffers()
   }
 
   const handlePurchaseName = (card: DraftCard) => {
@@ -126,9 +140,9 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   return (
     <div className="modal-overlay">
       <div className="modal-content max-w-6xl">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center gap-3 mb-5 sm:mb-6">
             <div>
               <div className="font-display text-2xl text-gold-400">
                 Studio
@@ -187,62 +201,81 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </div>
           )}
 
-          {/* Element selection */}
+          {/* Element chips drawn from the bag */}
           <div className="mb-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
-                Elements
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+              <div className="flex items-center gap-3">
+                <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
+                  Elements
+                </div>
+                <div className="text-sm text-parchment-500">
+                  Take a chip: new d4 ({NEW_D4_COST} EXP) or an upgrade &middot; {elementBag.length} left in bag
+                </div>
               </div>
-              <div className="text-sm text-parchment-500">
-                Pick an element to buy a new d4 ({NEW_D4_COST} EXP) or upgrade your dice
-              </div>
+              <button
+                onClick={handleRefreshElements}
+                disabled={player.exp < ELEMENT_REFRESH_COST}
+                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                title={`Discard these chips and draw ${4} new ones from the bag`}
+              >
+                Draw New ({ELEMENT_REFRESH_COST} EXP)
+              </button>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {ELEMENTS.map(({ genre, emoji, rgb }) => {
-                const isSelected = selectedElement === genre
-                return (
-                  <button
-                    key={genre}
-                    className="group relative rounded-lg p-3 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1"
-                    style={{
-                      background: isSelected
-                        ? `linear-gradient(160deg, rgba(${rgb}, 0.22) 0%, rgba(${rgb}, 0.06) 100%)`
-                        : `linear-gradient(160deg, rgba(${rgb}, 0.1) 0%, rgba(42, 33, 24, 0.9) 100%)`,
-                      border: isSelected
-                        ? `1px solid rgba(${rgb}, 0.7)`
-                        : `1px solid rgba(${rgb}, 0.25)`,
-                      boxShadow: isSelected
-                        ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 18px rgba(${rgb}, 0.3), 0 4px 10px rgba(0,0,0,0.4)`
-                        : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 4px rgba(0,0,0,0.3)',
-                    }}
-                    onClick={() => setSelectedElement(isSelected ? null : genre)}
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <div
-                        className="text-4xl transition-transform duration-200 ease-out group-hover:scale-110"
-                        style={{ filter: `drop-shadow(0 0 8px rgba(${rgb}, ${isSelected ? 0.6 : 0.3}))` }}
-                      >
-                        {emoji}
+            {elementOffers.length === 0 ? (
+              <div className="rounded-lg p-4 text-sm text-parchment-500 italic text-center"
+                style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.15)' }}
+              >
+                No chips on display — draw new ones from the bag
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {elementOffers.map((genre, offerIdx) => {
+                  const { emoji, rgb } = GENRE_THEME[genre]
+                  const isSelected = selectedOfferIdx === offerIdx
+                  return (
+                    <button
+                      key={`${genre}-${offerIdx}`}
+                      className="group relative rounded-lg p-3 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1 animate-scale-in"
+                      style={{
+                        background: isSelected
+                          ? `linear-gradient(160deg, rgba(${rgb}, 0.22) 0%, rgba(${rgb}, 0.06) 100%)`
+                          : `linear-gradient(160deg, rgba(${rgb}, 0.1) 0%, rgba(42, 33, 24, 0.9) 100%)`,
+                        border: isSelected
+                          ? `1px solid rgba(${rgb}, 0.7)`
+                          : `1px solid rgba(${rgb}, 0.25)`,
+                        boxShadow: isSelected
+                          ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 18px rgba(${rgb}, 0.3), 0 4px 10px rgba(0,0,0,0.4)`
+                          : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 4px rgba(0,0,0,0.3)',
+                      }}
+                      onClick={() => setSelectedOfferIdx(isSelected ? null : offerIdx)}
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <div
+                          className="text-4xl transition-transform duration-200 ease-out group-hover:scale-110"
+                          style={{ filter: `drop-shadow(0 0 8px rgba(${rgb}, ${isSelected ? 0.6 : 0.3}))` }}
+                        >
+                          {emoji}
+                        </div>
+                        <GenreBadge genre={genre} className="text-xs" />
                       </div>
-                      <GenreBadge genre={genre} className="text-xs" />
-                    </div>
-                    {isSelected && (
-                      <div
-                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold animate-scale-in"
-                        style={{
-                          background: `rgb(${rgb})`,
-                          color: '#fff',
-                          boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
-                        }}
-                      >
-                        ✓
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
+                      {isSelected && (
+                        <div
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold animate-scale-in"
+                          style={{
+                            background: `rgb(${rgb})`,
+                            color: '#fff',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+                          }}
+                        >
+                          ✓
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
             {/* Options for the selected element */}
             {selectedElement && (

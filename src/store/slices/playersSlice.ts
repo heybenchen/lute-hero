@@ -31,7 +31,7 @@ export interface PlayersSlice {
 }
 
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
-const STARTING_POSITIONS = [0, 2, 7, 13] // Edge spaces
+const STARTING_POSITIONS = [0, 3, 12, 15] // 4x4 grid corners — maximally far apart
 
 export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
   // Initial state

@@ -1,73 +1,67 @@
 import { BoardSpace, Genre } from '@/types'
 
+// Board is a 4x4 grid. Spaces are indexed row-major:
+//
+//    0   1   2   3
+//    4   5   6   7
+//    8   9  10  11
+//   12  13  14  15
+//
+// Movement follows orthogonal grid adjacency (up/down/left/right).
+export const GRID_SIZE = 4
+export const BOARD_SPACE_COUNT = GRID_SIZE * GRID_SIZE
+
+// The four corners are the starting spaces — maximally far apart on the grid.
+export const STARTING_SPACES = [0, 3, 12, 15]
+
 /**
- * Create the 14-space board graph with connections
- *
- * Board layout (example):
- *       0 --- 1 --- 2
- *      / \   / \   / \
- *     13  3-4   5-6  7
- *      \ / \ / \ / \ /
- *       12--11--10--9-8
- *
- * Each space connects to 3-5 neighbors
- * Edges wrap around for circular topology
+ * Orthogonal neighbors of a grid cell (no wrap-around).
+ */
+function gridNeighbors(index: number): number[] {
+  const row = Math.floor(index / GRID_SIZE)
+  const col = index % GRID_SIZE
+  const neighbors: number[] = []
+  if (row > 0) neighbors.push(index - GRID_SIZE) // up
+  if (row < GRID_SIZE - 1) neighbors.push(index + GRID_SIZE) // down
+  if (col > 0) neighbors.push(index - 1) // left
+  if (col < GRID_SIZE - 1) neighbors.push(index + 1) // right
+  return neighbors
+}
+
+/**
+ * Create the 4x4 (16-space) board graph with orthogonal-adjacency connections.
  */
 export function createBoardGraph(): BoardSpace[] {
   const spaces: BoardSpace[] = []
 
-  // Define the graph structure
-  // Each space connects to 3-5 others with wrap-around
-  const connections: number[][] = [
-    [1, 3, 13],           // 0 - edge (3 connections)
-    [0, 2, 4, 5],         // 1 - inner (4 connections)
-    [1, 6, 7],            // 2 - edge (3 connections)
-    [0, 4, 12, 13],       // 3 - inner (4 connections)
-    [1, 3, 5, 11],        // 4 - center (4 connections)
-    [1, 4, 6, 10],        // 5 - center (4 connections)
-    [2, 5, 7, 9],         // 6 - inner (4 connections)
-    [2, 6, 8],            // 7 - edge (3 connections)
-    [7, 9],               // 8 - edge (2 connections) - let's add one more
-    [6, 8, 10],           // 9 - edge (3 connections)
-    [5, 9, 11],           // 10 - inner (3 connections)
-    [4, 10, 12],          // 11 - inner (3 connections)
-    [3, 11, 13],          // 12 - edge (3 connections)
-    [0, 3, 12],           // 13 - edge (3 connections)
-  ]
-
-  // Adjust to ensure minimum 3 connections
-  connections[8].push(10) // 8 now has 3 connections
-
-  // Space names
+  // Space names, in grid order (corners read as distinct entry points)
   const names = [
-    'The Forgotten Stage',
-    'Echo Chamber',
-    'The Last Venue',
-    'Harmony Crossroads',
-    'The Soundwave Nexus',
-    'Resonance Plaza',
-    'Melody Junction',
-    'The Silent Amphitheater',
-    'Rhythm\'s End',
-    'The Broken Chord',
-    'Dissonance Square',
-    'The Muted Hall',
-    'Symphony Ruins',
-    'The Quiet Quarter',
+    'The Forgotten Stage',   // 0  (corner / start)
+    'Echo Chamber',          // 1
+    'Melody Junction',       // 2
+    'The Last Venue',        // 3  (corner / start)
+    'Harmony Crossroads',    // 4
+    'The Soundwave Nexus',   // 5
+    'Resonance Plaza',       // 6
+    'The Silent Amphitheater', // 7
+    'Symphony Ruins',        // 8
+    'Dissonance Square',     // 9
+    'The Muted Hall',        // 10
+    'The Broken Chord',      // 11
+    'The Quiet Quarter',     // 12 (corner / start)
+    'Crescendo Heights',     // 13
+    'The Fading Refrain',    // 14
+    "Rhythm's End",          // 15 (corner / start)
   ]
 
-  // Edge spaces (where players start)
-  const edgeSpaces = [0, 2, 7, 8, 9, 12, 13]
-
-  // Create spaces
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < BOARD_SPACE_COUNT; i++) {
     spaces.push({
       id: i,
       name: names[i],
-      connections: connections[i],
+      connections: gridNeighbors(i),
       genreTags: [],
       monsters: [],
-      isEdge: edgeSpaces.includes(i),
+      isEdge: STARTING_SPACES.includes(i),
     })
   }
 

@@ -190,20 +190,20 @@ export function CombatModal() {
         {/* Atmospheric top gradient */}
         <div className="h-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.4), transparent)' }} />
 
-        <div className="p-10">
+        <div className="p-4 sm:p-6 lg:p-10">
           {/* Header */}
-          <div className="text-center mb-8 animate-fade-in">
-            <div className="font-display text-4xl text-gold-400 mb-1.5"
+          <div className="text-center mb-5 sm:mb-8 animate-fade-in">
+            <div className="font-display text-2xl sm:text-4xl text-gold-400 mb-1.5"
               style={{ textShadow: '0 0 20px rgba(212, 168, 83, 0.2)' }}
             >
               The Mashup
             </div>
-            <div className="flex items-center justify-center gap-4">
-              <div className="h-px w-20" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
-              <p className="text-base text-parchment-500 font-game tracking-wide">
+            <div className="flex items-center justify-center gap-3 sm:gap-4">
+              <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
+              <p className="text-sm sm:text-base text-parchment-500 font-game tracking-wide">
                 {player.name}'s Performance
               </p>
-              <div className="h-px w-20" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
+              <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
             </div>
           </div>
 

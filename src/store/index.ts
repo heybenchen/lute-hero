@@ -10,10 +10,10 @@ import { createShopSlice, ShopSlice } from './slices/shopSlice'
 export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice & ShopSlice
 
 const STORAGE_KEY = 'lute-hero-save'
-const STORAGE_VERSION = 5
+const STORAGE_VERSION = 6
 
 // Only persist the durable game state — skip transient combat mid-fight data
-const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'namePool'>> = {
+const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers'>> = {
   name: STORAGE_KEY,
   version: STORAGE_VERSION,
   partialize: (state) => ({
@@ -24,6 +24,9 @@ const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'curre
     spaces: state.spaces,
     players: state.players,
     namePool: state.namePool,
+    elementBag: state.elementBag,
+    elementDiscard: state.elementDiscard,
+    elementOffers: state.elementOffers,
   }),
   // Only hydrate if saved game is in a non-setup phase (i.e. a real game was in progress)
   merge: (persisted, current) => {

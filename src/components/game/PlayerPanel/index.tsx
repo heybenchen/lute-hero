@@ -58,7 +58,7 @@ export function PlayerPanel() {
   }
 
   return (
-    <div className="card-ornate p-5 h-full flex flex-col">
+    <div className="card-ornate p-4 sm:p-5 lg:h-full flex flex-col">
       {/* Game info header */}
       <div className="text-center mb-4">
         <div className="font-display text-xl text-gold-400 mb-1">
@@ -170,7 +170,7 @@ export function PlayerPanel() {
       <div className="divider-ornate" />
 
       {/* All players */}
-      <div className="flex-1 min-h-0 overflow-auto mb-4">
+      <div className="lg:flex-1 lg:min-h-0 lg:overflow-auto mb-4">
         <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-2">
           All Players
         </div>

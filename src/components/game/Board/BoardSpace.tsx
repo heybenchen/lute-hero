@@ -34,8 +34,8 @@ export function BoardSpace({
       onClick={onClick}
       disabled={!canMoveTo}
       className={`
-        relative hover:z-40 w-[104px] h-[104px] rounded-xl
-        flex flex-col justify-between p-2
+        relative hover:z-40 w-full aspect-square rounded-lg sm:rounded-xl
+        flex flex-col justify-between p-1.5 sm:p-2
         transition-all duration-200 ease-out
         ${canMoveTo
           ? 'cursor-pointer hover:-translate-y-1 hover:brightness-110'

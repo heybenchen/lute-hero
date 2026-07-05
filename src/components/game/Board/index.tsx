@@ -4,19 +4,11 @@ import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 
-// Static tile grid: rows of space IDs arranged to roughly mirror the board graph.
-// null = empty grid cell.
-const TILE_ROWS: (number | null)[][] = [
-  [0, 1, 2, 6, 7],
-  [13, 3, 4, 5, 8],
-  [null, 12, 11, 10, 9],
-]
-
 // Corner flourish for the map frame
 function Corner({ position }: { position: string }) {
   return (
     <div
-      className={`absolute w-8 h-8 pointer-events-none ${position}`}
+      className={`absolute w-6 h-6 sm:w-8 sm:h-8 pointer-events-none ${position}`}
       style={{
         borderColor: 'rgba(212, 168, 83, 0.35)',
         borderStyle: 'solid',
@@ -86,9 +78,9 @@ export function Board() {
         }}
       />
 
-      {/* Legend — bottom-left */}
+      {/* Legend — bottom-left (desktop only; on mobile the tile dots + hint carry it) */}
       <div
-        className="absolute bottom-3 left-3 z-20 rounded-lg p-2.5 animate-fade-in"
+        className="hidden lg:block absolute bottom-3 left-3 z-20 rounded-lg p-2.5 animate-fade-in"
         style={{
           background: 'rgba(18, 13, 8, 0.9)',
           border: '1px solid rgba(212, 168, 83, 0.18)',
@@ -130,7 +122,7 @@ export function Board() {
         </div>
       </div>
 
-      <div className="relative p-8">
+      <div className="relative w-full max-w-[460px] p-4 sm:p-6 lg:p-8">
         {/* Map frame corners */}
         <Corner position="top-0 left-0" />
         <Corner position="top-0 right-0" />
@@ -138,59 +130,46 @@ export function Board() {
         <Corner position="bottom-0 right-0" />
 
         {/* Map title decoration */}
-        <div className="flex items-center justify-center gap-3 mb-5 pointer-events-none">
-          <div className="h-px w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
-          <div className="font-display text-xl text-gold-500 opacity-45 tracking-[0.25em] text-center select-none">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-5 pointer-events-none">
+          <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
+          <div className="font-display text-base sm:text-xl text-gold-500 opacity-45 tracking-[0.2em] sm:tracking-[0.25em] text-center select-none">
             The Bardic Realm
           </div>
-          <div className="h-px w-16" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
+          <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
         </div>
 
-        {/* Tile grid */}
-        <div className="flex flex-col gap-4" onMouseLeave={() => setHoveredSpaceId(null)}>
-          {TILE_ROWS.map((row, rowIdx) => (
-            <div key={rowIdx} className="flex gap-4">
-              {row.map((spaceId, colIdx) => {
-                if (spaceId === null) {
-                  return <div key={colIdx} className="w-[104px] h-[104px]" />
+        {/* 4x4 tile grid — space ids are row-major grid positions */}
+        <div
+          className="grid grid-cols-4 gap-2 sm:gap-3"
+          onMouseLeave={() => setHoveredSpaceId(null)}
+        >
+          {spaces.map((space) => (
+            <div
+              key={space.id}
+              className="animate-tile-in"
+              style={{ animationDelay: `${space.id * 35}ms` }}
+              // Hover handled on the wrapper: disabled tile buttons swallow mouse events
+              onMouseEnter={() => setHoveredSpaceId(space.id)}
+              onMouseLeave={() => setHoveredSpaceId(null)}
+            >
+              <BoardSpaceComponent
+                space={space}
+                players={players}
+                isCurrentPlayer={currentPlayer.position === space.id}
+                canMoveTo={validMoves.some((s) => s.id === space.id)}
+                isLinkedToHovered={
+                  hoveredSpace !== null &&
+                  hoveredSpace !== undefined &&
+                  hoveredSpace.connections.includes(space.id)
                 }
-
-                const space = spaces.find((s) => s.id === spaceId)
-                if (!space) return <div key={colIdx} className="w-[104px] h-[104px]" />
-
-                // Stagger tile entrance across the grid
-                const flatIndex = rowIdx * 5 + colIdx
-
-                return (
-                  <div
-                    key={colIdx}
-                    className="animate-tile-in"
-                    style={{ animationDelay: `${flatIndex * 40}ms` }}
-                    // Hover handled on the wrapper: disabled tile buttons swallow mouse events
-                    onMouseEnter={() => setHoveredSpaceId(space.id)}
-                    onMouseLeave={() => setHoveredSpaceId(null)}
-                  >
-                    <BoardSpaceComponent
-                      space={space}
-                      players={players}
-                      isCurrentPlayer={currentPlayer.position === space.id}
-                      canMoveTo={validMoves.some((s) => s.id === space.id)}
-                      isLinkedToHovered={
-                        hoveredSpace !== null &&
-                        hoveredSpace !== undefined &&
-                        hoveredSpace.connections.includes(space.id)
-                      }
-                      onClick={() => handleSpaceClick(space.id)}
-                    />
-                  </div>
-                )
-              })}
+                onClick={() => handleSpaceClick(space.id)}
+              />
             </div>
           ))}
         </div>
 
         {/* Hover hint */}
-        <div className="mt-4 text-center text-xs text-parchment-500 pointer-events-none h-4">
+        <div className="mt-3 sm:mt-4 text-center text-[11px] sm:text-xs text-parchment-500 pointer-events-none min-h-[1rem]">
           {hoveredSpace
             ? `${hoveredSpace.name} — paths to ${hoveredSpace.connections.map((id) => spaces.find((s) => s.id === id)?.name).filter(Boolean).join(', ')}`
             : canMove

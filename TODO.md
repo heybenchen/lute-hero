@@ -2,7 +2,6 @@
 
 ## High Priority
 
-- [ ] Only designate 4 starting spaces. Make each starting space as far away from the others as possible.
 - [ ] Update all songs to only have one effect
 - [ ] Make it so that all players have 4 songs by default which they can slot dice into, but with no effects or song titles. Buying the song title is what adds the effect.
 
@@ -16,6 +15,9 @@
 
 ## Completed
 
+- Board is a 4x4 grid (16 spaces) with orthogonal-adjacency movement; the 4 corners are the starting spaces, maximally far apart (also satisfies the "4 starting spaces far apart" request). Grid renders as a responsive CSS grid of aspect-square tiles.
+- Mobile-friendly layout: board + player panel stack vertically below `lg` and the page scrolls; board tiles, modals (Studio/Combat), and the title bar scale down responsively; board legend hidden on small screens (tile dots + hint carry the info). No horizontal overflow at 390px.
+- Element store draws from a bag: 6 chips per element per player, 4 shown at a time; "Draw New" discards the shown chips and pulls fresh ones; when the bag empties the discard is reshuffled back in. d20 upgrade now costs 30 EXP.
 - Board readability pass (ported from PR #16 onto the tile board): genre tags render as color-coded dot chips grouped with counts instead of emoji piles (addresses "make map colors more distinct"), board legend explains tile states and genre colors, dot-grid map texture, starting spaces get a distinct border + smaller S badge, skull monster icon, shared genre theme module (`src/data/genreTheme.ts`) keeps board and shop colors/emojis in sync
 
 - UI polish pass: staggered tile entrance + framed map with hover-to-preview path connections and hint line, gradient buttons with hover lift/press states and focus rings, blurred modal backdrop with springy entrance, per-element themed shop cards with selection glow, pulsing fight button and danger glow on monster tiles, bobbing player token, fame bar sheen; fixed monster tooltip rendering dim/under neighboring tiles

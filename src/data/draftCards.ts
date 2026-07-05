@@ -17,7 +17,7 @@ export const NEW_D4_COST = 5;
 export const UPGRADE_COSTS: Record<Exclude<DiceType, "d4">, number> = {
   d6: 10,
   d12: 20,
-  d20: 20,
+  d20: 30,
 };
 
 /**
