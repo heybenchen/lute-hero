@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useGameStore, selectCurrentPlayer } from "@/store";
 import { GenreBadge } from "@/components/ui/GenreBadge";
 import { getMaxValue } from "@/game-logic/dice/roller";
-import { TRACK_EFFECT_DESCRIPTIONS } from "@/data/trackEffects";
+import { describeTrackEffect } from "@/data/trackEffects";
 import { DiceType } from "@/types";
 
 const diceIcons: Record<DiceType, string> = {
@@ -142,7 +142,7 @@ export function CurrentPlayerDisplay() {
                     <div className="pt-1">
                       <div className="font-bold text-parchment-400 text-xs mb-1">Effect</div>
                       <div className="text-classical text-xs">
-                        &#x2728; {TRACK_EFFECT_DESCRIPTIONS[song.effect.type] || song.effect.type}
+                        &#x2728; {describeTrackEffect(song.effect)}
                       </div>
                     </div>
                   )}

@@ -1,6 +1,6 @@
 import { Song } from '@/types'
 import { DiceDisplay } from '@/components/ui/DiceDisplay'
-import { TRACK_EFFECT_DESCRIPTIONS, TRACK_EFFECT_NAMES } from '@/data/trackEffects'
+import { describeTrackEffect, TRACK_EFFECT_NAMES } from '@/data/trackEffects'
 
 interface SongCardProps {
   song: Song
@@ -112,7 +112,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
                 </div>
                 <span
                   className="text-classical/70 truncate"
-                  title={TRACK_EFFECT_DESCRIPTIONS[song.effect.type] || song.effect.type}
+                  title={describeTrackEffect(song.effect)}
                 >
                   {TRACK_EFFECT_NAMES[song.effect.type] || song.effect.type}
                 </span>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
 import { DraftCard, DiceType, Genre, Dice, PendingReward } from '@/types'
 import { DraftCardDisplay } from './DraftCardDisplay'
-import { TRACK_EFFECT_DESCRIPTIONS } from '@/data/trackEffects'
+import { describeTrackEffect } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import {
@@ -225,7 +225,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                       <span className="text-sm font-bold text-classical">"{reward.name}"</span>
                       {reward.effect && (
                         <span className="text-[10px] text-classical/70 hidden sm:inline">
-                          {TRACK_EFFECT_DESCRIPTIONS[reward.effect.type] || reward.effect.type}
+                          {describeTrackEffect(reward.effect)}
                         </span>
                       )}
                     </button>
@@ -457,7 +457,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                       >
                         <span className="font-bold text-classical shrink-0">FX:</span>
                         <span className="text-classical/80 truncate">
-                          {TRACK_EFFECT_DESCRIPTIONS[song.effect.type] || song.effect.type}
+                          {describeTrackEffect(song.effect)}
                         </span>
                       </div>
                     </div>
