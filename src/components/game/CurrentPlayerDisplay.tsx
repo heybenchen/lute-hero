@@ -1,16 +1,9 @@
 import { useState } from "react";
 import { useGameStore, selectCurrentPlayer } from "@/store";
 import { GenreBadge } from "@/components/ui/GenreBadge";
+import { DiceShape } from "@/components/ui/DiceShape";
 import { getMaxValue } from "@/game-logic/dice/roller";
 import { describeTrackEffect } from "@/data/trackEffects";
-import { DiceType } from "@/types";
-
-const diceIcons: Record<DiceType, string> = {
-  d4: "\u25B3",
-  d6: "\u2684",
-  d12: "\u2B22",
-  d20: "\u2B21",
-};
 
 export function CurrentPlayerDisplay() {
   const currentPlayer = useGameStore(selectCurrentPlayer);
@@ -77,7 +70,7 @@ export function CurrentPlayerDisplay() {
                       {slot.dice ? (
                         <>
                           <div className="text-gold-400 text-[24px] leading-none">
-                            {diceIcons[slot.dice.type]}
+                            <DiceShape type={slot.dice.type} />
                           </div>
                           <div className="font-bold text-[10px] text-parchment-300">
                             {slot.dice.genre}

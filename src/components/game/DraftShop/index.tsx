@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
-import { DraftCard, DiceType, Genre, Dice, PendingReward } from '@/types'
+import { DraftCard, Genre, Dice, PendingReward } from '@/types'
 import { DraftCardDisplay } from './DraftCardDisplay'
 import { describeTrackEffect } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
+import { DiceShape } from '@/components/ui/DiceShape'
 import {
   NEW_D4_COST,
   createElementalDie,
@@ -14,13 +15,6 @@ import {
   INSPIRATION_SPEND,
 } from '@/data/draftCards'
 import { GENRE_THEME } from '@/data/genreTheme'
-
-const diceIcons: Record<DiceType, string> = {
-  d4: '△',
-  d6: '⚄',
-  d12: '⬠',
-  d20: '⬡',
-}
 
 interface DraftShopProps {
   playerId: string
@@ -230,7 +224,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                           boxShadow: isActive ? `0 0 12px rgba(${rgb}, 0.3)` : undefined,
                         }}
                       >
-                        <span className="text-lg text-gold-400">{diceIcons[reward.dice.type]}</span>
+                        <span className="text-lg text-gold-400"><DiceShape type={reward.dice.type} /></span>
                         <span className="text-sm font-bold text-parchment-200">{reward.dice.type}</span>
                         <GenreBadge genre={reward.dice.genre} className="text-[10px] px-1.5 py-0" />
                       </button>
@@ -366,7 +360,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                     disabled={player.exp < NEW_D4_COST}
                     className="btn-primary text-sm px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {diceIcons.d4} New d4 &mdash; {NEW_D4_COST} EXP
+                    <DiceShape type="d4" /> New d4 &mdash; {NEW_D4_COST} EXP
                   </button>
 
                   {/* Upgrades for owned dice of this element */}
@@ -387,9 +381,9 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                           className="btn-secondary text-sm px-3 py-2 disabled:opacity-40 disabled:cursor-not-allowed text-left"
                         >
                           <div className="font-bold">
-                            {diceIcons[dice.type]} {dice.type}
+                            <DiceShape type={dice.type} /> {dice.type}
                             {nextType ? (
-                              <span> &rarr; {diceIcons[nextType]} {nextType} &mdash; {cost} EXP</span>
+                              <span> &rarr; <DiceShape type={nextType} /> {nextType} &mdash; {cost} EXP</span>
                             ) : (
                               <span className="text-parchment-500"> (max)</span>
                             )}
@@ -459,7 +453,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               {player.songs.map((song) => (
                 <div
                   key={song.id}
-                  className={`card transition-all duration-150 ${activeName ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+                  className={`card w-full max-w-[280px] mx-auto transition-all duration-150 ${activeName ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
                   style={activeName ? {
                     border: '1px solid rgba(176, 124, 255, 0.4)',
                     boxShadow: '0 0 12px rgba(176, 124, 255, 0.1)',
@@ -495,14 +489,14 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex justify-center gap-3">
                     {song.slots.map((slot, idx) => {
                       return (
                         <button
                           key={idx}
                           onClick={() => handleSlotDice(song.id, idx, !!slot.dice)}
                           disabled={!activeDie}
-                          className="h-20 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
+                          className="w-20 h-20 aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
                           style={{
                             background: slot.dice
                               ? activeDie
@@ -523,7 +517,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                         >
                           {slot.dice ? (
                             <div className="text-center relative">
-                              <div className="text-2xl mb-0.5 text-gold-400">{diceIcons[slot.dice.type]}</div>
+                              <div className="text-2xl mb-0.5 text-gold-400"><DiceShape type={slot.dice.type} /></div>
                               <div className="absolute -top-1 -right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                                 style={{
                                   background: 'linear-gradient(135deg, #b8922e, #d4a853)',
