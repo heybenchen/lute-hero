@@ -20,6 +20,7 @@ export function PlayerPanel() {
   const usePlayerFight = useGameStore((state) => state.usePlayerFight)
   const startCombat = useGameStore((state) => state.startCombat)
   const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
+  const refillShopSlots = useGameStore((state) => state.refillShopSlots)
 
   if (!currentPlayer) return null
 
@@ -48,6 +49,9 @@ export function PlayerPanel() {
     } else {
       nextTurn()
     }
+
+    // Start the next player's turn with a full shop (fresh names, topped-up chips)
+    refillShopSlots()
   }
 
   const handleFight = () => {

@@ -132,6 +132,11 @@ export interface DraftCard {
   songEffect?: TrackEffect;
 }
 
+// A purchased-but-unresolved reward, queued so buying more never discards it.
+export type PendingReward =
+  | { kind: "die"; id: string; dice: Dice }
+  | { kind: "name"; id: string; name: string; effects: TrackEffect[] };
+
 // ============================================
 // COMBAT STATE
 // ============================================

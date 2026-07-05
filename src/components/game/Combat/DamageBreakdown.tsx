@@ -21,7 +21,7 @@ export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps
       }}
     >
       {/* Header bar */}
-      <div className="flex items-center justify-between px-6 py-3.5"
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5"
         style={{ background: 'rgba(30, 24, 18, 0.6)', borderBottom: '1px solid rgba(212, 168, 83, 0.1)' }}
       >
         <div className="text-sm font-medieval text-parchment-400 uppercase tracking-wider">
@@ -37,7 +37,7 @@ export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps
         </div>
       </div>
 
-      <div className="p-5 space-y-3">
+      <div className="p-3 sm:p-5 space-y-3">
         {calculations.map((calc, idx) => {
           const monster = monsters[idx]
           if (!monster) return null
@@ -79,10 +79,10 @@ export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps
                     {gm.multiplier !== 1 && (
                       <span className={`font-bold text-sm ${
                         gm.multiplier === 2 ? 'text-green-400' :
-                        gm.multiplier === 0.5 ? 'text-red-400' :
+                        gm.multiplier === 0 ? 'text-red-400' :
                         'text-parchment-300'
                       }`}>
-                        x{gm.multiplier}
+                        {gm.multiplier === 0 ? 'immune' : `×${gm.multiplier}`}
                       </span>
                     )}
                   </div>

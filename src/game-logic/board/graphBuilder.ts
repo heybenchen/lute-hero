@@ -110,6 +110,30 @@ export function addGenreTagsToNeighbors(
 }
 
 /**
+ * Add one tag of a specific genre to every cardinally-adjacent neighbor
+ * of a given space. Used when a player clears a space and chooses which
+ * element radiates outward.
+ */
+export function addGenreTagToNeighbors(
+  spaces: BoardSpace[],
+  spaceId: number,
+  genre: Genre
+): BoardSpace[] {
+  const currentSpace = spaces.find((s) => s.id === spaceId)
+  if (!currentSpace) return spaces
+
+  const neighborIds = new Set(currentSpace.connections)
+
+  return spaces.map((space) => {
+    if (!neighborIds.has(space.id)) return space
+    return {
+      ...space,
+      genreTags: [...space.genreTags, genre],
+    }
+  })
+}
+
+/**
  * Get valid move destinations from current space
  */
 export function getValidMoves(

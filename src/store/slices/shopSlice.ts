@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand'
-import { DraftCard, Genre } from '@/types'
+import { DraftCard, Genre, PendingReward } from '@/types'
 import { generateNameCard } from '@/data/draftCards'
 import { createElementBag, drawFromBag, ELEMENT_OFFER_COUNT } from '@/data/elementBag'
 
@@ -11,13 +11,17 @@ export interface ShopSlice {
   elementBag: Genre[] // Chips still in the bag
   elementDiscard: Genre[] // Chips out of the bag (consumed or cycled out)
   elementOffers: Genre[] // Chips currently on display in the store
+  pendingRewards: Record<string, PendingReward[]> // Unresolved rewards per player
 
   // Actions
   initializeShop: (numPlayers: number) => void
+  refillShopSlots: () => void
   refreshElementOffers: () => void
   consumeElementOffer: (offerIndex: number) => void
   purchaseFromNamePool: (cardId: string) => void
   refreshNamePool: () => void
+  enqueueReward: (playerId: string, reward: PendingReward) => void
+  removeReward: (playerId: string, rewardId: string) => void
   resetShop: () => void
 }
 
@@ -35,6 +39,7 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
   elementBag: [],
   elementDiscard: [],
   elementOffers: [],
+  pendingRewards: {},
 
   // Actions
   initializeShop: (numPlayers) => {
@@ -46,7 +51,23 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
       elementBag: bag,
       elementDiscard: discard,
       elementOffers: drawn,
+      pendingRewards: {},
     })
+  },
+
+  // Called at the start of each player's turn: top the element offers back
+  // up to a full display and deal a fresh set of song names.
+  refillShopSlots: () => {
+    const needed = ELEMENT_OFFER_COUNT - get().elementOffers.length
+    if (needed > 0) {
+      const { drawn, bag, discard } = drawFromBag(get().elementBag, get().elementDiscard, needed)
+      set({
+        elementOffers: [...get().elementOffers, ...drawn],
+        elementBag: bag,
+        elementDiscard: discard,
+      })
+    }
+    set({ namePool: freshNamePool() })
   },
 
   refreshElementOffers: () => {
@@ -88,7 +109,30 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
     set({ namePool: freshNamePool() })
   },
 
+  enqueueReward: (playerId, reward) => {
+    const current = get().pendingRewards[playerId] ?? []
+    set({
+      pendingRewards: { ...get().pendingRewards, [playerId]: [...current, reward] },
+    })
+  },
+
+  removeReward: (playerId, rewardId) => {
+    const current = get().pendingRewards[playerId] ?? []
+    set({
+      pendingRewards: {
+        ...get().pendingRewards,
+        [playerId]: current.filter((r) => r.id !== rewardId),
+      },
+    })
+  },
+
   resetShop: () => {
-    set({ namePool: [], elementBag: [], elementDiscard: [], elementOffers: [] })
+    set({
+      namePool: [],
+      elementBag: [],
+      elementDiscard: [],
+      elementOffers: [],
+      pendingRewards: {},
+    })
   },
 })

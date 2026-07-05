@@ -15,6 +15,13 @@
 
 ## Completed
 
+- Purchased rewards queue: buying a new die or a song name enqueues a per-player reward (persisted) instead of a single pending slot, so buying a second thing no longer discards the first. An "Unclaimed Rewards" tray in the Studio lets you pick which to place; rewards survive closing the shop and ending the turn.
+- Shop slots refill at the start of each player's turn: element chips top back up to 4 (drawn from the bag) and a fresh set of song names is dealt.
+- Victory element choice: clearing all monsters in a space lets the victor pick an element that radiates 1 tag to every cardinally-adjacent space (replaces the old random neighbor spread). `clearSpaceAfterCombat` now only clears; `spreadElementToNeighbors` does the chosen spread.
+- Resistance shown correctly in combat as immune / 0× (was mislabeled ".5x"); damage report shows "immune" for the 0× multiplier.
+- Board tiles are strictly uniform (aspect-square, content clipped) and element tags redesigned as compact glowing color beads with counts.
+- Battle page: dice tumble/roll animation before settling on their value; layout reworked so the Last Roll + Damage Report stack on mobile and stay inside their containers; monster/song rows scroll horizontally within the modal; mobile-friendly paddings, font sizes, and full-width action buttons (no horizontal overflow at 390px).
+- d20 upgrade costs 30 EXP.
 - Board is a 4x4 grid (16 spaces) with orthogonal-adjacency movement; the 4 corners are the starting spaces, maximally far apart (also satisfies the "4 starting spaces far apart" request). Grid renders as a responsive CSS grid of aspect-square tiles.
 - Mobile-friendly layout: board + player panel stack vertically below `lg` and the page scrolls; board tiles, modals (Studio/Combat), and the title bar scale down responsively; board legend hidden on small screens (tile dots + hint carry the info). No horizontal overflow at 390px.
 - Element store draws from a bag: 6 chips per element per player, 4 shown at a time; "Draw New" discards the shown chips and pulls fresh ones; when the bag empties the discard is reshuffled back in. d20 upgrade now costs 30 EXP.

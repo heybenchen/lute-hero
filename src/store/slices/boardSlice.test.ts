@@ -130,10 +130,9 @@ describe('boardSlice spawning integration', () => {
       expect(space.genreTags).toEqual([])
     })
 
-    it('should spread 1 tag to each adjacent space after clearing', () => {
+    it('should NOT spread tags to neighbors on its own (spread is player-driven)', () => {
       useGameStore.getState().initializeBoard()
 
-      // Space 0 (top-left grid corner) connects to spaces 1 and 4
       const spaces = useGameStore.getState().spaces
       const updatedSpaces = spaces.map((s) =>
         s.id === 0 ? { ...s, genreTags: ['Ballad'] as Genre[] } : s
@@ -150,7 +149,39 @@ describe('boardSlice spawning integration', () => {
 
       neighborIds.forEach((id, idx) => {
         const neighbor = useGameStore.getState().spaces.find((s) => s.id === id)!
-        expect(neighbor.genreTags.length).toBe(tagsBefore[idx] + 1)
+        expect(neighbor.genreTags.length).toBe(tagsBefore[idx])
+      })
+    })
+  })
+
+  describe('spreadElementToNeighbors', () => {
+    it('should add 1 tag of the chosen element to each cardinal neighbor', () => {
+      useGameStore.getState().initializeBoard()
+
+      // Space 0 (top-left grid corner) connects to spaces 1 and 4
+      const neighborIds = useGameStore.getState().spaces.find((s) => s.id === 0)!.connections
+
+      useGameStore.getState().spreadElementToNeighbors(0, 'Hymn')
+
+      neighborIds.forEach((id) => {
+        const neighbor = useGameStore.getState().spaces.find((s) => s.id === id)!
+        expect(neighbor.genreTags).toContain('Hymn')
+        expect(neighbor.genreTags.filter((g) => g === 'Hymn')).toHaveLength(1)
+      })
+    })
+
+    it('should not affect non-neighbor spaces or the source space', () => {
+      useGameStore.getState().initializeBoard()
+
+      const source = useGameStore.getState().spaces.find((s) => s.id === 0)!
+      const neighborIds = new Set(source.connections)
+
+      useGameStore.getState().spreadElementToNeighbors(0, 'Folk')
+
+      useGameStore.getState().spaces.forEach((space) => {
+        if (space.id === 0 || !neighborIds.has(space.id)) {
+          expect(space.genreTags).not.toContain('Folk')
+        }
       })
     })
   })
@@ -252,13 +283,15 @@ describe('boardSlice spawning integration', () => {
       let space = useGameStore.getState().spaces.find((s) => s.id === 0)!
       expect(space.monsters.length).toBeGreaterThanOrEqual(1)
 
-      // Combat: clear the space (space 0 gets cleared; its neighbors 1 and 4 each get +1 tag)
+      // Combat: clear the fought space, then the victor spreads a chosen
+      // element to its cardinal neighbors (spaces 1 and 4)
       useGameStore.getState().clearSpaceAfterCombat(0)
+      useGameStore.getState().spreadElementToNeighbors(0, 'Ballad')
       space = useGameStore.getState().spaces.find((s) => s.id === 0)!
       expect(space.monsters).toEqual([])
       expect(space.genreTags).toEqual([])
 
-      // Space 1 (a neighbor of 0) should have gained a spread tag
+      // Space 1 (a neighbor of 0) should have gained the spread tag
       const neighborAfterClear = useGameStore.getState().spaces.find((s) => s.id === 1)!
       expect(neighborAfterClear.genreTags).toHaveLength(2) // 1 from addGenreTags + 1 spread
 

@@ -109,7 +109,7 @@ export function BoardSpace({
       </div>
 
       {/* Content area */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-0.5">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden">
         {/* Monster indicator */}
         {hasMonsters && (
           <div className="flex flex-col items-center group relative">
@@ -156,36 +156,35 @@ export function BoardSpace({
           </div>
         )}
 
-        {/* Genre tags — grouped color-coded chips with counts */}
+        {/* Genre tags — compact color-coded beads with counts */}
         {genreEntries.length > 0 && (
-          <div className="flex flex-wrap gap-1 justify-center mt-0.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-0.5 justify-center max-w-full mt-0.5">
             {genreEntries.map(([genre, count]) => {
               const { color } = GENRE_THEME[genre]
               return (
                 <div
                   key={genre}
-                  className="flex items-center gap-1 rounded-full px-1.5 py-0.5"
+                  className="flex items-center gap-0.5 rounded-md pl-1 pr-1.5 py-0.5 leading-none"
                   style={{
-                    background: `${color}1f`,
-                    border: `1px solid ${color}55`,
+                    background: `linear-gradient(135deg, ${color}33, ${color}14)`,
+                    border: `1px solid ${color}66`,
+                    boxShadow: `inset 0 0 4px ${color}22`,
                   }}
                   title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
                 >
-                  <div
-                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
                     style={{
                       backgroundColor: color,
-                      boxShadow: `0 0 4px ${color}aa`,
+                      boxShadow: `0 0 5px ${color}, inset 0 0 1px rgba(255,255,255,0.5)`,
                     }}
                   />
-                  {count > 1 && (
-                    <span
-                      className="text-[8px] font-bold leading-none"
-                      style={{ color }}
-                    >
-                      {count}
-                    </span>
-                  )}
+                  <span
+                    className="text-[9px] font-bold tabular-nums"
+                    style={{ color, textShadow: '0 1px 1px rgba(0,0,0,0.5)' }}
+                  >
+                    {count}
+                  </span>
                 </div>
               )
             })}

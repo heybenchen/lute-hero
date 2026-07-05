@@ -10,6 +10,7 @@ import { calculateFameEarned, calculateTotalMonsterExp } from '@/game-logic/fame
 import { calculateCoverFameSplit } from '@/game-logic/fame/coverSongFame'
 import { MAX_SONGS_PER_COMBAT } from '@/store/slices/combatSlice'
 import { Genre, Monster, Player, SongUsage } from '@/types'
+import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 
 /** Check if a song ID has been used in this combat */
 function isSongUsed(songsUsed: SongUsage[], songId: string): boolean {
@@ -36,6 +37,9 @@ export function CombatModal() {
   const checkPhaseTransition = useGameStore((state) => state.checkPhaseTransition)
   const addGenreTagsForMonsters = useGameStore((state) => state.addGenreTagsForMonsters)
   const removeGenreTagsForDefeatedMonsters = useGameStore((state) => state.removeGenreTagsForDefeatedMonsters)
+  const spreadElementToNeighbors = useGameStore((state) => state.spreadElementToNeighbors)
+
+  const [chosenElement, setChosenElement] = useState<Genre | null>(null)
 
   const player = useGameStore(
     selectPlayerById(playerId || '')
@@ -141,6 +145,7 @@ export function CombatModal() {
   const handleEndCombat = () => {
     const success = allMonstersDefeated
     const { playerFame, coverFameByPlayer } = fameBreakdown
+    setChosenElement(null)
     endCombat(success)
 
     // EXP is always awarded for the full encounter
@@ -162,6 +167,10 @@ export function CombatModal() {
 
     if (success && spaceId !== null) {
       clearSpaceAfterCombat(spaceId)
+      // Victor radiates their chosen element to all cardinal neighbors
+      if (chosenElement) {
+        spreadElementToNeighbors(spaceId, chosenElement)
+      }
     }
 
     // On retreat, remove genre tags for defeated monsters and add tags for surviving ones
@@ -208,13 +217,13 @@ export function CombatModal() {
           </div>
 
           {/* Monsters Section */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <SectionHeader
               label="Monsters"
               detail={monstersAliveCount > 0 ? `${monstersAliveCount} remaining` : 'All converted!'}
               detailColor={monstersAliveCount > 0 ? 'text-red-400' : 'text-green-400'}
             />
-            <div className="flex gap-5 overflow-x-auto pb-2 -mx-1 px-1">
+            <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
               {monsters.map((monster: Monster, idx: number) => (
                 <MonsterCard key={monster.id} monster={monster} index={idx} />
               ))}
@@ -222,13 +231,13 @@ export function CombatModal() {
           </div>
 
           {/* Songs Section */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <SectionHeader
               label="Your Songs"
               detail={`${ownSongsRemaining} remaining · ${songsUsed.length}/${MAX_SONGS_PER_COMBAT} played`}
               detailColor="text-gold-400"
             />
-            <div className="flex gap-5 overflow-x-auto pb-2 -mx-1 px-1">
+            <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
               {player.songs.map((song, idx) => (
                 <SongCard
                   key={song.id}
@@ -243,7 +252,7 @@ export function CombatModal() {
 
           {/* Cover Songs Section */}
           {coverPlayersWithSongs.length > 0 && (
-            <div className="mb-8">
+            <div className="mb-6 sm:mb-8">
               <SectionHeader
                 label="Cover Songs"
                 detail={`${coverPlayersWithSongs.reduce((n, e) => n + e.songs.length, 0)} available`}
@@ -262,7 +271,7 @@ export function CombatModal() {
                       {coverPlayer.name}'s Songs
                     </span>
                   </div>
-                  <div className="flex gap-5 overflow-x-auto pb-2 -mx-1 px-1">
+                  <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
                     {songs.map((song, idx) => (
                       <SongCard
                         key={song.id}
@@ -282,11 +291,11 @@ export function CombatModal() {
 
           {/* Last Roll + Damage — side by side when both present */}
           {(rolls.length > 0 || lastDamageCalculations.length > 0) && (
-            <div className={`mb-8 ${rolls.length > 0 && lastDamageCalculations.length > 0 ? 'grid grid-cols-[auto_1fr] gap-5' : ''}`}>
+            <div className={`mb-6 sm:mb-8 ${rolls.length > 0 && lastDamageCalculations.length > 0 ? 'grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-4 lg:gap-5' : ''}`}>
               {/* Last roll result */}
               {rolls.length > 0 && (
                 <div
-                  className="rounded-xl p-5 animate-fade-in self-start"
+                  className="rounded-xl p-4 sm:p-5 animate-fade-in self-start max-w-full overflow-x-auto"
                   style={{
                     background: 'rgba(42, 33, 24, 0.5)',
                     border: '1px solid rgba(212, 168, 83, 0.12)',
@@ -311,6 +320,7 @@ export function CombatModal() {
                           isCrit={roll.isCrit}
                           cascadeRolls={roll.cascadeRolls}
                           compact
+                          animateRoll
                         />
                       )
                     })}
@@ -331,7 +341,7 @@ export function CombatModal() {
           {/* Rewards — always shown when combat is over */}
           {isCombatOver && (
             <div
-              className="mb-8 rounded-xl overflow-hidden animate-slide-up"
+              className="mb-6 sm:mb-8 rounded-xl overflow-hidden animate-slide-up"
               style={{
                 background: allMonstersDefeated
                   ? 'linear-gradient(135deg, rgba(45, 140, 48, 0.08), rgba(42, 33, 24, 0.5))'
@@ -340,14 +350,14 @@ export function CombatModal() {
                 boxShadow: allMonstersDefeated ? '0 0 30px rgba(76, 175, 80, 0.08)' : undefined,
               }}
             >
-              <div className="px-8 py-5 text-center">
+              <div className="px-4 sm:px-8 py-4 sm:py-5 text-center">
                 <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-1.5">
                   {allMonstersDefeated ? 'Victory' : 'Retreat'} — Rewards Earned
                 </div>
-                <div className="flex items-center justify-center gap-6 mt-2">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mt-2">
                   {totalFameEarned > 0 && (
                     <div>
-                      <div className="text-3xl font-bold text-gold-400 tabular-nums"
+                      <div className="text-2xl sm:text-3xl font-bold text-gold-400 tabular-nums"
                         style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
                       >
                         +{fameBreakdown.playerFame} Fame
@@ -367,7 +377,7 @@ export function CombatModal() {
                     </div>
                   )}
                   <div>
-                    <div className="text-3xl font-bold text-gold-400 tabular-nums"
+                    <div className="text-2xl sm:text-3xl font-bold text-gold-400 tabular-nums"
                       style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
                     >
                       +{totalExp} EXP
@@ -382,33 +392,82 @@ export function CombatModal() {
           )}
 
           {/* Actions */}
-          <div className="flex gap-4 justify-center pt-4">
+          <div className="flex flex-col items-center gap-4 pt-4">
             {allMonstersDefeated ? (
-              <button
-                onClick={handleEndCombat}
-                className="px-10 py-3.5 font-medieval font-bold rounded-lg text-lg transition-all duration-200 animate-fade-in"
-                style={{
-                  background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
-                  border: '1px solid rgba(100, 220, 100, 0.4)',
-                  color: '#d4ffd6',
-                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
-                  boxShadow: '0 0 25px rgba(100, 220, 100, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
-                }}
-              >
-                Claim Fame &amp; Glory
-              </button>
+              <div className="w-full flex flex-col items-center gap-4 animate-fade-in">
+                {/* Element choice — radiates to cardinal neighbors */}
+                <div className="w-full max-w-md text-center">
+                  <div className="text-sm font-medieval text-parchment-400 uppercase tracking-wider mb-1">
+                    Radiate an Element
+                  </div>
+                  <p className="text-xs text-parchment-500 mb-3">
+                    Every space bordering this one gains 1 tag of your chosen element.
+                  </p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {ALL_GENRES.map((genre) => {
+                      const { emoji, rgb } = GENRE_THEME[genre]
+                      const isChosen = chosenElement === genre
+                      return (
+                        <button
+                          key={genre}
+                          onClick={() => setChosenElement(isChosen ? null : genre)}
+                          className="relative rounded-lg py-2.5 flex flex-col items-center gap-1 transition-all duration-200 ease-out hover:-translate-y-0.5"
+                          style={{
+                            background: isChosen
+                              ? `linear-gradient(160deg, rgba(${rgb},0.28), rgba(${rgb},0.08))`
+                              : `linear-gradient(160deg, rgba(${rgb},0.1), rgba(42,33,24,0.9))`,
+                            border: `1px solid rgba(${rgb},${isChosen ? 0.75 : 0.3})`,
+                            boxShadow: isChosen
+                              ? `0 0 16px rgba(${rgb},0.35), inset 0 1px 0 rgba(255,255,255,0.08)`
+                              : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                          }}
+                        >
+                          <span className="text-2xl leading-none" style={{ filter: `drop-shadow(0 0 6px rgba(${rgb},${isChosen ? 0.6 : 0.3}))` }}>
+                            {emoji}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: `rgb(${rgb})` }}>
+                            {genre}
+                          </span>
+                          {isChosen && (
+                            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold"
+                              style={{ background: `rgb(${rgb})`, color: '#fff' }}>
+                              ✓
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleEndCombat}
+                  disabled={!chosenElement}
+                  className="w-full max-w-md px-6 sm:px-10 py-3.5 font-medieval font-bold rounded-lg text-base sm:text-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
+                  style={{
+                    background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
+                    border: '1px solid rgba(100, 220, 100, 0.4)',
+                    color: '#d4ffd6',
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
+                    boxShadow: '0 0 25px rgba(100, 220, 100, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
+                  }}
+                  title={chosenElement ? undefined : 'Choose an element to radiate first'}
+                >
+                  {chosenElement ? 'Claim Fame & Glory' : 'Choose an Element Above'}
+                </button>
+              </div>
             ) : canContinue ? (
               <div className="flex items-center gap-4 animate-fade-in">
-                <div className="h-px w-12" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.2))' }} />
-                <p className="text-lg text-parchment-500 italic font-game animate-pulse-slow">
+                <div className="hidden sm:block h-px w-12" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.2))' }} />
+                <p className="text-base sm:text-lg text-parchment-500 italic font-game animate-pulse-slow text-center">
                   Choose a song to perform...
                 </p>
-                <div className="h-px w-12" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.2))' }} />
+                <div className="hidden sm:block h-px w-12" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.2))' }} />
               </div>
             ) : (
               <button
                 onClick={handleEndCombat}
-                className="btn-secondary text-lg px-10 py-3.5 animate-fade-in"
+                className="btn-secondary text-base sm:text-lg px-10 py-3.5 animate-fade-in w-full max-w-md"
               >
                 Retreat
               </button>
