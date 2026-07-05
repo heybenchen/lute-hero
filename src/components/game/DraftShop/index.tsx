@@ -10,6 +10,8 @@ import {
   createElementalDie,
   getNextDiceType,
   getUpgradeCost,
+  getInspirationCost,
+  INSPIRATION_SPEND,
 } from '@/data/draftCards'
 import { GENRE_THEME } from '@/data/genreTheme'
 
@@ -24,9 +26,6 @@ interface DraftShopProps {
   playerId: string
   onClose: () => void
 }
-
-const REFRESH_COST = 5
-const ELEMENT_REFRESH_COST = 5
 
 interface OwnedDie {
   dice: Dice
@@ -60,6 +59,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const refreshElementOffers = useGameStore((state) => state.refreshElementOffers)
   const consumeElementOffer = useGameStore((state) => state.consumeElementOffer)
 
+  // Inspiration
+  const buyInspiration = useGameStore((state) => state.buyInspiration)
+  const spendInspiration = useGameStore((state) => state.spendInspiration)
+
   // Pending-reward queue (persists so buying more never discards unresolved rewards)
   const pendingRewards = useGameStore((state) => state.pendingRewards[playerId]) ?? EMPTY_REWARDS
   const enqueueReward = useGameStore((state) => state.enqueueReward)
@@ -76,12 +79,18 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const activeName = activeReward?.kind === 'name' ? activeReward : null
 
   const handleRefreshNames = () => {
-    if (!player || player.exp < REFRESH_COST) return
-    awardPlayerExp(playerId, -REFRESH_COST)
+    if (!player || player.inspiration < INSPIRATION_SPEND) return
+    if (!spendInspiration(playerId, INSPIRATION_SPEND)) return
     refreshNamePool()
   }
 
+  const handleBuyInspiration = () => {
+    buyInspiration(playerId)
+  }
+
   if (!player) return null
+
+  const inspirationCost = getInspirationCost(player.inspirationBoughtThisTurn)
 
   // All dice the player owns of the selected element, with their location
   const ownedDiceOfElement: OwnedDie[] = selectedElement
@@ -115,8 +124,8 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   }
 
   const handleRefreshElements = () => {
-    if (player.exp < ELEMENT_REFRESH_COST) return
-    awardPlayerExp(playerId, -ELEMENT_REFRESH_COST)
+    if (player.inspiration < INSPIRATION_SPEND) return
+    if (!spendInspiration(playerId, INSPIRATION_SPEND)) return
     setSelectedOfferIdx(null)
     refreshElementOffers()
   }
@@ -160,18 +169,35 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
       <div className="modal-content max-w-6xl">
         <div className="p-4 sm:p-6">
           {/* Header */}
-          <div className="flex justify-between items-center gap-3 mb-5 sm:mb-6">
+          <div className="flex justify-between items-start gap-3 mb-5 sm:mb-6">
             <div>
               <div className="font-display text-2xl text-gold-400">
                 Studio
               </div>
               <p className="text-base text-parchment-400">
-                {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span> Available
+                {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span>
+                <span className="mx-1.5 text-parchment-600">&middot;</span>
+                <span title="Inspiration">&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
               </p>
             </div>
-            <button onClick={onClose} className="btn-secondary text-sm">
-              Close Shop
-            </button>
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+              <button
+                onClick={handleBuyInspiration}
+                disabled={player.exp < inspirationCost}
+                className="text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5 whitespace-nowrap"
+                style={{
+                  background: 'rgba(176, 124, 255, 0.14)',
+                  border: '1px solid rgba(176, 124, 255, 0.45)',
+                  color: '#d9c2ff',
+                }}
+                title={`Buy 1 Inspiration for ${inspirationCost} EXP (cost rises each purchase this turn)`}
+              >
+                &#x2728; Buy Inspiration ({inspirationCost} EXP)
+              </button>
+              <button onClick={onClose} className="btn-secondary text-sm">
+                Close Shop
+              </button>
+            </div>
           </div>
 
           {/* Pending rewards tray — queued purchases waiting to be placed */}
@@ -255,11 +281,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </div>
               <button
                 onClick={handleRefreshElements}
-                disabled={player.exp < ELEMENT_REFRESH_COST}
+                disabled={player.inspiration < INSPIRATION_SPEND}
                 className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                title={`Discard these chips and draw ${4} new ones from the bag`}
+                title={player.inspiration >= INSPIRATION_SPEND ? 'Discard these chips and draw 4 new ones from the bag' : 'Requires Inspiration'}
               >
-                Draw New ({ELEMENT_REFRESH_COST} EXP)
+                Draw New (&#x2728; {INSPIRATION_SPEND})
               </button>
             </div>
 
@@ -393,11 +419,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </div>
               <button
                 onClick={handleRefreshNames}
-                disabled={!player || player.exp < REFRESH_COST}
+                disabled={player.inspiration < INSPIRATION_SPEND}
                 className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                title={`Refresh name selection for ${REFRESH_COST} EXP`}
+                title={player.inspiration >= INSPIRATION_SPEND ? 'Draw a fresh set of song names' : 'Requires Inspiration'}
               >
-                Refresh ({REFRESH_COST} EXP)
+                Refresh (&#x2728; {INSPIRATION_SPEND})
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

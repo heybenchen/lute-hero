@@ -21,6 +21,7 @@ export function PlayerPanel() {
   const startCombat = useGameStore((state) => state.startCombat)
   const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
   const refillShopSlots = useGameStore((state) => state.refillShopSlots)
+  const resetPlayerInspirationPurchases = useGameStore((state) => state.resetPlayerInspirationPurchases)
 
   if (!currentPlayer) return null
 
@@ -35,6 +36,8 @@ export function PlayerPanel() {
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
     resetPlayerFights(currentPlayer.id)
+    // Inspiration buy cost escalates within a turn, then resets
+    resetPlayerInspirationPurchases(currentPlayer.id)
 
     if (currentTurnPlayerIndex >= players.length - 1) {
       players.forEach((p) => {
@@ -106,9 +109,12 @@ export function PlayerPanel() {
           </div>
           <div>
             <div className="font-medieval text-lg font-bold text-gold-300">{currentPlayer.name}</div>
-            <div className="text-sm text-parchment-400 flex gap-3 mt-0.5">
+            <div className="text-sm text-parchment-400 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
               <span>Fame: <span className="text-gold-400 font-bold">{currentPlayer.fame}</span></span>
               <span>EXP: <span className="text-parchment-200 font-bold">{currentPlayer.exp}</span></span>
+              <span title="Inspiration — spend to reroll a song, travel anywhere, or refresh the shop">
+                &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{currentPlayer.inspiration}</span>
+              </span>
             </div>
           </div>
         </div>

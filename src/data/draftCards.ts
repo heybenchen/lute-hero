@@ -13,6 +13,14 @@ let dieIdCounter = 0;
 // Buying an element grants the right to add a new d4 of that element
 export const NEW_D4_COST = 5;
 
+// Inspiration: base cost 5 EXP, escalating by 5 for each token bought this turn.
+export const INSPIRATION_BASE_COST = 5;
+export function getInspirationCost(boughtThisTurn: number): number {
+  return INSPIRATION_BASE_COST * (boughtThisTurn + 1);
+}
+// Each refresh / travel / reroll spends this many inspiration tokens.
+export const INSPIRATION_SPEND = 1;
+
 // Cost to upgrade an existing die TO the given type (via DICE_UPGRADE_PATH)
 export const UPGRADE_COSTS: Record<Exclude<DiceType, "d4">, number> = {
   d6: 5,

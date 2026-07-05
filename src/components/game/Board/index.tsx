@@ -27,8 +27,11 @@ export function Board() {
   const currentPlayer = useGameStore(selectCurrentPlayer)
   const movePlayer = useGameStore((state) => state.movePlayer)
   const spawnMonstersAtSpace = useGameStore((state) => state.spawnMonstersAtSpace)
+  const updatePlayer = useGameStore((state) => state.updatePlayer)
+  const spendInspiration = useGameStore((state) => state.spendInspiration)
 
   const [hoveredSpaceId, setHoveredSpaceId] = useState<number | null>(null)
+  const [travelMode, setTravelMode] = useState(false)
 
   if (!currentPlayer) return null
 
@@ -36,9 +39,20 @@ export function Board() {
   const canMove = currentPlayer.movesThisTurn < 2
   const validMoves = canMove ? getValidMoves(currentPlayer.position, spaces) : []
 
+  const canTravel = currentPlayer.inspiration > 0
   const hoveredSpace = hoveredSpaceId !== null ? spaces.find((s) => s.id === hoveredSpaceId) : null
 
   const handleSpaceClick = (spaceId: number) => {
+    // Inspiration travel: hop to any space (not the current one) for 1 Inspiration
+    if (travelMode) {
+      if (spaceId === currentPlayer.position) return
+      if (!spendInspiration(currentPlayer.id, 1)) return
+      updatePlayer(currentPlayer.id, { position: spaceId })
+      spawnMonstersAtSpace(spaceId)
+      setTravelMode(false)
+      return
+    }
+
     if (!canMove) return
 
     const isValidMove = validMoves.some((s) => s.id === spaceId)
@@ -77,6 +91,24 @@ export function Board() {
           background: 'radial-gradient(ellipse at center, transparent 35%, rgba(9, 6, 3, 0.65) 100%)',
         }}
       />
+
+      {/* Inspiration travel toggle */}
+      {(canTravel || travelMode) && (
+        <button
+          onClick={() => setTravelMode((m) => !m)}
+          disabled={!canTravel && !travelMode}
+          className="absolute top-3 right-3 z-30 text-xs sm:text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 hover:enabled:-translate-y-0.5"
+          style={{
+            background: travelMode ? 'rgba(176, 124, 255, 0.28)' : 'rgba(176, 124, 255, 0.12)',
+            border: `1px solid rgba(176, 124, 255, ${travelMode ? 0.8 : 0.45})`,
+            color: '#e6d9ff',
+            boxShadow: travelMode ? '0 0 14px rgba(176, 124, 255, 0.35)' : undefined,
+          }}
+          title="Spend 1 Inspiration to travel to any space"
+        >
+          {travelMode ? '✖ Cancel Travel' : `✨ Travel (1)`}
+        </button>
+      )}
 
       {/* Legend — bottom-left (desktop only; on mobile the tile dots + hint carry it) */}
       <div
@@ -153,6 +185,7 @@ export function Board() {
                 players={players}
                 isCurrentPlayer={currentPlayer.position === space.id}
                 canMoveTo={validMoves.some((s) => s.id === space.id)}
+                isTravelTarget={travelMode && space.id !== currentPlayer.position}
                 isLinkedToHovered={
                   hoveredSpace !== null &&
                   hoveredSpace !== undefined &&
@@ -165,12 +198,18 @@ export function Board() {
         </div>
 
         {/* Hover hint */}
-        <div className="mt-3 sm:mt-4 text-center text-[11px] sm:text-xs text-parchment-500 pointer-events-none min-h-[1rem]">
-          {hoveredSpace
-            ? `${hoveredSpace.name} — paths to ${hoveredSpace.connections.map((id) => spaces.find((s) => s.id === id)?.name).filter(Boolean).join(', ')}`
-            : canMove
-            ? 'Glowing tiles are within reach'
-            : ''}
+        <div className="mt-3 sm:mt-4 text-center text-[11px] sm:text-xs pointer-events-none min-h-[1rem]">
+          {travelMode ? (
+            <span className="text-classical font-bold">Click any space to travel there — costs 1 Inspiration</span>
+          ) : (
+            <span className="text-parchment-500">
+              {hoveredSpace
+                ? `${hoveredSpace.name} — paths to ${hoveredSpace.connections.map((id) => spaces.find((s) => s.id === id)?.name).filter(Boolean).join(', ')}`
+                : canMove
+                ? 'Glowing tiles are within reach'
+                : ''}
+            </span>
+          )}
         </div>
       </div>
     </div>

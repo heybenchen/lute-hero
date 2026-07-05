@@ -26,7 +26,10 @@ export function CombatModal() {
   const killCredits = useGameStore((state) => state.killCredits)
   const rolls = useGameStore((state) => state.rolls)
   const lastDamageCalculations = useGameStore((state) => state.lastDamageCalculations)
+  const lastPlayedSong = useGameStore((state) => state.lastPlayedSong)
   const playSong = useGameStore((state) => state.playSong)
+  const rerollLastSong = useGameStore((state) => state.rerollLastSong)
+  const spendInspiration = useGameStore((state) => state.spendInspiration)
   const endCombat = useGameStore((state) => state.endCombat)
   const clearSpaceAfterCombat = useGameStore((state) => state.clearSpaceAfterCombat)
   const awardPlayerFame = useGameStore((state) => state.awardPlayerFame)
@@ -137,6 +140,20 @@ export function CombatModal() {
     const newPopups = createDamagePopups(
       result.damageCalculations,
       monstersBefore,
+      result.updatedMonsters,
+    )
+    setPopups((prev) => [...prev, ...newPopups])
+  }
+
+  const handleReroll = () => {
+    if (!lastPlayedSong || player.inspiration <= 0) return
+    if (!spendInspiration(player.id, 1)) return
+    const result = rerollLastSong()
+    if (!result) return
+    // Show the new performance's damage relative to the pre-play monster state
+    const newPopups = createDamagePopups(
+      result.damageCalculations,
+      result.monstersBefore,
       result.updatedMonsters,
     )
     setPopups((prev) => [...prev, ...newPopups])
@@ -325,6 +342,23 @@ export function CombatModal() {
                       )
                     })}
                   </div>
+
+                  {/* Reroll the last song with Inspiration */}
+                  {lastPlayedSong && !allMonstersDefeated && (
+                    <button
+                      onClick={handleReroll}
+                      disabled={player.inspiration <= 0}
+                      className="mt-3 text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
+                      style={{
+                        background: 'rgba(176, 124, 255, 0.12)',
+                        border: '1px solid rgba(176, 124, 255, 0.4)',
+                        color: '#d9c2ff',
+                      }}
+                      title={player.inspiration > 0 ? 'Reroll this song for 1 Inspiration' : 'Requires Inspiration'}
+                    >
+                      &#x2728; Reroll &mdash; {player.inspiration} Inspiration
+                    </button>
+                  )}
                 </div>
               )}
 

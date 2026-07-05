@@ -6,6 +6,7 @@ interface BoardSpaceProps {
   players: Player[]
   isCurrentPlayer: boolean
   canMoveTo: boolean
+  isTravelTarget?: boolean
   isLinkedToHovered?: boolean
   onClick: () => void
 }
@@ -15,6 +16,7 @@ export function BoardSpace({
   players,
   isCurrentPlayer,
   canMoveTo,
+  isTravelTarget = false,
   isLinkedToHovered = false,
   onClick,
 }: BoardSpaceProps) {
@@ -32,16 +34,16 @@ export function BoardSpace({
   return (
     <button
       onClick={onClick}
-      disabled={!canMoveTo}
+      disabled={!canMoveTo && !isTravelTarget}
       className={`
         relative hover:z-40 w-full aspect-square rounded-lg sm:rounded-xl
         flex flex-col justify-between p-1.5 sm:p-2
         transition-all duration-200 ease-out
-        ${canMoveTo
+        ${canMoveTo || isTravelTarget
           ? 'cursor-pointer hover:-translate-y-1 hover:brightness-110'
           : 'cursor-default'
         }
-        ${hasMonsters && canMoveTo ? 'animate-danger-pulse' : ''}
+        ${hasMonsters && (canMoveTo || isTravelTarget) ? 'animate-danger-pulse' : ''}
       `}
       style={{
         background: hasMonsters
@@ -51,6 +53,8 @@ export function BoardSpace({
           : 'linear-gradient(135deg, rgba(42, 33, 24, 0.9) 0%, rgba(61, 48, 32, 0.9) 100%)',
         border: isCurrentPlayer
           ? '2px solid rgba(100, 220, 100, 0.65)'
+          : isTravelTarget
+          ? '2px solid rgba(176, 124, 255, 0.7)'
           : canMoveTo
           ? '2px solid rgba(212, 168, 83, 0.55)'
           : isLinkedToHovered
@@ -60,6 +64,8 @@ export function BoardSpace({
           : '1px solid rgba(212, 168, 83, 0.15)',
         boxShadow: isCurrentPlayer
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px rgba(100, 220, 100, 0.22), 0 4px 8px rgba(0,0,0,0.3)'
+          : isTravelTarget
+          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(176, 124, 255, 0.3), 0 4px 8px rgba(0,0,0,0.3)'
           : canMoveTo
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 12px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(0,0,0,0.3)'
           : isLinkedToHovered
@@ -70,7 +76,7 @@ export function BoardSpace({
     >
       {/* Dim overlay for out-of-reach tiles (kept off the container so
           tooltips inside stay at full opacity) */}
-      {!canMoveTo && !isCurrentPlayer && (
+      {!canMoveTo && !isCurrentPlayer && !isTravelTarget && (
         <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
       )}
 
@@ -183,7 +189,7 @@ export function BoardSpace({
       </div>
 
       {/* Move indicator glow */}
-      {canMoveTo && (
+      {(canMoveTo || isTravelTarget) && (
         <div
           className="absolute inset-0 rounded-xl pointer-events-none animate-ring-pulse"
         />

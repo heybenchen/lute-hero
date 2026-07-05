@@ -14,6 +14,7 @@
 
 ## Completed
 
+- Inspiration mechanic: buy Inspiration tokens in the Studio for 5 EXP, escalating +5 per purchase within a turn and resetting when the turn ends. Spend a token to (1) reroll the last song in combat — a true reroll that replaces the result rather than stacking damage, (2) travel to any space on the board (violet-highlighted targets), or (3) refresh the shop's element chips or song names (both refreshes now cost 1 Inspiration instead of EXP). Inspiration count shown in the player panel and Studio header.
 - Board tile cleanup: removed the space-number badge and the starting-space "S" indicator (and its legend row + edge border); the player token now sits in the top-left corner of its space; monster/threat counts render on the same line as their icon (no vertical overflow).
 - Hymn element recolored from cyan to yellow (`#facc15`) across the shared theme, Tailwind palette, genre badge (now dark text for contrast), and combat monster accents; the boss badge keeps its own cyan.
 - Songs now hold a single effect: `Song.effect: TrackEffect | null` (was `effects: TrackEffect[]`). Names grant exactly one effect; damage calc, shop, combat/song cards, and the current-player panel updated accordingly.

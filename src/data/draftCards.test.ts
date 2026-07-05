@@ -6,6 +6,7 @@ import {
   getUpgradeCost,
   createElementalDie,
   generateNameCard,
+  getInspirationCost,
 } from './draftCards'
 
 describe('Elemental Dice Shop', () => {
@@ -18,6 +19,13 @@ describe('Elemental Dice Shop', () => {
       expect(UPGRADE_COSTS.d6).toBe(5)
       expect(UPGRADE_COSTS.d12).toBe(15)
       expect(UPGRADE_COSTS.d20).toBe(30)
+    })
+
+    it('should escalate inspiration cost by 5 EXP per purchase this turn', () => {
+      expect(getInspirationCost(0)).toBe(5)
+      expect(getInspirationCost(1)).toBe(10)
+      expect(getInspirationCost(2)).toBe(15)
+      expect(getInspirationCost(3)).toBe(20)
     })
   })
 
