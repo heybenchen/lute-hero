@@ -4,6 +4,8 @@ import { GenreBadge } from '@/components/ui/GenreBadge'
 interface MonsterCardProps {
   monster: Monster
   index?: number
+  /** Fame this monster is worth if defeated, at the player's current fame tier */
+  fameValue?: number
 }
 
 const genreAccentColors: Record<Genre, { border: string; glow: string; bg: string }> = {
@@ -13,7 +15,7 @@ const genreAccentColors: Record<Genre, { border: string; glow: string; bg: strin
   Shanty: { border: 'rgba(41, 121, 255, 0.4)', glow: 'rgba(41, 121, 255, 0.15)', bg: 'rgba(41, 121, 255, 0.06)' },
 }
 
-export function MonsterCard({ monster, index = 0 }: MonsterCardProps) {
+export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps) {
   const hpPercent = (monster.currentHP / monster.maxHP) * 100
   const isDefeated = monster.currentHP <= 0
   const isLowHP = hpPercent > 0 && hpPercent <= 25
@@ -63,6 +65,14 @@ export function MonsterCard({ monster, index = 0 }: MonsterCardProps) {
                   </span>
                 )}
                 <span className="text-sm text-parchment-500">Lv.{monster.level}</span>
+                {fameValue !== undefined && fameValue > 0 && (
+                  <span
+                    className="flex items-center gap-1 text-xs font-bold text-gold-400"
+                    title="Fame earned if this monster is defeated"
+                  >
+                    &#x2B50; {fameValue}
+                  </span>
+                )}
               </div>
             </div>
 

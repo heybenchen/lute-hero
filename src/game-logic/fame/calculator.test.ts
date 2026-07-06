@@ -26,6 +26,8 @@ describe('Fame Calculator', () => {
     movesThisTurn: 0,
     fightsThisTurn: 0,
     hasShoppedThisTurn: false,
+    inspiration: 0,
+    inspirationBoughtThisTurn: 0,
     ...overrides,
   })
 

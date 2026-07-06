@@ -26,7 +26,10 @@ export function CombatModal() {
   const killCredits = useGameStore((state) => state.killCredits)
   const rolls = useGameStore((state) => state.rolls)
   const lastDamageCalculations = useGameStore((state) => state.lastDamageCalculations)
+  const lastPlayedSong = useGameStore((state) => state.lastPlayedSong)
   const playSong = useGameStore((state) => state.playSong)
+  const rerollLastSong = useGameStore((state) => state.rerollLastSong)
+  const spendInspiration = useGameStore((state) => state.spendInspiration)
   const endCombat = useGameStore((state) => state.endCombat)
   const clearSpaceAfterCombat = useGameStore((state) => state.clearSpaceAfterCombat)
   const awardPlayerFame = useGameStore((state) => state.awardPlayerFame)
@@ -118,6 +121,11 @@ export function CombatModal() {
 
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
   const totalExp = calculateTotalMonsterExp(monsters)
+  // Fame per monster at the player's current tier (player.monstersDefeated only
+  // changes at endCombat, so this stays constant for the whole fight). Fame
+  // scales with total monsters defeated, not individual monster level, so
+  // every monster in a fight is worth the same amount.
+  const fameValuePerMonster = calculateFameEarned(player.monstersDefeated, 1)
   const isCombatOver = allMonstersDefeated || !canContinue
 
   const handlePlaySong = (songId: string, ownerId: string) => {
@@ -137,6 +145,20 @@ export function CombatModal() {
     const newPopups = createDamagePopups(
       result.damageCalculations,
       monstersBefore,
+      result.updatedMonsters,
+    )
+    setPopups((prev) => [...prev, ...newPopups])
+  }
+
+  const handleReroll = () => {
+    if (!lastPlayedSong || player.inspiration <= 0) return
+    if (!spendInspiration(player.id, 1)) return
+    const result = rerollLastSong()
+    if (!result) return
+    // Show the new performance's damage relative to the pre-play monster state
+    const newPopups = createDamagePopups(
+      result.damageCalculations,
+      result.monstersBefore,
       result.updatedMonsters,
     )
     setPopups((prev) => [...prev, ...newPopups])
@@ -214,6 +236,18 @@ export function CombatModal() {
               </p>
               <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
             </div>
+
+            {/* Live EXP counter — EXP is fixed per monster level, so this total
+                holds steady throughout the fight (not just in the end summary) */}
+            <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm"
+              style={{
+                background: 'rgba(212, 168, 83, 0.08)',
+                border: '1px solid rgba(212, 168, 83, 0.2)',
+              }}
+            >
+              <span className="text-parchment-500">EXP this fight:</span>
+              <span className="font-bold text-gold-400 tabular-nums">+{totalExp}</span>
+            </div>
           </div>
 
           {/* Monsters Section */}
@@ -225,7 +259,7 @@ export function CombatModal() {
             />
             <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
               {monsters.map((monster: Monster, idx: number) => (
-                <MonsterCard key={monster.id} monster={monster} index={idx} />
+                <MonsterCard key={monster.id} monster={monster} index={idx} fameValue={fameValuePerMonster} />
               ))}
             </div>
           </div>
@@ -325,6 +359,23 @@ export function CombatModal() {
                       )
                     })}
                   </div>
+
+                  {/* Reroll the last song with Inspiration */}
+                  {lastPlayedSong && !allMonstersDefeated && (
+                    <button
+                      onClick={handleReroll}
+                      disabled={player.inspiration <= 0}
+                      className="mt-3 text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
+                      style={{
+                        background: 'rgba(176, 124, 255, 0.12)',
+                        border: '1px solid rgba(176, 124, 255, 0.4)',
+                        color: '#d9c2ff',
+                      }}
+                      title={player.inspiration > 0 ? 'Reroll this song for 1 Inspiration' : 'Requires Inspiration'}
+                    >
+                      &#x2728; Reroll &mdash; {player.inspiration} Inspiration
+                    </button>
+                  )}
                 </div>
               )}
 

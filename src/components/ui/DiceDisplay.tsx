@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Dice, DiceType } from '@/types'
+import { Dice } from '@/types'
 import { GenreBadge } from './GenreBadge'
+import { DiceShape } from './DiceShape'
 import { getMaxValue } from '@/game-logic/dice/roller'
 
 interface DiceDisplayProps {
@@ -12,13 +13,6 @@ interface DiceDisplayProps {
   compact?: boolean
   /** Play a tumbling roll animation before settling on the value (battle page) */
   animateRoll?: boolean
-}
-
-const diceIcons: Record<DiceType, string> = {
-  d4: '\u25B3',
-  d6: '\u2684',
-  d12: '\u2B20',
-  d20: '\u2B21',
 }
 
 /**
@@ -88,7 +82,7 @@ export function DiceDisplay({
           }}
         >
           <div className="flex flex-col items-center">
-            <div className="text-lg text-gold-400">{diceIcons[dice.type]}</div>
+            <div className="text-lg text-gold-400"><DiceShape type={dice.type} /></div>
             {displayValue !== undefined && (
               <div className={`text-base font-bold tabular-nums ${rolling ? 'text-gold-400/80' : isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
                 {displayValue}
@@ -118,7 +112,7 @@ export function DiceDisplay({
                 }}
               >
                 <div className="flex flex-col items-center">
-                  <div className="text-sm text-gold-400">{diceIcons[dice.type]}</div>
+                  <div className="text-sm text-gold-400"><DiceShape type={dice.type} /></div>
                   <div className={`text-sm font-bold ${cascadeCrit ? 'text-gold-300' : 'text-gold-400'}`}>
                     {cascadeValue}
                   </div>
@@ -144,7 +138,7 @@ export function DiceDisplay({
         }}
       >
         <div className="flex flex-col items-center">
-          <div className="text-2xl text-gold-400">{diceIcons[dice.type]}</div>
+          <div className="text-2xl text-gold-400"><DiceShape type={dice.type} /></div>
           {displayValue !== undefined && (
             <div className={`text-xl font-bold tabular-nums ${rolling ? 'text-gold-400/80' : isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
               {displayValue}
@@ -174,7 +168,7 @@ export function DiceDisplay({
               }}
             >
               <div className="flex flex-col items-center">
-                <div className="text-2xl text-gold-400">{diceIcons[dice.type]}</div>
+                <div className="text-2xl text-gold-400"><DiceShape type={dice.type} /></div>
                 <div className={`text-xl font-bold ${cascadeCrit ? 'text-gold-300' : 'text-gold-400'}`}>
                   {cascadeValue}
                 </div>

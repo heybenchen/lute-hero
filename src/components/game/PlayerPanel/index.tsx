@@ -2,9 +2,15 @@ import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer, selectCollectiveFame } from '@/store'
 import { FAME_THRESHOLDS } from '@/data/startingData'
 import { DraftShop } from '../DraftShop'
+import { GenreBadge } from '@/components/ui/GenreBadge'
+import { DiceShape } from '@/components/ui/DiceShape'
+import { getMaxValue } from '@/game-logic/dice/roller'
+import { describeTrackEffect } from '@/data/trackEffects'
 
 export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
+  const [hoveredSong, setHoveredSong] = useState<string | null>(null)
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
@@ -21,6 +27,7 @@ export function PlayerPanel() {
   const startCombat = useGameStore((state) => state.startCombat)
   const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
   const refillShopSlots = useGameStore((state) => state.refillShopSlots)
+  const resetPlayerInspirationPurchases = useGameStore((state) => state.resetPlayerInspirationPurchases)
 
   if (!currentPlayer) return null
 
@@ -35,6 +42,8 @@ export function PlayerPanel() {
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
     resetPlayerFights(currentPlayer.id)
+    // Inspiration buy cost escalates within a turn, then resets
+    resetPlayerInspirationPurchases(currentPlayer.id)
 
     if (currentTurnPlayerIndex >= players.length - 1) {
       players.forEach((p) => {
@@ -106,11 +115,126 @@ export function PlayerPanel() {
           </div>
           <div>
             <div className="font-medieval text-lg font-bold text-gold-300">{currentPlayer.name}</div>
-            <div className="text-sm text-parchment-400 flex gap-3 mt-0.5">
+            <div className="text-sm text-parchment-400 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
               <span>Fame: <span className="text-gold-400 font-bold">{currentPlayer.fame}</span></span>
               <span>EXP: <span className="text-parchment-200 font-bold">{currentPlayer.exp}</span></span>
+              <span title="Inspiration — spend to reroll a song, travel anywhere, or refresh the shop">
+                &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{currentPlayer.inspiration}</span>
+              </span>
             </div>
           </div>
+        </div>
+
+        {/* Songs — right above the Moves/Fights trackers */}
+        <div className="mb-3">
+          <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-1.5">
+            Songs
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {currentPlayer.songs.map((song) => (
+              <div
+                key={song.id}
+                className="rounded-lg p-2 min-w-fit shrink-0 transition-all duration-150 hover:bg-tavern-600"
+                style={{
+                  background: 'rgba(61, 48, 32, 0.5)',
+                  border: '1px solid rgba(212, 168, 83, 0.12)',
+                }}
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  setTooltipPos({ x: rect.left, y: rect.bottom + 8 })
+                  setHoveredSong(song.id)
+                }}
+                onMouseLeave={() => setHoveredSong(null)}
+              >
+                <div className="h-4 text-xs font-bold text-parchment-400 mb-1 truncate max-w-[110px]">
+                  {song.name}
+                </div>
+                <div className="flex gap-1">
+                  {song.slots.map((slot, idx) => (
+                    <div
+                      key={idx}
+                      className="w-11 h-11 rounded flex flex-col items-center justify-center text-[9px]"
+                      style={{
+                        background: slot.dice
+                          ? 'rgba(212, 168, 83, 0.15)'
+                          : 'rgba(255, 255, 255, 0.03)',
+                        border: slot.dice
+                          ? '1px solid rgba(212, 168, 83, 0.25)'
+                          : '1px dashed rgba(212, 168, 83, 0.1)',
+                      }}
+                    >
+                      {slot.dice ? (
+                        <>
+                          <div className="text-gold-400 text-[18px] leading-none">
+                            <DiceShape type={slot.dice.type} />
+                          </div>
+                          <div className="font-bold text-[8px] text-parchment-300">
+                            {slot.dice.genre}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-parchment-500/30 text-[9px]">-</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Floating song tooltip */}
+          {hoveredSong && currentPlayer.songs.find((s) => s.id === hoveredSong) && (
+            <div
+              className="fixed z-[100] p-3 rounded-lg shadow-2xl w-64 pointer-events-none animate-fade-in"
+              style={{
+                left: `${tooltipPos.x}px`,
+                top: `${tooltipPos.y}px`,
+                background: 'linear-gradient(135deg, #2a2118, #1a1410)',
+                border: '1px solid rgba(212, 168, 83, 0.3)',
+              }}
+            >
+              {(() => {
+                const song = currentPlayer.songs.find((s) => s.id === hoveredSong)!
+                return (
+                  <>
+                    <div className="font-medieval font-bold mb-2 text-gold-400">{song.name}</div>
+                    <div className="space-y-2 text-sm">
+                      {song.slots.map((slot, idx) => (
+                        <div
+                          key={`slot-${idx}`}
+                          className="pb-1"
+                          style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.12)' }}
+                        >
+                          <div className="font-bold text-parchment-400 text-xs">Slot {idx + 1}</div>
+                          {slot.dice ? (
+                            <div className="mt-0.5">
+                              <div className="flex items-center gap-1">
+                                <span className="text-parchment-300 text-xs">{slot.dice.type}</span>
+                                <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
+                              </div>
+                              <div className="text-xs text-parchment-400">
+                                Roll: 1-{getMaxValue(slot.dice.type)} (2x on max)
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-parchment-500 text-xs">Empty slot</div>
+                          )}
+                        </div>
+                      ))}
+                      {song.effect && (
+                        <div className="pt-1">
+                          <div className="font-bold text-parchment-400 text-xs mb-1">Effect</div>
+                          <div className="text-classical text-xs">
+                            &#x2728; {describeTrackEffect(song.effect)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Move and Action trackers */}

@@ -118,6 +118,8 @@ export interface Player {
   movesThisTurn: number; // Track moves for 2-move limit
   fightsThisTurn: number; // Track fights for 1-fight limit
   hasShoppedThisTurn: boolean; // Track if player has shopped this turn
+  inspiration: number; // Inspiration tokens held (spend to reroll, travel, or refresh shop)
+  inspirationBoughtThisTurn: number; // Escalates the buy cost; resets each turn
 }
 
 // ============================================

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { PlayerPanel } from './PlayerPanel'
-import { CurrentPlayerDisplay } from './CurrentPlayerDisplay'
 import { useGameStore, clearSavedGame } from '@/store'
 
 export function GameView() {
@@ -99,8 +98,7 @@ export function GameView() {
       <div className="relative z-10 flex flex-col lg:flex-row gap-3 flex-1 lg:min-h-0 px-2 sm:px-3 pb-3">
         {/* Board area */}
         <div className="flex-1 flex flex-col lg:min-h-0 min-w-0 gap-2 sm:gap-3">
-          <CurrentPlayerDisplay />
-          <div className="flex-1 lg:min-h-0 min-h-[56vh] overflow-auto rounded-xl" style={{
+          <div className="flex-1 lg:min-h-0 min-h-[65vh] overflow-auto rounded-xl" style={{
             border: '1px solid rgba(212, 168, 83, 0.15)',
           }}>
             <Board />

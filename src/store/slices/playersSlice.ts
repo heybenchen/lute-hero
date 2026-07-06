@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand'
 import { Player, Genre, Dice, SongSlot, TrackEffect } from '@/types'
 import { createStarterSongs, DICE_UPGRADE_PATH } from '@/data/startingData'
+import { getInspirationCost } from '@/data/draftCards'
 import {
   awardFame,
   awardExp,
@@ -28,6 +29,9 @@ export interface PlayersSlice {
   resetPlayerMoves: (playerId: string) => void
   resetPlayerFights: (playerId: string) => void
   setPlayerShopped: (playerId: string) => void
+  buyInspiration: (playerId: string) => boolean
+  spendInspiration: (playerId: string, amount?: number) => boolean
+  resetPlayerInspirationPurchases: (playerId: string) => void
 }
 
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
@@ -57,6 +61,8 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
         movesThisTurn: 0,
         fightsThisTurn: 0,
         hasShoppedThisTurn: false,
+        inspiration: 0,
+        inspirationBoughtThisTurn: 0,
       }
     })
 
@@ -199,6 +205,47 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
     set({
       players: get().players.map((p) =>
         p.id === playerId ? { ...p, hasShoppedThisTurn: true } : p
+      ),
+    })
+  },
+
+  buyInspiration: (playerId) => {
+    const player = get().players.find((p) => p.id === playerId)
+    if (!player) return false
+    const cost = getInspirationCost(player.inspirationBoughtThisTurn)
+    if (player.exp < cost) return false
+
+    set({
+      players: get().players.map((p) =>
+        p.id === playerId
+          ? {
+              ...p,
+              exp: p.exp - cost,
+              inspiration: p.inspiration + 1,
+              inspirationBoughtThisTurn: p.inspirationBoughtThisTurn + 1,
+            }
+          : p
+      ),
+    })
+    return true
+  },
+
+  spendInspiration: (playerId, amount = 1) => {
+    const player = get().players.find((p) => p.id === playerId)
+    if (!player || player.inspiration < amount) return false
+
+    set({
+      players: get().players.map((p) =>
+        p.id === playerId ? { ...p, inspiration: p.inspiration - amount } : p
+      ),
+    })
+    return true
+  },
+
+  resetPlayerInspirationPurchases: (playerId) => {
+    set({
+      players: get().players.map((p) =>
+        p.id === playerId ? { ...p, inspirationBoughtThisTurn: 0 } : p
       ),
     })
   },

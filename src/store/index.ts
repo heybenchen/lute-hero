@@ -10,7 +10,7 @@ import { createShopSlice, ShopSlice } from './slices/shopSlice'
 export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice & ShopSlice
 
 const STORAGE_KEY = 'lute-hero-save'
-const STORAGE_VERSION = 7
+const STORAGE_VERSION = 8
 
 // Only persist the durable game state — skip transient combat mid-fight data
 const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers' | 'pendingRewards'>> = {

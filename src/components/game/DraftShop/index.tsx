@@ -1,32 +1,25 @@
 import { useState } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
-import { DraftCard, DiceType, Genre, Dice, PendingReward } from '@/types'
+import { DraftCard, Genre, Dice, PendingReward } from '@/types'
 import { DraftCardDisplay } from './DraftCardDisplay'
 import { describeTrackEffect } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
+import { DiceShape } from '@/components/ui/DiceShape'
 import {
   NEW_D4_COST,
   createElementalDie,
   getNextDiceType,
   getUpgradeCost,
+  getInspirationCost,
+  INSPIRATION_SPEND,
 } from '@/data/draftCards'
 import { GENRE_THEME } from '@/data/genreTheme'
-
-const diceIcons: Record<DiceType, string> = {
-  d4: '△',
-  d6: '⚄',
-  d12: '⬠',
-  d20: '⬡',
-}
 
 interface DraftShopProps {
   playerId: string
   onClose: () => void
 }
-
-const REFRESH_COST = 5
-const ELEMENT_REFRESH_COST = 5
 
 interface OwnedDie {
   dice: Dice
@@ -60,6 +53,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const refreshElementOffers = useGameStore((state) => state.refreshElementOffers)
   const consumeElementOffer = useGameStore((state) => state.consumeElementOffer)
 
+  // Inspiration
+  const buyInspiration = useGameStore((state) => state.buyInspiration)
+  const spendInspiration = useGameStore((state) => state.spendInspiration)
+
   // Pending-reward queue (persists so buying more never discards unresolved rewards)
   const pendingRewards = useGameStore((state) => state.pendingRewards[playerId]) ?? EMPTY_REWARDS
   const enqueueReward = useGameStore((state) => state.enqueueReward)
@@ -76,12 +73,18 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const activeName = activeReward?.kind === 'name' ? activeReward : null
 
   const handleRefreshNames = () => {
-    if (!player || player.exp < REFRESH_COST) return
-    awardPlayerExp(playerId, -REFRESH_COST)
+    if (!player || player.inspiration < INSPIRATION_SPEND) return
+    if (!spendInspiration(playerId, INSPIRATION_SPEND)) return
     refreshNamePool()
   }
 
+  const handleBuyInspiration = () => {
+    buyInspiration(playerId)
+  }
+
   if (!player) return null
+
+  const inspirationCost = getInspirationCost(player.inspirationBoughtThisTurn)
 
   // All dice the player owns of the selected element, with their location
   const ownedDiceOfElement: OwnedDie[] = selectedElement
@@ -115,8 +118,8 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   }
 
   const handleRefreshElements = () => {
-    if (player.exp < ELEMENT_REFRESH_COST) return
-    awardPlayerExp(playerId, -ELEMENT_REFRESH_COST)
+    if (player.inspiration < INSPIRATION_SPEND) return
+    if (!spendInspiration(playerId, INSPIRATION_SPEND)) return
     setSelectedOfferIdx(null)
     refreshElementOffers()
   }
@@ -160,18 +163,35 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
       <div className="modal-content max-w-6xl">
         <div className="p-4 sm:p-6">
           {/* Header */}
-          <div className="flex justify-between items-center gap-3 mb-5 sm:mb-6">
+          <div className="flex justify-between items-start gap-3 mb-5 sm:mb-6">
             <div>
               <div className="font-display text-2xl text-gold-400">
                 Studio
               </div>
               <p className="text-base text-parchment-400">
-                {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span> Available
+                {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span>
+                <span className="mx-1.5 text-parchment-600">&middot;</span>
+                <span title="Inspiration">&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
               </p>
             </div>
-            <button onClick={onClose} className="btn-secondary text-sm">
-              Close Shop
-            </button>
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+              <button
+                onClick={handleBuyInspiration}
+                disabled={player.exp < inspirationCost}
+                className="text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5 whitespace-nowrap"
+                style={{
+                  background: 'rgba(176, 124, 255, 0.14)',
+                  border: '1px solid rgba(176, 124, 255, 0.45)',
+                  color: '#d9c2ff',
+                }}
+                title={`Buy 1 Inspiration for ${inspirationCost} EXP (cost rises each purchase this turn)`}
+              >
+                &#x2728; Buy Inspiration ({inspirationCost} EXP)
+              </button>
+              <button onClick={onClose} className="btn-secondary text-sm">
+                Close Shop
+              </button>
+            </div>
           </div>
 
           {/* Pending rewards tray — queued purchases waiting to be placed */}
@@ -204,7 +224,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                           boxShadow: isActive ? `0 0 12px rgba(${rgb}, 0.3)` : undefined,
                         }}
                       >
-                        <span className="text-lg text-gold-400">{diceIcons[reward.dice.type]}</span>
+                        <span className="text-lg text-gold-400"><DiceShape type={reward.dice.type} /></span>
                         <span className="text-sm font-bold text-parchment-200">{reward.dice.type}</span>
                         <GenreBadge genre={reward.dice.genre} className="text-[10px] px-1.5 py-0" />
                       </button>
@@ -255,11 +275,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </div>
               <button
                 onClick={handleRefreshElements}
-                disabled={player.exp < ELEMENT_REFRESH_COST}
+                disabled={player.inspiration < INSPIRATION_SPEND}
                 className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                title={`Discard these chips and draw ${4} new ones from the bag`}
+                title={player.inspiration >= INSPIRATION_SPEND ? 'Discard these chips and draw 4 new ones from the bag' : 'Requires Inspiration'}
               >
-                Draw New ({ELEMENT_REFRESH_COST} EXP)
+                Draw New (&#x2728; {INSPIRATION_SPEND})
               </button>
             </div>
 
@@ -340,7 +360,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                     disabled={player.exp < NEW_D4_COST}
                     className="btn-primary text-sm px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {diceIcons.d4} New d4 &mdash; {NEW_D4_COST} EXP
+                    <DiceShape type="d4" /> New d4 &mdash; {NEW_D4_COST} EXP
                   </button>
 
                   {/* Upgrades for owned dice of this element */}
@@ -361,9 +381,9 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                           className="btn-secondary text-sm px-3 py-2 disabled:opacity-40 disabled:cursor-not-allowed text-left"
                         >
                           <div className="font-bold">
-                            {diceIcons[dice.type]} {dice.type}
+                            <DiceShape type={dice.type} /> {dice.type}
                             {nextType ? (
-                              <span> &rarr; {diceIcons[nextType]} {nextType} &mdash; {cost} EXP</span>
+                              <span> &rarr; <DiceShape type={nextType} /> {nextType} &mdash; {cost} EXP</span>
                             ) : (
                               <span className="text-parchment-500"> (max)</span>
                             )}
@@ -393,11 +413,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </div>
               <button
                 onClick={handleRefreshNames}
-                disabled={!player || player.exp < REFRESH_COST}
+                disabled={player.inspiration < INSPIRATION_SPEND}
                 className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                title={`Refresh name selection for ${REFRESH_COST} EXP`}
+                title={player.inspiration >= INSPIRATION_SPEND ? 'Draw a fresh set of song names' : 'Requires Inspiration'}
               >
-                Refresh ({REFRESH_COST} EXP)
+                Refresh (&#x2728; {INSPIRATION_SPEND})
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -433,7 +453,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               {player.songs.map((song) => (
                 <div
                   key={song.id}
-                  className={`card transition-all duration-150 ${activeName ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+                  className={`card w-full max-w-[280px] mx-auto transition-all duration-150 ${activeName ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
                   style={activeName ? {
                     border: '1px solid rgba(176, 124, 255, 0.4)',
                     boxShadow: '0 0 12px rgba(176, 124, 255, 0.1)',
@@ -469,14 +489,14 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex justify-center gap-3">
                     {song.slots.map((slot, idx) => {
                       return (
                         <button
                           key={idx}
                           onClick={() => handleSlotDice(song.id, idx, !!slot.dice)}
                           disabled={!activeDie}
-                          className="h-20 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
+                          className="w-20 h-20 aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
                           style={{
                             background: slot.dice
                               ? activeDie
@@ -497,7 +517,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                         >
                           {slot.dice ? (
                             <div className="text-center relative">
-                              <div className="text-2xl mb-0.5 text-gold-400">{diceIcons[slot.dice.type]}</div>
+                              <div className="text-2xl mb-0.5 text-gold-400"><DiceShape type={slot.dice.type} /></div>
                               <div className="absolute -top-1 -right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                                 style={{
                                   background: 'linear-gradient(135deg, #b8922e, #d4a853)',
