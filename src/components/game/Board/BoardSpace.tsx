@@ -80,10 +80,15 @@ export function BoardSpace({
         <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
       )}
 
-      {/* Player indicator — reserved row at the top so it never overlaps the
-          space name or tags below it (only other player tags may overlap it) */}
+      {/* Space name */}
+      <div className="text-[9px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
+        {space.name}
+      </div>
+
+      {/* Player indicator — reserved row right under the title so it never
+          overlaps the name or tags below it (only other player tags may overlap it) */}
       {playersHere.length > 0 && (
-        <div className="flex justify-start -space-x-1.5 h-5 sm:h-6 mb-0.5 shrink-0">
+        <div className="flex justify-center -space-x-1.5 h-5 sm:h-6 mt-0.5 shrink-0">
           {playersHere.map((player) => (
             <div
               key={player.id}
@@ -99,11 +104,6 @@ export function BoardSpace({
           ))}
         </div>
       )}
-
-      {/* Space name */}
-      <div className="text-[9px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
-        {space.name}
-      </div>
 
       {/* Content area */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden">
