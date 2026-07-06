@@ -80,13 +80,14 @@ export function BoardSpace({
         <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
       )}
 
-      {/* Player indicator — top-left corner */}
+      {/* Player indicator — reserved row at the top so it never overlaps the
+          space name or tags below it (only other player tags may overlap it) */}
       {playersHere.length > 0 && (
-        <div className="absolute top-1 left-1 z-20 flex -space-x-1.5">
+        <div className="flex justify-start -space-x-1.5 h-5 sm:h-6 mb-0.5 shrink-0">
           {playersHere.map((player) => (
             <div
               key={player.id}
-              className={`player-avatar w-6 h-6 text-[10px] ${isCurrentPlayer ? 'animate-token-bob' : ''}`}
+              className={`player-avatar w-5 h-5 sm:w-6 sm:h-6 text-[9px] sm:text-[10px] ${isCurrentPlayer ? 'animate-token-bob' : ''}`}
               style={{
                 backgroundColor: player.color,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
@@ -106,52 +107,6 @@ export function BoardSpace({
 
       {/* Content area */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden">
-        {/* Monster indicator */}
-        {hasMonsters && (
-          <div className="flex items-center gap-1 group relative">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0"
-              style={{ background: 'rgba(232, 32, 64, 0.2)', border: '1px solid rgba(232, 32, 64, 0.5)', color: '#ff7070' }}
-            >
-              &#x2620;
-            </div>
-            <div className="text-red-400 font-bold text-xs leading-none">
-              &times;{space.monsters.length}
-            </div>
-            {/* Hover tooltip */}
-            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-52 rounded-lg p-2.5 shadow-xl text-sm pointer-events-none animate-fade-in"
-              style={{
-                background: 'linear-gradient(135deg, #2a2118, #1a1410)',
-                border: '1px solid rgba(212, 168, 83, 0.3)',
-              }}
-            >
-              {space.monsters.map((monster, idx) => (
-                <div key={monster.id} className={`${idx > 0 ? 'mt-2 pt-2 border-t border-gold-500/20' : ''}`}>
-                  <div className="font-bold text-gold-400">{monster.name}</div>
-                  <div className="text-xs mt-1 text-parchment-300">
-                    <div>HP: {monster.currentHP}/{monster.maxHP}</div>
-                    {monster.vulnerability && (
-                      <div className="text-green-400">Weak: {monster.vulnerability}</div>
-                    )}
-                    {monster.resistance && (
-                      <div className="text-red-400">Resist: {monster.resistance}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Potential monsters indicator */}
-        {!hasMonsters && potentialMonsters > 0 && (
-          <div className="flex items-center gap-1 opacity-70">
-            <span className="text-amber-400 text-sm leading-none">&#x26A0;</span>
-            <span className="text-amber-400 font-bold text-xs leading-none">
-              {potentialMonsters}
-            </span>
-          </div>
-        )}
-
         {/* Genre tags — compact color-coded beads with counts */}
         {genreEntries.length > 0 && (
           <div className="flex flex-wrap gap-x-1 gap-y-0.5 justify-center max-w-full mt-0.5">
