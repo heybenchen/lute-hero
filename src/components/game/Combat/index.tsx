@@ -121,6 +121,11 @@ export function CombatModal() {
 
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
   const totalExp = calculateTotalMonsterExp(monsters)
+  // Fame per monster at the player's current tier (player.monstersDefeated only
+  // changes at endCombat, so this stays constant for the whole fight). Fame
+  // scales with total monsters defeated, not individual monster level, so
+  // every monster in a fight is worth the same amount.
+  const fameValuePerMonster = calculateFameEarned(player.monstersDefeated, 1)
   const isCombatOver = allMonstersDefeated || !canContinue
 
   const handlePlaySong = (songId: string, ownerId: string) => {
@@ -254,7 +259,7 @@ export function CombatModal() {
             />
             <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
               {monsters.map((monster: Monster, idx: number) => (
-                <MonsterCard key={monster.id} monster={monster} index={idx} />
+                <MonsterCard key={monster.id} monster={monster} index={idx} fameValue={fameValuePerMonster} />
               ))}
             </div>
           </div>
