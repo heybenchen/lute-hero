@@ -1,4 +1,4 @@
-import { TrackEffect } from "@/types";
+import { TrackEffect } from '../types';
 
 export const TRACK_EFFECTS: { [key: string]: TrackEffect } = {
   freeReroll: { type: "freeReroll", used: false },

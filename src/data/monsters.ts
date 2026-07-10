@@ -1,4 +1,4 @@
-import { MonsterTemplate, Genre } from '@/types'
+import { MonsterTemplate, Genre, Rng } from '../types'
 
 export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   // Fire monsters — vulnerable to Ballad (Fire), resistant to Shanty (Water)
@@ -161,11 +161,11 @@ const templatesByGenre: Record<Genre, MonsterTemplate[]> = {
  * Get a random monster template for a given genre.
  * In later rounds, heavier templates (higher baseHP) are more likely.
  */
-export function getMonsterByGenre(genre: Genre, round: number = 1): MonsterTemplate {
+export function getMonsterByGenre(genre: Genre, round: number = 1, rng: Rng = Math.random): MonsterTemplate {
   const candidates = templatesByGenre[genre]
   if (!candidates || candidates.length === 0) {
     const allNonBoss = MONSTER_TEMPLATES.filter((m) => !m.isBoss)
-    return allNonBoss[Math.floor(Math.random() * allNonBoss.length)]
+    return allNonBoss[Math.floor(rng() * allNonBoss.length)]
   }
 
   // Sort by ascending baseHP
@@ -175,15 +175,15 @@ export function getMonsterByGenre(genre: Genre, round: number = 1): MonsterTempl
   if (round <= 2) {
     // Weight toward first half
     const pool = sorted.slice(0, Math.ceil(sorted.length * 0.75))
-    return pool[Math.floor(Math.random() * pool.length)]
+    return pool[Math.floor(rng() * pool.length)]
   }
   if (round <= 5) {
     // Uniform random
-    return sorted[Math.floor(Math.random() * sorted.length)]
+    return sorted[Math.floor(rng() * sorted.length)]
   }
   // Round 6+: weight toward second half (tougher monsters)
   const pool = sorted.slice(Math.floor(sorted.length * 0.25))
-  return pool[Math.floor(Math.random() * pool.length)]
+  return pool[Math.floor(rng() * pool.length)]
 }
 
 /**

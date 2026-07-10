@@ -1,4 +1,4 @@
-import { DraftCard, Dice, Genre, DiceType } from "@/types";
+import { DraftCard, Dice, Genre, DiceType, Rng, NewId } from '../types';
 import { TRACK_EFFECTS } from "./trackEffects";
 import { DICE_UPGRADE_PATH } from "./startingData";
 
@@ -48,17 +48,17 @@ export function getUpgradeCost(type: DiceType): number | null {
 /**
  * Create a fresh d4 die of the purchased element.
  */
-export function createElementalDie(genre: Genre): Dice {
+export function createElementalDie(genre: Genre, newId?: NewId): Dice {
   return {
-    id: `die-${Date.now()}-${dieIdCounter++}`,
+    id: newId ? newId("die") : `die-${Date.now()}-${dieIdCounter++}`,
     type: "d4",
     genre,
   };
 }
 
-export function generateNameCard(): DraftCard {
+export function generateNameCard(rng: Rng = Math.random, newId?: NewId): DraftCard {
   const effects = Object.keys(TRACK_EFFECTS);
-  const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+  const randomEffect = effects[Math.floor(rng() * effects.length)];
 
   const songNames = [
     "Acoustic Serenade",
@@ -74,10 +74,10 @@ export function generateNameCard(): DraftCard {
   ];
 
   return {
-    id: generateCardId(),
+    id: newId ? newId("card") : generateCardId(),
     type: "name",
     cost: 10,
-    songName: songNames[Math.floor(Math.random() * songNames.length)],
+    songName: songNames[Math.floor(rng() * songNames.length)],
     songEffect: TRACK_EFFECTS[randomEffect],
   };
 }
