@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useGameStore } from '@/store'
-import { Song } from '@/types'
+import { Genre, Song } from '@/types'
 
-function makeSong(id: string, diceId: string): Song {
+function makeSong(id: string, diceId: string, genre: Genre = 'Ballad'): Song {
   return {
     id,
     name: `Song ${id}`,
-    slots: [{ dice: { id: diceId, type: 'd6', genre: 'Ballad' } }, { dice: null }],
+    slots: [{ dice: { id: diceId, type: 'd6', genre } }, { dice: null }],
     effect: null,
     used: false,
   }
@@ -25,7 +25,7 @@ describe('showdownSlice', () => {
     useGameStore.getState().resetShowdown()
   })
 
-  it('starts a showdown at turn 1 with zeroed fandom for every player', () => {
+  it('starts a showdown at turn 1 with zeroed fandom and no adaptation', () => {
     const ids = setupPlayers(['A', 'B'])
     useGameStore.getState().startShowdown(ids)
 
@@ -33,43 +33,71 @@ describe('showdownSlice', () => {
     expect(state.showdownActive).toBe(true)
     expect(state.showdownTurn).toBe(1)
     expect(state.showdownPerformerIdx).toBe(0)
+    expect(state.showdownResistGenre).toBeNull()
+    expect(state.showdownWeakGenre).toBeNull()
     expect(state.showdownFandom).toEqual({ [ids[0]]: 0, [ids[1]]: 0 })
   })
 
-  it('awards fandom equal to damage dealt when playing a song', () => {
+  it('awards fandom equal to damage dealt and records the dominant element', () => {
     const ids = setupPlayers(['A'])
     useGameStore.getState().startShowdown(ids)
 
-    const result = useGameStore.getState().playShowdownSong(makeSong('s1', 'd1'))
+    const result = useGameStore.getState().playShowdownSong(makeSong('s1', 'd1', 'Folk'))
     expect(result).not.toBeNull()
-    expect(result!.multiplier).toBe(1)
-    expect(result!.fandom).toBe(result!.rawDamage)
+    expect(result!.genre).toBe('Folk')
+    expect(result!.fandom).toBeGreaterThan(0)
     expect(useGameStore.getState().showdownFandom[ids[0]]).toBe(result!.fandom)
-    expect(useGameStore.getState().showdownSongsUsed).toContain('s1')
+    expect(useGameStore.getState().showdownCurrentGenre).toBe('Folk')
   })
 
-  it('refuses to play the same song twice in one performance', () => {
+  it('only allows one song per performance', () => {
     const ids = setupPlayers(['A'])
     useGameStore.getState().startShowdown(ids)
 
-    const song = makeSong('s1', 'd1')
-    expect(useGameStore.getState().playShowdownSong(song)).not.toBeNull()
-    expect(useGameStore.getState().playShowdownSong(song)).toBeNull()
+    expect(useGameStore.getState().playShowdownSong(makeSong('s1', 'd1'))).not.toBeNull()
+    // A second, different song is refused — one song per turn
+    expect(useGameStore.getState().playShowdownSong(makeSong('s2', 'd2'))).toBeNull()
+    expect(useGameStore.getState().showdownSongsUsed).toEqual(['s1'])
   })
 
-  it('advances performers, then adapts the boss between turns', () => {
+  it('applies element immunity (0x) when the boss resists the song element', () => {
+    const ids = setupPlayers(['A'])
+    useGameStore.getState().startShowdown(ids)
+    useGameStore.setState({ showdownResistGenre: 'Ballad', showdownWeakGenre: 'Folk' })
+
+    const result = useGameStore.getState().playShowdownSong(makeSong('s1', 'd1', 'Ballad'))
+    expect(result!.wasResisted).toBe(true)
+    expect(result!.hitWeakness).toBe(false)
+    expect(result!.fandom).toBe(0) // immune, same as monster resistance
+  })
+
+  it('applies element weakness (2x) when the song matches the exposed element', () => {
+    const ids = setupPlayers(['A'])
+    useGameStore.getState().startShowdown(ids)
+    useGameStore.setState({ showdownResistGenre: 'Ballad', showdownWeakGenre: 'Folk' })
+
+    const result = useGameStore.getState().playShowdownSong(makeSong('s1', 'd1', 'Folk'))
+    expect(result!.hitWeakness).toBe(true)
+    expect(result!.wasResisted).toBe(false)
+    // 2x multiplier: a d6 roll (no crit) doubles to an even value; with a crit
+    // cascade it stays a multiple of 2 as every roll is doubled
+    expect(result!.fandom % 2).toBe(0)
+    expect(result!.fandom).toBeGreaterThan(0)
+  })
+
+  it('advances performers, then adapts the boss between turns by element', () => {
     const ids = setupPlayers(['A', 'B'])
     useGameStore.getState().startShowdown(ids)
 
-    // Player A performs
-    useGameStore.getState().playShowdownSong(makeSong('a1', 'da1'))
+    // Player A performs a Ballad song
+    useGameStore.getState().playShowdownSong(makeSong('a1', 'da1', 'Ballad'))
     let advance = useGameStore.getState().finishShowdownPerformance()
     expect(advance.kind).toBe('nextPerformer')
     expect(useGameStore.getState().showdownPerformerIdx).toBe(1)
     expect(useGameStore.getState().showdownSongsUsed).toEqual([])
 
-    // Player B performs — turn ends, boss adapts
-    useGameStore.getState().playShowdownSong(makeSong('b1', 'db1'))
+    // Player B performs a Folk song — turn ends, boss adapts
+    useGameStore.getState().playShowdownSong(makeSong('b1', 'db1', 'Folk'))
     advance = useGameStore.getState().finishShowdownPerformance()
     expect(advance.kind).toBe('bossAdapts')
 
@@ -79,14 +107,18 @@ describe('showdownSlice', () => {
     expect(state.showdownHistory).toHaveLength(1)
 
     const [perfA, perfB] = state.showdownHistory[0]
+    expect(perfA.genre).toBe('Ballad')
+    expect(perfB.genre).toBe('Folk')
     if (perfA.fandom !== perfB.fandom) {
-      const strongest = perfA.fandom > perfB.fandom ? perfA.playerId : perfB.playerId
-      const weakest = perfA.fandom > perfB.fandom ? perfB.playerId : perfA.playerId
-      expect(state.showdownResistedId).toBe(strongest)
-      expect(state.showdownWeakenedId).toBe(weakest)
+      const strongest = perfA.fandom > perfB.fandom ? perfA : perfB
+      const weakest = perfA.fandom > perfB.fandom ? perfB : perfA
+      expect(state.showdownResistGenre).toBe(strongest.genre)
+      expect(state.showdownWeakGenre).toBe(weakest.genre)
     } else {
-      expect(state.showdownResistedId).toBeNull()
-      expect(state.showdownWeakenedId).toBeNull()
+      // Damage tie: strongest resolves to the earlier performer (A), so the
+      // boss resists Ballad and is weak to Folk
+      expect(state.showdownResistGenre).toBe('Ballad')
+      expect(state.showdownWeakGenre).toBe('Folk')
     }
   })
 
@@ -108,7 +140,7 @@ describe('showdownSlice', () => {
     const player = state.players[0]
     const totalFandom = state.showdownFandom[ids[0]]
     expect(player.fame).toBe(totalFandom)
-    expect(player.totalBossDamage).toBeGreaterThanOrEqual(totalFandom) // raw >= floored fandom at 1x
+    expect(player.totalBossDamage).toBe(totalFandom)
   })
 
   it('tracks best hit and crit counts per player', () => {
@@ -120,15 +152,5 @@ describe('showdownSlice', () => {
     expect(best.damage).toBe(result!.fandom)
     expect(best.songName).toBe('Song s1')
     expect(useGameStore.getState().showdownCrits[ids[0]]).toBeGreaterThanOrEqual(0)
-  })
-
-  it('applies the resistance multiplier to the resisted player', () => {
-    const ids = setupPlayers(['A', 'B'])
-    useGameStore.getState().startShowdown(ids)
-    useGameStore.setState({ showdownResistedId: ids[0], showdownWeakenedId: ids[1] })
-
-    const resisted = useGameStore.getState().playShowdownSong(makeSong('s1', 'd1'))
-    expect(resisted!.multiplier).toBe(0.5)
-    expect(resisted!.fandom).toBe(Math.floor(resisted!.rawDamage * 0.5))
   })
 })

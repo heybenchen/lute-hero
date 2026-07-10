@@ -1,19 +1,33 @@
 import { describe, it, expect } from 'vitest'
 import {
   SHOWDOWN_TURNS,
-  SHOWDOWN_RESIST_MULTIPLIER,
-  SHOWDOWN_WEAKNESS_MULTIPLIER,
   createShowdownBoss,
-  getShowdownMultiplier,
+  getDominantGenre,
   computeBossAdaptation,
-  calculateShowdownFandom,
   getPlayableSongs,
   ShowdownPerformance,
 } from './showdown'
-import { Song } from '@/types'
+import { Genre, Song, DiceRoll } from '@/types'
 
-function perf(playerId: string, fandom: number): ShowdownPerformance {
-  return { playerId, rawDamage: fandom, multiplier: 1, fandom }
+function perf(playerId: string, fandom: number, genre: Genre | null): ShowdownPerformance {
+  return { playerId, fandom, genre }
+}
+
+function roll(diceId: string, value: number, critBonus = 0): DiceRoll {
+  return { diceId, value, isCrit: critBonus > 0, critBonus, cascadeRolls: [] }
+}
+
+function song(genres: (Genre | null)[], ids: string[] = ['d1', 'd2']): Song {
+  return {
+    id: 's1',
+    name: 'Anthem',
+    slots: [
+      { dice: genres[0] ? { id: ids[0], type: 'd6', genre: genres[0] } : null },
+      { dice: genres[1] ? { id: ids[1], type: 'd6', genre: genres[1] } : null },
+    ],
+    effect: null,
+    used: false,
+  }
 }
 
 describe('showdown constants', () => {
@@ -23,122 +37,110 @@ describe('showdown constants', () => {
 })
 
 describe('createShowdownBoss', () => {
-  it('builds the final boss with no genre vulnerability or resistance', () => {
+  it('starts with no genre vulnerability or resistance', () => {
     const boss = createShowdownBoss()
     expect(boss.isBoss).toBe(true)
     expect(boss.vulnerability).toBeNull()
     expect(boss.resistance).toBeNull()
-    expect(boss.currentHP).toBeGreaterThan(0)
     expect(boss.name).toBe('The Eternal Silence')
+  })
+
+  it('carries its adaptation as monster vulnerability/resistance', () => {
+    const boss = createShowdownBoss({ resistGenre: 'Ballad', weakGenre: 'Folk' })
+    expect(boss.resistance).toBe('Ballad')
+    expect(boss.vulnerability).toBe('Folk')
   })
 })
 
-describe('getShowdownMultiplier', () => {
-  const adaptation = { resistedPlayerId: 'p1', weakenedPlayerId: 'p2' }
-
-  it('halves fandom for the resisted player', () => {
-    expect(getShowdownMultiplier('p1', adaptation)).toBe(SHOWDOWN_RESIST_MULTIPLIER)
+describe('getDominantGenre', () => {
+  it('returns the genre of a single-element song', () => {
+    const s = song(['Ballad', 'Ballad'])
+    expect(getDominantGenre(s, [roll('d1', 3), roll('d2', 5)])).toBe('Ballad')
   })
 
-  it('doubles fandom for the player the boss is weak to', () => {
-    expect(getShowdownMultiplier('p2', adaptation)).toBe(SHOWDOWN_WEAKNESS_MULTIPLIER)
+  it('picks the genre that contributed the most roll value', () => {
+    const s = song(['Ballad', 'Folk'])
+    expect(getDominantGenre(s, [roll('d1', 2), roll('d2', 6)])).toBe('Folk')
   })
 
-  it('returns 1x for unaffected players', () => {
-    expect(getShowdownMultiplier('p3', adaptation)).toBe(1)
+  it('counts crit cascade bonuses toward the contribution', () => {
+    const s = song(['Ballad', 'Folk'])
+    expect(getDominantGenre(s, [roll('d1', 6, 5), roll('d2', 6)])).toBe('Ballad')
   })
 
-  it('returns 1x when the boss has not adapted', () => {
-    expect(
-      getShowdownMultiplier('p1', { resistedPlayerId: null, weakenedPlayerId: null })
-    ).toBe(1)
+  it('breaks ties by slot order', () => {
+    const s = song(['Shanty', 'Hymn'])
+    expect(getDominantGenre(s, [roll('d1', 4), roll('d2', 4)])).toBe('Shanty')
+  })
+
+  it('returns null for a song with no dice', () => {
+    expect(getDominantGenre(song([null, null]), [])).toBeNull()
   })
 })
 
 describe('computeBossAdaptation', () => {
-  it('resists the strongest attacker and is weak to the weakest', () => {
+  it('resists the strongest attack element and is weak to the weakest', () => {
     const result = computeBossAdaptation([
-      perf('p1', 20),
-      perf('p2', 35),
-      perf('p3', 8),
+      perf('p1', 20, 'Ballad'),
+      perf('p2', 35, 'Folk'),
+      perf('p3', 8, 'Shanty'),
     ])
-    expect(result.resistedPlayerId).toBe('p2')
-    expect(result.weakenedPlayerId).toBe('p3')
+    expect(result.resistGenre).toBe('Folk')
+    expect(result.weakGenre).toBe('Shanty')
   })
 
   it('does not adapt in a solo showdown', () => {
-    const result = computeBossAdaptation([perf('p1', 25)])
-    expect(result.resistedPlayerId).toBeNull()
-    expect(result.weakenedPlayerId).toBeNull()
+    const result = computeBossAdaptation([perf('p1', 25, 'Ballad')])
+    expect(result.resistGenre).toBeNull()
+    expect(result.weakGenre).toBeNull()
   })
 
   it('does not adapt with no performances', () => {
-    const result = computeBossAdaptation([])
-    expect(result.resistedPlayerId).toBeNull()
-    expect(result.weakenedPlayerId).toBeNull()
+    expect(computeBossAdaptation([])).toEqual({ resistGenre: null, weakGenre: null })
   })
 
-  it('does not adapt when all players deal equal damage', () => {
-    const result = computeBossAdaptation([perf('p1', 15), perf('p2', 15)])
-    // Ties go to earlier performers: p1 is both strongest and weakest candidate,
-    // but a tie among everyone means strongest === weakest only when one player
-    // holds both titles. Here p1 is strongest-first and p1 is weakest-first.
-    expect(result.resistedPlayerId).toBeNull()
-    expect(result.weakenedPlayerId).toBeNull()
-  })
-
-  it('breaks partial ties by performance order', () => {
+  it('does not adapt when strongest and weakest share an element', () => {
     const result = computeBossAdaptation([
-      perf('p1', 30),
-      perf('p2', 30),
-      perf('p3', 10),
+      perf('p1', 30, 'Ballad'),
+      perf('p2', 10, 'Ballad'),
     ])
-    expect(result.resistedPlayerId).toBe('p1')
-    expect(result.weakenedPlayerId).toBe('p3')
+    expect(result.resistGenre).toBeNull()
+    expect(result.weakGenre).toBeNull()
   })
 
-  it('handles two players with different damage', () => {
-    const result = computeBossAdaptation([perf('p1', 12), perf('p2', 40)])
-    expect(result.resistedPlayerId).toBe('p2')
-    expect(result.weakenedPlayerId).toBe('p1')
-  })
-})
-
-describe('calculateShowdownFandom', () => {
-  it('awards one fandom per point of damage at 1x', () => {
-    expect(calculateShowdownFandom(17, 1)).toBe(17)
+  it('breaks damage ties by performance order', () => {
+    const result = computeBossAdaptation([
+      perf('p1', 30, 'Ballad'),
+      perf('p2', 30, 'Folk'),
+      perf('p3', 10, 'Hymn'),
+    ])
+    expect(result.resistGenre).toBe('Ballad')
+    expect(result.weakGenre).toBe('Hymn')
   })
 
-  it('halves and floors fandom under resistance', () => {
-    expect(calculateShowdownFandom(15, SHOWDOWN_RESIST_MULTIPLIER)).toBe(7)
+  it('ignores performances without an element', () => {
+    const result = computeBossAdaptation([
+      perf('p1', 30, 'Ballad'),
+      perf('p2', 5, null),
+    ])
+    expect(result.resistGenre).toBeNull()
+    expect(result.weakGenre).toBeNull()
   })
 
-  it('doubles fandom under an exposed weakness', () => {
-    expect(calculateShowdownFandom(15, SHOWDOWN_WEAKNESS_MULTIPLIER)).toBe(30)
-  })
-
-  it('never goes negative', () => {
-    expect(calculateShowdownFandom(0, SHOWDOWN_WEAKNESS_MULTIPLIER)).toBe(0)
+  it('handles two players with different damage and elements', () => {
+    const result = computeBossAdaptation([
+      perf('p1', 12, 'Hymn'),
+      perf('p2', 40, 'Shanty'),
+    ])
+    expect(result.resistGenre).toBe('Shanty')
+    expect(result.weakGenre).toBe('Hymn')
   })
 })
 
 describe('getPlayableSongs', () => {
-  const songWithDice: Song = {
-    id: 's1',
-    name: 'Anthem',
-    slots: [{ dice: { id: 'd1', type: 'd6', genre: 'Ballad' } }, { dice: null }],
-    effect: null,
-    used: false,
-  }
-  const emptySong: Song = {
-    id: 's2',
-    name: '',
-    slots: [{ dice: null }, { dice: null }],
-    effect: null,
-    used: false,
-  }
-
   it('only returns songs with at least one die', () => {
-    expect(getPlayableSongs([songWithDice, emptySong])).toEqual([songWithDice])
+    const withDice = song(['Ballad', null])
+    const empty = { ...song([null, null]), id: 's2' }
+    expect(getPlayableSongs([withDice, empty])).toEqual([withDice])
   })
 })

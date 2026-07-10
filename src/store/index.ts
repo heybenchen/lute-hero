@@ -14,7 +14,7 @@ const STORAGE_KEY = 'lute-hero-save'
 const STORAGE_VERSION = 8
 
 // Only persist the durable game state — skip transient combat mid-fight data
-const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers' | 'pendingRewards' | 'showdownActive' | 'showdownComplete' | 'showdownTurn' | 'showdownOrder' | 'showdownPerformerIdx' | 'showdownResistedId' | 'showdownWeakenedId' | 'showdownSongsUsed' | 'showdownTurnPerformances' | 'showdownHistory' | 'showdownCurrentDamage' | 'showdownCurrentFandom' | 'showdownFandom' | 'showdownBestHit' | 'showdownCrits'>> = {
+const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers' | 'pendingRewards' | 'showdownActive' | 'showdownComplete' | 'showdownTurn' | 'showdownOrder' | 'showdownPerformerIdx' | 'showdownResistGenre' | 'showdownWeakGenre' | 'showdownSongsUsed' | 'showdownTurnPerformances' | 'showdownHistory' | 'showdownCurrentFandom' | 'showdownCurrentGenre' | 'showdownFandom' | 'showdownBestHit' | 'showdownCrits'>> = {
   name: STORAGE_KEY,
   version: STORAGE_VERSION,
   partialize: (state) => ({
@@ -34,13 +34,13 @@ const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'curre
     showdownTurn: state.showdownTurn,
     showdownOrder: state.showdownOrder,
     showdownPerformerIdx: state.showdownPerformerIdx,
-    showdownResistedId: state.showdownResistedId,
-    showdownWeakenedId: state.showdownWeakenedId,
+    showdownResistGenre: state.showdownResistGenre,
+    showdownWeakGenre: state.showdownWeakGenre,
     showdownSongsUsed: state.showdownSongsUsed,
     showdownTurnPerformances: state.showdownTurnPerformances,
     showdownHistory: state.showdownHistory,
-    showdownCurrentDamage: state.showdownCurrentDamage,
     showdownCurrentFandom: state.showdownCurrentFandom,
+    showdownCurrentGenre: state.showdownCurrentGenre,
     showdownFandom: state.showdownFandom,
     showdownBestHit: state.showdownBestHit,
     showdownCrits: state.showdownCrits,

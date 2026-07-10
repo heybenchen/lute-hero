@@ -13,8 +13,9 @@ type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
 interface FandomPopup {
   id: string
   fandom: number
-  multiplier: number
   hadCrit: boolean
+  hitWeakness: boolean
+  wasResisted: boolean
 }
 
 export function FinalShowdown() {
@@ -24,8 +25,8 @@ export function FinalShowdown() {
   const showdownTurn = useGameStore((state) => state.showdownTurn)
   const showdownOrder = useGameStore((state) => state.showdownOrder)
   const showdownPerformerIdx = useGameStore((state) => state.showdownPerformerIdx)
-  const showdownResistedId = useGameStore((state) => state.showdownResistedId)
-  const showdownWeakenedId = useGameStore((state) => state.showdownWeakenedId)
+  const showdownResistGenre = useGameStore((state) => state.showdownResistGenre)
+  const showdownWeakGenre = useGameStore((state) => state.showdownWeakGenre)
   const showdownSongsUsed = useGameStore((state) => state.showdownSongsUsed)
   const showdownCurrentFandom = useGameStore((state) => state.showdownCurrentFandom)
   const showdownFandom = useGameStore((state) => state.showdownFandom)
@@ -61,18 +62,14 @@ export function FinalShowdown() {
 
   const performerId = showdownOrder[showdownPerformerIdx]
   const performer = players.find((p) => p.id === performerId)
-  const resistedPlayer = players.find((p) => p.id === showdownResistedId) || null
-  const weakenedPlayer = players.find((p) => p.id === showdownWeakenedId) || null
 
   const playableSongs = useMemo(
     () => (performer ? getPlayableSongs(performer.songs) : []),
     [performer]
   )
-  const songsRemaining = playableSongs.filter((s) => !showdownSongsUsed.includes(s.id)).length
-  const performanceDone = songsRemaining === 0
-
-  const performerMultiplier =
-    performerId === showdownResistedId ? 0.5 : performerId === showdownWeakenedId ? 2 : 1
+  // Each player performs exactly one song per turn
+  const hasPerformed = showdownSongsUsed.length >= 1
+  const performanceDone = hasPerformed || playableSongs.length === 0
 
   const handlePlaySong = (song: Song) => {
     const result = playShowdownSong(song)
@@ -81,8 +78,9 @@ export function FinalShowdown() {
     const popup: FandomPopup = {
       id: `fandom-${Date.now()}`,
       fandom: result.fandom,
-      multiplier: result.multiplier,
       hadCrit: result.hadCrit,
+      hitWeakness: result.hitWeakness,
+      wasResisted: result.wasResisted,
     }
     setPopups((prev) => [...prev, popup])
     setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
@@ -90,13 +88,13 @@ export function FinalShowdown() {
 
   const handleFinishPerformance = () => {
     // Capture this turn's recap before the store clears it
-    const recap = [
-      ...useGameStore.getState().showdownTurnPerformances,
+    const storeState = useGameStore.getState()
+    const recap: ShowdownPerformance[] = [
+      ...storeState.showdownTurnPerformances,
       {
         playerId: performerId,
-        rawDamage: useGameStore.getState().showdownCurrentDamage,
-        multiplier: performerMultiplier,
-        fandom: useGameStore.getState().showdownCurrentFandom,
+        fandom: storeState.showdownCurrentFandom,
+        genre: storeState.showdownCurrentGenre,
       },
     ]
     const turnNow = showdownTurn
@@ -125,8 +123,8 @@ export function FinalShowdown() {
         turnEnded={adaptTurnEnded}
         performances={adaptRecap}
         players={players}
-        resistedPlayer={resistedPlayer}
-        weakenedPlayer={weakenedPlayer}
+        resistGenre={showdownResistGenre}
+        weakGenre={showdownWeakGenre}
         onContinue={() => setStage('perform')}
       />
     )
@@ -154,14 +152,26 @@ export function FinalShowdown() {
         {popups.map((p) => (
           <div key={p.id} className="absolute left-1/2 top-[38%] -translate-x-1/2 animate-fandom-pop text-center">
             <div
-              className={`font-bold tabular-nums leading-none ${p.hadCrit ? 'text-gold-300 text-6xl' : 'text-gold-400 text-5xl'}`}
+              className={`font-bold tabular-nums leading-none ${
+                p.wasResisted && p.fandom === 0
+                  ? 'text-red-300 text-5xl'
+                  : p.hadCrit || p.hitWeakness
+                    ? 'text-gold-300 text-6xl'
+                    : 'text-gold-400 text-5xl'
+              }`}
               style={{ textShadow: '0 0 24px rgba(240, 215, 140, 0.7), 0 2px 8px rgba(0,0,0,0.8)' }}
             >
               +{p.fandom}
             </div>
             <div className="text-parchment-300 font-medieval font-bold text-sm mt-1 tracking-wider uppercase" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}>
-              ♪ Fandom {p.multiplier !== 1 && <span className={p.multiplier > 1 ? 'text-green-300' : 'text-red-300'}>×{p.multiplier === 0.5 ? '½' : p.multiplier}</span>}
+              ♪ Fandom
             </div>
+            {p.hitWeakness && (
+              <div className="text-green-300 font-medieval font-bold text-xs tracking-widest uppercase">Weakness ×2!</div>
+            )}
+            {p.wasResisted && (
+              <div className="text-red-300 font-medieval font-bold text-xs tracking-widest uppercase">Resisted...</div>
+            )}
             {p.hadCrit && (
               <div className="text-gold-400 font-medieval font-bold text-xs tracking-widest uppercase animate-pulse">Encore!</div>
             )}
@@ -183,8 +193,8 @@ export function FinalShowdown() {
         <div className="card-ornate p-4 sm:p-8 mb-4" style={{ background: 'rgba(20, 14, 28, 0.75)' }}>
           <BossStage
             turn={showdownTurn}
-            resistedPlayer={resistedPlayer}
-            weakenedPlayer={weakenedPlayer}
+            resistGenre={showdownResistGenre}
+            weakGenre={showdownWeakGenre}
             fandom={showdownFandom}
             players={players}
           />
@@ -203,30 +213,16 @@ export function FinalShowdown() {
                     {performer.name} takes the stage
                   </div>
                   <div className="text-xs text-parchment-500">
-                    Verse {showdownTurn} · {songsRemaining} song{songsRemaining !== 1 ? 's' : ''} left to play
+                    Verse {showdownTurn} · {hasPerformed ? 'performance complete' : 'choose one song to perform'}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                {performerMultiplier !== 1 && (
-                  <span
-                    className="text-xs font-medieval font-bold px-3 py-1.5 rounded-full"
-                    style={{
-                      background: performerMultiplier > 1 ? 'rgba(76, 175, 80, 0.12)' : 'rgba(232, 32, 64, 0.12)',
-                      border: `1px solid ${performerMultiplier > 1 ? 'rgba(76, 175, 80, 0.45)' : 'rgba(232, 32, 64, 0.4)'}`,
-                      color: performerMultiplier > 1 ? '#a7f3ad' : '#ff9d9d',
-                    }}
-                  >
-                    {performerMultiplier > 1 ? '💥 Weakness exposed — ×2 fandom' : '🛡 The Silence resists you — ×½ fandom'}
-                  </span>
-                )}
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-gold-400 tabular-nums" style={{ textShadow: '0 0 12px rgba(212,168,83,0.3)' }}>
-                    +{showdownCurrentFandom}
-                  </div>
-                  <div className="text-[10px] text-parchment-500 uppercase tracking-wider">fandom this verse</div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-gold-400 tabular-nums" style={{ textShadow: '0 0 12px rgba(212,168,83,0.3)' }}>
+                  +{showdownCurrentFandom}
                 </div>
+                <div className="text-[10px] text-parchment-500 uppercase tracking-wider">fandom this verse</div>
               </div>
             </div>
 
@@ -237,7 +233,7 @@ export function FinalShowdown() {
                   key={song.id}
                   song={{ ...song, used: showdownSongsUsed.includes(song.id) }}
                   onPlay={() => handlePlaySong(song)}
-                  disabled={showdownSongsUsed.includes(song.id)}
+                  disabled={hasPerformed}
                   index={idx}
                 />
               ))}
@@ -281,7 +277,7 @@ export function FinalShowdown() {
                 </button>
               ) : (
                 <p className="text-base text-parchment-500 italic font-game animate-pulse-slow">
-                  Play every song — the crowd wants it all...
+                  One song, one shot — make it count...
                 </p>
               )}
             </div>
@@ -341,9 +337,9 @@ function ShowdownIntro({ onBegin, playerCount }: { onBegin: () => void; playerCo
         >
           <div className="text-xs font-medieval uppercase tracking-[0.3em] text-gold-500 mb-3 text-center">How the Showdown Works</div>
           <ul className="space-y-2.5 text-sm text-parchment-300">
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Three verses. Each verse, every bard performs all of their songs against the Silence.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Three verses. Each verse, every bard performs <span className="text-gold-300 font-bold">one song</span> against the Silence.</span></li>
             <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Every point of damage earns you <span className="text-gold-300 font-bold">1 fandom</span>.</span></li>
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Between verses it adapts: it <span className="text-red-300 font-bold">hardens (×½)</span> against the strongest performance and <span className="text-green-300 font-bold">cracks (×2)</span> before the weakest.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Between verses it adapts like any monster: it becomes <span className="text-red-300 font-bold">immune (0×)</span> to the element of the strongest attack and <span className="text-green-300 font-bold">weak (2×)</span> to the element of the weakest.</span></li>
             <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>After the third verse the Silence shatters — and the bard with the most fans is crowned <span className="text-gold-300 font-bold">Legend of the Realm</span>.</span></li>
           </ul>
         </div>
@@ -371,7 +367,7 @@ function ShowdownFinale({
   showdownHistory: ShowdownPerformance[][]
 }) {
   const totalFandom = players.reduce((sum, p) => sum + (showdownFandom[p.id] || 0), 0)
-  const totalDamage = showdownHistory.flat().reduce((sum, perf) => sum + perf.rawDamage, 0)
+  const songsPlayed = showdownHistory.flat().length
 
   return (
     <div className="min-h-[100dvh] flex items-center justify-center relative overflow-hidden" style={{ background: '#07050a' }}>
@@ -416,7 +412,7 @@ function ShowdownFinale({
           className="text-parchment-300 text-base sm:text-lg animate-slide-up"
           style={{ animationDelay: '1100ms', animationFillMode: 'both' }}
         >
-          {totalDamage} damage struck · {totalFandom} fans won over · music returns to the realm
+          {songsPlayed} songs performed · {totalFandom} fans won over · music returns to the realm
         </p>
         <p
           className="text-parchment-500 text-sm mt-6 italic animate-pulse-slow animate-fade-in"

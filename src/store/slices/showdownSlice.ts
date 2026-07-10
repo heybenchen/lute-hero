@@ -1,22 +1,28 @@
 import { StateCreator } from 'zustand'
-import { Song, DiceRoll, Player } from '@/types'
+import { Song, DiceRoll, Genre, Player } from '@/types'
 import { rollSong, calculateDamage } from '@/game-logic/combat/damageCalculator'
 import {
   SHOWDOWN_TURNS,
   ShowdownPerformance,
   createShowdownBoss,
-  getShowdownMultiplier,
+  getDominantGenre,
   computeBossAdaptation,
-  calculateShowdownFandom,
 } from '@/game-logic/showdown/showdown'
+
+/** Each player performs exactly one song per showdown turn. */
+export const SONGS_PER_SHOWDOWN_TURN = 1
 
 /** Result of one song played against the boss, returned for UI animation. */
 export interface ShowdownPlayResult {
   rolls: DiceRoll[]
-  rawDamage: number
-  multiplier: number
   fandom: number
   hadCrit: boolean
+  /** Dominant element of the performance */
+  genre: Genre | null
+  /** Song included dice matching the boss's exposed weakness (2x) */
+  hitWeakness: boolean
+  /** Song included dice the boss is immune to (0x) */
+  wasResisted: boolean
 }
 
 /** What happened when a performance ended — drives the UI's next scene. */
@@ -32,13 +38,13 @@ export interface ShowdownSlice {
   showdownTurn: number // 1..SHOWDOWN_TURNS
   showdownOrder: string[] // player ids in performance order
   showdownPerformerIdx: number
-  showdownResistedId: string | null
-  showdownWeakenedId: string | null
+  showdownResistGenre: Genre | null // boss is immune to this element (0x)
+  showdownWeakGenre: Genre | null // boss takes double damage from this element (2x)
   showdownSongsUsed: string[] // song ids the current performer has played
+  showdownCurrentFandom: number // fandom earned by the current performer this turn
+  showdownCurrentGenre: Genre | null // dominant element of the current performance
   showdownTurnPerformances: ShowdownPerformance[] // completed performances this turn
   showdownHistory: ShowdownPerformance[][] // one entry per completed turn
-  showdownCurrentDamage: number // raw damage by the current performer so far
-  showdownCurrentFandom: number // fandom earned by the current performer so far
   showdownFandom: Record<string, number> // total fandom per player
   showdownBestHit: Record<string, { damage: number; songName: string }>
   showdownCrits: Record<string, number>
@@ -56,13 +62,13 @@ const initialShowdownState = {
   showdownTurn: 1,
   showdownOrder: [] as string[],
   showdownPerformerIdx: 0,
-  showdownResistedId: null as string | null,
-  showdownWeakenedId: null as string | null,
+  showdownResistGenre: null as Genre | null,
+  showdownWeakGenre: null as Genre | null,
   showdownSongsUsed: [] as string[],
+  showdownCurrentFandom: 0,
+  showdownCurrentGenre: null as Genre | null,
   showdownTurnPerformances: [] as ShowdownPerformance[],
   showdownHistory: [] as ShowdownPerformance[][],
-  showdownCurrentDamage: 0,
-  showdownCurrentFandom: 0,
   showdownFandom: {} as Record<string, number>,
   showdownBestHit: {} as Record<string, { damage: number; songName: string }>,
   showdownCrits: {} as Record<string, number>,
@@ -84,22 +90,29 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
   playShowdownSong: (song) => {
     const state = get()
     if (!state.showdownActive || state.showdownComplete) return null
+    if (state.showdownSongsUsed.length >= SONGS_PER_SHOWDOWN_TURN) return null
     if (state.showdownSongsUsed.includes(song.id)) return null
 
     const performerId = state.showdownOrder[state.showdownPerformerIdx]
     if (!performerId) return null
 
-    const boss = createShowdownBoss()
+    // The boss carries its adaptation as ordinary monster weakness/resistance,
+    // so the standard damage pipeline applies the 2x / 0x element multipliers.
+    const boss = createShowdownBoss({
+      resistGenre: state.showdownResistGenre,
+      weakGenre: state.showdownWeakGenre,
+    })
     const { rolls } = rollSong(song)
     const calc = calculateDamage(song, rolls, boss)
-    const rawDamage = Math.max(0, calc.totalDamage)
-
-    const multiplier = getShowdownMultiplier(performerId, {
-      resistedPlayerId: state.showdownResistedId,
-      weakenedPlayerId: state.showdownWeakenedId,
-    })
-    const fandom = calculateShowdownFandom(rawDamage, multiplier)
+    const fandom = Math.max(0, calc.totalDamage)
+    const genre = getDominantGenre(song, rolls)
     const critCount = rolls.filter((r) => r.isCrit).length
+
+    const songGenres = song.slots
+      .map((slot) => slot.dice?.genre)
+      .filter((g): g is Genre => g !== undefined)
+    const hitWeakness = state.showdownWeakGenre !== null && songGenres.includes(state.showdownWeakGenre)
+    const wasResisted = state.showdownResistGenre !== null && songGenres.includes(state.showdownResistGenre)
 
     const prevBest = state.showdownBestHit[performerId]
     const bestHit =
@@ -109,8 +122,8 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
 
     set({
       showdownSongsUsed: [...state.showdownSongsUsed, song.id],
-      showdownCurrentDamage: state.showdownCurrentDamage + rawDamage,
       showdownCurrentFandom: state.showdownCurrentFandom + fandom,
+      showdownCurrentGenre: genre,
       showdownFandom: {
         ...state.showdownFandom,
         [performerId]: (state.showdownFandom[performerId] || 0) + fandom,
@@ -122,22 +135,17 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
       },
     })
 
-    return { rolls, rawDamage, multiplier, fandom, hadCrit: critCount > 0 }
+    return { rolls, fandom, hadCrit: critCount > 0, genre, hitWeakness, wasResisted }
   },
 
   finishShowdownPerformance: () => {
     const state = get()
     const performerId = state.showdownOrder[state.showdownPerformerIdx]
-    const multiplier = getShowdownMultiplier(performerId, {
-      resistedPlayerId: state.showdownResistedId,
-      weakenedPlayerId: state.showdownWeakenedId,
-    })
 
     const performance: ShowdownPerformance = {
       playerId: performerId,
-      rawDamage: state.showdownCurrentDamage,
-      multiplier,
       fandom: state.showdownCurrentFandom,
+      genre: state.showdownCurrentGenre,
     }
     const turnPerformances = [...state.showdownTurnPerformances, performance]
 
@@ -147,8 +155,8 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
         showdownTurnPerformances: turnPerformances,
         showdownPerformerIdx: state.showdownPerformerIdx + 1,
         showdownSongsUsed: [],
-        showdownCurrentDamage: 0,
         showdownCurrentFandom: 0,
+        showdownCurrentGenre: null,
       })
       return { kind: 'nextPerformer' }
     }
@@ -164,10 +172,10 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
         showdownTurn: state.showdownTurn + 1,
         showdownPerformerIdx: 0,
         showdownSongsUsed: [],
-        showdownCurrentDamage: 0,
         showdownCurrentFandom: 0,
-        showdownResistedId: adaptation.resistedPlayerId,
-        showdownWeakenedId: adaptation.weakenedPlayerId,
+        showdownCurrentGenre: null,
+        showdownResistGenre: adaptation.resistGenre,
+        showdownWeakGenre: adaptation.weakGenre,
       })
       return { kind: 'bossAdapts', turnEnded: state.showdownTurn }
     }
@@ -178,16 +186,11 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
       players: Player[]
       updatePlayer: (playerId: string, updates: Partial<Player>) => void
     }
-    const fandomByPlayer = { ...state.showdownFandom }
     store.players.forEach((p) => {
-      const fandom = fandomByPlayer[p.id] || 0
-      const bossDamage = history
-        .flat()
-        .filter((perf) => perf.playerId === p.id)
-        .reduce((sum, perf) => sum + perf.rawDamage, 0)
+      const fandom = state.showdownFandom[p.id] || 0
       store.updatePlayer(p.id, {
         fame: p.fame + fandom,
-        totalBossDamage: bossDamage,
+        totalBossDamage: fandom, // fandom == damage dealt to the boss
       })
     })
 
@@ -195,8 +198,8 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
       showdownHistory: history,
       showdownTurnPerformances: [],
       showdownSongsUsed: [],
-      showdownCurrentDamage: 0,
       showdownCurrentFandom: 0,
+      showdownCurrentGenre: null,
       showdownComplete: true,
     })
     return { kind: 'showdownComplete' }

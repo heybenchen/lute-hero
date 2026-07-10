@@ -6,7 +6,8 @@ import { SongCard } from './SongCard'
 import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { DamageBreakdown } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
-import { calculateFameEarned, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
+import { calculateFameEarned, calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
+import { calculateFameMultiplier } from '@/data/startingData'
 import { calculateCoverFameSplit } from '@/game-logic/fame/coverSongFame'
 import { MAX_SONGS_PER_COMBAT } from '@/store/slices/combatSlice'
 import { Genre, Monster, Player, SongUsage } from '@/types'
@@ -69,7 +70,10 @@ export function CombatModal() {
 
   const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
   const totalFameEarned = player && monstersDefeatedCount > 0
-    ? calculateFameEarned(player.monstersDefeated, monstersDefeatedCount)
+    ? calculateFameEarned(
+        player.monstersDefeated,
+        monsters.filter((m: Monster) => m.currentHP <= 0).map((m: Monster) => m.level)
+      )
     : 0
 
   const fameBreakdown = useMemo(() => {
@@ -77,19 +81,26 @@ export function CombatModal() {
       return { playerFame: 0, coverFameByPlayer: new Map<string, { name: string; fame: number }>() }
     }
 
-    const ownKills = killCredits.filter((kc) => !kc.isCover).length
-    const coverKillsByOwner = new Map<string, number>()
+    // Fame per kill scales with the killed monster's level and the tier multiplier
+    const tierMultiplier = calculateFameMultiplier(
+      (player?.monstersDefeated ?? 0) + monstersDefeatedCount
+    )
+    const fameForKill = (monsterId: string) => {
+      const level = monsters.find((m: Monster) => m.id === monsterId)?.level ?? 1
+      return calculateMonsterFameValue(level) * tierMultiplier
+    }
+
+    let playerFame = killCredits
+      .filter((kc) => !kc.isCover)
+      .reduce((sum, kc) => sum + fameForKill(kc.monsterId), 0)
+
+    const coverFameByOwner = new Map<string, number>()
     killCredits.filter((kc) => kc.isCover).forEach((kc) => {
-      coverKillsByOwner.set(kc.songOwnerId, (coverKillsByOwner.get(kc.songOwnerId) || 0) + 1)
+      coverFameByOwner.set(kc.songOwnerId, (coverFameByOwner.get(kc.songOwnerId) || 0) + fameForKill(kc.monsterId))
     })
 
-    const famePerKill = monstersDefeatedCount > 0 ? totalFameEarned / monstersDefeatedCount : 0
-
-    let playerFame = Math.round(ownKills * famePerKill)
     const coverFameByPlayer = new Map<string, { name: string; fame: number }>()
-
-    coverKillsByOwner.forEach((killCount, ownerId) => {
-      const coverFame = Math.round(killCount * famePerKill)
+    coverFameByOwner.forEach((coverFame, ownerId) => {
       const splitShare = calculateCoverFameSplit(coverFame)
       const ownerPlayer = colocatedPlayers.find((p: Player) => p.id === ownerId)
       if (ownerPlayer && splitShare > 0) {
@@ -99,7 +110,7 @@ export function CombatModal() {
     })
 
     return { playerFame, coverFameByPlayer }
-  }, [killCredits, monstersDefeatedCount, totalFameEarned, colocatedPlayers])
+  }, [killCredits, monsters, monstersDefeatedCount, totalFameEarned, player?.monstersDefeated, colocatedPlayers])
 
   if (!isActive || !player) return null
 
@@ -121,11 +132,10 @@ export function CombatModal() {
 
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
   const totalExp = calculateTotalMonsterExp(monsters)
-  // Fame per monster at the player's current tier (player.monstersDefeated only
-  // changes at endCombat, so this stays constant for the whole fight). Fame
-  // scales with total monsters defeated, not individual monster level, so
-  // every monster in a fight is worth the same amount.
-  const fameValuePerMonster = calculateFameEarned(player.monstersDefeated, 1)
+  // Fame tier at the player's current standing (player.monstersDefeated only
+  // changes at endCombat, so this stays constant for the whole fight). Each
+  // monster's fame value scales with its level times this multiplier.
+  const fameTierMultiplier = calculateFameMultiplier(player.monstersDefeated + 1)
   const isCombatOver = allMonstersDefeated || !canContinue
 
   const handlePlaySong = (songId: string, ownerId: string) => {
@@ -259,7 +269,12 @@ export function CombatModal() {
             />
             <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
               {monsters.map((monster: Monster, idx: number) => (
-                <MonsterCard key={monster.id} monster={monster} index={idx} fameValue={fameValuePerMonster} />
+                <MonsterCard
+                  key={monster.id}
+                  monster={monster}
+                  index={idx}
+                  fameValue={calculateMonsterFameValue(monster.level) * fameTierMultiplier}
+                />
               ))}
             </div>
           </div>

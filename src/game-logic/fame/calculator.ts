@@ -1,17 +1,32 @@
 import { Player, Monster, GamePhase } from '@/types'
 import { calculateFameMultiplier, FAME_THRESHOLDS } from '@/data/startingData'
 
+/** Base fame per monster level: Lv1=5, Lv2=10, Lv3=15, Lv4=20 (before the tier multiplier). */
+export const MONSTER_FAME_PER_LEVEL = 5
+
 /**
- * Calculate fame earned from defeating monsters
+ * Base fame a monster is worth by level (a smooth linear curve),
+ * before the player's fame-tier multiplier.
+ */
+export function calculateMonsterFameValue(level: number): number {
+  return level * MONSTER_FAME_PER_LEVEL
+}
+
+/**
+ * Calculate fame earned from defeating monsters. Fame scales with each
+ * monster's level and with the player's fame tier (total monsters defeated).
  */
 export function calculateFameEarned(
   currentMonstersDefeated: number,
-  newMonstersDefeated: number
+  defeatedMonsterLevels: number[]
 ): number {
-  const totalDefeated = currentMonstersDefeated + newMonstersDefeated
+  const totalDefeated = currentMonstersDefeated + defeatedMonsterLevels.length
   const multiplier = calculateFameMultiplier(totalDefeated)
 
-  return newMonstersDefeated * multiplier * 10
+  return defeatedMonsterLevels.reduce(
+    (sum, level) => sum + calculateMonsterFameValue(level) * multiplier,
+    0
+  )
 }
 
 /**

@@ -1,22 +1,23 @@
-import { Player } from '@/types'
+import { Genre, Player } from '@/types'
 import { ShowdownPerformance } from '@/game-logic/showdown/showdown'
+import { GENRE_THEME } from '@/data/genreTheme'
 
 interface AdaptBannerProps {
   turnEnded: number
   performances: ShowdownPerformance[]
   players: Player[]
-  resistedPlayer: Player | null
-  weakenedPlayer: Player | null
+  resistGenre: Genre | null
+  weakGenre: Genre | null
   onContinue: () => void
 }
 
-/** Between-turn interlude: recap of the verse, then the boss's adaptation. */
+/** Between-turn interlude: recap of the verse, then the boss's elemental adaptation. */
 export function AdaptBanner({
   turnEnded,
   performances,
   players,
-  resistedPlayer,
-  weakenedPlayer,
+  resistGenre,
+  weakGenre,
   onContinue,
 }: AdaptBannerProps) {
   const byId = new Map(players.map((p) => [p.id, p]))
@@ -44,6 +45,7 @@ export function AdaptBanner({
             const player = byId.get(perf.playerId)
             if (!player) return null
             const topFandom = ranked[0].fandom || 1
+            const theme = perf.genre ? GENRE_THEME[perf.genre] : null
             return (
               <div
                 key={perf.playerId}
@@ -54,13 +56,17 @@ export function AdaptBanner({
                   {player.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="flex justify-between items-baseline mb-0.5">
-                    <span className="text-sm font-bold text-parchment-200 truncate">{player.name}</span>
-                    <span className="text-sm font-bold text-gold-400 tabular-nums">
-                      +{perf.fandom} fandom
-                      {perf.multiplier !== 1 && (
-                        <span className="text-xs text-parchment-500 ml-1">(×{perf.multiplier})</span>
+                  <div className="flex justify-between items-baseline mb-0.5 gap-2">
+                    <span className="text-sm font-bold text-parchment-200 truncate">
+                      {player.name}
+                      {theme && (
+                        <span className="ml-1.5 text-xs font-normal" style={{ color: theme.color }}>
+                          {theme.emoji} {perf.genre}
+                        </span>
                       )}
+                    </span>
+                    <span className="text-sm font-bold text-gold-400 tabular-nums flex-shrink-0">
+                      +{perf.fandom} fandom
                     </span>
                   </div>
                   <div className="hp-bar h-1.5">
@@ -82,9 +88,9 @@ export function AdaptBanner({
         {/* Adaptation announcement */}
         <div className="divider-ornate" />
         <div className="mt-5 mb-7 space-y-3">
-          {resistedPlayer || weakenedPlayer ? (
+          {resistGenre || weakGenre ? (
             <>
-              {resistedPlayer && (
+              {resistGenre && (
                 <div
                   className="animate-slide-up rounded-lg px-4 py-3 max-w-md mx-auto"
                   style={{
@@ -95,12 +101,15 @@ export function AdaptBanner({
                   }}
                 >
                   <span className="text-sm text-parchment-300">
-                    🛡 It hardens against <span className="font-bold" style={{ color: resistedPlayer.color }}>{resistedPlayer.name}</span>'s
-                    mighty sound — their fandom is <span className="font-bold text-red-300">halved</span> next verse.
+                    🛡 It hardens against the mightiest sound —{' '}
+                    <span className="font-bold" style={{ color: GENRE_THEME[resistGenre].color }}>
+                      {GENRE_THEME[resistGenre].emoji} {resistGenre}
+                    </span>{' '}
+                    dice deal <span className="font-bold text-red-300">no damage</span> next verse.
                   </span>
                 </div>
               )}
-              {weakenedPlayer && (
+              {weakGenre && (
                 <div
                   className="animate-slide-up rounded-lg px-4 py-3 max-w-md mx-auto"
                   style={{
@@ -111,15 +120,18 @@ export function AdaptBanner({
                   }}
                 >
                   <span className="text-sm text-parchment-300">
-                    💥 But a crack opens for <span className="font-bold" style={{ color: weakenedPlayer.color }}>{weakenedPlayer.name}</span> —
-                    their fandom is <span className="font-bold text-green-300">doubled</span> next verse!
+                    💥 But the faintest note opens a crack —{' '}
+                    <span className="font-bold" style={{ color: GENRE_THEME[weakGenre].color }}>
+                      {GENRE_THEME[weakGenre].emoji} {weakGenre}
+                    </span>{' '}
+                    dice deal <span className="font-bold text-green-300">double damage</span> next verse!
                   </span>
                 </div>
               )}
             </>
           ) : (
             <div className="text-sm text-parchment-400 italic animate-slide-up" style={{ animationDelay: '600ms', animationFillMode: 'both' }}>
-              The performances were too evenly matched — the Silence cannot adapt.
+              The performances rang too alike — the Silence cannot adapt.
             </div>
           )}
         </div>

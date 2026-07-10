@@ -1,34 +1,35 @@
-import { Monster, Song } from '@/types'
+import { Genre, Monster, Song, DiceRoll } from '@/types'
 import { getFinalBoss } from '@/data/monsters'
 
 /** The Final Showdown always lasts exactly this many turns. */
 export const SHOWDOWN_TURNS = 3
 
-/** Fandom multiplier when the boss has built resistance to a player. */
-export const SHOWDOWN_RESIST_MULTIPLIER = 0.5
-
-/** Fandom multiplier when the boss has an exposed weakness to a player. */
-export const SHOWDOWN_WEAKNESS_MULTIPLIER = 2
-
-/** One player's complete performance for a single showdown turn. */
+/** One player's performance (a single song) for a single showdown turn. */
 export interface ShowdownPerformance {
   playerId: string
-  /** Raw damage rolled before the boss's resistance/weakness multiplier. */
-  rawDamage: number
-  /** Multiplier applied to this player's damage this turn (0.5 / 1 / 2). */
-  multiplier: number
-  /** Effective damage dealt = fandom earned (rawDamage × multiplier, floored). */
+  /** Effective damage dealt = fandom earned (genre multipliers already applied). */
   fandom: number
+  /** Dominant element of the song played — drives the boss's adaptation. */
+  genre: Genre | null
 }
 
-/** How the boss adapts between turns: who it resists, whose attacks it's weak to. */
+/**
+ * How the boss adapts between turns. Works exactly like monster
+ * strengths/weaknesses: the resisted element deals 0× damage (immune),
+ * the weak element deals 2× damage.
+ */
 export interface BossAdaptation {
-  resistedPlayerId: string | null
-  weakenedPlayerId: string | null
+  resistGenre: Genre | null
+  weakGenre: Genre | null
 }
 
-/** Build the showdown boss from the final-boss template. */
-export function createShowdownBoss(): Monster {
+export const NO_ADAPTATION: BossAdaptation = { resistGenre: null, weakGenre: null }
+
+/**
+ * Build the showdown boss with its current elemental adaptation. Genre
+ * multipliers are then applied by the normal monster damage pipeline.
+ */
+export function createShowdownBoss(adaptation: BossAdaptation = NO_ADAPTATION): Monster {
   const template = getFinalBoss()
   return {
     id: 'showdown-boss',
@@ -36,58 +37,64 @@ export function createShowdownBoss(): Monster {
     name: template.name,
     currentHP: template.baseHP,
     maxHP: template.baseHP,
-    vulnerability: null,
-    resistance: null,
+    vulnerability: adaptation.weakGenre,
+    resistance: adaptation.resistGenre,
     isBoss: true,
     level: 5,
   }
 }
 
 /**
- * Fandom multiplier for a player given the boss's current adaptation.
- * Resistance halves fandom earned; an exposed weakness doubles it.
+ * The dominant element of a performance: the genre whose dice contributed
+ * the most raw roll value (crit cascades included). Ties go to the genre
+ * appearing first in slot order.
  */
-export function getShowdownMultiplier(
-  playerId: string,
-  adaptation: BossAdaptation
-): number {
-  if (adaptation.resistedPlayerId === playerId) return SHOWDOWN_RESIST_MULTIPLIER
-  if (adaptation.weakenedPlayerId === playerId) return SHOWDOWN_WEAKNESS_MULTIPLIER
-  return 1
+export function getDominantGenre(song: Song, rolls: DiceRoll[]): Genre | null {
+  const totals = new Map<Genre, number>()
+  const order: Genre[] = []
+
+  song.slots.forEach((slot) => {
+    if (!slot.dice) return
+    const genre = slot.dice.genre
+    if (!order.includes(genre)) order.push(genre)
+    const contribution = rolls
+      .filter((r) => r.diceId === slot.dice!.id)
+      .reduce((sum, r) => sum + r.value + r.critBonus, 0)
+    totals.set(genre, (totals.get(genre) || 0) + contribution)
+  })
+
+  let dominant: Genre | null = null
+  let best = -1
+  for (const genre of order) {
+    const total = totals.get(genre) || 0
+    if (total > best) {
+      best = total
+      dominant = genre
+    }
+  }
+  return dominant
 }
 
 /**
- * After a turn, the boss builds resistance to the most powerful attack among
- * all players and a weakness to the weakest. Power is measured by effective
- * damage dealt (fandom) that turn. If the strongest and weakest attacker are
- * the same player (e.g. a solo showdown), the boss cannot adapt.
- * Ties go to whoever performed earlier in the turn.
+ * After a turn, the boss builds resistance to the element of the most
+ * powerful attack among all players and a weakness to the element of the
+ * weakest. If both point at the same element (or there are fewer than two
+ * performances), the boss cannot adapt. Ties go to earlier performers.
  */
 export function computeBossAdaptation(performances: ShowdownPerformance[]): BossAdaptation {
-  if (performances.length < 2) {
-    return { resistedPlayerId: null, weakenedPlayerId: null }
-  }
+  const withGenre = performances.filter((p) => p.genre !== null)
+  if (withGenre.length < 2) return NO_ADAPTATION
 
-  let strongest = performances[0]
-  let weakest = performances[0]
-  for (const perf of performances) {
+  let strongest = withGenre[0]
+  let weakest = withGenre[0]
+  for (const perf of withGenre) {
     if (perf.fandom > strongest.fandom) strongest = perf
     if (perf.fandom < weakest.fandom) weakest = perf
   }
 
-  if (strongest.playerId === weakest.playerId) {
-    return { resistedPlayerId: null, weakenedPlayerId: null }
-  }
+  if (strongest.genre === weakest.genre) return NO_ADAPTATION
 
-  return {
-    resistedPlayerId: strongest.playerId,
-    weakenedPlayerId: weakest.playerId,
-  }
-}
-
-/** Fandom earned from a song's raw damage under the current multiplier. */
-export function calculateShowdownFandom(rawDamage: number, multiplier: number): number {
-  return Math.floor(rawDamage * multiplier)
+  return { resistGenre: strongest.genre, weakGenre: weakest.genre }
 }
 
 /** Songs a player can actually perform (at least one die slotted). */

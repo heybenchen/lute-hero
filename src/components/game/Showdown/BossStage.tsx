@@ -1,10 +1,11 @@
-import { Player } from '@/types'
+import { Genre, Player } from '@/types'
 import { SHOWDOWN_TURNS } from '@/game-logic/showdown/showdown'
+import { GENRE_THEME } from '@/data/genreTheme'
 
 interface BossStageProps {
   turn: number
-  resistedPlayer: Player | null
-  weakenedPlayer: Player | null
+  resistGenre: Genre | null
+  weakGenre: Genre | null
   fandom: Record<string, number>
   players: Player[]
   /** Ramps the boss's visual instability as its defeat approaches */
@@ -12,7 +13,7 @@ interface BossStageProps {
 }
 
 /** The Eternal Silence — a void orb that grows more unstable each turn. */
-export function BossStage({ turn, resistedPlayer, weakenedPlayer, fandom, players, defeated }: BossStageProps) {
+export function BossStage({ turn, resistGenre, weakGenre, fandom, players, defeated }: BossStageProps) {
   const totalFandom = players.reduce((sum, p) => sum + (fandom[p.id] || 0), 0)
 
   return (
@@ -89,10 +90,10 @@ export function BossStage({ turn, resistedPlayer, weakenedPlayer, fandom, player
         The antithesis of all music — outlast it, and let the crowd decide who shone brightest.
       </div>
 
-      {/* Adaptation badges */}
-      {(resistedPlayer || weakenedPlayer) && (
+      {/* Elemental adaptation badges — same mechanics as monster strengths/weaknesses */}
+      {(resistGenre || weakGenre) && (
         <div className="flex flex-wrap justify-center gap-2 mb-4 animate-slide-up">
-          {resistedPlayer && (
+          {resistGenre && (
             <span
               className="text-xs font-medieval font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5"
               style={{
@@ -100,11 +101,12 @@ export function BossStage({ turn, resistedPlayer, weakenedPlayer, fandom, player
                 border: '1px solid rgba(232, 32, 64, 0.4)',
                 color: '#ff9d9d',
               }}
+              title={`${resistGenre} dice deal no damage this verse`}
             >
-              🛡 Hardened against {resistedPlayer.name} — ×½ fandom
+              🛡 0× {GENRE_THEME[resistGenre].emoji} <span style={{ color: GENRE_THEME[resistGenre].color }}>{resistGenre}</span> — immune
             </span>
           )}
-          {weakenedPlayer && (
+          {weakGenre && (
             <span
               className="text-xs font-medieval font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5"
               style={{
@@ -112,8 +114,9 @@ export function BossStage({ turn, resistedPlayer, weakenedPlayer, fandom, player
                 border: '1px solid rgba(76, 175, 80, 0.45)',
                 color: '#a7f3ad',
               }}
+              title={`${weakGenre} dice deal double damage this verse`}
             >
-              💥 Cracks before {weakenedPlayer.name} — ×2 fandom
+              💥 2× {GENRE_THEME[weakGenre].emoji} <span style={{ color: GENRE_THEME[weakGenre].color }}>{weakGenre}</span> — exposed
             </span>
           )}
         </div>
