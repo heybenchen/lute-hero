@@ -6,10 +6,12 @@ import { useGameStore, clearSavedGame } from '@/store'
 
 export function GameView() {
   const resetGame = useGameStore((state) => state.resetGame)
+  const resetShowdown = useGameStore((state) => state.resetShowdown)
   const [showMenu, setShowMenu] = useState(false)
 
   const handleNewGame = () => {
     clearSavedGame()
+    resetShowdown()
     resetGame()
   }
 

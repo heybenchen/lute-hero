@@ -54,7 +54,7 @@ export function Setup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 relative">
+    <div className="min-h-screen flex items-center justify-center p-3 sm:p-8 relative">
       {/* Atmospheric background */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -66,7 +66,7 @@ export function Setup() {
         }}
       />
 
-      <div className="card-ornate max-w-2xl w-full relative z-10 p-8">
+      <div className="card-ornate max-w-2xl w-full relative z-10 p-4 sm:p-8">
         {/* Title */}
         <div className="text-center mb-8">
           <h1 className="font-display text-5xl text-gold-400 mb-3">
@@ -87,7 +87,7 @@ export function Setup() {
               <button
                 key={count}
                 onClick={() => setPlayerCount(count)}
-                className="px-6 py-2.5 rounded-lg font-medieval font-bold text-sm transition-all duration-200"
+                className="flex-1 sm:flex-none px-3 sm:px-6 py-2.5 rounded-lg font-medieval font-bold text-sm whitespace-nowrap transition-all duration-200"
                 style={{
                   background: playerCount === count
                     ? 'linear-gradient(135deg, #6d5638, #5a4529)'
@@ -126,7 +126,7 @@ export function Setup() {
                     newNames[idx] = e.target.value
                     setPlayerNames(newNames)
                   }}
-                  className="flex-1 px-4 py-2 rounded-lg text-white font-game placeholder:text-parchment-500"
+                  className="flex-1 min-w-0 px-3 sm:px-4 py-2 rounded-lg text-white font-game placeholder:text-parchment-500"
                   style={{
                     background: 'rgba(42, 33, 24, 0.9)',
                     border: '1px solid rgba(212, 168, 83, 0.2)',
@@ -141,7 +141,7 @@ export function Setup() {
                     newGenres[idx] = e.target.value as Genre
                     setSelectedGenres(newGenres)
                   }}
-                  className="px-4 py-2 rounded-lg text-white font-game"
+                  className="flex-shrink-0 px-2 sm:px-4 py-2 rounded-lg text-white font-game"
                   style={{
                     background: 'rgba(42, 33, 24, 0.9)',
                     border: '1px solid rgba(212, 168, 83, 0.2)',
@@ -212,7 +212,7 @@ export function Setup() {
             <li>Genre tags spawn monsters when you enter</li>
             <li>Play songs to deal damage (AOE to all monsters)</li>
             <li>Defeat monsters to gain Fame and EXP</li>
-            <li>Vulnerable genres deal 2x damage, resistant 0.5x</li>
+            <li>Vulnerable genres deal 2x damage, resistant 0x (immune)</li>
             <li>Rolling max value = Critical Hit (double damage!)</li>
           </ul>
         </div>

@@ -252,4 +252,168 @@
     border: 2px solid rgba(255, 255, 255, 0.2);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
+
+  /* =============================================
+     FINAL SHOWDOWN
+     ============================================= */
+
+  /* Boss void aura slowly swelling */
+  .animate-boss-aura {
+    animation: bossAura 4s ease-in-out infinite;
+  }
+
+  @keyframes bossAura {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.08); }
+  }
+
+  /* The muted note trapped inside the orb */
+  .animate-boss-breathe {
+    animation: bossBreathe 3.2s ease-in-out infinite;
+  }
+
+  @keyframes bossBreathe {
+    0%, 100% { transform: scale(1) rotate(-3deg); }
+    50% { transform: scale(1.12) rotate(3deg); }
+  }
+
+  /* Rotating rune ring around the boss */
+  .animate-rune-spin {
+    animation: runeSpin 22s linear infinite;
+  }
+
+  @keyframes runeSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Final-verse instability shake */
+  .animate-boss-unstable {
+    animation: bossUnstable 0.5s ease-in-out infinite;
+  }
+
+  @keyframes bossUnstable {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-2px, 1px); }
+    50% { transform: translate(2px, -1px); }
+    75% { transform: translate(-1px, -2px); }
+  }
+
+  /* The Silence shattering at the finale */
+  .animate-boss-shatter {
+    animation: bossShatter 2.4s cubic-bezier(0.55, 0, 0.68, 0.19) forwards;
+  }
+
+  @keyframes bossShatter {
+    0% { transform: scale(1); opacity: 1; filter: blur(0); }
+    35% { transform: scale(1.15) rotate(4deg); opacity: 1; filter: blur(0); }
+    55% { transform: scale(0.9) rotate(-6deg); opacity: 1; filter: blur(1px); }
+    100% { transform: scale(2.4) rotate(10deg); opacity: 0; filter: blur(14px); }
+  }
+
+  /* Expanding shockwave rings at the finale */
+  .animate-shockwave {
+    animation: shockwave 1.6s ease-out infinite;
+  }
+
+  @keyframes shockwave {
+    0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(9); opacity: 0; }
+  }
+
+  /* +N Fandom popup: pop in, drift up, fade */
+  .animate-fandom-pop {
+    animation: fandomPop 1.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes fandomPop {
+    0% { transform: translate(-50%, 30px) scale(0.4); opacity: 0; }
+    12% { transform: translate(-50%, 0) scale(1.15); opacity: 1; }
+    22% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+    75% { transform: translate(-50%, -60px) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -95px) scale(0.9); opacity: 0; }
+  }
+
+  /* Winner spotlights: sweep the stage, then lock on center */
+  .animate-spotlight-sweep-l {
+    animation: spotlightSweepL 0.9s ease-in-out forwards;
+  }
+
+  .animate-spotlight-sweep-r {
+    animation: spotlightSweepR 0.9s ease-in-out forwards;
+  }
+
+  .animate-spotlight-lock-l {
+    animation: spotlightLockL 5s ease-in-out infinite;
+  }
+
+  .animate-spotlight-lock-r {
+    animation: spotlightLockR 5s ease-in-out infinite;
+  }
+
+  @keyframes spotlightSweepL {
+    0% { transform: rotate(-38deg); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: rotate(-6deg); opacity: 1; }
+  }
+
+  @keyframes spotlightSweepR {
+    0% { transform: rotate(38deg); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: rotate(6deg); opacity: 1; }
+  }
+
+  @keyframes spotlightLockL {
+    0%, 100% { transform: rotate(-6deg); }
+    50% { transform: rotate(-10deg); }
+  }
+
+  @keyframes spotlightLockR {
+    0%, 100% { transform: rotate(6deg); }
+    50% { transform: rotate(10deg); }
+  }
+
+  /* Music-note confetti raining over the winner */
+  .animate-note-fall {
+    animation-name: noteFall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes noteFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    8% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { transform: translateY(110vh) rotate(340deg); opacity: 0; }
+  }
+
+  /* Winner avatar pulse */
+  .animate-winner-glow {
+    animation: winnerGlow 2.2s ease-in-out infinite;
+  }
+
+  @keyframes winnerGlow {
+    0%, 100% { box-shadow: 0 0 25px rgba(240, 215, 140, 0.45), 0 0 60px rgba(240, 215, 140, 0.15); }
+    50% { box-shadow: 0 0 45px rgba(240, 215, 140, 0.75), 0 0 100px rgba(240, 215, 140, 0.3); }
+  }
+
+  /* Expanding halo ring behind the winner */
+  .animate-winner-ring {
+    animation: winnerRing 2.2s ease-out infinite;
+  }
+
+  @keyframes winnerRing {
+    0% { transform: scale(0.85); opacity: 0.9; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  /* Crown bobbing above the champion */
+  .animate-crown-bob {
+    animation: crownBob 2s ease-in-out infinite;
+  }
+
+  @keyframes crownBob {
+    0%, 100% { transform: translate(-50%, 0) rotate(-4deg); }
+    50% { transform: translate(-50%, -6px) rotate(4deg); }
+  }
 }

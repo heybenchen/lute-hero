@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   calculateFameEarned,
+  calculateMonsterFameValue,
   calculateFailureBonus,
   calculateCollectiveFame,
   calculateTotalMonstersDefeated,
@@ -31,26 +32,39 @@ describe('Fame Calculator', () => {
     ...overrides,
   })
 
+  describe('calculateMonsterFameValue', () => {
+    it('ramps steeply by level since songs hit all monsters at once', () => {
+      expect(calculateMonsterFameValue(1)).toBe(10)
+      expect(calculateMonsterFameValue(2)).toBe(30)
+      expect(calculateMonsterFameValue(3)).toBe(70)
+      expect(calculateMonsterFameValue(4)).toBe(150)
+      expect(calculateMonsterFameValue(5)).toBe(250)
+    })
+
+    it('clamps levels past 5 to the top value (like the HP cap)', () => {
+      expect(calculateMonsterFameValue(6)).toBe(250)
+      expect(calculateMonsterFameValue(9)).toBe(250)
+    })
+
+    it('treats out-of-range low levels as level 1', () => {
+      expect(calculateMonsterFameValue(0)).toBe(10)
+    })
+  })
+
   describe('calculateFameEarned', () => {
-    it('should calculate fame with 1x multiplier for 1-3 monsters', () => {
-      expect(calculateFameEarned(0, 1)).toBe(10) // 0 + 1 = 1 total, 1x multiplier * 10
-      expect(calculateFameEarned(1, 1)).toBe(10) // 1 + 1 = 2 total, 1x multiplier * 10
-      expect(calculateFameEarned(2, 1)).toBe(10) // 2 + 1 = 3 total, 1x multiplier * 10
+    it('awards each monster its level-based fame value', () => {
+      expect(calculateFameEarned([1])).toBe(10)
+      expect(calculateFameEarned([2])).toBe(30)
+      expect(calculateFameEarned([4])).toBe(150)
     })
 
-    it('should calculate fame with 2x multiplier for 4-6 monsters', () => {
-      expect(calculateFameEarned(3, 1)).toBe(20) // 3 + 1 = 4 total, 2x multiplier * 10
-      expect(calculateFameEarned(4, 2)).toBe(40) // 4 + 2 = 6 total, 2x multiplier * 10
+    it('sums fame across all defeated monsters', () => {
+      expect(calculateFameEarned([1, 2, 3])).toBe(110) // 10 + 30 + 70
+      expect(calculateFameEarned([2, 4])).toBe(180) // 30 + 150
     })
 
-    it('should calculate fame with 3x multiplier for 7-9 monsters', () => {
-      expect(calculateFameEarned(6, 1)).toBe(30) // 6 + 1 = 7 total, 3x multiplier * 10
-      expect(calculateFameEarned(8, 1)).toBe(30) // 8 + 1 = 9 total, 3x multiplier * 10
-    })
-
-    it('should calculate fame with 4x multiplier for 10+ monsters', () => {
-      expect(calculateFameEarned(9, 1)).toBe(40) // 9 + 1 = 10 total, 4x multiplier * 10
-      expect(calculateFameEarned(15, 2)).toBe(80) // 15 + 2 = 17 total, 4x multiplier * 10
+    it('returns 0 when nothing was defeated', () => {
+      expect(calculateFameEarned([])).toBe(0)
     })
   })
 

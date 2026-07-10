@@ -5,15 +5,16 @@ import { createBoardSlice, BoardSlice } from './slices/boardSlice'
 import { createPlayersSlice, PlayersSlice } from './slices/playersSlice'
 import { createCombatSlice, CombatSlice } from './slices/combatSlice'
 import { createShopSlice, ShopSlice } from './slices/shopSlice'
+import { createShowdownSlice, ShowdownSlice } from './slices/showdownSlice'
 
 // Combined store type
-export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice & ShopSlice
+export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice & ShopSlice & ShowdownSlice
 
 const STORAGE_KEY = 'lute-hero-save'
 const STORAGE_VERSION = 8
 
 // Only persist the durable game state — skip transient combat mid-fight data
-const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers' | 'pendingRewards'>> = {
+const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers' | 'pendingRewards' | 'showdownActive' | 'showdownComplete' | 'showdownTurn' | 'showdownOrder' | 'showdownPerformerIdx' | 'showdownResistGenre' | 'showdownWeakGenre' | 'showdownSongsUsed' | 'showdownTurnPerformances' | 'showdownHistory' | 'showdownCurrentFandom' | 'showdownCurrentGenre' | 'showdownFandom' | 'showdownBestHit' | 'showdownCrits'>> = {
   name: STORAGE_KEY,
   version: STORAGE_VERSION,
   partialize: (state) => ({
@@ -28,6 +29,21 @@ const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'curre
     elementDiscard: state.elementDiscard,
     elementOffers: state.elementOffers,
     pendingRewards: state.pendingRewards,
+    showdownActive: state.showdownActive,
+    showdownComplete: state.showdownComplete,
+    showdownTurn: state.showdownTurn,
+    showdownOrder: state.showdownOrder,
+    showdownPerformerIdx: state.showdownPerformerIdx,
+    showdownResistGenre: state.showdownResistGenre,
+    showdownWeakGenre: state.showdownWeakGenre,
+    showdownSongsUsed: state.showdownSongsUsed,
+    showdownTurnPerformances: state.showdownTurnPerformances,
+    showdownHistory: state.showdownHistory,
+    showdownCurrentFandom: state.showdownCurrentFandom,
+    showdownCurrentGenre: state.showdownCurrentGenre,
+    showdownFandom: state.showdownFandom,
+    showdownBestHit: state.showdownBestHit,
+    showdownCrits: state.showdownCrits,
   }),
   // Only hydrate if saved game is in a non-setup phase (i.e. a real game was in progress)
   merge: (persisted, current) => {
@@ -49,6 +65,7 @@ export const useGameStore = create<GameStore>()(
         ...createPlayersSlice(...args),
         ...createCombatSlice(...args),
         ...createShopSlice(...args),
+        ...createShowdownSlice(...args),
       }),
       persistOptions,
     ),

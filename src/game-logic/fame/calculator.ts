@@ -1,17 +1,29 @@
 import { Player, Monster, GamePhase } from '@/types'
-import { calculateFameMultiplier, FAME_THRESHOLDS } from '@/data/startingData'
+import { FAME_THRESHOLDS } from '@/data/startingData'
 
 /**
- * Calculate fame earned from defeating monsters
+ * Fame per monster level. Since songs hit all monsters at once (AOE),
+ * high-level monsters ramp up steeply to make the tough fights the real
+ * fame payoffs. Levels past 5 clamp to the top value, matching the HP
+ * multiplier cap.
  */
-export function calculateFameEarned(
-  currentMonstersDefeated: number,
-  newMonstersDefeated: number
-): number {
-  const totalDefeated = currentMonstersDefeated + newMonstersDefeated
-  const multiplier = calculateFameMultiplier(totalDefeated)
+export const MONSTER_FAME_BY_LEVEL = [10, 30, 70, 150, 250]
 
-  return newMonstersDefeated * multiplier * 10
+/** Fame a monster is worth by level. */
+export function calculateMonsterFameValue(level: number): number {
+  const capped = Math.min(Math.max(level, 1), MONSTER_FAME_BY_LEVEL.length)
+  return MONSTER_FAME_BY_LEVEL[capped - 1]
+}
+
+/**
+ * Calculate fame earned from defeating monsters — the sum of each
+ * defeated monster's level-based fame value.
+ */
+export function calculateFameEarned(defeatedMonsterLevels: number[]): number {
+  return defeatedMonsterLevels.reduce(
+    (sum, level) => sum + calculateMonsterFameValue(level),
+    0
+  )
 }
 
 /**
