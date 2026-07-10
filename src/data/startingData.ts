@@ -61,11 +61,3 @@ export const DICE_UPGRADE_PATH: { [key in DiceType]: DiceType | null } = {
 export const FAME_THRESHOLDS = {
   finalBoss: 100, // Per-player fame needed (collective = value × numPlayers)
 };
-
-// Fame multipliers based on total monsters defeated
-export function calculateFameMultiplier(monstersDefeated: number): number {
-  if (monstersDefeated >= 10) return 4;
-  if (monstersDefeated >= 7) return 3;
-  if (monstersDefeated >= 4) return 2;
-  return 1;
-}

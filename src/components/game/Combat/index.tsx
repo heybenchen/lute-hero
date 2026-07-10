@@ -7,7 +7,6 @@ import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { DamageBreakdown } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateFameEarned, calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
-import { calculateFameMultiplier } from '@/data/startingData'
 import { calculateCoverFameSplit } from '@/game-logic/fame/coverSongFame'
 import { MAX_SONGS_PER_COMBAT } from '@/store/slices/combatSlice'
 import { Genre, Monster, Player, SongUsage } from '@/types'
@@ -71,7 +70,6 @@ export function CombatModal() {
   const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
   const totalFameEarned = player && monstersDefeatedCount > 0
     ? calculateFameEarned(
-        player.monstersDefeated,
         monsters.filter((m: Monster) => m.currentHP <= 0).map((m: Monster) => m.level)
       )
     : 0
@@ -81,13 +79,10 @@ export function CombatModal() {
       return { playerFame: 0, coverFameByPlayer: new Map<string, { name: string; fame: number }>() }
     }
 
-    // Fame per kill scales with the killed monster's level and the tier multiplier
-    const tierMultiplier = calculateFameMultiplier(
-      (player?.monstersDefeated ?? 0) + monstersDefeatedCount
-    )
+    // Fame per kill scales with the killed monster's level
     const fameForKill = (monsterId: string) => {
       const level = monsters.find((m: Monster) => m.id === monsterId)?.level ?? 1
-      return calculateMonsterFameValue(level) * tierMultiplier
+      return calculateMonsterFameValue(level)
     }
 
     let playerFame = killCredits
@@ -110,7 +105,7 @@ export function CombatModal() {
     })
 
     return { playerFame, coverFameByPlayer }
-  }, [killCredits, monsters, monstersDefeatedCount, totalFameEarned, player?.monstersDefeated, colocatedPlayers])
+  }, [killCredits, monsters, monstersDefeatedCount, totalFameEarned, colocatedPlayers])
 
   if (!isActive || !player) return null
 
@@ -132,10 +127,6 @@ export function CombatModal() {
 
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
   const totalExp = calculateTotalMonsterExp(monsters)
-  // Fame tier at the player's current standing (player.monstersDefeated only
-  // changes at endCombat, so this stays constant for the whole fight). Each
-  // monster's fame value scales with its level times this multiplier.
-  const fameTierMultiplier = calculateFameMultiplier(player.monstersDefeated + 1)
   const isCombatOver = allMonstersDefeated || !canContinue
 
   const handlePlaySong = (songId: string, ownerId: string) => {
@@ -273,7 +264,7 @@ export function CombatModal() {
                   key={monster.id}
                   monster={monster}
                   index={idx}
-                  fameValue={calculateMonsterFameValue(monster.level) * fameTierMultiplier}
+                  fameValue={calculateMonsterFameValue(monster.level)}
                 />
               ))}
             </div>
