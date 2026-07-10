@@ -1,15 +1,18 @@
 import { Player, Monster, GamePhase } from '@/types'
 import { calculateFameMultiplier, FAME_THRESHOLDS } from '@/data/startingData'
 
-/** Base fame per monster level: Lv1=5, Lv2=10, Lv3=15, Lv4=20 (before the tier multiplier). */
-export const MONSTER_FAME_PER_LEVEL = 5
-
 /**
- * Base fame a monster is worth by level (a smooth linear curve),
- * before the player's fame-tier multiplier.
+ * Base fame per monster level, before the fame-tier multiplier. Since songs
+ * hit all monsters at once (AOE), high-level monsters ramp up steeply to
+ * make the tough fights the real fame payoffs. Levels past 5 clamp to the
+ * top value, matching the HP multiplier cap.
  */
+export const MONSTER_FAME_BY_LEVEL = [10, 30, 70, 150, 250]
+
+/** Base fame a monster is worth by level, before the player's fame-tier multiplier. */
 export function calculateMonsterFameValue(level: number): number {
-  return level * MONSTER_FAME_PER_LEVEL
+  const capped = Math.min(Math.max(level, 1), MONSTER_FAME_BY_LEVEL.length)
+  return MONSTER_FAME_BY_LEVEL[capped - 1]
 }
 
 /**
