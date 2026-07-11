@@ -124,9 +124,6 @@ export function PlayerPanel() {
 
         {/* Songs — right above the Moves/Fights trackers */}
         <div className="mb-3">
-          <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-1.5">
-            Songs
-          </div>
           <div className="flex flex-wrap justify-between gap-2">
             {currentPlayer.songs.map((song) => (
               <div
