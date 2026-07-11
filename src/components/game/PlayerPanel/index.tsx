@@ -79,7 +79,43 @@ export function PlayerPanel() {
         )}
       </div>
 
-      <div className="divider-ornate mt-1" />
+      {/* All players */}
+      <div className="grid grid-cols-2 gap-2">
+        {players.map((player) => {
+          const isCurrentTurn = player.id === currentPlayer.id
+          return (
+            <div
+              key={player.id}
+              className="p-2 rounded-lg transition-all duration-150"
+              style={{
+                background: isCurrentTurn
+                  ? 'rgba(100, 220, 100, 0.08)'
+                  : 'rgba(61, 48, 32, 0.3)',
+                border: isCurrentTurn
+                  ? '1px solid rgba(100, 220, 100, 0.25)'
+                  : '1px solid rgba(212, 168, 83, 0.08)',
+              }}
+            >
+              <div className="flex items-center gap-1.5">
+                <div
+                  className="player-avatar w-5 h-5 text-[9px] flex-shrink-0"
+                  style={{ backgroundColor: player.color }}
+                >
+                  {player.name.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0 truncate font-bold text-[10px] text-parchment-200">{player.name}</div>
+              </div>
+              <div className="text-[10px] text-parchment-400 flex gap-2 mt-0.5">
+                <span>Fame:<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
+                <span>EXP:<span className="text-parchment-200 font-bold ml-0.5">{player.exp}</span></span>
+                <span>&#x2728;<span className="font-bold ml-0.5" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="divider-ornate mt-5" />
 
       {/* Current player */}
       <div>
@@ -214,46 +250,6 @@ export function PlayerPanel() {
           )}
         </div>
 
-      </div>
-
-      <div className="divider-ornate" />
-
-      {/* All players */}
-      <div className="lg:flex-1 lg:min-h-0 lg:overflow-auto mb-4">
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          {players.map((player) => {
-            const isCurrentTurn = player.id === currentPlayer.id
-            return (
-              <div
-                key={player.id}
-                className="p-2 rounded-lg transition-all duration-150"
-                style={{
-                  background: isCurrentTurn
-                    ? 'rgba(100, 220, 100, 0.08)'
-                    : 'rgba(61, 48, 32, 0.3)',
-                  border: isCurrentTurn
-                    ? '1px solid rgba(100, 220, 100, 0.25)'
-                    : '1px solid rgba(212, 168, 83, 0.08)',
-                }}
-              >
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className="player-avatar w-5 h-5 text-[9px] flex-shrink-0"
-                    style={{ backgroundColor: player.color }}
-                  >
-                    {player.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0 truncate font-bold text-[10px] text-parchment-200">{player.name}</div>
-                </div>
-                <div className="text-[10px] text-parchment-400 flex gap-2 mt-0.5">
-                  <span>Fame:<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
-                  <span>EXP:<span className="text-parchment-200 font-bold ml-0.5">{player.exp}</span></span>
-                  <span>&#x2728;<span className="font-bold ml-0.5" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
       </div>
 
       {/* Actions */}
