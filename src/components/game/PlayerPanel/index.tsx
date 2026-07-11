@@ -89,7 +89,7 @@ export function PlayerPanel() {
                 </div>
                 <div className="flex-1 min-w-0 truncate font-bold text-[10px] text-parchment-200">{player.name}</div>
               </div>
-              <div className="text-[10px] text-parchment-400 flex flex-col gap-0.5 mt-1">
+              <div className="text-[10px] text-parchment-400 flex gap-1.5 mt-1">
                 <span title="Fame">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
                 <span title="EXP">&#x1F4D6;<span className="text-parchment-200 font-bold ml-0.5">{player.exp}</span></span>
                 <span title="Inspiration">&#x2728;<span className="font-bold ml-0.5" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
