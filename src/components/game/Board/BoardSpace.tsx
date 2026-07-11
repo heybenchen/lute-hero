@@ -85,10 +85,8 @@ export function BoardSpace({
         {space.name}
       </div>
 
-      {/* Player indicator — reserved row right under the title so it never
-          overlaps the name or tags below it (only other player tags may overlap it) */}
       {playersHere.length > 0 && (
-        <div className="flex justify-center -space-x-1.5 h-5 sm:h-6 mt-0.5 shrink-0">
+        <div className="absolute left-0 right-0 top-4 sm:top-5 flex justify-center -space-x-1.5 z-20 pointer-events-none">
           {playersHere.map((player) => (
             <div
               key={player.id}

@@ -67,7 +67,7 @@ export function Board() {
 
   return (
     <div
-      className="relative w-full lg:h-full rounded-xl overflow-auto flex items-center justify-center"
+      className="relative w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
       style={{
         background: `
           radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.04) 0%, transparent 45%),
