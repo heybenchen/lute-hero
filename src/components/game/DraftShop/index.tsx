@@ -170,28 +170,31 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </div>
               <p className="text-base text-parchment-400">
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span>
-                <span className="mx-1.5 text-parchment-600">&middot;</span>
+              </p>
+              <p className="text-sm text-parchment-400 flex items-center gap-2 mt-1">
                 <span title="Inspiration">&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
+                <button
+                  onClick={handleBuyInspiration}
+                  disabled={player.exp < inspirationCost}
+                  className="text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5 whitespace-nowrap"
+                  style={{
+                    background: 'rgba(176, 124, 255, 0.14)',
+                    border: '1px solid rgba(176, 124, 255, 0.45)',
+                    color: '#d9c2ff',
+                  }}
+                  title={`Buy 1 Inspiration for ${inspirationCost} EXP (cost rises each purchase this turn)`}
+                >
+                  &#x2728; Buy Inspiration ({inspirationCost} EXP)
+                </button>
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
-              <button
-                onClick={handleBuyInspiration}
-                disabled={player.exp < inspirationCost}
-                className="text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5 whitespace-nowrap"
-                style={{
-                  background: 'rgba(176, 124, 255, 0.14)',
-                  border: '1px solid rgba(176, 124, 255, 0.45)',
-                  color: '#d9c2ff',
-                }}
-                title={`Buy 1 Inspiration for ${inspirationCost} EXP (cost rises each purchase this turn)`}
-              >
-                &#x2728; Buy Inspiration ({inspirationCost} EXP)
-              </button>
-              <button onClick={onClose} className="btn-secondary text-sm">
-                Close Shop
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              className="text-parchment-400 hover:text-parchment-200 transition-colors text-xl leading-none p-1"
+              title="Close Shop"
+            >
+              &#x2715;
+            </button>
           </div>
 
           {/* Pending rewards tray — queued purchases waiting to be placed */}
@@ -270,7 +273,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   Elements
                 </div>
                 <div className="text-sm text-parchment-500">
-                  Take a chip: new d4 ({NEW_D4_COST} EXP) or an upgrade &middot; {elementBag.length} left in bag
+                  {elementBag.length} left in bag
                 </div>
               </div>
               <button
