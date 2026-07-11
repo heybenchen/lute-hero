@@ -98,6 +98,11 @@ export function GameView() {
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col lg:flex-row gap-2 sm:gap-3 flex-1 min-h-0 px-2 sm:px-3 pb-2 sm:pb-3">
+        {/* Player panel */}
+        <div className="w-full max-h-[50dvh] lg:max-h-none lg:w-80 flex-shrink-0 overflow-auto min-h-0">
+          <PlayerPanel />
+        </div>
+
         {/* Board area */}
         <div className="flex-1 min-h-0 flex flex-col min-w-0">
           <div className="flex-1 min-h-0 overflow-hidden rounded-xl" style={{
@@ -105,11 +110,6 @@ export function GameView() {
           }}>
             <Board />
           </div>
-        </div>
-
-        {/* Player panel */}
-        <div className="w-full max-h-[50dvh] lg:max-h-none lg:w-80 flex-shrink-0 overflow-auto min-h-0">
-          <PlayerPanel />
         </div>
       </div>
 
