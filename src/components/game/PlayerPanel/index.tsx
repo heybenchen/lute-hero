@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameStore, selectCurrentPlayer, selectCollectiveFame } from '@/store'
+import { useGameStore, selectCurrentPlayer } from '@/store'
 import { FAME_THRESHOLDS } from '@/data/startingData'
 import { DraftShop } from '../DraftShop'
 import { GenreBadge } from '@/components/ui/GenreBadge'
@@ -14,7 +14,6 @@ export function PlayerPanel() {
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
-  const collectiveFame = useGameStore(selectCollectiveFame)
   const phase = useGameStore((state) => state.phase)
   const currentRound = useGameStore((state) => state.currentRound)
   const nextTurn = useGameStore((state) => state.nextTurn)
@@ -36,8 +35,9 @@ export function PlayerPanel() {
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
   const canFight = hasMonsters && fightsRemaining > 0
-  const currentThreshold = FAME_THRESHOLDS.finalBoss * players.length
-  const fameProgress = Math.min((collectiveFame / currentThreshold) * 100, 100)
+  const pendingPhase = useGameStore((state) => state.pendingPhase)
+  const finalTurnGranted = useGameStore((state) => state.finalTurnGranted)
+  const fameThreshold = FAME_THRESHOLDS.finalBoss
 
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
@@ -81,22 +81,35 @@ export function PlayerPanel() {
           {phase} Phase
         </div>
 
-        {/* Fame progress bar */}
+        {/* Per-player fame bars */}
         {phase === 'main' && (
           <div className="mt-3">
-            <div className="flex justify-between text-xs text-parchment-400 mb-1">
-              <span>Fame to Final Boss</span>
-              <span className="text-gold-400 font-bold">{collectiveFame} / {currentThreshold}</span>
-            </div>
-            <div className="hp-bar h-2 bar-sheen">
-              <div
-                className="hp-fill rounded-full"
-                style={{
-                  width: `${fameProgress}%`,
-                  background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
-                  boxShadow: fameProgress > 0 ? '0 0 6px rgba(240, 215, 140, 0.4)' : 'none',
-                }}
-              />
+            {pendingPhase && finalTurnGranted && (
+              <div className="text-xs font-medieval font-bold text-amber-300 mb-1.5 tracking-wide animate-pulse">
+                Final Turn!
+              </div>
+            )}
+            <div className="text-[10px] text-parchment-500 uppercase tracking-wider mb-1">Fame to Final Boss ({fameThreshold})</div>
+            <div className="flex flex-col gap-1">
+              {players.map((p) => {
+                const pct = Math.min((p.fame / fameThreshold) * 100, 100)
+                return (
+                  <div key={p.id} className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-parchment-400 w-16 truncate">{p.name}</span>
+                    <div className="hp-bar h-1.5 flex-1 bar-sheen">
+                      <div
+                        className="hp-fill rounded-full"
+                        style={{
+                          width: `${pct}%`,
+                          background: pct >= 100 ? 'linear-gradient(90deg, #f0d78c, #ffe9a0)' : 'linear-gradient(90deg, #b8922e, #f0d78c)',
+                          boxShadow: pct > 0 ? '0 0 4px rgba(240, 215, 140, 0.3)' : 'none',
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-gold-400 font-bold w-7 text-right">{p.fame}</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -305,7 +318,7 @@ export function PlayerPanel() {
         <div className="space-y-2">
           {players.map((player) => {
             const playerSpace = spaces.find((s) => s.id === player.position)
-            const playerFameProgress = Math.min((player.fame / currentThreshold) * 100, 100)
+            const playerFameProgress = Math.min((player.fame / fameThreshold) * 100, 100)
             const diceCount = player.songs.reduce((n, s) => n + s.slots.filter((sl) => sl.dice).length, 0)
             const isCurrentTurn = player.id === currentPlayer.id
             return (

@@ -57,7 +57,7 @@ export const DICE_UPGRADE_PATH: { [key in DiceType]: DiceType | null } = {
   d20: null, // Max level
 };
 
-// Fame thresholds for phase transitions (per-player values, multiply by numPlayers)
+// Fame thresholds for phase transitions
 export const FAME_THRESHOLDS = {
-  finalBoss: 100, // Per-player fame needed (collective = value × numPlayers)
+  finalBoss: 300, // Any single player reaching this triggers the final boss
 };

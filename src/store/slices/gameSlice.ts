@@ -8,6 +8,7 @@ export interface GameSlice {
   currentRound: number
   currentTurnPlayerIndex: number
   pendingPhase: GamePhase | null
+  finalTurnGranted: boolean
 
   // Actions
   setPhase: (phase: GamePhase) => void
@@ -25,6 +26,7 @@ export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
   currentRound: 0,
   currentTurnPlayerIndex: 0,
   pendingPhase: null,
+  finalTurnGranted: false,
 
   // Actions
   setPhase: (phase) => set({ phase }),
@@ -46,6 +48,7 @@ export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
       currentRound: 1,
       currentTurnPlayerIndex: 0,
       pendingPhase: null,
+      finalTurnGranted: false,
     }),
 
   resetGame: () =>
@@ -54,25 +57,28 @@ export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
       currentRound: 0,
       currentTurnPlayerIndex: 0,
       pendingPhase: null,
+      finalTurnGranted: false,
     }),
 
   checkPhaseTransition: () => {
     const phase = get().phase
-    // Access players from the combined store (available at runtime via Zustand slices pattern)
     const players = (get() as any).players as { fame: number }[]
     if (!players) return
 
-    const collectiveFame = players.reduce((total: number, p: { fame: number }) => total + p.fame, 0)
-    const nextPhase = getNextPhase(phase, collectiveFame, players.length)
-    if (nextPhase) {
+    const playerFames = players.map(p => p.fame)
+    const nextPhase = getNextPhase(phase, playerFames)
+    if (nextPhase && !get().pendingPhase) {
       set({ pendingPhase: nextPhase })
     }
   },
 
   applyPendingPhase: () => {
     const pending = get().pendingPhase
-    if (pending) {
-      set({ phase: pending, pendingPhase: null })
+    if (!pending) return
+    if (!get().finalTurnGranted) {
+      set({ finalTurnGranted: true })
+    } else {
+      set({ phase: pending, pendingPhase: null, finalTurnGranted: false })
     }
   },
 })
