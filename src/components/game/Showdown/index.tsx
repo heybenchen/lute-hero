@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useGameStore } from '@/store'
+import { useGameStore, selectCanPerform } from '@/store'
 import { Song, DiceRoll } from '@/types'
 import { SongCard } from '../Combat/SongCard'
 import { DiceDisplay } from '@/components/ui/DiceDisplay'
@@ -31,6 +31,9 @@ export function FinalShowdown() {
   const showdownFandom = useGameStore((state) => state.showdownFandom)
   const showdownHistory = useGameStore((state) => state.showdownHistory)
   const dispatch = useGameStore((state) => state.dispatch)
+  const canPerform = useGameStore(selectCanPerform)
+  const remoteEntry = useGameStore((state) => state.remoteEntry)
+  const mode = useGameStore((state) => state.mode)
 
   // The engine starts the showdown when END_TURN flips the phase, so it is
   // already active on mount. Show the intro only for a fresh showdown;
@@ -55,6 +58,39 @@ export function FinalShowdown() {
     const timer = setTimeout(() => setStage('winner'), 3200)
     return () => clearTimeout(timer)
   }, [stage])
+
+  // Spectators follow other performers live via the SSE event stream
+  useEffect(() => {
+    if (!remoteEntry) return
+    for (const event of remoteEntry.events) {
+      if (event.type === 'diceRolled' && event.context === 'showdown') {
+        const owner = useGameStore.getState().players.find((p) => p.id === event.playerId)
+        const song = owner?.songs.find((sg) => sg.id === event.songId)
+        if (song) setLastRolls({ song, rolls: event.rolls })
+      }
+      if (event.type === 'showdownPlay') {
+        const popup: FandomPopup = {
+          id: `fandom-${event.playerId}-${Date.now()}`,
+          fandom: event.fandom,
+          hadCrit: event.hadCrit,
+          hitWeakness: event.hitWeakness,
+          wasResisted: event.wasResisted,
+        }
+        setPopups((prev) => [...prev, popup])
+        setTimeout(() => setPopups((prev) => prev.filter((pp) => pp.id !== popup.id)), 1900)
+      }
+      if (event.type === 'showdownAdvance') {
+        setLastRolls(null)
+        if (event.advance === 'bossAdapts') {
+          setAdaptRecap(event.recap ?? [])
+          setAdaptTurnEnded(event.turnEnded ?? 1)
+          setStage('adapt')
+        } else if (event.advance === 'showdownComplete') {
+          setStage('finale')
+        }
+      }
+    }
+  }, [remoteEntry])
 
   const performerId = showdownOrder[showdownPerformerIdx]
   const performer = players.find((p) => p.id === performerId)
@@ -227,7 +263,7 @@ export function FinalShowdown() {
                   key={song.id}
                   song={{ ...song, used: showdownSongsUsed.includes(song.id) }}
                   onPlay={() => handlePlaySong(song)}
-                  disabled={hasPerformed}
+                  disabled={hasPerformed || !canPerform}
                   index={idx}
                 />
               ))}
@@ -262,7 +298,11 @@ export function FinalShowdown() {
 
             {/* Finish performance */}
             <div className="flex justify-center pt-2">
-              {performanceDone ? (
+              {!canPerform && mode === 'online' ? (
+                <p className="text-base text-parchment-500 italic font-game animate-pulse-slow">
+                  {performer.name} holds the stage — watch the show...
+                </p>
+              ) : performanceDone ? (
                 <button
                   onClick={handleFinishPerformance}
                   className="btn-primary text-base px-10 py-3 animate-fade-in w-full max-w-md"

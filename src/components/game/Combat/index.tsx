@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from 'react'
-import { useGameStore, selectPlayerById, selectPlayersAtSpace } from '@/store'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useGameStore, selectPlayerById, selectPlayersAtSpace, selectCanAct } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
@@ -28,6 +28,8 @@ export function CombatModal() {
   const lastDamageCalculations = useGameStore((state) => state.lastDamageCalculations)
   const lastPlayedSongId = useGameStore((state) => state.lastPlayedSongId)
   const dispatch = useGameStore((state) => state.dispatch)
+  const canAct = useGameStore(selectCanAct)
+  const remoteEntry = useGameStore((state) => state.remoteEntry)
 
   const [chosenElement, setChosenElement] = useState<Genre | null>(null)
 
@@ -71,6 +73,17 @@ export function CombatModal() {
     return { playerFame: rewards.fighterFame, coverFameByPlayer }
   }, [rewards, colocatedPlayers])
 
+  // Spectators animate other players' songs from the SSE event stream
+  useEffect(() => {
+    if (!remoteEntry || !isActive) return
+    for (const event of remoteEntry.events) {
+      if (event.type === 'damageDealt') {
+        const newPopups = createDamagePopups(event.calculations, event.monstersBefore, event.monstersAfter)
+        setPopups((prev) => [...prev, ...newPopups])
+      }
+    }
+  }, [remoteEntry, isActive])
+
   if (!isActive || !player) return null
 
   const lastPlayedSong: Song | null = lastPlayedSongId
@@ -113,13 +126,13 @@ export function CombatModal() {
   }
 
   const handlePlaySong = async (songId: string, ownerId: string) => {
-    if (isSongUsed(songsUsed, songId)) return
+    if (!canAct || isSongUsed(songsUsed, songId)) return
     const result = await dispatch({ type: 'PLAY_SONG', songId, ownerId })
     if (result.ok) showDamageEvents(result.events)
   }
 
   const handleReroll = async () => {
-    if (!lastPlayedSong || player.inspiration <= 0) return
+    if (!canAct || !lastPlayedSong || player.inspiration <= 0) return
     const result = await dispatch({ type: 'REROLL_SONG' })
     if (result.ok) showDamageEvents(result.events)
   }
@@ -149,7 +162,7 @@ export function CombatModal() {
             <div className="flex items-center justify-center gap-3 sm:gap-4">
               <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
               <p className="text-sm sm:text-base text-parchment-500 font-game tracking-wide">
-                {player.name}'s Performance
+                {player.name}'s Performance{!canAct ? ' — watching live' : ''}
               </p>
               <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
             </div>
@@ -199,7 +212,7 @@ export function CombatModal() {
                   key={song.id}
                   song={{ ...song, used: isSongUsed(songsUsed, song.id) }}
                   onPlay={() => handlePlaySong(song.id, player.id)}
-                  disabled={isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
+                  disabled={!canAct || isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
                   index={idx}
                 />
               ))}
@@ -233,7 +246,7 @@ export function CombatModal() {
                         key={song.id}
                         song={{ ...song, used: isSongUsed(songsUsed, song.id) }}
                         onPlay={() => handlePlaySong(song.id, coverPlayer.id)}
-                        disabled={isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
+                        disabled={!canAct || isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
                         index={idx}
                         isCover
                         ownerName={coverPlayer.name}
@@ -415,7 +428,7 @@ export function CombatModal() {
 
                 <button
                   onClick={handleEndCombat}
-                  disabled={!chosenElement}
+                  disabled={!canAct || !chosenElement}
                   className="w-full max-w-md px-6 sm:px-10 py-3.5 font-medieval font-bold rounded-lg text-base sm:text-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
                   style={{
                     background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
@@ -440,7 +453,8 @@ export function CombatModal() {
             ) : (
               <button
                 onClick={handleEndCombat}
-                className="btn-secondary text-base sm:text-lg px-10 py-3.5 animate-fade-in w-full max-w-md"
+                disabled={!canAct}
+                className="btn-secondary text-base sm:text-lg px-10 py-3.5 animate-fade-in w-full max-w-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Retreat
               </button>

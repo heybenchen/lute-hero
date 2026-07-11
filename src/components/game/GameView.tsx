@@ -2,13 +2,19 @@ import { useState } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { PlayerPanel } from './PlayerPanel'
-import { useGameStore } from '@/store'
+import { useGameStore, selectIsHost } from '@/store'
 
 export function GameView() {
   const dispatch = useGameStore((state) => state.dispatch)
+  const mode = useGameStore((state) => state.mode)
+  const connection = useGameStore((state) => state.connection)
+  const isHost = useGameStore(selectIsHost)
+  const leaveOnline = useGameStore((state) => state.leaveOnline)
+  const goToModeSelect = useGameStore((state) => state.goToModeSelect)
   const [showMenu, setShowMenu] = useState(false)
 
   const handleNewGame = () => {
+    setShowMenu(false)
     dispatch({ type: 'RESET_GAME' })
   }
 
@@ -51,6 +57,18 @@ export function GameView() {
           >
             Lute Hero
           </h1>
+          {mode === 'online' && connection !== 'connected' && (
+            <span
+              className="text-[10px] font-medieval font-bold px-2 py-0.5 rounded-full animate-pulse"
+              style={{
+                background: 'rgba(255, 180, 60, 0.1)',
+                border: '1px solid rgba(255, 180, 60, 0.4)',
+                color: '#ffd591',
+              }}
+            >
+              Reconnecting…
+            </span>
+          )}
           <div
             className="hidden sm:block h-px w-16"
             style={{
@@ -76,18 +94,29 @@ export function GameView() {
               >
                 Resume Game
               </button>
-              <button
-                onClick={handleNewGame}
-                className="w-full py-3 font-medieval font-bold rounded-lg transition-all duration-200"
-                style={{
-                  background: 'linear-gradient(135deg, #8c3d3d, #6e2d2d)',
-                  border: '1px solid rgba(220, 100, 100, 0.4)',
-                  color: '#ffd4d4',
-                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
-                }}
-              >
-                New Game
-              </button>
+              {isHost && (
+                <button
+                  onClick={handleNewGame}
+                  className="w-full py-3 font-medieval font-bold rounded-lg transition-all duration-200"
+                  style={{
+                    background: 'linear-gradient(135deg, #8c3d3d, #6e2d2d)',
+                    border: '1px solid rgba(220, 100, 100, 0.4)',
+                    color: '#ffd4d4',
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
+                  }}
+                >
+                  {mode === 'online' ? 'Back to Lobby (reset)' : 'New Game'}
+                </button>
+              )}
+              {mode === 'online' ? (
+                <button onClick={leaveOnline} className="btn-secondary w-full py-3">
+                  Leave Online Game
+                </button>
+              ) : (
+                <button onClick={goToModeSelect} className="btn-secondary w-full py-3">
+                  Exit to Menu
+                </button>
+              )}
             </div>
           </div>
         </div>

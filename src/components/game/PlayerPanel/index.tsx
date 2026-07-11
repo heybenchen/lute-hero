@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameStore, selectCurrentPlayer, selectCollectiveFame } from '@/store'
+import { useGameStore, selectCurrentPlayer, selectCollectiveFame, selectCanAct } from '@/store'
 import { FAME_THRESHOLDS } from '@/data/startingData'
 import { DraftShop } from '../DraftShop'
 import { GenreBadge } from '@/components/ui/GenreBadge'
@@ -18,6 +18,8 @@ export function PlayerPanel() {
   const phase = useGameStore((state) => state.phase)
   const currentRound = useGameStore((state) => state.currentRound)
   const dispatch = useGameStore((state) => state.dispatch)
+  const canAct = useGameStore(selectCanAct)
+  const mode = useGameStore((state) => state.mode)
 
   if (!currentPlayer) return null
 
@@ -25,7 +27,7 @@ export function PlayerPanel() {
   const fightsRemaining = 1 - currentPlayer.fightsThisTurn
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
-  const canFight = hasMonsters && fightsRemaining > 0
+  const canFight = hasMonsters && fightsRemaining > 0 && canAct
   const currentThreshold = FAME_THRESHOLDS.finalBoss * players.length
   const fameProgress = Math.min((collectiveFame / currentThreshold) * 100, 100)
 
@@ -344,7 +346,12 @@ export function PlayerPanel() {
 
       {/* Actions */}
       <div className="space-y-2 mt-auto">
-        {hasMonsters && (
+        {mode === 'online' && !canAct && (
+          <div className="text-center text-sm text-parchment-500 italic py-2 animate-pulse-slow">
+            Waiting for {currentPlayer.name}’s turn…
+          </div>
+        )}
+        {hasMonsters && canAct && (
           <button
             onClick={handleFight}
             disabled={!canFight}
@@ -364,15 +371,19 @@ export function PlayerPanel() {
           </button>
         )}
 
-        <button
-          onClick={() => setShowDraftShop(true)}
-          className="btn-secondary w-full"
-        >
-          Studio ({currentPlayer.exp} EXP)
-        </button>
-        <button onClick={handleEndTurn} className="btn-primary w-full">
-          End Turn
-        </button>
+        {canAct && (
+          <>
+            <button
+              onClick={() => setShowDraftShop(true)}
+              className="btn-secondary w-full"
+            >
+              Studio ({currentPlayer.exp} EXP)
+            </button>
+            <button onClick={handleEndTurn} className="btn-primary w-full">
+              End Turn
+            </button>
+          </>
+        )}
       </div>
 
       {/* Studio modal */}

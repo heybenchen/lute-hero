@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameStore, selectCurrentPlayer } from '@/store'
+import { useGameStore, selectCurrentPlayer, selectCanAct } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
@@ -26,14 +26,15 @@ export function Board() {
   const players = useGameStore((state) => state.players)
   const currentPlayer = useGameStore(selectCurrentPlayer)
   const dispatch = useGameStore((state) => state.dispatch)
+  const canAct = useGameStore(selectCanAct)
 
   const [hoveredSpaceId, setHoveredSpaceId] = useState<number | null>(null)
   const [travelMode, setTravelMode] = useState(false)
 
   if (!currentPlayer) return null
 
-  // Allow moves if player hasn't used both moves
-  const canMove = currentPlayer.movesThisTurn < 2
+  // Allow moves if it's this client's turn and moves remain
+  const canMove = canAct && currentPlayer.movesThisTurn < 2
   const validMoves = canMove ? getValidMoves(currentPlayer.position, spaces) : []
 
   // Travel spends 1 Inspiration and 1 movement, so it needs a move available
