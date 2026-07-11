@@ -6,18 +6,6 @@ import { DiceShape } from '@/components/ui/DiceShape'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { describeTrackEffect } from '@/data/trackEffects'
 
-// Pick black or white text based on the background color's perceived luminance,
-// so player-name labels stay legible on any player color without a drop shadow.
-function getContrastText(hex: string): string {
-  const c = hex.replace('#', '')
-  const full = c.length === 3 ? c.split('').map((ch) => ch + ch).join('') : c
-  const r = parseInt(full.slice(0, 2), 16)
-  const g = parseInt(full.slice(2, 4), 16)
-  const b = parseInt(full.slice(4, 6), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.55 ? '#1a140a' : '#ffffff'
-}
-
 export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
   const [hoveredSong, setHoveredSong] = useState<string | null>(null)
@@ -91,7 +79,7 @@ export function PlayerPanel() {
             >
               <div
                 className="px-2 py-1 truncate font-bold text-[10px]"
-                style={{ background: player.color, color: getContrastText(player.color) }}
+                style={{ background: player.color, color: 'rgb(0, 0, 0)' }}
               >
                 {player.name}
               </div>
