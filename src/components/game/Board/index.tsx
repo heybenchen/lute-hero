@@ -110,15 +110,15 @@ export function Board() {
         </button>
       )}
 
-      <div className="relative w-full p-3 sm:p-6 lg:p-8" style={{ maxWidth: 'min(100%, calc(100vh - 9rem))', margin: '8px' }}>
+      <div className="relative w-full p-2 sm:p-6 lg:p-8 max-w-[calc(50dvh_-_6rem)] lg:max-w-[calc(100dvh_-_9rem)]" style={{ margin: '8px' }}>
         {/* Map frame corners */}
         <Corner position="top-0 left-0" />
         <Corner position="top-0 right-0" />
         <Corner position="bottom-0 left-0" />
         <Corner position="bottom-0 right-0" />
 
-        {/* Map title decoration */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-5 pointer-events-none">
+        {/* Map title decoration — hidden on mobile to save vertical space */}
+        <div className="hidden sm:flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-5 pointer-events-none">
           <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
           <div className="font-display text-base sm:text-xl text-gold-500 opacity-45 tracking-[0.2em] sm:tracking-[0.25em] text-center select-none">
             The Bardic Realm
@@ -157,20 +157,6 @@ export function Board() {
           ))}
         </div>
 
-        {/* Hover hint */}
-        <div className="hidden sm:block mt-1.5 sm:mt-4 text-center text-[10px] sm:text-xs pointer-events-none min-h-[1rem]">
-          {travelMode ? (
-            <span className="text-classical font-bold">Click any space to travel there — costs 1 Inspiration and 1 move</span>
-          ) : (
-            <span className="text-parchment-500">
-              {hoveredSpace
-                ? `${hoveredSpace.name} — paths to ${hoveredSpace.connections.map((id) => spaces.find((s) => s.id === id)?.name).filter(Boolean).join(', ')}`
-                : canMove
-                ? 'Glowing tiles are within reach'
-                : ''}
-            </span>
-          )}
-        </div>
       </div>
     </div>
   )
