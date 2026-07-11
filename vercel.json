@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/games/[id]/stream.ts": {
+      "maxDuration": 300
+    }
+  }
+}
