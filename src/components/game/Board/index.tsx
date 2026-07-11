@@ -67,7 +67,7 @@ export function Board() {
 
   return (
     <div
-      className="relative w-full h-full rounded-xl overflow-auto flex items-center justify-center"
+      className="relative w-full lg:h-full rounded-xl overflow-auto flex items-center justify-center"
       style={{
         background: `
           radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.04) 0%, transparent 45%),
@@ -110,7 +110,7 @@ export function Board() {
         </button>
       )}
 
-      <div className="relative w-full p-4 sm:p-6 lg:p-8" style={{ maxWidth: 'min(100%, calc(100vh - 9rem))' }}>
+      <div className="relative w-full p-3 sm:p-6 lg:p-8" style={{ maxWidth: 'min(100%, calc(100vh - 9rem))' }}>
         {/* Map frame corners */}
         <Corner position="top-0 left-0" />
         <Corner position="top-0 right-0" />
@@ -118,7 +118,7 @@ export function Board() {
         <Corner position="bottom-0 right-0" />
 
         {/* Map title decoration */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-5 pointer-events-none">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-5 pointer-events-none">
           <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
           <div className="font-display text-base sm:text-xl text-gold-500 opacity-45 tracking-[0.2em] sm:tracking-[0.25em] text-center select-none">
             The Bardic Realm
@@ -158,7 +158,7 @@ export function Board() {
         </div>
 
         {/* Hover hint */}
-        <div className="mt-3 sm:mt-4 text-center text-[11px] sm:text-xs pointer-events-none min-h-[1rem]">
+        <div className="mt-1.5 sm:mt-4 text-center text-[10px] sm:text-xs pointer-events-none min-h-[1rem]">
           {travelMode ? (
             <span className="text-classical font-bold">Click any space to travel there — costs 1 Inspiration and 1 move</span>
           ) : (

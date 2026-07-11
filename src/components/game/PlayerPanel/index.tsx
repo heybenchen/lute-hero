@@ -11,6 +11,7 @@ export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
   const [hoveredSong, setHoveredSong] = useState<string | null>(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
+  const [fameExpanded, setFameExpanded] = useState(false)
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
@@ -81,36 +82,50 @@ export function PlayerPanel() {
           {phase} Phase
         </div>
 
-        {/* Per-player fame bars */}
+        {/* Per-player fame */}
         {phase === 'main' && (
-          <div className="mt-3">
+          <div className="mt-2">
             {pendingPhase && finalTurnGranted && (
-              <div className="text-xs font-medieval font-bold text-amber-300 mb-1.5 tracking-wide animate-pulse">
+              <div className="text-xs font-medieval font-bold text-amber-300 mb-1 tracking-wide animate-pulse">
                 Final Turn!
               </div>
             )}
-            <div className="text-[10px] text-parchment-500 uppercase tracking-wider mb-1">Fame to Final Boss ({fameThreshold})</div>
-            <div className="flex flex-col gap-1">
-              {players.map((p) => {
-                const pct = Math.min((p.fame / fameThreshold) * 100, 100)
-                return (
-                  <div key={p.id} className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-parchment-400 w-16 truncate">{p.name}</span>
-                    <div className="hp-bar h-1.5 flex-1 bar-sheen">
-                      <div
-                        className="hp-fill rounded-full"
-                        style={{
-                          width: `${pct}%`,
-                          background: pct >= 100 ? 'linear-gradient(90deg, #f0d78c, #ffe9a0)' : 'linear-gradient(90deg, #b8922e, #f0d78c)',
-                          boxShadow: pct > 0 ? '0 0 4px rgba(240, 215, 140, 0.3)' : 'none',
-                        }}
-                      />
+            <button
+              onClick={() => setFameExpanded((v) => !v)}
+              className="w-full flex items-center justify-between text-[10px] text-parchment-500 uppercase tracking-wider hover:text-parchment-300 transition-colors"
+            >
+              <span>Fame to Final Boss ({fameThreshold})</span>
+              <span className="text-parchment-600 text-[9px]">{fameExpanded ? '▲' : '▼'}</span>
+            </button>
+            {fameExpanded ? (
+              <div className="flex flex-col gap-0.5 mt-1">
+                {players.map((p) => {
+                  const pct = Math.min((p.fame / fameThreshold) * 100, 100)
+                  return (
+                    <div key={p.id} className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-parchment-400 w-16 truncate">{p.name}</span>
+                      <div className="hp-bar h-1 flex-1 bar-sheen">
+                        <div
+                          className="hp-fill rounded-full"
+                          style={{
+                            width: `${pct}%`,
+                            background: pct >= 100 ? 'linear-gradient(90deg, #f0d78c, #ffe9a0)' : 'linear-gradient(90deg, #b8922e, #f0d78c)',
+                            boxShadow: pct > 0 ? '0 0 4px rgba(240, 215, 140, 0.3)' : 'none',
+                          }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-gold-400 font-bold w-7 text-right">{p.fame}</span>
                     </div>
-                    <span className="text-[10px] text-gold-400 font-bold w-7 text-right">{p.fame}</span>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="flex gap-2 mt-0.5 justify-center">
+                {players.map((p) => (
+                  <span key={p.id} className="text-[10px] text-gold-400 font-bold">{p.fame}</span>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -147,7 +162,7 @@ export function PlayerPanel() {
             {currentPlayer.songs.map((song) => (
               <div
                 key={song.id}
-                className="rounded-lg p-2 min-w-fit shrink-0 transition-all duration-150 hover:bg-tavern-600"
+                className="rounded-lg p-1.5 min-w-fit shrink-0 transition-all duration-150 hover:bg-tavern-600"
                 style={{
                   background: 'rgba(61, 48, 32, 0.5)',
                   border: '1px solid rgba(212, 168, 83, 0.12)',
@@ -159,14 +174,14 @@ export function PlayerPanel() {
                 }}
                 onMouseLeave={() => setHoveredSong(null)}
               >
-                <div className="h-4 text-xs font-bold text-parchment-400 mb-1 truncate max-w-[110px]">
+                <div className="h-3.5 text-[10px] font-bold text-parchment-400 mb-0.5 truncate max-w-[90px]">
                   {song.name}
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-0.5">
                   {song.slots.map((slot, idx) => (
                     <div
                       key={idx}
-                      className="w-11 h-11 rounded flex flex-col items-center justify-center text-[9px]"
+                      className="w-8 h-8 rounded flex flex-col items-center justify-center text-[8px]"
                       style={{
                         background: slot.dice
                           ? 'rgba(212, 168, 83, 0.15)'
@@ -178,15 +193,15 @@ export function PlayerPanel() {
                     >
                       {slot.dice ? (
                         <>
-                          <div className="text-gold-400 text-[18px] leading-none">
+                          <div className="text-gold-400 text-[14px] leading-none">
                             <DiceShape type={slot.dice.type} />
                           </div>
-                          <div className="font-bold text-[8px] text-parchment-300">
+                          <div className="font-bold text-[7px] text-parchment-300">
                             {slot.dice.genre}
                           </div>
                         </>
                       ) : (
-                        <div className="text-parchment-500/30 text-[9px]">-</div>
+                        <div className="text-parchment-500/30 text-[8px]">-</div>
                       )}
                     </div>
                   ))}

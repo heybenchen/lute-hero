@@ -30,11 +30,11 @@ export function GameView() {
       />
 
       {/* Title bar */}
-      <div className="relative z-10 flex items-center py-2 sm:py-3 px-3 sm:px-6 flex-shrink-0">
-        <div className="flex items-center gap-3 sm:gap-4">
+      <div className="relative z-10 flex items-center justify-center py-2 sm:py-3 px-3 sm:px-6 flex-shrink-0">
+        <div className="flex items-center justify-center gap-3 sm:gap-4 w-full">
           <button
             onClick={() => setShowMenu(true)}
-            className="px-3 py-1.5 rounded-lg font-medieval text-sm text-parchment-400 transition-all duration-150 hover:text-gold-400"
+            className="absolute left-3 sm:left-6 px-3 py-1.5 rounded-lg font-medieval text-sm text-parchment-400 transition-all duration-150 hover:text-gold-400"
             style={{
               background: 'rgba(61, 48, 32, 0.4)',
               border: '1px solid rgba(212, 168, 83, 0.15)',
@@ -99,8 +99,8 @@ export function GameView() {
       {/* Main content */}
       <div className="relative z-10 flex flex-col lg:flex-row gap-3 flex-1 lg:min-h-0 px-2 sm:px-3 pb-3">
         {/* Board area */}
-        <div className="flex-1 flex flex-col lg:min-h-0 min-w-0 gap-2 sm:gap-3">
-          <div className="flex-1 lg:min-h-0 min-h-[65vh] overflow-auto rounded-xl" style={{
+        <div className="lg:flex-1 flex flex-col lg:min-h-0 min-w-0 gap-2 sm:gap-3">
+          <div className="lg:flex-1 lg:min-h-0 overflow-auto rounded-xl" style={{
             border: '1px solid rgba(212, 168, 83, 0.15)',
           }}>
             <Board />
