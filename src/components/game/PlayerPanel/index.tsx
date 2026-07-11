@@ -70,10 +70,10 @@ export function PlayerPanel() {
           return (
             <div
               key={player.id}
-              className="rounded-lg transition-all duration-150 flex-1 min-w-0 overflow-hidden"
+              className={`rounded-lg transition-all duration-300 flex-1 min-w-0 overflow-hidden ${isCurrentTurn ? 'animate-active-glow -translate-y-0.5' : ''}`}
               style={{
                 border: isCurrentTurn
-                  ? '2px solid rgba(255, 255, 255, 0.85)'
+                  ? '2px solid rgba(255, 215, 130, 0.9)'
                   : '1px solid rgba(0, 0, 0, 0.25)',
               }}
             >
