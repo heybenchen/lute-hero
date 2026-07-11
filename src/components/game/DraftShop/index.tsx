@@ -172,7 +172,6 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span>
               </p>
               <p className="text-sm text-parchment-400 flex items-center gap-2 mt-1">
-                <span title="Inspiration">&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
                 <button
                   onClick={handleBuyInspiration}
                   disabled={player.exp < inspirationCost}
@@ -186,6 +185,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 >
                   &#x2728; Buy Inspiration ({inspirationCost} EXP)
                 </button>
+                <span title="Inspiration">&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
               </p>
             </div>
             <button
