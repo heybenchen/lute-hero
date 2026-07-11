@@ -327,19 +327,13 @@ export function PlayerPanel() {
 
       {/* All players */}
       <div className="lg:flex-1 lg:min-h-0 lg:overflow-auto mb-4">
-        <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-2">
-          All Players
-        </div>
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
           {players.map((player) => {
-            const playerSpace = spaces.find((s) => s.id === player.position)
-            const playerFameProgress = Math.min((player.fame / fameThreshold) * 100, 100)
-            const diceCount = player.songs.reduce((n, s) => n + s.slots.filter((sl) => sl.dice).length, 0)
             const isCurrentTurn = player.id === currentPlayer.id
             return (
               <div
                 key={player.id}
-                className="p-2.5 rounded-lg transition-all duration-150"
+                className="p-2 rounded-lg transition-all duration-150"
                 style={{
                   background: isCurrentTurn
                     ? 'rgba(100, 220, 100, 0.08)'
@@ -349,51 +343,19 @@ export function PlayerPanel() {
                     : '1px solid rgba(212, 168, 83, 0.08)',
                 }}
               >
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-1.5 mb-1">
                   <div
-                    className="player-avatar w-8 h-8 text-xs flex-shrink-0"
+                    className="player-avatar w-6 h-6 text-[10px] flex-shrink-0"
                     style={{ backgroundColor: player.color }}
                   >
                     {player.name.charAt(0)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <div className="font-bold text-sm text-parchment-200 truncate">{player.name}</div>
-                      {isCurrentTurn && (
-                        <span
-                          className="text-[10px] font-medieval font-bold text-green-300 shrink-0 px-1.5 py-0.5 rounded-full animate-glow-pulse"
-                          style={{
-                            background: 'rgba(100, 220, 100, 0.12)',
-                            border: '1px solid rgba(100, 220, 100, 0.3)',
-                          }}
-                        >
-                          ▶ TURN
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-parchment-500 truncate">
-                      {playerSpace?.name ?? '—'}
-                    </div>
-                  </div>
+                  <div className="font-bold text-xs text-parchment-200 truncate">{player.name}</div>
                 </div>
-
-                {/* Stats row */}
-                <div className="flex gap-2 text-xs mb-1.5">
-                  <span className="text-gold-400 font-bold">⭐ {player.fame}</span>
-                  <span className="text-parchment-400">{player.exp} EXP</span>
-                  <span className="text-parchment-500">{player.songs.length} songs · {diceCount} dice</span>
-                </div>
-
-                {/* Mini fame progress */}
-                <div className="hp-bar h-1">
-                  <div
-                    className="hp-fill rounded-full"
-                    style={{
-                      width: `${playerFameProgress}%`,
-                      background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
-                      transition: 'width 0.3s ease',
-                    }}
-                  />
+                <div className="text-[10px] text-parchment-400 space-y-0.5">
+                  <div>Fame: <span className="text-gold-400 font-bold">{player.fame}</span></div>
+                  <div>EXP: <span className="text-parchment-200 font-bold">{player.exp}</span></div>
+                  <div>&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></div>
                 </div>
               </div>
             )
