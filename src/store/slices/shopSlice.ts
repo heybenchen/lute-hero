@@ -38,7 +38,8 @@ function freshNamePool(excludeNames: Set<string> = new Set()): DraftCard[] {
 
 function collectUsedNames(get: () => ShopSlice): Set<string> {
   const used = new Set<string>()
-  const players: Player[] | undefined = (get() as any).players
+  // `players` lives on a sibling slice; reach it through the combined store at runtime.
+  const players = (get() as unknown as { players?: Player[] }).players
   if (players) {
     for (const p of players) {
       for (const s of p.songs) {

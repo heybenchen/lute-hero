@@ -62,7 +62,8 @@ export const createGameSlice: StateCreator<GameSlice> = (set, get) => ({
 
   checkPhaseTransition: () => {
     const phase = get().phase
-    const players = (get() as any).players as { fame: number }[]
+    // `players` lives on a sibling slice; reach it through the combined store at runtime.
+    const players = (get() as unknown as { players?: { fame: number }[] }).players
     if (!players) return
 
     const playerFames = players.map(p => p.fame)

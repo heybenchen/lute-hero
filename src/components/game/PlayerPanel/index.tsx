@@ -31,7 +31,7 @@ export function PlayerPanel() {
   const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
   const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
   const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
-  const usePlayerFight = useGameStore((state) => state.usePlayerFight)
+  const consumePlayerFight = useGameStore((state) => state.consumePlayerFight)
   const startCombat = useGameStore((state) => state.startCombat)
   const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
   const refillShopSlots = useGameStore((state) => state.refillShopSlots)
@@ -69,7 +69,7 @@ export function PlayerPanel() {
 
   const handleFight = () => {
     if (currentSpace && canFight) {
-      usePlayerFight(currentPlayer.id)
+      consumePlayerFight(currentPlayer.id)
       startCombat(currentPlayer.id, currentSpace.id, currentSpace.monsters)
     }
   }

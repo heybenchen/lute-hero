@@ -25,7 +25,7 @@ export function applyTrackEffect(
 
   let modifiedRoll = { ...roll };
   let updatedEffect: TrackEffect | null = effect;
-  let additionalRolls: DiceRoll[] = [];
+  const additionalRolls: DiceRoll[] = [];
 
   switch (effect.type) {
     case "freeReroll":
