@@ -60,22 +60,6 @@ export function Board() {
         `,
       }}
     >
-      {/* Subtle dot-grid map texture */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(rgba(212, 168, 83, 0.08) 0.8px, transparent 0.8px)',
-          backgroundSize: '28px 28px',
-        }}
-      />
-
-      {/* Warm vignette */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 35%, rgba(9, 6, 3, 0.65) 100%)',
-        }}
-      />
-
       {/* Inspiration travel toggle */}
       {(canTravel || travelMode) && (
         <button
