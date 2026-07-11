@@ -14,7 +14,7 @@ const STORAGE_KEY = 'lute-hero-save'
 const STORAGE_VERSION = 8
 
 // Only persist the durable game state — skip transient combat mid-fight data
-const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers' | 'pendingRewards' | 'showdownActive' | 'showdownComplete' | 'showdownTurn' | 'showdownOrder' | 'showdownPerformerIdx' | 'showdownResistGenre' | 'showdownWeakGenre' | 'showdownSongsUsed' | 'showdownTurnPerformances' | 'showdownHistory' | 'showdownCurrentFandom' | 'showdownCurrentGenre' | 'showdownFandom' | 'showdownBestHit' | 'showdownCrits'>> = {
+const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'finalTurnGranted' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers' | 'pendingRewards' | 'showdownActive' | 'showdownComplete' | 'showdownTurn' | 'showdownOrder' | 'showdownPerformerIdx' | 'showdownResistGenre' | 'showdownWeakGenre' | 'showdownSongsUsed' | 'showdownTurnPerformances' | 'showdownHistory' | 'showdownCurrentFandom' | 'showdownCurrentGenre' | 'showdownFandom' | 'showdownBestHit' | 'showdownCrits'>> = {
   name: STORAGE_KEY,
   version: STORAGE_VERSION,
   partialize: (state) => ({
@@ -22,6 +22,7 @@ const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'curre
     currentRound: state.currentRound,
     currentTurnPlayerIndex: state.currentTurnPlayerIndex,
     pendingPhase: state.pendingPhase,
+    finalTurnGranted: state.finalTurnGranted,
     spaces: state.spaces,
     players: state.players,
     namePool: state.namePool,
@@ -106,10 +107,6 @@ export const selectPlayerById = (playerId: string) => (state: GameStore) => {
 
 export const selectSpaceById = (spaceId: number) => (state: GameStore) => {
   return state.spaces.find((s) => s.id === spaceId)
-}
-
-export const selectCollectiveFame = (state: GameStore) => {
-  return state.players.reduce((total, p) => total + p.fame, 0)
 }
 
 export const selectActivePlayers = (state: GameStore) => {

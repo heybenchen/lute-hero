@@ -74,6 +74,7 @@ export default {
         'token-bob': 'tokenBob 2.4s ease-in-out infinite',
         'ring-pulse': 'ringPulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'danger-pulse': 'dangerPulse 2.2s ease-in-out infinite',
+        'active-glow': 'activeGlow 2s ease-in-out infinite',
       },
       keyframes: {
         tileIn: {
@@ -92,6 +93,10 @@ export default {
         dangerPulse: {
           '0%, 100%': { boxShadow: '0 0 6px rgba(232, 32, 64, 0.15)' },
           '50%': { boxShadow: '0 0 18px rgba(232, 32, 64, 0.45)' },
+        },
+        activeGlow: {
+          '0%, 100%': { boxShadow: '0 0 6px 1px rgba(240, 200, 110, 0.4)' },
+          '50%': { boxShadow: '0 0 16px 3px rgba(240, 200, 110, 0.75)' },
         },
         shimmer: {
           '0%, 100%': { opacity: '0.5' },

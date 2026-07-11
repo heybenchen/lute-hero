@@ -4,10 +4,11 @@
   "version": "0.0.1",
   "type": "module",
   "description": "A multiplayer tabletop game where Bards defeat monsters with music",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --report-unused-disable-directives",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",

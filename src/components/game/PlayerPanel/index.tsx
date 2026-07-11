@@ -1,11 +1,22 @@
 import { useState } from 'react'
-import { useGameStore, selectCurrentPlayer, selectCollectiveFame } from '@/store'
-import { FAME_THRESHOLDS } from '@/data/startingData'
+import { useGameStore, selectCurrentPlayer } from '@/store'
 import { DraftShop } from '../DraftShop'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { describeTrackEffect } from '@/data/trackEffects'
+
+// Choose black or white text for legibility on an arbitrary player color.
+// Uses the perceptual (sRGB-weighted) luminance so names stay readable on both
+// light chips (e.g. amber) and dark ones (e.g. blue/red).
+function readableTextColor(hex: string): string {
+  const value = hex.replace('#', '')
+  const r = parseInt(value.slice(0, 2), 16)
+  const g = parseInt(value.slice(2, 4), 16)
+  const b = parseInt(value.slice(4, 6), 16)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.6 ? '#1a140a' : '#ffffff'
+}
 
 export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
@@ -14,16 +25,13 @@ export function PlayerPanel() {
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
-  const collectiveFame = useGameStore(selectCollectiveFame)
-  const phase = useGameStore((state) => state.phase)
-  const currentRound = useGameStore((state) => state.currentRound)
   const nextTurn = useGameStore((state) => state.nextTurn)
   const nextRound = useGameStore((state) => state.nextRound)
   const addGenreTags = useGameStore((state) => state.addGenreTags)
   const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
   const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
   const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
-  const usePlayerFight = useGameStore((state) => state.usePlayerFight)
+  const consumePlayerFight = useGameStore((state) => state.consumePlayerFight)
   const startCombat = useGameStore((state) => state.startCombat)
   const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
   const refillShopSlots = useGameStore((state) => state.refillShopSlots)
@@ -31,13 +39,9 @@ export function PlayerPanel() {
 
   if (!currentPlayer) return null
 
-  const movesRemaining = 2 - currentPlayer.movesThisTurn
-  const fightsRemaining = 1 - currentPlayer.fightsThisTurn
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
-  const canFight = hasMonsters && fightsRemaining > 0
-  const currentThreshold = FAME_THRESHOLDS.finalBoss * players.length
-  const fameProgress = Math.min((collectiveFame / currentThreshold) * 100, 100)
+  const canFight = hasMonsters && currentPlayer.fightsThisTurn < 1
 
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
@@ -65,47 +69,46 @@ export function PlayerPanel() {
 
   const handleFight = () => {
     if (currentSpace && canFight) {
-      usePlayerFight(currentPlayer.id)
+      consumePlayerFight(currentPlayer.id)
       startCombat(currentPlayer.id, currentSpace.id, currentSpace.monsters)
     }
   }
 
   return (
     <div className="card-ornate p-4 sm:p-5 lg:h-full flex flex-col">
-      {/* Game info header */}
-      <div className="text-center mb-4">
-        <div className="font-display text-xl text-gold-400 mb-1">
-          Round {currentRound}
-        </div>
-        <div className="text-sm text-parchment-400 uppercase tracking-widest font-medieval">
-          {phase} Phase
-        </div>
-
-        {/* Fame progress bar */}
-        {phase === 'main' && (
-          <div className="mt-3">
-            <div className="flex justify-between text-xs text-parchment-400 mb-1">
-              <span>Fame to Final Boss</span>
-              <span className="text-gold-400 font-bold">{collectiveFame} / {currentThreshold}</span>
-            </div>
-            <div className="hp-bar h-2 bar-sheen">
+      {/* All players */}
+      <div className="flex gap-2">
+        {players.map((player) => {
+          const isCurrentTurn = player.id === currentPlayer.id
+          return (
+            <div
+              key={player.id}
+              className={`rounded-lg transition-all duration-300 flex-1 min-w-0 overflow-hidden ${isCurrentTurn ? 'animate-active-glow -translate-y-0.5' : ''}`}
+              style={{
+                border: isCurrentTurn
+                  ? '2px solid rgba(255, 215, 130, 0.9)'
+                  : '1px solid rgba(0, 0, 0, 0.25)',
+              }}
+            >
               <div
-                className="hp-fill rounded-full"
-                style={{
-                  width: `${fameProgress}%`,
-                  background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
-                  boxShadow: fameProgress > 0 ? '0 0 6px rgba(240, 215, 140, 0.4)' : 'none',
-                }}
-              />
+                className="px-2 py-1 truncate font-bold text-[10px]"
+                style={{ background: player.color, color: readableTextColor(player.color) }}
+              >
+                {player.name}
+              </div>
+              <div className="text-[10px] text-parchment-300 flex gap-1.5 px-2 py-1" style={{ background: 'rgba(20, 16, 10, 0.85)' }}>
+                <span title="Fame">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
+                <span title="EXP">&#x1F4D6;<span className="text-parchment-100 font-bold ml-0.5">{player.exp}</span></span>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })}
       </div>
 
-      <div className="divider-ornate" />
+      <div className="divider-ornate mt-5" />
 
       {/* Current player */}
-      <div className="mb-4">
+      <div>
         <div className="flex items-center gap-3 mb-3">
           <div
             className="player-avatar w-12 h-12 text-xl"
@@ -127,14 +130,11 @@ export function PlayerPanel() {
 
         {/* Songs — right above the Moves/Fights trackers */}
         <div className="mb-3">
-          <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-1.5">
-            Songs
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex flex-wrap justify-between gap-2">
             {currentPlayer.songs.map((song) => (
               <div
                 key={song.id}
-                className="rounded-lg p-2 min-w-fit shrink-0 transition-all duration-150 hover:bg-tavern-600"
+                className="rounded-lg p-1.5 flex-1 min-w-0 transition-all duration-150 hover:bg-tavern-600"
                 style={{
                   background: 'rgba(61, 48, 32, 0.5)',
                   border: '1px solid rgba(212, 168, 83, 0.12)',
@@ -146,14 +146,14 @@ export function PlayerPanel() {
                 }}
                 onMouseLeave={() => setHoveredSong(null)}
               >
-                <div className="h-4 text-xs font-bold text-parchment-400 mb-1 truncate max-w-[110px]">
+                <div className="h-3.5 text-[10px] font-bold text-parchment-400 mb-0.5 truncate">
                   {song.name}
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-0.5">
                   {song.slots.map((slot, idx) => (
                     <div
                       key={idx}
-                      className="w-11 h-11 rounded flex flex-col items-center justify-center text-[9px]"
+                      className="flex-1 aspect-square rounded flex flex-col items-center justify-center text-[8px]"
                       style={{
                         background: slot.dice
                           ? 'rgba(212, 168, 83, 0.15)'
@@ -165,15 +165,15 @@ export function PlayerPanel() {
                     >
                       {slot.dice ? (
                         <>
-                          <div className="text-gold-400 text-[18px] leading-none">
+                          <div className="text-gold-400 text-[14px] leading-none">
                             <DiceShape type={slot.dice.type} />
                           </div>
-                          <div className="font-bold text-[8px] text-parchment-300">
+                          <div className="font-bold text-[7px] text-parchment-300">
                             {slot.dice.genre}
                           </div>
                         </>
                       ) : (
-                        <div className="text-parchment-500/30 text-[9px]">-</div>
+                        <div className="text-parchment-500/30 text-[8px]">-</div>
                       )}
                     </div>
                   ))}
@@ -237,140 +237,6 @@ export function PlayerPanel() {
           )}
         </div>
 
-        {/* Move and Action trackers */}
-        <div className="grid grid-cols-2 gap-2">
-          {/* Movement tracker */}
-          <div className="rounded-lg p-2" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-            <div className="text-xs font-medieval text-parchment-400 mb-1.5 text-center">
-              Moves
-            </div>
-            <div className="flex gap-1.5 justify-center">
-              {[1, 2].map((move) => (
-                <div
-                  key={move}
-                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-xs transition-all duration-200"
-                  style={{
-                    background: move <= movesRemaining
-                      ? 'linear-gradient(135deg, #3d8c40, #2d6e30)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: move <= movesRemaining
-                      ? '1px solid rgba(100, 220, 100, 0.4)'
-                      : '1px solid rgba(255, 255, 255, 0.05)',
-                    color: move <= movesRemaining ? '#d4ffd6' : 'rgba(255,255,255,0.15)',
-                    boxShadow: move <= movesRemaining ? '0 0 8px rgba(100, 220, 100, 0.15)' : 'none',
-                  }}
-                >
-                  {move}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Fight tracker */}
-          <div className="rounded-lg p-2" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-            <div className="text-xs font-medieval text-parchment-400 mb-1.5 text-center">
-              Fights
-            </div>
-            <div className="flex gap-1.5 justify-center">
-              {[1].map((fight) => (
-                <div
-                  key={fight}
-                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-xs transition-all duration-200"
-                  style={{
-                    background: fight <= fightsRemaining
-                      ? 'linear-gradient(135deg, #c43030, #8c2020)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: fight <= fightsRemaining
-                      ? '1px solid rgba(232, 80, 80, 0.4)'
-                      : '1px solid rgba(255, 255, 255, 0.05)',
-                    color: fight <= fightsRemaining ? '#ffd4d4' : 'rgba(255,255,255,0.15)',
-                    boxShadow: fight <= fightsRemaining ? '0 0 8px rgba(232, 80, 80, 0.15)' : 'none',
-                  }}
-                >
-                  &#x2694;
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="divider-ornate" />
-
-      {/* All players */}
-      <div className="lg:flex-1 lg:min-h-0 lg:overflow-auto mb-4">
-        <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-2">
-          All Players
-        </div>
-        <div className="space-y-2">
-          {players.map((player) => {
-            const playerSpace = spaces.find((s) => s.id === player.position)
-            const playerFameProgress = Math.min((player.fame / currentThreshold) * 100, 100)
-            const diceCount = player.songs.reduce((n, s) => n + s.slots.filter((sl) => sl.dice).length, 0)
-            const isCurrentTurn = player.id === currentPlayer.id
-            return (
-              <div
-                key={player.id}
-                className="p-2.5 rounded-lg transition-all duration-150"
-                style={{
-                  background: isCurrentTurn
-                    ? 'rgba(100, 220, 100, 0.08)'
-                    : 'rgba(61, 48, 32, 0.3)',
-                  border: isCurrentTurn
-                    ? '1px solid rgba(100, 220, 100, 0.25)'
-                    : '1px solid rgba(212, 168, 83, 0.08)',
-                }}
-              >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div
-                    className="player-avatar w-8 h-8 text-xs flex-shrink-0"
-                    style={{ backgroundColor: player.color }}
-                  >
-                    {player.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <div className="font-bold text-sm text-parchment-200 truncate">{player.name}</div>
-                      {isCurrentTurn && (
-                        <span
-                          className="text-[10px] font-medieval font-bold text-green-300 shrink-0 px-1.5 py-0.5 rounded-full animate-glow-pulse"
-                          style={{
-                            background: 'rgba(100, 220, 100, 0.12)',
-                            border: '1px solid rgba(100, 220, 100, 0.3)',
-                          }}
-                        >
-                          ▶ TURN
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-parchment-500 truncate">
-                      {playerSpace?.name ?? '—'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats row */}
-                <div className="flex gap-2 text-xs mb-1.5">
-                  <span className="text-gold-400 font-bold">⭐ {player.fame}</span>
-                  <span className="text-parchment-400">{player.exp} EXP</span>
-                  <span className="text-parchment-500">{player.songs.length} songs · {diceCount} dice</span>
-                </div>
-
-                {/* Mini fame progress */}
-                <div className="hp-bar h-1">
-                  <div
-                    className="hp-fill rounded-full"
-                    style={{
-                      width: `${playerFameProgress}%`,
-                      background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
-                      transition: 'width 0.3s ease',
-                    }}
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
       </div>
 
       {/* Actions */}
@@ -379,7 +245,7 @@ export function PlayerPanel() {
           <button
             onClick={handleFight}
             disabled={!canFight}
-            className={`w-full py-2.5 px-4 font-medieval font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:brightness-110 hover:enabled:-translate-y-0.5 active:enabled:translate-y-0 ${canFight ? 'animate-danger-pulse' : ''}`}
+            className={`w-full py-1.5 px-2.5 text-sm sm:py-2.5 sm:px-4 sm:text-base font-medieval font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:brightness-110 hover:enabled:-translate-y-0.5 active:enabled:translate-y-0 ${canFight ? 'animate-danger-pulse' : ''}`}
             style={{
               background: canFight
                 ? 'linear-gradient(135deg, #c43030, #8c2020)'
@@ -390,18 +256,18 @@ export function PlayerPanel() {
               boxShadow: canFight ? '0 0 12px rgba(232, 32, 64, 0.2)' : 'none',
             }}
           >
-            &#x2694; Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
+            <span className="text-[1.2em]">&#x2694;</span> Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
             {!canFight && ' (No fights left)'}
           </button>
         )}
 
         <button
           onClick={() => setShowDraftShop(true)}
-          className="btn-secondary w-full"
+          className="btn-secondary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5"
         >
           Studio ({currentPlayer.exp} EXP)
         </button>
-        <button onClick={handleEndTurn} className="btn-primary w-full">
+        <button onClick={handleEndTurn} className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5">
           End Turn
         </button>
       </div>

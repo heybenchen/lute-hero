@@ -36,11 +36,11 @@ export function BoardSpace({
       onClick={onClick}
       disabled={!canMoveTo && !isTravelTarget}
       className={`
-        relative hover:z-40 w-full aspect-square rounded-lg sm:rounded-xl
+        relative sm:hover:z-40 w-full aspect-square rounded-lg sm:rounded-xl
         flex flex-col justify-between p-1.5 sm:p-2
         transition-all duration-200 ease-out
         ${canMoveTo || isTravelTarget
-          ? 'cursor-pointer hover:-translate-y-1 hover:brightness-110'
+          ? 'cursor-pointer sm:hover:-translate-y-1 sm:hover:brightness-110'
           : 'cursor-default'
         }
         ${hasMonsters && (canMoveTo || isTravelTarget) ? 'animate-danger-pulse' : ''}
@@ -81,14 +81,12 @@ export function BoardSpace({
       )}
 
       {/* Space name */}
-      <div className="text-[9px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
+      <div className="text-[9px] lg:text-sm font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 w-full line-clamp-2">
         {space.name}
       </div>
 
-      {/* Player indicator — reserved row right under the title so it never
-          overlaps the name or tags below it (only other player tags may overlap it) */}
       {playersHere.length > 0 && (
-        <div className="flex justify-center -space-x-1.5 h-5 sm:h-6 mt-0.5 shrink-0">
+        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex -space-x-1.5 z-20 pointer-events-none">
           {playersHere.map((player) => (
             <div
               key={player.id}
@@ -106,16 +104,16 @@ export function BoardSpace({
       )}
 
       {/* Content area */}
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 lg:gap-1.5 overflow-hidden">
         {/* Genre tags — compact color-coded beads with counts */}
         {genreEntries.length > 0 && (
-          <div className="flex flex-wrap gap-x-1 gap-y-0.5 justify-center max-w-full mt-0.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-0.5 lg:gap-x-1.5 lg:gap-y-1 justify-center max-w-full mt-0.5">
             {genreEntries.map(([genre, count]) => {
               const { color } = GENRE_THEME[genre]
               return (
                 <div
                   key={genre}
-                  className="flex items-center gap-0.5 rounded-md pl-1 pr-1.5 py-0.5 leading-none"
+                  className="flex items-center gap-0.5 lg:gap-1 rounded-md pl-1 pr-1.5 py-0.5 lg:pl-1.5 lg:pr-2 lg:py-1 leading-none"
                   style={{
                     background: `linear-gradient(135deg, ${color}33, ${color}14)`,
                     border: `1px solid ${color}66`,
@@ -124,14 +122,14 @@ export function BoardSpace({
                   title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
                 >
                   <span
-                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    className="w-2 h-2 lg:w-3 lg:h-3 rounded-full flex-shrink-0"
                     style={{
                       backgroundColor: color,
                       boxShadow: `0 0 5px ${color}, inset 0 0 1px rgba(255,255,255,0.5)`,
                     }}
                   />
                   <span
-                    className="text-[9px] font-bold tabular-nums"
+                    className="text-[9px] lg:text-xs font-bold tabular-nums"
                     style={{ color, textShadow: '0 1px 1px rgba(0,0,0,0.5)' }}
                   >
                     {count}
