@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
-import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 
 // Corner flourish for the map frame
 function Corner({ position }: { position: string }) {
@@ -111,47 +110,7 @@ export function Board() {
         </button>
       )}
 
-      {/* Legend — bottom-left (desktop only; on mobile the tile dots + hint carry it) */}
-      <div
-        className="hidden lg:block absolute bottom-3 left-3 z-20 rounded-lg p-2.5 animate-fade-in"
-        style={{
-          background: 'rgba(18, 13, 8, 0.9)',
-          border: '1px solid rgba(212, 168, 83, 0.18)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 10px rgba(0,0,0,0.4)',
-        }}
-      >
-        <div className="text-[9px] font-medieval text-gold-500 tracking-widest mb-1.5 uppercase opacity-80">
-          Legend
-        </div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: 'rgba(232, 32, 64, 0.18)', border: '1px solid rgba(232, 32, 64, 0.4)' }} />
-            <span className="text-[9px] text-parchment-400">Has monsters</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: 'rgba(255, 157, 27, 0.12)', border: '1px solid rgba(255, 157, 27, 0.3)' }} />
-            <span className="text-[9px] text-parchment-400">Danger building</span>
-          </div>
-          <div className="pt-1 mt-1" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.12)' }}>
-            {ALL_GENRES.map((genre) => {
-              const { color, emoji } = GENRE_THEME[genre]
-              return (
-                <div key={genre} className="flex items-center gap-1.5 py-0.5">
-                  <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}88` }}
-                  />
-                  <span className="text-[9px] text-parchment-400">
-                    {genre} <span className="opacity-60">{emoji}</span>
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="relative w-full max-w-[460px] p-4 sm:p-6 lg:p-8">
+      <div className="relative w-full p-4 sm:p-6 lg:p-8" style={{ maxWidth: 'min(100%, calc(100vh - 9rem))' }}>
         {/* Map frame corners */}
         <Corner position="top-0 left-0" />
         <Corner position="top-0 right-0" />
