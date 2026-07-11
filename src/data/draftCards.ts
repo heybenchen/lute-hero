@@ -56,28 +56,31 @@ export function createElementalDie(genre: Genre): Dice {
   };
 }
 
-export function generateNameCard(): DraftCard {
+const SONG_NAMES = [
+  "Acoustic Serenade",
+  "Bass Drop Anthem",
+  "Melody of Hope",
+  "Rhythm Revolution",
+  "Harmony Unleashed",
+  "Symphony of Chaos",
+  "Beat Machine",
+  "Lyrical Storm",
+  "Crescendo Rising",
+  "Digital Dreams",
+];
+
+export function generateNameCard(excludeNames: Set<string> = new Set()): DraftCard {
   const effects = Object.keys(TRACK_EFFECTS);
   const randomEffect = effects[Math.floor(Math.random() * effects.length)];
 
-  const songNames = [
-    "Acoustic Serenade",
-    "Bass Drop Anthem",
-    "Melody of Hope",
-    "Rhythm Revolution",
-    "Harmony Unleashed",
-    "Symphony of Chaos",
-    "Beat Machine",
-    "Lyrical Storm",
-    "Crescendo Rising",
-    "Digital Dreams",
-  ];
+  const available = SONG_NAMES.filter((n) => !excludeNames.has(n));
+  const pool = available.length > 0 ? available : SONG_NAMES;
 
   return {
     id: generateCardId(),
     type: "name",
     cost: 10,
-    songName: songNames[Math.floor(Math.random() * songNames.length)],
+    songName: pool[Math.floor(Math.random() * pool.length)],
     songEffect: TRACK_EFFECTS[randomEffect],
   };
 }

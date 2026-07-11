@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand'
-import { DraftCard, Genre, PendingReward } from '@/types'
+import { DraftCard, Genre, Player, PendingReward } from '@/types'
 import { generateNameCard } from '@/data/draftCards'
 import { createElementBag, drawFromBag, ELEMENT_OFFER_COUNT } from '@/data/elementBag'
 
@@ -25,12 +25,31 @@ export interface ShopSlice {
   resetShop: () => void
 }
 
-function freshNamePool(): DraftCard[] {
+function freshNamePool(excludeNames: Set<string> = new Set()): DraftCard[] {
+  const used = new Set(excludeNames)
   const namePool: DraftCard[] = []
   for (let i = 0; i < NAME_POOL_SIZE; i++) {
-    namePool.push(generateNameCard())
+    const card = generateNameCard(used)
+    if (card.songName) used.add(card.songName)
+    namePool.push(card)
   }
   return namePool
+}
+
+function collectUsedNames(get: () => ShopSlice): Set<string> {
+  const used = new Set<string>()
+  const players: Player[] | undefined = (get() as any).players
+  if (players) {
+    for (const p of players) {
+      for (const s of p.songs) {
+        if (s.name) used.add(s.name)
+      }
+    }
+  }
+  for (const card of get().namePool) {
+    if (card.songName) used.add(card.songName)
+  }
+  return used
 }
 
 export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
@@ -47,7 +66,7 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
     const { drawn, bag, discard } = drawFromBag(fullBag, [], ELEMENT_OFFER_COUNT)
 
     set({
-      namePool: freshNamePool(),
+      namePool: freshNamePool(collectUsedNames(get)),
       elementBag: bag,
       elementDiscard: discard,
       elementOffers: drawn,
@@ -67,7 +86,7 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
         elementDiscard: discard,
       })
     }
-    set({ namePool: freshNamePool() })
+    set({ namePool: freshNamePool(collectUsedNames(get)) })
   },
 
   refreshElementOffers: () => {
@@ -98,15 +117,16 @@ export const createShopSlice: StateCreator<ShopSlice> = (set, get) => ({
 
   purchaseFromNamePool: (cardId) => {
     const pool = get().namePool
+    const used = collectUsedNames(get)
     set({
       namePool: pool.map((card) =>
-        card.id === cardId ? generateNameCard() : card
+        card.id === cardId ? generateNameCard(used) : card
       ),
     })
   },
 
   refreshNamePool: () => {
-    set({ namePool: freshNamePool() })
+    set({ namePool: freshNamePool(collectUsedNames(get)) })
   },
 
   enqueueReward: (playerId, reward) => {
