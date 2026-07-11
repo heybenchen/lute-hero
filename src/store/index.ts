@@ -109,10 +109,6 @@ export const selectSpaceById = (spaceId: number) => (state: GameStore) => {
   return state.spaces.find((s) => s.id === spaceId)
 }
 
-export const selectCollectiveFame = (state: GameStore) => {
-  return state.players.reduce((total, p) => total + p.fame, 0)
-}
-
 export const selectActivePlayers = (state: GameStore) => {
   return state.players.filter((p) => !p.isEliminated)
 }

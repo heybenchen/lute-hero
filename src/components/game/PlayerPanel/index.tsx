@@ -6,6 +6,18 @@ import { DiceShape } from '@/components/ui/DiceShape'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { describeTrackEffect } from '@/data/trackEffects'
 
+// Choose black or white text for legibility on an arbitrary player color.
+// Uses the perceptual (sRGB-weighted) luminance so names stay readable on both
+// light chips (e.g. amber) and dark ones (e.g. blue/red).
+function readableTextColor(hex: string): string {
+  const value = hex.replace('#', '')
+  const r = parseInt(value.slice(0, 2), 16)
+  const g = parseInt(value.slice(2, 4), 16)
+  const b = parseInt(value.slice(4, 6), 16)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.6 ? '#1a140a' : '#ffffff'
+}
+
 export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
   const [hoveredSong, setHoveredSong] = useState<string | null>(null)
@@ -30,6 +42,7 @@ export function PlayerPanel() {
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
   const canFight = hasMonsters && currentPlayer.fightsThisTurn < 1
+
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
     resetPlayerFights(currentPlayer.id)
@@ -79,7 +92,7 @@ export function PlayerPanel() {
             >
               <div
                 className="px-2 py-1 truncate font-bold text-[10px]"
-                style={{ background: player.color, color: 'rgb(0, 0, 0)' }}
+                style={{ background: player.color, color: readableTextColor(player.color) }}
               >
                 {player.name}
               </div>
@@ -243,7 +256,7 @@ export function PlayerPanel() {
               boxShadow: canFight ? '0 0 12px rgba(232, 32, 64, 0.2)' : 'none',
             }}
           >
-            <span style={{ fontSize: '1.2em' }}>&#x2694;</span> Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
+            <span className="text-[1.2em]">&#x2694;</span> Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
             {!canFight && ' (No fights left)'}
           </button>
         )}
