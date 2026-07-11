@@ -2,17 +2,14 @@ import { useState } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { PlayerPanel } from './PlayerPanel'
-import { useGameStore, clearSavedGame } from '@/store'
+import { useGameStore } from '@/store'
 
 export function GameView() {
-  const resetGame = useGameStore((state) => state.resetGame)
-  const resetShowdown = useGameStore((state) => state.resetShowdown)
+  const dispatch = useGameStore((state) => state.dispatch)
   const [showMenu, setShowMenu] = useState(false)
 
   const handleNewGame = () => {
-    clearSavedGame()
-    resetShowdown()
-    resetGame()
+    dispatch({ type: 'RESET_GAME' })
   }
 
   return (

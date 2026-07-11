@@ -20,7 +20,6 @@ interface FandomPopup {
 
 export function FinalShowdown() {
   const players = useGameStore((state) => state.players)
-  const showdownActive = useGameStore((state) => state.showdownActive)
   const showdownComplete = useGameStore((state) => state.showdownComplete)
   const showdownTurn = useGameStore((state) => state.showdownTurn)
   const showdownOrder = useGameStore((state) => state.showdownOrder)
@@ -31,27 +30,24 @@ export function FinalShowdown() {
   const showdownCurrentFandom = useGameStore((state) => state.showdownCurrentFandom)
   const showdownFandom = useGameStore((state) => state.showdownFandom)
   const showdownHistory = useGameStore((state) => state.showdownHistory)
-  const startShowdown = useGameStore((state) => state.startShowdown)
-  const playShowdownSong = useGameStore((state) => state.playShowdownSong)
-  const finishShowdownPerformance = useGameStore((state) => state.finishShowdownPerformance)
-  const setPhase = useGameStore((state) => state.setPhase)
+  const dispatch = useGameStore((state) => state.dispatch)
 
-  // Resume mid-showdown after a refresh; otherwise open on the cinematic intro
+  // The engine starts the showdown when END_TURN flips the phase, so it is
+  // already active on mount. Show the intro only for a fresh showdown;
+  // resume mid-fight (after a refresh) straight into the perform stage.
   const [stage, setStage] = useState<Stage>(() => {
     if (showdownComplete) return 'winner'
-    if (showdownActive) return 'perform'
-    return 'intro'
+    const fresh =
+      showdownTurn === 1 &&
+      showdownPerformerIdx === 0 &&
+      showdownSongsUsed.length === 0 &&
+      showdownHistory.length === 0
+    return fresh ? 'intro' : 'perform'
   })
   const [lastRolls, setLastRolls] = useState<{ song: Song; rolls: DiceRoll[] } | null>(null)
   const [popups, setPopups] = useState<FandomPopup[]>([])
   const [adaptRecap, setAdaptRecap] = useState<ShowdownPerformance[]>([])
   const [adaptTurnEnded, setAdaptTurnEnded] = useState(1)
-
-  useEffect(() => {
-    if (!showdownActive && players.length > 0) {
-      startShowdown(players.map((p) => p.id))
-    }
-  }, [showdownActive, players, startShowdown])
 
   // Boss-shatter finale plays out, then the winner takes the stage
   useEffect(() => {
@@ -71,42 +67,40 @@ export function FinalShowdown() {
   const hasPerformed = showdownSongsUsed.length >= 1
   const performanceDone = hasPerformed || playableSongs.length === 0
 
-  const handlePlaySong = (song: Song) => {
-    const result = playShowdownSong(song)
-    if (!result) return
-    setLastRolls({ song, rolls: result.rolls })
-    const popup: FandomPopup = {
-      id: `fandom-${Date.now()}`,
-      fandom: result.fandom,
-      hadCrit: result.hadCrit,
-      hitWeakness: result.hitWeakness,
-      wasResisted: result.wasResisted,
+  const handlePlaySong = async (song: Song) => {
+    const result = await dispatch({ type: 'PLAY_SHOWDOWN_SONG', songId: song.id })
+    if (!result.ok) return
+    for (const event of result.events) {
+      if (event.type === 'diceRolled') {
+        setLastRolls({ song, rolls: event.rolls })
+      }
+      if (event.type === 'showdownPlay') {
+        const popup: FandomPopup = {
+          id: `fandom-${Date.now()}`,
+          fandom: event.fandom,
+          hadCrit: event.hadCrit,
+          hitWeakness: event.hitWeakness,
+          wasResisted: event.wasResisted,
+        }
+        setPopups((prev) => [...prev, popup])
+        setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
+      }
     }
-    setPopups((prev) => [...prev, popup])
-    setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
   }
 
-  const handleFinishPerformance = () => {
-    // Capture this turn's recap before the store clears it
-    const storeState = useGameStore.getState()
-    const recap: ShowdownPerformance[] = [
-      ...storeState.showdownTurnPerformances,
-      {
-        playerId: performerId,
-        fandom: storeState.showdownCurrentFandom,
-        genre: storeState.showdownCurrentGenre,
-      },
-    ]
+  const handleFinishPerformance = async () => {
     const turnNow = showdownTurn
-
-    const advance = finishShowdownPerformance()
+    const result = await dispatch({ type: 'FINISH_SHOWDOWN_PERFORMANCE' })
     setLastRolls(null)
+    if (!result.ok) return
 
-    if (advance.kind === 'bossAdapts') {
-      setAdaptRecap(recap)
-      setAdaptTurnEnded(turnNow)
+    const advance = result.events.find((e) => e.type === 'showdownAdvance')
+    if (!advance || advance.type !== 'showdownAdvance') return
+    if (advance.advance === 'bossAdapts') {
+      setAdaptRecap(advance.recap ?? [])
+      setAdaptTurnEnded(advance.turnEnded ?? turnNow)
       setStage('adapt')
-    } else if (advance.kind === 'showdownComplete') {
+    } else if (advance.advance === 'showdownComplete') {
       setStage('finale')
     }
   }
@@ -139,7 +133,7 @@ export function FinalShowdown() {
       <WinnerSpotlight
         players={players}
         showdownFandom={showdownFandom}
-        onContinue={() => setPhase('gameOver')}
+        onContinue={() => dispatch({ type: 'ADVANCE_TO_SUMMARY' })}
       />
     )
   }

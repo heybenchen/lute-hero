@@ -1,101 +1,131 @@
 import { create } from 'zustand'
-import { devtools, persist, PersistOptions } from 'zustand/middleware'
-import { createGameSlice, GameSlice } from './slices/gameSlice'
-import { createBoardSlice, BoardSlice } from './slices/boardSlice'
-import { createPlayersSlice, PlayersSlice } from './slices/playersSlice'
-import { createCombatSlice, CombatSlice } from './slices/combatSlice'
-import { createShopSlice, ShopSlice } from './slices/shopSlice'
-import { createShowdownSlice, ShowdownSlice } from './slices/showdownSlice'
+import { devtools } from 'zustand/middleware'
+import { Genre } from '@/types'
+import { EngineState, EngineCombatState, createInitialEngineState } from '@/engine/state'
+import { GameAction } from '@/engine/actions'
+import { Driver, DispatchResult } from '@/drivers/types'
+import { LocalDriver, loadSavedGame } from '@/drivers/localDriver'
 
-// Combined store type
-export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice & ShopSlice & ShowdownSlice
+export { hasSavedGame, clearSavedGame } from '@/drivers/localDriver'
 
-const STORAGE_KEY = 'lute-hero-save'
-const STORAGE_VERSION = 8
+// ============================================================
+// Store shape
+// ============================================================
 
-// Only persist the durable game state — skip transient combat mid-fight data
-const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers' | 'pendingRewards' | 'showdownActive' | 'showdownComplete' | 'showdownTurn' | 'showdownOrder' | 'showdownPerformerIdx' | 'showdownResistGenre' | 'showdownWeakGenre' | 'showdownSongsUsed' | 'showdownTurnPerformances' | 'showdownHistory' | 'showdownCurrentFandom' | 'showdownCurrentGenre' | 'showdownFandom' | 'showdownBestHit' | 'showdownCrits'>> = {
-  name: STORAGE_KEY,
-  version: STORAGE_VERSION,
-  partialize: (state) => ({
-    phase: state.phase,
-    currentRound: state.currentRound,
-    currentTurnPlayerIndex: state.currentTurnPlayerIndex,
-    pendingPhase: state.pendingPhase,
-    spaces: state.spaces,
-    players: state.players,
-    namePool: state.namePool,
-    elementBag: state.elementBag,
-    elementDiscard: state.elementDiscard,
-    elementOffers: state.elementOffers,
-    pendingRewards: state.pendingRewards,
-    showdownActive: state.showdownActive,
-    showdownComplete: state.showdownComplete,
-    showdownTurn: state.showdownTurn,
-    showdownOrder: state.showdownOrder,
-    showdownPerformerIdx: state.showdownPerformerIdx,
-    showdownResistGenre: state.showdownResistGenre,
-    showdownWeakGenre: state.showdownWeakGenre,
-    showdownSongsUsed: state.showdownSongsUsed,
-    showdownTurnPerformances: state.showdownTurnPerformances,
-    showdownHistory: state.showdownHistory,
-    showdownCurrentFandom: state.showdownCurrentFandom,
-    showdownCurrentGenre: state.showdownCurrentGenre,
-    showdownFandom: state.showdownFandom,
-    showdownBestHit: state.showdownBestHit,
-    showdownCrits: state.showdownCrits,
-  }),
-  // Only hydrate if saved game is in a non-setup phase (i.e. a real game was in progress)
-  merge: (persisted, current) => {
-    const saved = persisted as Partial<GameStore> | undefined
-    if (!saved || saved.phase === 'setup' || !saved.players?.length) {
-      return current
-    }
-    return { ...current, ...saved }
-  },
+/**
+ * The engine state is mirrored into the store with combat FLATTENED to the
+ * top level, preserving the field names of the old combat slice so existing
+ * component reads and selectors keep working unchanged.
+ */
+export type GameMirror = Omit<EngineState, 'combat'> & EngineCombatState
+
+export type PlayMode = 'hotseat' | 'online' | null
+export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error'
+
+export interface LobbySeat {
+  seatId: string
+  playerId: string | null
+  name: string
+  color: string
+  starterGenre: Genre
+  ready: boolean
+  isHost: boolean
 }
 
-// Create the store with all slices
+export interface LobbyState {
+  gameId: string
+  joinCode: string
+  status: 'lobby' | 'active' | 'finished'
+  seats: LobbySeat[]
+  mySeatId: string
+  presence: Record<string, boolean>
+}
+
+export interface UiState {
+  mode: PlayMode
+  connection: ConnectionStatus
+  lobby: LobbyState | null
+  lastError: string | null
+}
+
+export type GameStore = GameMirror &
+  UiState & {
+    /** Route an action to the active driver (local hotseat or remote server). */
+    dispatch: (action: GameAction) => Promise<DispatchResult>
+    /** Begin (or resume) a hotseat game with the LocalDriver. */
+    startHotseat: () => void
+    /** Drivers push authoritative engine state here. */
+    _applyEngineState: (engineState: EngineState) => void
+    _setUi: (updates: Partial<UiState>) => void
+    /** Swap the active driver (used by online mode). */
+    _setDriver: (driver: Driver | null) => void
+  }
+
+// ============================================================
+// Engine-state flattening
+// ============================================================
+
+function flatten(engineState: EngineState): GameMirror {
+  const { combat, ...rest } = engineState
+  return { ...rest, ...combat }
+}
+
+// The active driver lives outside the store: it owns the authoritative
+// EngineState and pushes snapshots in via _applyEngineState.
+let activeDriver: Driver | null = null
+
+// ============================================================
+// Store
+// ============================================================
+
 export const useGameStore = create<GameStore>()(
   devtools(
-    persist(
-      (...args) => ({
-        ...createGameSlice(...args),
-        ...createBoardSlice(...args),
-        ...createPlayersSlice(...args),
-        ...createCombatSlice(...args),
-        ...createShopSlice(...args),
-        ...createShowdownSlice(...args),
-      }),
-      persistOptions,
-    ),
+    (set, get) => ({
+      ...flatten(createInitialEngineState()),
+
+      mode: null,
+      connection: 'idle',
+      lobby: null,
+      lastError: null,
+
+      dispatch: async (action) => {
+        if (!activeDriver) {
+          return { ok: false, events: [], error: 'No active game driver' }
+        }
+        const result = await activeDriver.dispatch(action)
+        if (!result.ok && result.error) {
+          set({ lastError: result.error })
+        }
+        return result
+      },
+
+      startHotseat: () => {
+        activeDriver?.stop()
+        activeDriver = new LocalDriver(loadSavedGame(), (engineState) =>
+          get()._applyEngineState(engineState)
+        )
+        set({ mode: 'hotseat', connection: 'idle', lobby: null, lastError: null })
+      },
+
+      _applyEngineState: (engineState) => {
+        set(flatten(engineState))
+      },
+
+      _setUi: (updates) => set(updates),
+
+      _setDriver: (driver) => {
+        activeDriver?.stop()
+        activeDriver = driver
+      },
+    }),
     { name: 'LuteHeroStore' }
   )
 )
 
-/** Clear saved game from localStorage */
-export function clearSavedGame() {
-  try {
-    localStorage.removeItem(STORAGE_KEY)
-  } catch {
-    // localStorage may not be available
-  }
-}
+// ============================================================
+// Selectors (unchanged API)
+// ============================================================
 
-/** Check if a saved game exists */
-export function hasSavedGame(): boolean {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return false
-    const parsed = JSON.parse(raw)
-    const state = parsed?.state
-    return state?.phase && state.phase !== 'setup' && state.players?.length > 0
-  } catch {
-    return false
-  }
-}
-
-// Selectors for common queries
 export const selectCurrentPlayer = (state: GameStore) => {
   return state.players[state.currentTurnPlayerIndex]
 }
@@ -116,8 +146,9 @@ export const selectActivePlayers = (state: GameStore) => {
   return state.players.filter((p) => !p.isEliminated)
 }
 
-export const selectPlayersAtSpace = (spaceId: number, excludePlayerId?: string) => (state: GameStore) => {
-  return state.players.filter(
-    (p) => p.position === spaceId && p.id !== excludePlayerId && !p.isEliminated
-  )
-}
+export const selectPlayersAtSpace =
+  (spaceId: number, excludePlayerId?: string) => (state: GameStore) => {
+    return state.players.filter(
+      (p) => p.position === spaceId && p.id !== excludePlayerId && !p.isEliminated
+    )
+  }

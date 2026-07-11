@@ -447,14 +447,16 @@ function performCombatPlay(
 }
 
 /** Fame each participant earns from the current combat, by kill credits. */
-export function computeCombatRewards(state: EngineState): {
+export function computeCombatRewards(combat: {
+  monsters: Monster[]
+  killCredits: KillCredit[]
+}): {
   totalFameEarned: number
   fighterFame: number
   coverFameByOwner: Map<string, number>
   totalExp: number
   monstersDefeatedCount: number
 } {
-  const combat = state.combat
   const defeated = combat.monsters.filter((m) => m.currentHP <= 0)
   const monstersDefeatedCount = defeated.length
   const totalExp = calculateTotalMonsterExp(combat.monsters)
@@ -491,7 +493,7 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
   const fighterId = combat.playerId!
   const spaceId = combat.spaceId!
   const success = combat.monsters.every((m) => m.currentHP <= 0)
-  const rewards = computeCombatRewards(state)
+  const rewards = computeCombatRewards(combat)
 
   // EXP always awarded for the full encounter; fame per kill credit
   let players = adjustExp(state.players, fighterId, rewards.totalExp)

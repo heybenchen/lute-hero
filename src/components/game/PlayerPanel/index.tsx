@@ -17,17 +17,7 @@ export function PlayerPanel() {
   const collectiveFame = useGameStore(selectCollectiveFame)
   const phase = useGameStore((state) => state.phase)
   const currentRound = useGameStore((state) => state.currentRound)
-  const nextTurn = useGameStore((state) => state.nextTurn)
-  const nextRound = useGameStore((state) => state.nextRound)
-  const addGenreTags = useGameStore((state) => state.addGenreTags)
-  const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
-  const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
-  const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
-  const usePlayerFight = useGameStore((state) => state.usePlayerFight)
-  const startCombat = useGameStore((state) => state.startCombat)
-  const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
-  const refillShopSlots = useGameStore((state) => state.refillShopSlots)
-  const resetPlayerInspirationPurchases = useGameStore((state) => state.resetPlayerInspirationPurchases)
+  const dispatch = useGameStore((state) => state.dispatch)
 
   if (!currentPlayer) return null
 
@@ -40,33 +30,12 @@ export function PlayerPanel() {
   const fameProgress = Math.min((collectiveFame / currentThreshold) * 100, 100)
 
   const handleEndTurn = () => {
-    resetPlayerMoves(currentPlayer.id)
-    resetPlayerFights(currentPlayer.id)
-    // Inspiration buy cost escalates within a turn, then resets
-    resetPlayerInspirationPurchases(currentPlayer.id)
-
-    if (currentTurnPlayerIndex >= players.length - 1) {
-      players.forEach((p) => {
-        resetPlayerMoves(p.id)
-        resetPlayerFights(p.id)
-      })
-      // Add 1 genre tag to all spaces once per round
-      addGenreTags()
-      // Apply any pending phase transition now that all players have had equal turns
-      applyPendingPhase()
-      nextRound()
-    } else {
-      nextTurn()
-    }
-
-    // Start the next player's turn with a full shop (fresh names, topped-up chips)
-    refillShopSlots()
+    dispatch({ type: 'END_TURN' })
   }
 
   const handleFight = () => {
     if (currentSpace && canFight) {
-      usePlayerFight(currentPlayer.id)
-      startCombat(currentPlayer.id, currentSpace.id, currentSpace.monsters)
+      dispatch({ type: 'START_COMBAT', playerId: currentPlayer.id })
     }
   }
 

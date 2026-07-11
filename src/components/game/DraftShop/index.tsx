@@ -8,7 +8,6 @@ import { GenreBadge } from '@/components/ui/GenreBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
 import {
   NEW_D4_COST,
-  createElementalDie,
   getNextDiceType,
   getUpgradeCost,
   getInspirationCost,
@@ -28,39 +27,20 @@ interface OwnedDie {
   slotIndex: number
 }
 
-let rewardIdCounter = 0
-function newRewardId(): string {
-  return `reward-${Date.now()}-${rewardIdCounter++}`
-}
-
 // Stable empty reference so the selector doesn't churn when a player has no rewards
 const EMPTY_REWARDS: PendingReward[] = []
 
 export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const player = useGameStore(selectPlayerById(playerId))
-  const awardPlayerExp = useGameStore((state) => state.awardPlayerExp)
-  const applyNameToSong = useGameStore((state) => state.applyNameToSong)
-  const upgradeDice = useGameStore((state) => state.upgradeDice)
+  const dispatch = useGameStore((state) => state.dispatch)
 
   // Shop state
   const namePool = useGameStore((state) => state.namePool)
-  const purchaseFromNamePool = useGameStore((state) => state.purchaseFromNamePool)
-  const refreshNamePool = useGameStore((state) => state.refreshNamePool)
-
-  // Element bag state
   const elementOffers = useGameStore((state) => state.elementOffers)
   const elementBag = useGameStore((state) => state.elementBag)
-  const refreshElementOffers = useGameStore((state) => state.refreshElementOffers)
-  const consumeElementOffer = useGameStore((state) => state.consumeElementOffer)
-
-  // Inspiration
-  const buyInspiration = useGameStore((state) => state.buyInspiration)
-  const spendInspiration = useGameStore((state) => state.spendInspiration)
 
   // Pending-reward queue (persists so buying more never discards unresolved rewards)
   const pendingRewards = useGameStore((state) => state.pendingRewards[playerId]) ?? EMPTY_REWARDS
-  const enqueueReward = useGameStore((state) => state.enqueueReward)
-  const removeReward = useGameStore((state) => state.removeReward)
 
   const [selectedOfferIdx, setSelectedOfferIdx] = useState<number | null>(null)
   const [activeRewardId, setActiveRewardId] = useState<string | null>(null)
@@ -74,12 +54,17 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
   const handleRefreshNames = () => {
     if (!player || player.inspiration < INSPIRATION_SPEND) return
-    if (!spendInspiration(playerId, INSPIRATION_SPEND)) return
-    refreshNamePool()
+    dispatch({ type: 'REFRESH_NAME_POOL' })
   }
 
   const handleBuyInspiration = () => {
-    buyInspiration(playerId)
+    dispatch({ type: 'BUY_INSPIRATION' })
+  }
+
+  // The engine mints reward ids; grab the newest one to auto-select it
+  const selectNewestReward = () => {
+    const rewards = useGameStore.getState().pendingRewards[playerId] ?? []
+    setActiveRewardId(rewards[rewards.length - 1]?.id ?? null)
   }
 
   if (!player) return null
@@ -97,13 +82,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
       )
     : []
 
-  const handleBuyNewD4 = () => {
+  const handleBuyNewD4 = async () => {
     if (selectedOfferIdx === null || !selectedElement || player.exp < NEW_D4_COST) return
-    awardPlayerExp(playerId, -NEW_D4_COST)
-    consumeElementOffer(selectedOfferIdx)
-    const reward: PendingReward = { kind: 'die', id: newRewardId(), dice: createElementalDie(selectedElement) }
-    enqueueReward(playerId, reward)
-    setActiveRewardId(reward.id)
+    const result = await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx })
+    if (result.ok) selectNewestReward()
     setSelectedOfferIdx(null)
   }
 
@@ -111,37 +93,25 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     if (selectedOfferIdx === null) return
     const cost = getUpgradeCost(die.type)
     if (cost === null || player.exp < cost) return
-    awardPlayerExp(playerId, -cost)
-    consumeElementOffer(selectedOfferIdx)
-    upgradeDice(playerId, die.id)
+    dispatch({ type: 'UPGRADE_DIE', offerIndex: selectedOfferIdx, diceId: die.id })
     setSelectedOfferIdx(null)
   }
 
   const handleRefreshElements = () => {
     if (player.inspiration < INSPIRATION_SPEND) return
-    if (!spendInspiration(playerId, INSPIRATION_SPEND)) return
     setSelectedOfferIdx(null)
-    refreshElementOffers()
+    dispatch({ type: 'REFRESH_ELEMENT_OFFERS' })
   }
 
-  const handlePurchaseName = (card: DraftCard) => {
+  const handlePurchaseName = async (card: DraftCard) => {
     if (!player || player.exp < card.cost) return
-    awardPlayerExp(playerId, -card.cost)
-    const reward: PendingReward = {
-      kind: 'name',
-      id: newRewardId(),
-      name: card.songName || 'New Song',
-      effect: card.songEffect ?? null,
-    }
-    enqueueReward(playerId, reward)
-    setActiveRewardId(reward.id)
-    purchaseFromNamePool(card.id)
+    const result = await dispatch({ type: 'BUY_NAME', cardId: card.id })
+    if (result.ok) selectNewestReward()
   }
 
   const handleApplyName = (songId: string) => {
     if (!activeName) return
-    applyNameToSong(playerId, songId, activeName.name, activeName.effect)
-    removeReward(playerId, activeName.id)
+    dispatch({ type: 'SLOT_NAME_REWARD', rewardId: activeName.id, songId })
     setActiveRewardId(null)
   }
 
@@ -153,8 +123,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
     if (!isReplacement && song.slots[slotIndex].dice) return
 
-    useGameStore.getState().addDiceToPlayer(playerId, activeDie, songId, slotIndex)
-    removeReward(playerId, activeReward.id)
+    dispatch({ type: 'SLOT_DIE_REWARD', rewardId: activeReward.id, songId, slotIndex })
     setActiveRewardId(null)
   }
 

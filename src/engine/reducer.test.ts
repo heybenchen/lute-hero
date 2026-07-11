@@ -152,7 +152,7 @@ describe('combat flow', () => {
     expect(state.combat.monsters.every((m) => m.currentHP <= 0)).toBe(true)
 
     const fameBefore = state.players[0].fame
-    const rewards = computeCombatRewards(state)
+    const rewards = computeCombatRewards(state.combat)
     const endResult = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' })
     state = endResult.state
     expect(state.combat.isActive).toBe(false)

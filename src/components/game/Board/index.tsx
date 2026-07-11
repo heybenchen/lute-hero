@@ -25,9 +25,7 @@ export function Board() {
   const spaces = useGameStore((state) => state.spaces)
   const players = useGameStore((state) => state.players)
   const currentPlayer = useGameStore(selectCurrentPlayer)
-  const movePlayer = useGameStore((state) => state.movePlayer)
-  const spawnMonstersAtSpace = useGameStore((state) => state.spawnMonstersAtSpace)
-  const spendInspiration = useGameStore((state) => state.spendInspiration)
+  const dispatch = useGameStore((state) => state.dispatch)
 
   const [hoveredSpaceId, setHoveredSpaceId] = useState<number | null>(null)
   const [travelMode, setTravelMode] = useState(false)
@@ -46,10 +44,8 @@ export function Board() {
     // Inspiration travel: hop to any space (not the current one) for 1 Inspiration + 1 move
     if (travelMode) {
       if (spaceId === currentPlayer.position || !canMove) return
-      if (!spendInspiration(currentPlayer.id, 1)) return
-      // movePlayer consumes a movement (and sets position, ignoring adjacency)
-      movePlayer(currentPlayer.id, spaceId)
-      spawnMonstersAtSpace(spaceId)
+      if (currentPlayer.inspiration < 1) return
+      dispatch({ type: 'MOVE', playerId: currentPlayer.id, toSpaceId: spaceId, inspirationTravel: true })
       setTravelMode(false)
       return
     }
@@ -59,11 +55,8 @@ export function Board() {
     const isValidMove = validMoves.some((s) => s.id === spaceId)
     if (!isValidMove) return
 
-    // Move player to space (consumes a move, not an action)
-    movePlayer(currentPlayer.id, spaceId)
-
-    // Spawn monsters (but don't auto-trigger combat)
-    spawnMonstersAtSpace(spaceId)
+    // Move to the space; the engine spawns monsters from its tags
+    dispatch({ type: 'MOVE', playerId: currentPlayer.id, toSpaceId: spaceId, inspirationTravel: false })
   }
 
   return (
