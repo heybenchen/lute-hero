@@ -51,6 +51,7 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
         id: playerId,
         name: config.name,
         color: config.color || PLAYER_COLORS[index] || '#888888',
+        starterGenre: config.starterGenre,
         position: STARTING_POSITIONS[index] || 0,
         songs: starterSongs,
         exp: 0,

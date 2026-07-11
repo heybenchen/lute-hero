@@ -108,6 +108,7 @@ export interface Player {
   id: string;
   name: string;
   color: string;
+  starterGenre: Genre; // Element the player started with (drives their themed color)
   position: number; // Current space ID
   songs: Song[];
   exp: number;

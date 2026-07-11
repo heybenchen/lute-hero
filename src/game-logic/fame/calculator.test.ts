@@ -17,6 +17,7 @@ describe('Fame Calculator', () => {
     id: 'test-player',
     name: 'Test Player',
     color: '#ff0000',
+    starterGenre: 'Ballad',
     position: 0,
     songs: [],
     exp: 0,

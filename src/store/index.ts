@@ -11,7 +11,7 @@ import { createShowdownSlice, ShowdownSlice } from './slices/showdownSlice'
 export type GameStore = GameSlice & BoardSlice & PlayersSlice & CombatSlice & ShopSlice & ShowdownSlice
 
 const STORAGE_KEY = 'lute-hero-save'
-const STORAGE_VERSION = 8
+const STORAGE_VERSION = 9
 
 // Only persist the durable game state — skip transient combat mid-fight data
 const persistOptions: PersistOptions<GameStore, Pick<GameStore, 'phase' | 'currentRound' | 'currentTurnPlayerIndex' | 'pendingPhase' | 'finalTurnGranted' | 'spaces' | 'players' | 'namePool' | 'elementBag' | 'elementDiscard' | 'elementOffers' | 'pendingRewards' | 'showdownActive' | 'showdownComplete' | 'showdownTurn' | 'showdownOrder' | 'showdownPerformerIdx' | 'showdownResistGenre' | 'showdownWeakGenre' | 'showdownSongsUsed' | 'showdownTurnPerformances' | 'showdownHistory' | 'showdownCurrentFandom' | 'showdownCurrentGenre' | 'showdownFandom' | 'showdownBestHit' | 'showdownCrits'>> = {

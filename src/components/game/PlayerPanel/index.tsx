@@ -5,6 +5,7 @@ import { GenreBadge } from '@/components/ui/GenreBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { describeTrackEffect } from '@/data/trackEffects'
+import { GENRE_THEME } from '@/data/genreTheme'
 
 // Choose black or white text for legibility on an arbitrary player color.
 // Uses the perceptual (sRGB-weighted) luminance so names stay readable on both
@@ -80,6 +81,7 @@ export function PlayerPanel() {
       <div className="flex gap-2">
         {players.map((player) => {
           const isCurrentTurn = player.id === currentPlayer.id
+          const genreColor = GENRE_THEME[player.starterGenre]?.color ?? player.color
           return (
             <div
               key={player.id}
@@ -92,7 +94,7 @@ export function PlayerPanel() {
             >
               <div
                 className="px-2 py-1 truncate font-bold text-[10px]"
-                style={{ background: player.color, color: readableTextColor(player.color) }}
+                style={{ background: genreColor, color: readableTextColor(genreColor) }}
               >
                 {player.name}
               </div>
