@@ -13,7 +13,6 @@ export function PlayerPanel() {
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
-  const currentRound = useGameStore((state) => state.currentRound)
   const nextTurn = useGameStore((state) => state.nextTurn)
   const nextRound = useGameStore((state) => state.nextRound)
   const addGenreTags = useGameStore((state) => state.addGenreTags)
@@ -31,9 +30,6 @@ export function PlayerPanel() {
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
   const canFight = hasMonsters && currentPlayer.fightsThisTurn < 1
-  const pendingPhase = useGameStore((state) => state.pendingPhase)
-  const finalTurnGranted = useGameStore((state) => state.finalTurnGranted)
-
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
     resetPlayerFights(currentPlayer.id)
@@ -67,26 +63,14 @@ export function PlayerPanel() {
 
   return (
     <div className="card-ornate p-4 sm:p-5 lg:h-full flex flex-col">
-      {/* Game info header */}
-      <div className="text-center mb-4">
-        <div className="font-display text-xl text-gold-400">
-          Round {currentRound}
-        </div>
-        {pendingPhase && finalTurnGranted && (
-          <div className="text-xs font-medieval font-bold text-amber-300 mt-1 tracking-wide animate-pulse">
-            Final Turn!
-          </div>
-        )}
-      </div>
-
       {/* All players */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex gap-2">
         {players.map((player) => {
           const isCurrentTurn = player.id === currentPlayer.id
           return (
             <div
               key={player.id}
-              className="p-2 rounded-lg transition-all duration-150"
+              className="p-2 rounded-lg transition-all duration-150 flex-1 min-w-0"
               style={{
                 background: isCurrentTurn
                   ? 'rgba(100, 220, 100, 0.08)'

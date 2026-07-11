@@ -7,6 +7,9 @@ import { useGameStore, clearSavedGame } from '@/store'
 export function GameView() {
   const resetGame = useGameStore((state) => state.resetGame)
   const resetShowdown = useGameStore((state) => state.resetShowdown)
+  const currentRound = useGameStore((state) => state.currentRound)
+  const pendingPhase = useGameStore((state) => state.pendingPhase)
+  const finalTurnGranted = useGameStore((state) => state.finalTurnGranted)
   const [showMenu, setShowMenu] = useState(false)
 
   const handleNewGame = () => {
@@ -60,6 +63,14 @@ export function GameView() {
               background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.5))',
             }}
           />
+          <div className="absolute right-3 sm:right-6 flex items-center gap-2">
+            <span className="font-display text-sm text-gold-400">Round {currentRound}</span>
+            {pendingPhase && finalTurnGranted && (
+              <span className="text-xs font-medieval font-bold text-amber-300 tracking-wide animate-pulse">
+                Final Turn!
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
