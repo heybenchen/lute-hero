@@ -81,7 +81,7 @@ export function BoardSpace({
       )}
 
       {/* Space name */}
-      <div className="text-[9px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
+      <div className="text-[10px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 w-full line-clamp-2">
         {space.name}
       </div>
 
