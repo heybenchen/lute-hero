@@ -4,12 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Lute Hero is a multiplayer tabletop board game where Bards defeat monsters using music. Players navigate a 14-space graph board, encounter monsters spawned by genre tags, use songs with slotted dice to deal damage (with genre-based multipliers), earn Fame and EXP, and progress through three phases: Main Game → Underground Scene → Final Boss.
+Lute Hero is a multiplayer tabletop board game where Bards defeat monsters using music. Players navigate a 16-space grid board, encounter monsters spawned by genre tags, use songs with slotted dice to deal damage (with genre-based multipliers), earn Fame and EXP, and finish with a 3-verse Final Showdown against The Eternal Silence. It plays two ways: **hotseat** (everyone on one device) and **online multiplayer** (lobbies with join codes, server-authoritative state on Vercel).
 
 ## Commands
 
-- `npm run dev` — Start Vite dev server
+- `npm run dev` — Start Vite dev server (proxies `/api` to :8787)
+- `npm run dev:api` — Start the local API harness (in-memory Redis) for online mode
 - `npm run build` — TypeScript compile + Vite production build
+- `npm run typecheck:api` — Type-check the serverless functions
 - `npm run lint` — ESLint
 - `npm test` — Run Vitest tests
 - `npm test -- --run <path>` — Run a single test file
@@ -17,33 +19,39 @@ Lute Hero is a multiplayer tabletop board game where Bards defeat monsters using
 
 ## Tech Stack
 
-React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Tests use Vitest with jsdom. Path alias `@/` maps to `src/`.
+React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel Node functions in `api/` + Upstash Redis. Tests use Vitest (jsdom for UI, node for `api/__tests__`). Path alias `@/` maps to `src/` — but **shared code (`src/types`, `src/engine`, `src/game-logic`, `src/data`, `src/net/protocol.ts`) must use relative imports** because the serverless functions import it directly.
 
 ## Architecture
 
-**Pure game logic** lives in `src/game-logic/` — framework-agnostic, unit-tested functions for dice rolling, damage calculation, monster spawning, fame/EXP math, and board graph construction. These are called by Zustand actions, never directly by components.
+**The engine** (`src/engine/`) is the single source of game rules: a pure, deterministic reducer `applyAction(state, action, ctx)` over a serializable `EngineState`. Every mutation is one atomic `GameAction` (START_GAME, MOVE, PLAY_SONG, END_COMBAT, END_TURN, BUY_DIE, PLAY_SHOWDOWN_SONG, …), validated by `validate.ts` (rule legality + online seat authorization). `ctx` injects a seeded RNG (`mulberry32`) and id factory so the server and hotseat produce identical mechanics; all randomness in `src/game-logic/` and `src/data/` takes an `rng` parameter (defaulting to `Math.random`). `applyAction` returns `EngineEvent`s (dice rolls, damage, showdown beats) that drive UI animations.
 
-**State management** uses Zustand with a slices pattern in `src/store/`:
-- `gameSlice` — Phase transitions, round/turn tracking
-- `boardSlice` — 14 board spaces, genre tags, monster placement
-- `playersSlice` — Player data, movement, songs, dice inventory
-- `combatSlice` — Active combat state, damage calculations, song usage
+**Drivers** (`src/drivers/`) own the authoritative state per play mode and push it into the store:
+- `LocalDriver` — hotseat: applies actions synchronously, persists saves to localStorage (v9)
+- `RemoteDriver` — online: POSTs actions to the API, mirrors state from the SSE stream, dedupes animation events per action seq (actor animates from the POST response, spectators from SSE)
 
-All slices merge into one store (`src/store/index.ts`) with devtools middleware. Selectors like `selectCurrentPlayer` and `selectCollectiveFame` are exported from the store.
+**The store** (`src/store/index.ts`) is a render mirror: engine state (combat flattened to top level) + UI state (mode, connection, lobby) + one `dispatch(action)` routed to the active driver. Selectors: `selectCurrentPlayer`, `selectCanAct` (turn gating), `selectCanPerform` (showdown gating), `selectIsHost`.
 
-**Components** in `src/components/game/` map to game systems: `Board/` (graph visualization with SVG connections), `Combat/` (battle modal), `PlayerPanel/` (turn actions sidebar), `DraftShop/` (card drafting). `GameView.tsx` is the main layout; `Setup.tsx` handles lobby.
+**The server** (`api/`) is Vercel Node functions sharing the engine via relative imports: `lobbies/` (create, join-by-code; the same token rejoining gets its seat back — that's reconnect), `games/[id]/actions` (validated engine actions, crypto-seeded RNG, idempotent clientActionIds, CAS retry), `games/[id]/stream` (SSE: snapshot on connect, per-action updates, presence deltas, `goodbye` before the duration cap). Storage is Upstash Redis behind `api/_lib/redis.ts` (`RedisLike` with atomic Lua CAS; in-memory fallback for tests/dev). `scripts/api-dev.ts` runs the same handlers locally.
 
-**Types** are centralized in `src/types/index.ts` — defines Genre, DiceType, GamePhase, TrackEffect, Song, Monster, Player, BoardSpace, CombatState, and DamageCalculation.
+**Identity** (`src/net/identity.ts`): anonymous `crypto.randomUUID()` token per browser in localStorage; sha256 hash binds it to a seat. `lute-hero-online-session` stores the current game for auto-rejoin on reload.
 
-**Static data** in `src/data/` defines starter dice, track effects (12+ special modifiers like doubleCrit, flip, explosive), draft card generation, and monster templates.
+**Components** in `src/components/game/` map to game systems: `Board/` (4x4 tile grid), `Combat/` (battle modal with spectator mode), `PlayerPanel/` (turn actions + presence dots + host skip-turn), `DraftShop/` (Studio purchases), `Showdown/` (final boss), `FinalSummary/`. `src/components/lobby/` holds `ModeSelect` and `LobbyRoom`. All write through `dispatch`; never mutate state directly.
+
+**Types** are centralized in `src/types/index.ts`; wire types (GameDoc, Snapshot, SSE messages) in `src/net/protocol.ts`.
 
 ## Key Game Mechanics
 
-- **Damage flow**: Roll dice → apply track effects → sum base damage + crit bonuses (+5 per max roll) → apply genre multipliers (2x vulnerable, 0.5x resistant) → apply effect multipliers → each song hits ALL monsters (AOE)
-- **Monster spawning**: Each round adds 1 genre tag per space; every 2 tags of a genre spawns 1 monster of that genre
-- **Phase progression**: Collective fame thresholds (30 → Underground, 50 → Final Boss)
+- **Damage flow**: Roll dice (crits cascade) → apply track effects → genre multipliers (2x vulnerable, 0x resistant/immune) → each song hits ALL monsters (AOE)
+- **Monster spawning**: one monster per unique genre tag on a space; duplicate tags raise its level; fame per kill = 10/30/70/150/250 by level
+- **Turn structure**: Move up to 2 spaces, fight 1 combat (up to 3 songs), shop in the Studio, end turn
+- **Phase progression**: 100 collective fame per player → the Final Showdown (3 verses, one song each, boss adapts elementally between verses; damage = fandom; most total fans wins)
 - **Dice upgrade path**: d4 → d6 → d12 → d20
-- **Turn structure**: Move up to 2 spaces, fight 1 combat, then shop (unlimited purchases after fighting)
+
+## Deploying online multiplayer (Vercel)
+
+1. Import the repo into Vercel (framework: Vite). `api/**` deploys as Node functions automatically; `vercel.json` raises `maxDuration` for the SSE stream.
+2. Add **Upstash Redis** from the Vercel Marketplace (or set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`, or the `KV_REST_API_*` equivalents). Without them the API falls back to per-invocation in-memory storage, which does NOT work across serverless invocations — Redis is required in production.
+3. Hobby-plan note: streams rotate every ~300s (the client reconnects seamlessly); each connected client polls Redis ~2x/s.
 
 ## Task Tracking
 
@@ -51,4 +59,4 @@ All tasks, bugs, and feature requests are tracked in `TODO.md` at the repo root.
 
 ## Styling
 
-Tailwind with custom theme: `parchment-*` and `wood-*` color palettes for medieval aesthetic, per-genre colors (pop pink, rock crimson, electronic cyan, classical purple, hiphop orange). Custom CSS component classes (`.card`, `.btn-primary`, `.genre-*`) in `src/index.css`. Fonts: Cinzel (headers) and Barlow (body) via Google Fonts.
+Tailwind with custom theme: `parchment-*` and `wood-*` color palettes for medieval aesthetic, per-genre colors (Ballad red, Folk green, Hymn yellow, Shanty blue in `src/data/genreTheme.ts`). Custom CSS component classes (`.card`, `.btn-primary`, `.genre-*`) in `src/index.css`. Fonts: Cinzel (headers) and Spectral (body) via Google Fonts.

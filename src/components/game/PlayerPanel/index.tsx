@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameStore, selectCurrentPlayer, selectCollectiveFame, selectCanAct } from '@/store'
+import { useGameStore, selectCurrentPlayer, selectCollectiveFame, selectCanAct, selectIsHost } from '@/store'
 import { FAME_THRESHOLDS } from '@/data/startingData'
 import { DraftShop } from '../DraftShop'
 import { GenreBadge } from '@/components/ui/GenreBadge'
@@ -20,6 +20,16 @@ export function PlayerPanel() {
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const mode = useGameStore((state) => state.mode)
+  const lobby = useGameStore((state) => state.lobby)
+  const isHost = useGameStore(selectIsHost)
+
+  // Online presence per engine player (via their seat)
+  const presenceFor = (playerId: string): boolean | null => {
+    if (mode !== 'online' || !lobby) return null
+    const seat = lobby.seats.find((se) => se.playerId === playerId)
+    if (!seat) return null
+    return lobby.presence[seat.seatId] !== false
+  }
 
   if (!currentPlayer) return null
 
@@ -293,11 +303,23 @@ export function PlayerPanel() {
                 }}
               >
                 <div className="flex items-center gap-2 mb-1.5">
-                  <div
-                    className="player-avatar w-8 h-8 text-xs flex-shrink-0"
-                    style={{ backgroundColor: player.color }}
-                  >
-                    {player.name.charAt(0)}
+                  <div className="relative flex-shrink-0">
+                    <div
+                      className="player-avatar w-8 h-8 text-xs"
+                      style={{ backgroundColor: player.color }}
+                    >
+                      {player.name.charAt(0)}
+                    </div>
+                    {presenceFor(player.id) !== null && (
+                      <span
+                        className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border"
+                        style={{
+                          background: presenceFor(player.id) ? '#4caf50' : '#6b6b6b',
+                          borderColor: '#1e1812',
+                        }}
+                        title={presenceFor(player.id) ? 'Online' : 'Disconnected'}
+                      />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -350,6 +372,20 @@ export function PlayerPanel() {
           <div className="text-center text-sm text-parchment-500 italic py-2 animate-pulse-slow">
             Waiting for {currentPlayer.name}’s turn…
           </div>
+        )}
+        {mode === 'online' && !canAct && isHost && presenceFor(currentPlayer.id) === false && (
+          <button
+            onClick={() => dispatch({ type: 'HOST_SKIP_TURN', targetPlayerId: currentPlayer.id })}
+            className="w-full py-2 text-sm font-medieval font-bold rounded-lg transition-all duration-150 hover:-translate-y-0.5"
+            style={{
+              background: 'rgba(255, 180, 60, 0.1)',
+              border: '1px solid rgba(255, 180, 60, 0.4)',
+              color: '#ffd591',
+            }}
+            title="The current player looks disconnected - skip their turn (auto-retreats their combat)"
+          >
+            ⏭ Skip {currentPlayer.name}'s Turn (offline)
+          </button>
         )}
         {hasMonsters && canAct && (
           <button

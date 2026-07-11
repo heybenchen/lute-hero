@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { PlayerPanel } from './PlayerPanel'
@@ -11,7 +11,16 @@ export function GameView() {
   const isHost = useGameStore(selectIsHost)
   const leaveOnline = useGameStore((state) => state.leaveOnline)
   const goToModeSelect = useGameStore((state) => state.goToModeSelect)
+  const lastError = useGameStore((state) => state.lastError)
+  const _setUi = useGameStore((state) => state._setUi)
   const [showMenu, setShowMenu] = useState(false)
+
+  // Rejected actions (422/403/409) surface briefly, then clear
+  useEffect(() => {
+    if (!lastError) return
+    const timer = setTimeout(() => _setUi({ lastError: null }), 4000)
+    return () => clearTimeout(timer)
+  }, [lastError, _setUi])
 
   const handleNewGame = () => {
     setShowMenu(false)
@@ -141,6 +150,21 @@ export function GameView() {
 
       {/* Combat modal overlay */}
       <CombatModal />
+
+      {/* Error toast */}
+      {lastError && (
+        <div
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded-lg text-sm font-medieval animate-slide-up"
+          style={{
+            background: 'rgba(40, 18, 20, 0.95)',
+            border: '1px solid rgba(232, 32, 64, 0.45)',
+            color: '#ffb3b3',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+          }}
+        >
+          {lastError}
+        </div>
+      )}
     </div>
   )
 }
