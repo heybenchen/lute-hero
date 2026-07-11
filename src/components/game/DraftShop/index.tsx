@@ -460,7 +460,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   } : undefined}
                   onClick={() => activeName && handleApplyName(song.id)}
                 >
-                  <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-2"
+                  <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-2 text-center"
                     style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
                   >
                     {song.name || <span className="text-parchment-500 italic">Untitled</span>}
@@ -482,10 +482,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="mb-2 p-1.5 rounded text-xs text-parchment-500 italic"
+                    <div className="mb-2 p-1.5 rounded text-xs text-parchment-500 italic text-center"
                       style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
                     >
-                      No effects — buy a name to add effects
+                      No effects
                     </div>
                   )}
 
