@@ -82,7 +82,7 @@ export function PlayerPanel() {
       <div className="divider-ornate mt-1" />
 
       {/* Current player */}
-      <div className="mb-4">
+      <div>
         <div className="flex items-center gap-3 mb-3">
           <div
             className="player-avatar w-12 h-12 text-xl"
@@ -220,7 +220,7 @@ export function PlayerPanel() {
 
       {/* All players */}
       <div className="lg:flex-1 lg:min-h-0 lg:overflow-auto mb-4">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 mt-2">
           {players.map((player) => {
             const isCurrentTurn = player.id === currentPlayer.id
             return (
