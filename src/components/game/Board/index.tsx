@@ -110,7 +110,7 @@ export function Board() {
         </button>
       )}
 
-      <div className="relative w-full p-3 sm:p-6 lg:p-8" style={{ maxWidth: 'min(100%, calc(100vh - 9rem))' }}>
+      <div className="relative w-full p-3 sm:p-6 lg:p-8" style={{ maxWidth: 'min(100%, calc(100vh - 9rem))', margin: '8px' }}>
         {/* Map frame corners */}
         <Corner position="top-0 left-0" />
         <Corner position="top-0 right-0" />

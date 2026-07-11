@@ -162,7 +162,7 @@ export function PlayerPanel() {
             {currentPlayer.songs.map((song) => (
               <div
                 key={song.id}
-                className="rounded-lg p-1.5 min-w-fit shrink-0 transition-all duration-150 hover:bg-tavern-600"
+                className="rounded-lg p-1.5 flex-1 min-w-0 transition-all duration-150 hover:bg-tavern-600"
                 style={{
                   background: 'rgba(61, 48, 32, 0.5)',
                   border: '1px solid rgba(212, 168, 83, 0.12)',
@@ -174,14 +174,14 @@ export function PlayerPanel() {
                 }}
                 onMouseLeave={() => setHoveredSong(null)}
               >
-                <div className="h-3.5 text-[10px] font-bold text-parchment-400 mb-0.5 truncate max-w-[90px]">
+                <div className="h-3.5 text-[10px] font-bold text-parchment-400 mb-0.5 truncate">
                   {song.name}
                 </div>
                 <div className="flex gap-0.5">
                   {song.slots.map((slot, idx) => (
                     <div
                       key={idx}
-                      className="w-8 h-8 rounded flex flex-col items-center justify-center text-[8px]"
+                      className="flex-1 aspect-square rounded flex flex-col items-center justify-center text-[8px]"
                       style={{
                         background: slot.dice
                           ? 'rgba(212, 168, 83, 0.15)'
