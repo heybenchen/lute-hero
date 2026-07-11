@@ -36,11 +36,11 @@ export function BoardSpace({
       onClick={onClick}
       disabled={!canMoveTo && !isTravelTarget}
       className={`
-        relative hover:z-40 w-full aspect-square rounded-lg sm:rounded-xl
+        relative sm:hover:z-40 w-full aspect-square rounded-lg sm:rounded-xl
         flex flex-col justify-between p-1.5 sm:p-2
         transition-all duration-200 ease-out
         ${canMoveTo || isTravelTarget
-          ? 'cursor-pointer hover:-translate-y-1 hover:brightness-110'
+          ? 'cursor-pointer sm:hover:-translate-y-1 sm:hover:brightness-110'
           : 'cursor-default'
         }
         ${hasMonsters && (canMoveTo || isTravelTarget) ? 'animate-danger-pulse' : ''}

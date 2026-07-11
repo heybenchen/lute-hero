@@ -158,7 +158,7 @@ export function Board() {
         </div>
 
         {/* Hover hint */}
-        <div className="mt-1.5 sm:mt-4 text-center text-[10px] sm:text-xs pointer-events-none min-h-[1rem]">
+        <div className="hidden sm:block mt-1.5 sm:mt-4 text-center text-[10px] sm:text-xs pointer-events-none min-h-[1rem]">
           {travelMode ? (
             <span className="text-classical font-bold">Click any space to travel there — costs 1 Inspiration and 1 move</span>
           ) : (
