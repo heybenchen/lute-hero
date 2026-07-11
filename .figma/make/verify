@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+TIMEOUT=120
+INTERVAL=2
+ELAPSED=0
+URL="http://localhost:${PORT:-5173}"
+
+echo "Waiting for dev server at $URL..."
+
+while [ $ELAPSED -lt $TIMEOUT ]; do
+  if curl -s -o /dev/null -w "%{http_code}" "$URL" | grep -q "200"; then
+    echo "Dev server is ready"
+    exit 0
+  fi
+  sleep $INTERVAL
+  ELAPSED=$((ELAPSED + INTERVAL))
+done
+
+echo "Timed out waiting for dev server after ${TIMEOUT}s"
+exit 1

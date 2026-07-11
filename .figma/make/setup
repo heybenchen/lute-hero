@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+# Check for Node.js
+if ! command -v node &> /dev/null; then
+  echo "Node.js not found. Installing via Homebrew..."
+  brew install node
+fi
+
+echo "Node.js $(node --version) available"
