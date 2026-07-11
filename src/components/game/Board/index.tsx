@@ -3,22 +3,6 @@ import { useGameStore, selectCurrentPlayer } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
 
-// Corner flourish for the map frame
-function Corner({ position }: { position: string }) {
-  return (
-    <div
-      className={`absolute w-6 h-6 sm:w-8 sm:h-8 pointer-events-none ${position}`}
-      style={{
-        borderColor: 'rgba(212, 168, 83, 0.35)',
-        borderStyle: 'solid',
-        borderWidth: position.includes('top') ? '2px 0 0' : '0 0 2px',
-        ...(position.includes('left')
-          ? { borderLeftWidth: '2px' }
-          : { borderRightWidth: '2px' }),
-      }}
-    />
-  )
-}
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)
@@ -111,12 +95,6 @@ export function Board() {
       )}
 
       <div className="relative w-full p-2 sm:p-6 lg:p-8 max-w-[calc(50dvh_-_6rem)] lg:max-w-[calc(100dvh_-_9rem)]" style={{ margin: '8px' }}>
-        {/* Map frame corners */}
-        <Corner position="top-0 left-0" />
-        <Corner position="top-0 right-0" />
-        <Corner position="bottom-0 left-0" />
-        <Corner position="bottom-0 right-0" />
-
         {/* Map title decoration — hidden on mobile to save vertical space */}
         <div className="hidden sm:flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-5 pointer-events-none">
           <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />

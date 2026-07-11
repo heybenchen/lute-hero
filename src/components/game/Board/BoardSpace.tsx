@@ -86,7 +86,7 @@ export function BoardSpace({
       </div>
 
       {playersHere.length > 0 && (
-        <div className="absolute left-0 right-0 top-1 sm:top-5 flex justify-center -space-x-1.5 z-20 pointer-events-none">
+        <div className="absolute left-0 right-0 bottom-1 sm:bottom-1.5 flex justify-center -space-x-1.5 z-20 pointer-events-none">
           {playersHere.map((player) => (
             <div
               key={player.id}

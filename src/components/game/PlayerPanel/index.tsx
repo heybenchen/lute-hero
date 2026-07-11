@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
-import { FAME_THRESHOLDS } from '@/data/startingData'
 import { DraftShop } from '../DraftShop'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
@@ -11,11 +10,9 @@ export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
   const [hoveredSong, setHoveredSong] = useState<string | null>(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
-  const [fameExpanded, setFameExpanded] = useState(false)
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
-  const phase = useGameStore((state) => state.phase)
   const currentRound = useGameStore((state) => state.currentRound)
   const nextTurn = useGameStore((state) => state.nextTurn)
   const nextRound = useGameStore((state) => state.nextRound)
@@ -38,7 +35,6 @@ export function PlayerPanel() {
   const canFight = hasMonsters && fightsRemaining > 0
   const pendingPhase = useGameStore((state) => state.pendingPhase)
   const finalTurnGranted = useGameStore((state) => state.finalTurnGranted)
-  const fameThreshold = FAME_THRESHOLDS.finalBoss
 
   const handleEndTurn = () => {
     resetPlayerMoves(currentPlayer.id)
@@ -75,57 +71,12 @@ export function PlayerPanel() {
     <div className="card-ornate p-4 sm:p-5 lg:h-full flex flex-col">
       {/* Game info header */}
       <div className="text-center mb-4">
-        <div className="font-display text-xl text-gold-400 mb-1">
+        <div className="font-display text-xl text-gold-400">
           Round {currentRound}
         </div>
-        <div className="text-sm text-parchment-400 uppercase tracking-widest font-medieval">
-          {phase} Phase
-        </div>
-
-        {/* Per-player fame */}
-        {phase === 'main' && (
-          <div className="mt-2">
-            {pendingPhase && finalTurnGranted && (
-              <div className="text-xs font-medieval font-bold text-amber-300 mb-1 tracking-wide animate-pulse">
-                Final Turn!
-              </div>
-            )}
-            <button
-              onClick={() => setFameExpanded((v) => !v)}
-              className="w-full flex items-center justify-between text-[10px] text-parchment-500 uppercase tracking-wider hover:text-parchment-300 transition-colors"
-            >
-              <span>Fame to Final Boss ({fameThreshold})</span>
-              <span className="text-parchment-600 text-[9px]">{fameExpanded ? '▲' : '▼'}</span>
-            </button>
-            {fameExpanded ? (
-              <div className="flex flex-col gap-0.5 mt-1">
-                {players.map((p) => {
-                  const pct = Math.min((p.fame / fameThreshold) * 100, 100)
-                  return (
-                    <div key={p.id} className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-parchment-400 w-16 truncate">{p.name}</span>
-                      <div className="hp-bar h-1 flex-1 bar-sheen">
-                        <div
-                          className="hp-fill rounded-full"
-                          style={{
-                            width: `${pct}%`,
-                            background: pct >= 100 ? 'linear-gradient(90deg, #f0d78c, #ffe9a0)' : 'linear-gradient(90deg, #b8922e, #f0d78c)',
-                            boxShadow: pct > 0 ? '0 0 4px rgba(240, 215, 140, 0.3)' : 'none',
-                          }}
-                        />
-                      </div>
-                      <span className="text-[10px] text-gold-400 font-bold w-7 text-right">{p.fame}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="flex gap-2 mt-0.5 justify-center">
-                {players.map((p) => (
-                  <span key={p.id} className="text-[10px] text-gold-400 font-bold">{p.fame}</span>
-                ))}
-              </div>
-            )}
+        {pendingPhase && finalTurnGranted && (
+          <div className="text-xs font-medieval font-bold text-amber-300 mt-1 tracking-wide animate-pulse">
+            Final Turn!
           </div>
         )}
       </div>
@@ -343,19 +294,19 @@ export function PlayerPanel() {
                     : '1px solid rgba(212, 168, 83, 0.08)',
                 }}
               >
-                <div className="flex items-center gap-1.5 mb-1">
+                <div className="flex items-center gap-1.5">
                   <div
-                    className="player-avatar w-6 h-6 text-[10px] flex-shrink-0"
+                    className="player-avatar w-5 h-5 text-[9px] flex-shrink-0"
                     style={{ backgroundColor: player.color }}
                   >
                     {player.name.charAt(0)}
                   </div>
-                  <div className="font-bold text-xs text-parchment-200 truncate">{player.name}</div>
+                  <div className="flex-1 min-w-0 truncate font-bold text-[10px] text-parchment-200">{player.name}</div>
                 </div>
-                <div className="text-[10px] text-parchment-400 space-y-0.5">
-                  <div>Fame: <span className="text-gold-400 font-bold">{player.fame}</span></div>
-                  <div>EXP: <span className="text-parchment-200 font-bold">{player.exp}</span></div>
-                  <div>&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></div>
+                <div className="text-[10px] text-parchment-400 flex gap-2 mt-0.5">
+                  <span>F:<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
+                  <span>E:<span className="text-parchment-200 font-bold ml-0.5">{player.exp}</span></span>
+                  <span>&#x2728;<span className="font-bold ml-0.5" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
                 </div>
               </div>
             )
