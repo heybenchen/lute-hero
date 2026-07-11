@@ -158,7 +158,7 @@ export function PlayerPanel() {
           <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-1.5">
             Songs
           </div>
-          <div className="flex flex-wrap justify-between gap-y-2">
+          <div className="flex flex-wrap justify-between gap-2">
             {currentPlayer.songs.map((song) => (
               <div
                 key={song.id}
