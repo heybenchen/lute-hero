@@ -246,8 +246,8 @@ export function PlayerPanel() {
                   <div className="flex-1 min-w-0 truncate font-bold text-[10px] text-parchment-200">{player.name}</div>
                 </div>
                 <div className="text-[10px] text-parchment-400 flex gap-2 mt-0.5">
-                  <span>F:<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
-                  <span>E:<span className="text-parchment-200 font-bold ml-0.5">{player.exp}</span></span>
+                  <span>Fame:<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
+                  <span>EXP:<span className="text-parchment-200 font-bold ml-0.5">{player.exp}</span></span>
                   <span>&#x2728;<span className="font-bold ml-0.5" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
                 </div>
               </div>
@@ -273,7 +273,7 @@ export function PlayerPanel() {
               boxShadow: canFight ? '0 0 12px rgba(232, 32, 64, 0.2)' : 'none',
             }}
           >
-            &#x2694; Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
+            <span style={{ fontSize: '1.2em' }}>&#x2694;</span> Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
             {!canFight && ' (No fights left)'}
           </button>
         )}
