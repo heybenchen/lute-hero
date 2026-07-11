@@ -94,7 +94,7 @@ export function Board() {
         </button>
       )}
 
-      <div className="relative w-full p-2 sm:p-6 lg:p-8 max-w-[calc(50dvh_-_6rem)] lg:max-w-[calc(100dvh_-_9rem)]" style={{ margin: 0 }}>
+      <div className="relative w-full p-2 sm:p-6 lg:p-8 max-w-[calc(50dvh_-_6rem)] lg:max-w-[calc(100dvh_-_5rem)]" style={{ margin: 0 }}>
         {/* Map title decoration — hidden on mobile to save vertical space */}
         <div className="hidden sm:flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-5 pointer-events-none">
           <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />

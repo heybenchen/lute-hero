@@ -70,18 +70,22 @@ export function PlayerPanel() {
           return (
             <div
               key={player.id}
-              className="p-2 rounded-lg transition-all duration-150 flex-1 min-w-0"
+              className="rounded-lg transition-all duration-150 flex-1 min-w-0 overflow-hidden"
               style={{
-                background: player.color,
                 border: isCurrentTurn
-                  ? '2px solid rgba(255, 255, 255, 0.8)'
-                  : '1px solid rgba(0, 0, 0, 0.2)',
+                  ? '2px solid rgba(255, 255, 255, 0.85)'
+                  : '1px solid rgba(0, 0, 0, 0.25)',
               }}
             >
-              <div className="flex-1 min-w-0 truncate font-bold text-[10px] text-parchment-100">{player.name}</div>
-              <div className="text-[10px] text-parchment-400 flex gap-1.5 mt-1">
+              <div
+                className="px-2 py-1 truncate font-bold text-[10px] text-white"
+                style={{ background: player.color, textShadow: '0 1px 2px rgba(0, 0, 0, 0.6)' }}
+              >
+                {player.name}
+              </div>
+              <div className="text-[10px] text-parchment-300 flex gap-1.5 px-2 py-1" style={{ background: 'rgba(20, 16, 10, 0.85)' }}>
                 <span title="Fame">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
-                <span title="EXP">&#x1F4D6;<span className="text-parchment-200 font-bold ml-0.5">{player.exp}</span></span>
+                <span title="EXP">&#x1F4D6;<span className="text-parchment-100 font-bold ml-0.5">{player.exp}</span></span>
               </div>
             </div>
           )
@@ -228,7 +232,7 @@ export function PlayerPanel() {
           <button
             onClick={handleFight}
             disabled={!canFight}
-            className={`w-full py-2.5 px-4 font-medieval font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:brightness-110 hover:enabled:-translate-y-0.5 active:enabled:translate-y-0 ${canFight ? 'animate-danger-pulse' : ''}`}
+            className={`w-full py-1.5 px-2.5 text-sm sm:py-2.5 sm:px-4 sm:text-base font-medieval font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:brightness-110 hover:enabled:-translate-y-0.5 active:enabled:translate-y-0 ${canFight ? 'animate-danger-pulse' : ''}`}
             style={{
               background: canFight
                 ? 'linear-gradient(135deg, #c43030, #8c2020)'
