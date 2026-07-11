@@ -28,11 +28,9 @@ export function PlayerPanel() {
 
   if (!currentPlayer) return null
 
-  const movesRemaining = 2 - currentPlayer.movesThisTurn
-  const fightsRemaining = 1 - currentPlayer.fightsThisTurn
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
-  const canFight = hasMonsters && fightsRemaining > 0
+  const canFight = hasMonsters && currentPlayer.fightsThisTurn < 1
   const pendingPhase = useGameStore((state) => state.pendingPhase)
   const finalTurnGranted = useGameStore((state) => state.finalTurnGranted)
 
@@ -216,62 +214,6 @@ export function PlayerPanel() {
           )}
         </div>
 
-        {/* Move and Action trackers */}
-        <div className="grid grid-cols-2 gap-2">
-          {/* Movement tracker */}
-          <div className="rounded-lg p-2" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-            <div className="text-xs font-medieval text-parchment-400 mb-1.5 text-center">
-              Moves
-            </div>
-            <div className="flex gap-1.5 justify-center">
-              {[1, 2].map((move) => (
-                <div
-                  key={move}
-                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-xs transition-all duration-200"
-                  style={{
-                    background: move <= movesRemaining
-                      ? 'linear-gradient(135deg, #3d8c40, #2d6e30)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: move <= movesRemaining
-                      ? '1px solid rgba(100, 220, 100, 0.4)'
-                      : '1px solid rgba(255, 255, 255, 0.05)',
-                    color: move <= movesRemaining ? '#d4ffd6' : 'rgba(255,255,255,0.15)',
-                    boxShadow: move <= movesRemaining ? '0 0 8px rgba(100, 220, 100, 0.15)' : 'none',
-                  }}
-                >
-                  {move}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Fight tracker */}
-          <div className="rounded-lg p-2" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-            <div className="text-xs font-medieval text-parchment-400 mb-1.5 text-center">
-              Fights
-            </div>
-            <div className="flex gap-1.5 justify-center">
-              {[1].map((fight) => (
-                <div
-                  key={fight}
-                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-xs transition-all duration-200"
-                  style={{
-                    background: fight <= fightsRemaining
-                      ? 'linear-gradient(135deg, #c43030, #8c2020)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: fight <= fightsRemaining
-                      ? '1px solid rgba(232, 80, 80, 0.4)'
-                      : '1px solid rgba(255, 255, 255, 0.05)',
-                    color: fight <= fightsRemaining ? '#ffd4d4' : 'rgba(255,255,255,0.15)',
-                    boxShadow: fight <= fightsRemaining ? '0 0 8px rgba(232, 80, 80, 0.15)' : 'none',
-                  }}
-                >
-                  &#x2694;
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="divider-ornate" />
