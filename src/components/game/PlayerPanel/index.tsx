@@ -81,7 +81,7 @@ export function PlayerPanel() {
         )}
       </div>
 
-      <div className="divider-ornate" />
+      <div className="divider-ornate mt-1" />
 
       {/* Current player */}
       <div className="mb-4">
