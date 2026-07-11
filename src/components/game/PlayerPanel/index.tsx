@@ -72,23 +72,13 @@ export function PlayerPanel() {
               key={player.id}
               className="p-2 rounded-lg transition-all duration-150 flex-1 min-w-0"
               style={{
-                background: isCurrentTurn
-                  ? 'rgba(100, 220, 100, 0.08)'
-                  : 'rgba(61, 48, 32, 0.3)',
+                background: player.color,
                 border: isCurrentTurn
-                  ? '1px solid rgba(100, 220, 100, 0.25)'
-                  : '1px solid rgba(212, 168, 83, 0.08)',
+                  ? '2px solid rgba(255, 255, 255, 0.8)'
+                  : '1px solid rgba(0, 0, 0, 0.2)',
               }}
             >
-              <div className="flex items-center gap-1.5">
-                <div
-                  className="player-avatar w-5 h-5 text-[9px] flex-shrink-0"
-                  style={{ backgroundColor: player.color }}
-                >
-                  {player.name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0 truncate font-bold text-[10px] text-parchment-200">{player.name}</div>
-              </div>
+              <div className="flex-1 min-w-0 truncate font-bold text-[10px] text-parchment-100">{player.name}</div>
               <div className="text-[10px] text-parchment-400 flex gap-1.5 mt-1">
                 <span title="Fame">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
                 <span title="EXP">&#x1F4D6;<span className="text-parchment-200 font-bold ml-0.5">{player.exp}</span></span>
