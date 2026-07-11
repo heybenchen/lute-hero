@@ -262,11 +262,11 @@ export function PlayerPanel() {
 
         <button
           onClick={() => setShowDraftShop(true)}
-          className="btn-secondary w-full"
+          className="btn-secondary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5"
         >
           Studio ({currentPlayer.exp} EXP)
         </button>
-        <button onClick={handleEndTurn} className="btn-primary w-full">
+        <button onClick={handleEndTurn} className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5">
           End Turn
         </button>
       </div>
