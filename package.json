@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "description": "A multiplayer tabletop game where Bards defeat monsters with music",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

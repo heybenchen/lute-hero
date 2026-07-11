@@ -6,7 +6,7 @@
 
 ## Medium Priority
 
-- Fix `npm run lint`: ESLint 9 is installed but the repo has no `eslint.config.js` (flat config), so lint fails before checking any files
+(none)
 
 ## Low Priority
 
@@ -14,6 +14,7 @@
 
 ## Completed
 
+- Tooling cleanup pass: migrated ESLint to a v9 flat config (`eslint.config.js`) so `pnpm lint` runs again, and fixed the errors it surfaced (`prefer-const`, two `no-explicit-any` cross-slice casts, and renamed the misnamed `usePlayerFight` store action → `consumePlayerFight` to satisfy `rules-of-hooks`). Fixed the test harness — jsdom's stub `localStorage` broke zustand-persist; added an in-memory Storage in `src/test/setup.ts`, so the full suite is green (127 tests). Completed the pnpm migration: removed the stale `package-lock.json`, gitignored npm/yarn lockfiles, added a `packageManager` field, pointed `.figma/make` scripts at pnpm, and updated docs.
 - Showdown rework + balance pass: each player now performs exactly one song per showdown verse (other songs lock after the play); the boss's adaptation is elemental, using the same mechanics as monster strengths/weaknesses — after each verse it becomes immune (0×) to the element of the strongest attack and weak (2×) to the element of the weakest, where an attack's element is the genre whose dice contributed the most roll value. Monster fame now scales steeply with monster level since damage is AOE (Lv1=10, Lv2=30, Lv3=70, Lv4=150, Lv5+=250); the old fame-tier multiplier (1x-4x by career monsters defeated) is removed, so these are the final values. Combat rewards, cover-song splits, and the per-monster ⭐ value all use per-level fame. Fixed the Setup screen overflowing at mobile widths (genre selects pushed off-screen) and stale "resistant 0.5x" rule text.
 - Final Showdown battle: reaching the fame threshold now launches a 3-verse boss fight against The Eternal Silence with its own full-screen UI (cinematic intro, void-orb boss with turn pips and a live per-player fandom race bar, dice-roll performances with floating "+N fandom" popups). Each verse every bard plays all their songs; each point of damage earns 1 fandom. Between verses the boss adapts — it resists (×½ fandom) whoever dealt the most effective damage last verse and is weak (×2) to whoever dealt the least. After verse 3 the boss auto-shatters (shockwave finale), fandom banks into fame, and a spotlight winner sequence crowns the player with the most total fans (sweeping stage lights, music-note confetti, animated fan count-up) with the full score breakdown below. A final Tour Summary page follows with per-player fun stats (monsters bested, biggest showdown hit, crits, dice, named songs, unspent EXP) and unique superlative awards (Crowd Favorite, One-Hit Wonder, Beast Buster, ...). Showdown state persists across refreshes; New Game resets it.
 

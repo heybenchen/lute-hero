@@ -8,9 +8,9 @@ description: Build, run, and drive Lute Hero end-to-end to verify changes at the
 ## Build & launch
 
 ```bash
-npm install            # node_modules is often missing in fresh containers
-npm run build          # tsc + vite build
-npm run dev            # Vite dev server on http://localhost:5173
+pnpm install           # node_modules is often missing in fresh containers
+pnpm build             # tsc + vite build
+pnpm dev               # Vite dev server on http://localhost:5173
 ```
 
 ## Drive with Playwright
@@ -39,4 +39,4 @@ const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromi
 - Open the shop via the "Studio (N EXP)" button in the right-hand player panel.
 - Pixel-diff screenshots are unreliable: valid-move tiles have a pulsing glow animation.
   Assert on `getBoundingClientRect()` / computed transforms instead.
-- `npm run lint` is broken repo-wide (ESLint 9 installed but no `eslint.config.js`).
+- `pnpm lint` uses the flat config in `eslint.config.js` (ESLint 9).

@@ -40,19 +40,19 @@ In a post-catastrophe fantasy world, only Bards remain. Players navigate a conne
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm dev
 
 # Run tests
-npm test
+pnpm test
 
 # Run tests with UI
-npm run test:ui
+pnpm test:ui
 
 # Build for production
-npm build
+pnpm build
 ```
 
 ## 🎯 How to Play
@@ -103,13 +103,13 @@ The project includes comprehensive unit tests:
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Watch mode
-npm test -- --watch
+pnpm test -- --watch
 
 # Coverage report
-npm run test:coverage
+pnpm test:coverage
 ```
 
 **Test Coverage:**
