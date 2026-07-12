@@ -100,7 +100,7 @@ export function Board() {
       <div className="relative w-full p-2 sm:p-6 lg:p-8 max-w-[calc(50dvh_-_6rem)] lg:max-w-[calc(100dvh_-_5rem)]">
         {/* 4x4 tile grid — space ids are row-major grid positions */}
         <div
-          className="grid grid-cols-4 gap-2 sm:gap-3"
+          className="grid grid-cols-4 gap-2 sm:gap-3 lg:px-20"
           onMouseLeave={() => setHoveredSpaceId(null)}
         >
           {spaces.map((space) => (

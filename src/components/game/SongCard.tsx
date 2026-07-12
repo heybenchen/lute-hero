@@ -22,25 +22,7 @@ export function SongCard({ song }: SongCardProps) {
       </div>
 
       <div className="flex items-stretch justify-center lg:justify-start gap-3">
-        {/* Effect on the left — hidden on mobile */}
-        <div className="hidden lg:flex flex-1 min-w-0">
-          {song.effect ? (
-            <div className="h-full w-full p-1.5 rounded text-xs flex items-start gap-1.5"
-              style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
-            >
-              <span className="font-bold text-classical shrink-0">FX:</span>
-              <span className="text-classical/80 break-words">{describeTrackEffect(song.effect)}</span>
-            </div>
-          ) : (
-            <div className="h-full w-full p-1.5 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
-              style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
-            >
-              No effects
-            </div>
-          )}
-        </div>
-
-        {/* Dice on the right */}
+        {/* Dice on the left */}
         <div className="flex gap-1.5 lg:gap-2 shrink-0">
           {song.slots.map((slot, idx) => (
             <div
@@ -63,6 +45,24 @@ export function SongCard({ song }: SongCardProps) {
               )}
             </div>
           ))}
+        </div>
+
+        {/* Effect on the right — hidden on mobile */}
+        <div className="hidden lg:flex flex-1 min-w-0">
+          {song.effect ? (
+            <div className="h-full w-full p-1.5 rounded text-xs flex items-start gap-1.5"
+              style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
+            >
+              <span className="font-bold text-classical shrink-0">FX:</span>
+              <span className="text-classical/80 break-words">{describeTrackEffect(song.effect)}</span>
+            </div>
+          ) : (
+            <div className="h-full w-full p-1.5 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
+              style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
+            >
+              No effects
+            </div>
+          )}
         </div>
       </div>
     </div>
