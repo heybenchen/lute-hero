@@ -32,6 +32,8 @@ export function BoardSpace({
   }, {})
   const genreEntries = Object.entries(genreTagCounts) as [Genre, number][]
   const illustration = SPACE_ILLUSTRATIONS[space.id]
+  // Spaces the player can act on this turn (reachable / current / travel target)
+  const isReachable = canMoveTo || isTravelTarget || isCurrentPlayer
 
   return (
     <button
@@ -58,18 +60,18 @@ export function BoardSpace({
           : isTravelTarget
           ? '2px solid rgba(176, 124, 255, 0.7)'
           : canMoveTo
-          ? '2px solid rgba(212, 168, 83, 0.55)'
+          ? '3px solid rgba(240, 200, 110, 0.95)'
           : isLinkedToHovered
           ? '1px dashed rgba(212, 168, 83, 0.5)'
           : hasMonsters
-          ? '1px solid rgba(232, 32, 64, 0.4)'
-          : '1px solid rgba(212, 168, 83, 0.15)',
+          ? '1px solid rgba(232, 32, 64, 0.25)'
+          : '1px solid rgba(212, 168, 83, 0.1)',
         boxShadow: isCurrentPlayer
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px rgba(100, 220, 100, 0.22), 0 4px 8px rgba(0,0,0,0.3)'
           : isTravelTarget
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(176, 124, 255, 0.3), 0 4px 8px rgba(0,0,0,0.3)'
           : canMoveTo
-          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 12px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(0,0,0,0.3)'
+          ? 'inset 0 1px 0 rgba(255,255,255,0.08), 0 0 18px rgba(240, 200, 110, 0.5), 0 4px 8px rgba(0,0,0,0.3)'
           : isLinkedToHovered
           ? 'inset 0 1px 0 rgba(255,255,255,0.04), 0 0 10px rgba(212, 168, 83, 0.12), 0 2px 6px rgba(0,0,0,0.3)'
           : 'inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 6px rgba(0,0,0,0.3)',
@@ -83,14 +85,14 @@ export function BoardSpace({
           alt=""
           aria-hidden="true"
           draggable={false}
-          className="absolute inset-0 z-0 h-full w-full rounded-lg sm:rounded-xl object-cover opacity-90 pointer-events-none"
+          className={`absolute inset-0 z-0 h-full w-full rounded-lg sm:rounded-xl object-cover pointer-events-none transition-all duration-200 ${isReachable ? 'opacity-90' : 'opacity-40 grayscale'}`}
         />
       )}
 
       {/* Dim overlay for out-of-reach tiles (kept off the container so
           tooltips inside stay at full opacity) */}
-      {!canMoveTo && !isCurrentPlayer && !isTravelTarget && (
-        <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
+      {!isReachable && (
+        <div className="absolute inset-0 rounded-xl bg-black/45 pointer-events-none z-10" />
       )}
 
       {/* Space name — dark banner keeps the label legible over the light map art */}
