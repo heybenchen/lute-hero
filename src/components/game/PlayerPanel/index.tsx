@@ -115,7 +115,7 @@ export function PlayerPanel() {
 
         {/* Songs — right above the Moves/Fights trackers */}
         <div className="mb-3">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-row lg:flex-col gap-2">
             {currentPlayer.songs.map((song) => (
               <SongCard key={song.id} song={song} />
             ))}
