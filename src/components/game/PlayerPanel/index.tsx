@@ -5,19 +5,7 @@ import { GenreBadge } from '@/components/ui/GenreBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { describeTrackEffect } from '@/data/trackEffects'
-import { GENRE_THEME } from '@/data/genreTheme'
-
-// Choose black or white text for legibility on an arbitrary player color.
-// Uses the perceptual (sRGB-weighted) luminance so names stay readable on both
-// light chips (e.g. amber) and dark ones (e.g. blue/red).
-function readableTextColor(hex: string): string {
-  const value = hex.replace('#', '')
-  const r = parseInt(value.slice(0, 2), 16)
-  const g = parseInt(value.slice(2, 4), 16)
-  const b = parseInt(value.slice(4, 6), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.6 ? '#1a140a' : '#ffffff'
-}
+import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
 
 export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)

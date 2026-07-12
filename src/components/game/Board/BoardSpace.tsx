@@ -1,5 +1,5 @@
 import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
-import { GENRE_THEME } from '@/data/genreTheme'
+import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
 import { SPACE_ILLUSTRATIONS } from '@/data/boardIllustrations'
 
 interface BoardSpaceProps {
@@ -93,8 +93,8 @@ export function BoardSpace({
         <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
       )}
 
-      {/* Space name */}
-      <div className="relative z-10 text-[9px] lg:text-sm font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 w-full line-clamp-2">
+      {/* Space name — dark banner keeps the label legible over the light map art */}
+      <div className="relative z-10 w-full rounded px-1 py-0.5 bg-black/60 text-[9px] lg:text-sm font-medieval font-bold text-center leading-tight text-gold-200 line-clamp-2">
         {space.name}
       </div>
 
@@ -126,24 +126,17 @@ export function BoardSpace({
               return (
                 <div
                   key={genre}
-                  className="flex items-center gap-0.5 lg:gap-1 rounded-md pl-1 pr-1.5 py-0.5 lg:pl-1.5 lg:pr-2 lg:py-1 leading-none"
+                  className="flex items-center justify-center rounded-md px-1.5 py-0.5 lg:px-2 lg:py-1 leading-none"
                   style={{
-                    background: `linear-gradient(135deg, ${color}33, ${color}14)`,
-                    border: `1px solid ${color}66`,
-                    boxShadow: `inset 0 0 4px ${color}22`,
+                    background: color,
+                    border: '1px solid rgba(0, 0, 0, 0.35)',
+                    boxShadow: `0 0 6px ${color}80, 0 1px 2px rgba(0,0,0,0.4)`,
                   }}
                   title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
                 >
                   <span
-                    className="w-2 h-2 lg:w-3 lg:h-3 rounded-full flex-shrink-0"
-                    style={{
-                      backgroundColor: color,
-                      boxShadow: `0 0 5px ${color}, inset 0 0 1px rgba(255,255,255,0.5)`,
-                    }}
-                  />
-                  <span
                     className="text-[9px] lg:text-xs font-bold tabular-nums"
-                    style={{ color, textShadow: '0 1px 1px rgba(0,0,0,0.5)' }}
+                    style={{ color: readableTextColor(color) }}
                   >
                     {count}
                   </span>
