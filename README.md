@@ -86,7 +86,7 @@ pnpm build
 
 ### Victory Conditions
 **Phase 1: Main Game**
-- Defeat monsters to earn Fame. When any single player reaches 300 Fame, the Final Boss begins.
+- Defeat monsters to earn Fame. When any single player reaches 150 Fame, the Final Boss begins.
 
 **Phase 2: Final Boss — The Showdown**
 - Three verses; each verse every bard performs one song against The Eternal Silence

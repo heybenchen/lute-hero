@@ -160,7 +160,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
         <div className="space-y-5 text-sm text-parchment-200 leading-relaxed">
           <Section title="🎯 Goal">
             You are a Bard defeating monsters with music. Earn <Hl>Fame</Hl> by winning
-            fights. The first bard to reach <Hl>300 Fame</Hl> triggers the Final Showdown,
+            fights. The first bard to reach <Hl>150 Fame</Hl> triggers the Final Showdown,
             and whoever has the most Fame after it is crowned Legend of the Realm.
           </Section>
 

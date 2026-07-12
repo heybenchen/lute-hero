@@ -44,7 +44,7 @@ All slices merge into one store (`src/store/index.ts`) with devtools middleware.
 
 - **Damage flow**: Roll dice → apply track effects → sum base damage + crit bonuses (+5 per max roll) → apply genre multipliers (2x vulnerable, 0.5x resistant) → apply effect multipliers → each song hits ALL monsters (AOE)
 - **Monster spawning**: Each round adds 1 genre tag per space; every 2 tags of a genre spawns 1 monster of that genre
-- **Phase progression**: Main → Final Boss when any single player reaches 300 fame (`FAME_THRESHOLDS.finalBoss`)
+- **Phase progression**: Main → Final Boss when any single player reaches 150 fame (`FAME_THRESHOLDS.finalBoss`)
 - **Dice upgrade path**: d4 → d6 → d12 → d20
 - **Turn structure**: Move up to 2 spaces, fight 1 combat, then shop (unlimited purchases after fighting)
 
