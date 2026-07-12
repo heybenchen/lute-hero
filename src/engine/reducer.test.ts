@@ -308,7 +308,8 @@ describe('shop actions', () => {
     state = apply(state, { type: 'BUY_INSPIRATION' }).state // 5
     state = apply(state, { type: 'BUY_INSPIRATION' }).state // 10
     expect(state.players[0].exp).toBe(85)
-    expect(state.players[0].inspiration).toBe(2)
+    // Players start with 1 Inspiration, so two purchases bring it to 3
+    expect(state.players[0].inspiration).toBe(3)
     expect(applyAction({ ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 0 } : p)) }, { type: 'BUY_INSPIRATION' }, ctx()).ok).toBe(false)
   })
 
