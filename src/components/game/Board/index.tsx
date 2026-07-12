@@ -79,13 +79,6 @@ export function Board() {
         }}
       />
 
-      {/* Warm vignette */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 35%, rgba(9, 6, 3, 0.65) 100%)',
-        }}
-      />
-
       {/* Inspiration travel toggle */}
       {(canTravel || travelMode) && (
         <button
