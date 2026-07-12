@@ -85,14 +85,14 @@ export function BoardSpace({
           alt=""
           aria-hidden="true"
           draggable={false}
-          className={`absolute inset-0 z-0 h-full w-full rounded-lg sm:rounded-xl object-cover pointer-events-none transition-all duration-200 ${isReachable ? 'opacity-90' : 'opacity-40 grayscale'}`}
+          className={`absolute inset-0 z-0 h-full w-full rounded-lg sm:rounded-xl object-cover pointer-events-none transition-all duration-200 ${isReachable ? 'opacity-90' : 'opacity-65 grayscale'}`}
         />
       )}
 
       {/* Dim overlay for out-of-reach tiles (kept off the container so
           tooltips inside stay at full opacity) */}
       {!isReachable && (
-        <div className="absolute inset-0 rounded-xl bg-black/45 pointer-events-none z-10" />
+        <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
       )}
 
       {/* Space name — dark banner keeps the label legible over the light map art */}
