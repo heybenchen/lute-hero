@@ -98,15 +98,6 @@ export function Board() {
       )}
 
       <div className="relative w-full p-2 sm:p-6 lg:p-8 max-w-[calc(50dvh_-_6rem)] lg:max-w-[calc(100dvh_-_5rem)]">
-        {/* Map title decoration — hidden on mobile to save vertical space */}
-        <div className="hidden sm:flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-5 pointer-events-none">
-          <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
-          <div className="font-display text-base sm:text-xl text-gold-500 opacity-45 tracking-[0.2em] sm:tracking-[0.25em] text-center select-none">
-            The Bardic Realm
-          </div>
-          <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
-        </div>
-
         {/* 4x4 tile grid — space ids are row-major grid positions */}
         <div
           className="grid grid-cols-4 gap-2 sm:gap-3"

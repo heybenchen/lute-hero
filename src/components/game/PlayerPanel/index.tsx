@@ -82,8 +82,8 @@ export function PlayerPanel() {
                 {player.name}
               </div>
               <div className="text-[10px] text-parchment-300 flex flex-nowrap whitespace-nowrap overflow-hidden gap-1.5 px-2 py-1" style={{ background: 'rgba(20, 16, 10, 0.85)' }}>
-                <span title="Fame" className="shrink-0">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
-                <span title="EXP" className="shrink-0">&#x1F4D6;<span className="text-parchment-100 font-bold ml-0.5">{player.exp}</span></span>
+                <span title="Fame" className="flex-1 text-center">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
+                <span title="EXP" className="flex-1 text-center">&#x1F4D6;<span className="text-parchment-100 font-bold ml-0.5">{player.exp}</span></span>
               </div>
             </div>
           )
@@ -152,7 +152,12 @@ export function PlayerPanel() {
         >
           Studio ({currentPlayer.exp} EXP)
         </button>
-        <button onClick={handleEndTurn} className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5">
+        <button
+          onClick={handleEndTurn}
+          disabled={canFight}
+          title={canFight ? 'Fight the monster here before ending your turn' : undefined}
+          className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
           End Turn
         </button>
       </div>
