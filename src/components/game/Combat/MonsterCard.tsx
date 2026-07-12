@@ -9,10 +9,10 @@ interface MonsterCardProps {
 }
 
 const genreAccentColors: Record<Genre, { border: string; glow: string; bg: string }> = {
-  Ballad: { border: 'rgba(232, 32, 64, 0.4)', glow: 'rgba(232, 32, 64, 0.15)', bg: 'rgba(232, 32, 64, 0.06)' },
-  Folk: { border: 'rgba(76, 175, 80, 0.4)', glow: 'rgba(76, 175, 80, 0.15)', bg: 'rgba(76, 175, 80, 0.06)' },
-  Hymn: { border: 'rgba(250, 204, 21, 0.4)', glow: 'rgba(250, 204, 21, 0.15)', bg: 'rgba(250, 204, 21, 0.06)' },
-  Shanty: { border: 'rgba(41, 121, 255, 0.4)', glow: 'rgba(41, 121, 255, 0.15)', bg: 'rgba(41, 121, 255, 0.06)' },
+  Ballad: { border: 'rgba(232, 32, 64, 0.4)', glow: 'rgba(232, 32, 64, 0.15)', bg: 'rgba(232, 32, 64, 0.16)' },
+  Folk: { border: 'rgba(76, 175, 80, 0.4)', glow: 'rgba(76, 175, 80, 0.15)', bg: 'rgba(76, 175, 80, 0.16)' },
+  Hymn: { border: 'rgba(250, 204, 21, 0.4)', glow: 'rgba(250, 204, 21, 0.15)', bg: 'rgba(250, 204, 21, 0.16)' },
+  Shanty: { border: 'rgba(41, 121, 255, 0.4)', glow: 'rgba(41, 121, 255, 0.15)', bg: 'rgba(41, 121, 255, 0.16)' },
 }
 
 export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps) {
@@ -36,7 +36,7 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
           background: isDefeated
             ? 'rgba(30, 24, 18, 0.6)'
             : accent
-            ? `linear-gradient(160deg, rgba(30, 24, 18, 0.95), ${accent.bg})`
+            ? `linear-gradient(160deg, ${accent.bg}, ${accent.bg}), rgba(30, 24, 18, 0.95)`
             : 'rgba(30, 24, 18, 0.95)',
           border: `1px solid ${isDefeated ? 'rgba(100, 200, 100, 0.2)' : accent ? accent.border : 'rgba(212, 168, 83, 0.2)'}`,
           boxShadow: isDefeated
@@ -108,7 +108,7 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
           </div>
 
           {/* Vulnerability & Resistance */}
-          <div className="flex gap-2.5">
+          <div className="flex gap-2.5 justify-between">
             {monster.vulnerability && (
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm"
                 style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(212, 168, 83, 0.2)' }}
