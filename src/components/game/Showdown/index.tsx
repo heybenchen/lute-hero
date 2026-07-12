@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '@/store'
 import { Song, DiceRoll } from '@/types'
 import { SongCard } from '../Combat/SongCard'
-import { DiceDisplay } from '@/components/ui/DiceDisplay'
+import { DamageBreakdown } from '../Combat/DamageBreakdown'
 import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
-import { getPlayableSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
+import { calculateDamage } from '@/game-logic/combat/damageCalculator'
+import { getPlayableSongs, createShowdownBoss, ShowdownPerformance } from '@/game-logic/showdown/showdown'
 
 type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
 
@@ -33,7 +34,9 @@ export function FinalShowdown() {
   const showdownHistory = useGameStore((state) => state.showdownHistory)
   const startShowdown = useGameStore((state) => state.startShowdown)
   const playShowdownSong = useGameStore((state) => state.playShowdownSong)
+  const rerollShowdownSong = useGameStore((state) => state.rerollShowdownSong)
   const finishShowdownPerformance = useGameStore((state) => state.finishShowdownPerformance)
+  const spendInspiration = useGameStore((state) => state.spendInspiration)
   const setPhase = useGameStore((state) => state.setPhase)
 
   // Resume mid-showdown after a refresh; otherwise open on the cinematic intro
@@ -67,14 +70,21 @@ export function FinalShowdown() {
     () => (performer ? getPlayableSongs(performer.songs) : []),
     [performer]
   )
+
+  // The boss as an ordinary monster (with its current adaptation), for the damage report
+  const boss = useMemo(
+    () => createShowdownBoss({ resistGenre: showdownResistGenre, weakGenre: showdownWeakGenre }),
+    [showdownResistGenre, showdownWeakGenre]
+  )
+  const lastDamage = useMemo(
+    () => (lastRolls ? calculateDamage(lastRolls.song, lastRolls.rolls, boss) : null),
+    [lastRolls, boss]
+  )
   // Each player performs exactly one song per turn
   const hasPerformed = showdownSongsUsed.length >= 1
   const performanceDone = hasPerformed || playableSongs.length === 0
 
-  const handlePlaySong = (song: Song) => {
-    const result = playShowdownSong(song)
-    if (!result) return
-    setLastRolls({ song, rolls: result.rolls })
+  const showFandomPopup = (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
     const popup: FandomPopup = {
       id: `fandom-${Date.now()}`,
       fandom: result.fandom,
@@ -84,6 +94,22 @@ export function FinalShowdown() {
     }
     setPopups((prev) => [...prev, popup])
     setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
+  }
+
+  const handlePlaySong = (song: Song) => {
+    const result = playShowdownSong(song)
+    if (!result) return
+    setLastRolls({ song, rolls: result.rolls })
+    showFandomPopup(result)
+  }
+
+  const handleReroll = () => {
+    if (!performer || !lastRolls || performer.inspiration <= 0) return
+    if (!spendInspiration(performer.id, 1)) return
+    const result = rerollShowdownSong()
+    if (!result) return
+    setLastRolls({ song: lastRolls.song, rolls: result.rolls })
+    showFandomPopup(result)
   }
 
   const handleFinishPerformance = () => {
@@ -226,7 +252,7 @@ export function FinalShowdown() {
               </div>
             </div>
 
-            {/* Songs */}
+            {/* Songs — the roll animates in-card, with an Inspiration reroll, like the battle phase */}
             <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1 mb-4">
               {performer.songs.map((song, idx) => (
                 <SongCard
@@ -235,34 +261,17 @@ export function FinalShowdown() {
                   onPlay={() => handlePlaySong(song)}
                   disabled={hasPerformed}
                   index={idx}
+                  rolls={lastRolls?.song.id === song.id ? lastRolls.rolls : undefined}
+                  onReroll={lastRolls?.song.id === song.id ? handleReroll : undefined}
+                  inspiration={performer.inspiration}
                 />
               ))}
             </div>
 
-            {/* Last roll */}
-            {lastRolls && (
-              <div
-                className="rounded-xl p-4 mb-4 animate-fade-in max-w-full overflow-x-auto"
-                style={{ background: 'rgba(42, 33, 24, 0.5)', border: '1px solid rgba(212, 168, 83, 0.12)' }}
-              >
-                <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-3">Last Roll</div>
-                <div className="flex gap-3 items-center flex-wrap">
-                  {lastRolls.rolls.map((roll, idx) => {
-                    const dice = lastRolls.song.slots.find((slot) => slot.dice?.id === roll.diceId)?.dice
-                    if (!dice) return null
-                    return (
-                      <DiceDisplay
-                        key={idx}
-                        dice={dice}
-                        value={roll.value}
-                        isCrit={roll.isCrit}
-                        cascadeRolls={roll.cascadeRolls}
-                        compact
-                        animateRoll
-                      />
-                    )
-                  })}
-                </div>
+            {/* Damage report against the Silence */}
+            {lastDamage && (
+              <div className="mb-4">
+                <DamageBreakdown calculations={[lastDamage]} monsters={[boss]} />
               </div>
             )}
 
