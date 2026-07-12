@@ -120,11 +120,11 @@ export function PlayerPanel() {
 
         {/* Songs — right above the Moves/Fights trackers */}
         <div className="mb-3">
-          <div className="flex flex-wrap justify-between gap-2">
+          <div className="flex flex-wrap justify-between gap-2 lg:flex-col lg:flex-nowrap lg:justify-start">
             {currentPlayer.songs.map((song) => (
               <div
                 key={song.id}
-                className="rounded-lg p-1.5 flex-1 min-w-0 transition-all duration-150 hover:bg-tavern-600"
+                className="rounded-lg p-1.5 flex-1 min-w-0 lg:w-full lg:flex-none transition-all duration-150 hover:bg-tavern-600"
                 style={{
                   background: 'rgba(61, 48, 32, 0.5)',
                   border: '1px solid rgba(212, 168, 83, 0.12)',
@@ -136,8 +136,8 @@ export function PlayerPanel() {
                 }}
                 onMouseLeave={() => setHoveredSong(null)}
               >
-                <div className="h-3.5 text-[10px] font-bold text-parchment-400 mb-0.5 truncate">
-                  {song.name}
+                <div className="h-3.5 lg:h-auto text-[10px] lg:text-xs font-bold text-parchment-300 mb-0.5 truncate lg:whitespace-normal">
+                  {song.name || <span className="italic text-parchment-500">Untitled</span>}
                 </div>
                 <div className="flex gap-0.5">
                   {song.slots.map((slot, idx) => (
@@ -168,6 +168,11 @@ export function PlayerPanel() {
                     </div>
                   ))}
                 </div>
+                {song.effect && (
+                  <div className="hidden lg:block mt-1.5 text-[11px] leading-snug text-classical">
+                    &#x2728; {describeTrackEffect(song.effect)}
+                  </div>
+                )}
               </div>
             ))}
           </div>
