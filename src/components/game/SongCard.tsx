@@ -20,18 +20,18 @@ export function SongCard({ song }: SongCardProps) {
         {song.name || <span className="text-parchment-500 italic">Untitled</span>}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-stretch gap-3">
         {/* Effect on the left */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex">
           {song.effect ? (
-            <div className="p-1.5 rounded text-xs flex items-center gap-1.5"
+            <div className="h-full w-full p-1.5 rounded text-xs flex items-center gap-1.5"
               style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
             >
               <span className="font-bold text-classical shrink-0">FX:</span>
               <span className="text-classical/80 truncate">{describeTrackEffect(song.effect)}</span>
             </div>
           ) : (
-            <div className="p-1.5 rounded text-xs text-parchment-500 italic text-center"
+            <div className="h-full w-full p-1.5 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
               style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
             >
               No effects
