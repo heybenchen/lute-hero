@@ -53,11 +53,11 @@ export function Board() {
     <div
       className="relative w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
       style={{
-        // Warm brown that blends with the parchment map's dark torn-paper border
+        // Warm coffee-brown matching the map image's torn-paper border texture
         background: `
-          radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.05) 0%, transparent 45%),
-          radial-gradient(ellipse at 70% 80%, rgba(139, 111, 71, 0.06) 0%, transparent 45%),
-          linear-gradient(160deg, #2e2518 0%, #241d12 50%, #2e2518 100%)
+          radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.06) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 80%, rgba(139, 111, 71, 0.07) 0%, transparent 45%),
+          linear-gradient(160deg, #3b3125 0%, #322817 50%, #3b3125 100%)
         `,
       }}
     >
