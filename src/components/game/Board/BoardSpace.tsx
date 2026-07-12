@@ -94,7 +94,7 @@ export function BoardSpace({
       )}
 
       {/* Space name — dark banner keeps the label legible over the light map art */}
-      <div className="relative z-10 w-full rounded px-1 py-0.5 bg-black/60 text-[9px] lg:text-sm font-medieval font-bold text-center leading-tight text-gold-200 line-clamp-2">
+      <div className="relative z-10 w-full rounded px-1 py-0.5 bg-black/30 text-[9px] lg:text-sm font-medieval font-bold text-center leading-tight text-gold-200 line-clamp-2">
         {space.name}
       </div>
 
