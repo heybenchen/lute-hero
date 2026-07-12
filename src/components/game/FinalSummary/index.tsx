@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useGameStore, clearSavedGame } from '@/store'
+import { useGameStore } from '@/store'
 import { Player } from '@/types'
 import { calculateFinalRankings } from '@/game-logic/fame/calculator'
 
@@ -86,8 +86,7 @@ export function FinalSummary() {
   const showdownBestHit = useGameStore((state) => state.showdownBestHit)
   const showdownCrits = useGameStore((state) => state.showdownCrits)
   const currentRound = useGameStore((state) => state.currentRound)
-  const resetGame = useGameStore((state) => state.resetGame)
-  const resetShowdown = useGameStore((state) => state.resetShowdown)
+  const dispatch = useGameStore((state) => state.dispatch)
 
   const summaries: PlayerSummary[] = useMemo(() => {
     const ranked = calculateFinalRankings(players)
@@ -112,9 +111,7 @@ export function FinalSummary() {
   }, [players, showdownFandom, showdownBestHit, showdownCrits])
 
   const handleNewGame = () => {
-    clearSavedGame()
-    resetShowdown()
-    resetGame()
+    dispatch({ type: 'RESET_GAME' })
   }
 
   if (summaries.length === 0) return null

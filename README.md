@@ -27,8 +27,8 @@ In a post-catastrophe fantasy world, only Bards remain. Players navigate a conne
 ### Progression
 - **Draft Shop**: Spend EXP to acquire new dice pairs (5-15 EXP) and songs (5 EXP)
 - **Fame Tiers**: Gain multiplied fame as you defeat more monsters
-- **Phase System**: Main → Underground Scene → Final Boss
-- **Final Boss**: Cooperative battle with player elimination mechanics
+- **Phase System**: Main → Final Boss
+- **Final Boss**: The Showdown — a fandom contest where the boss adapts each verse
 
 ## 🚀 Getting Started
 
@@ -40,19 +40,19 @@ In a post-catastrophe fantasy world, only Bards remain. Players navigate a conne
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm dev
 
 # Run tests
-npm test
+pnpm test
 
 # Run tests with UI
-npm run test:ui
+pnpm test:ui
 
 # Build for production
-npm build
+pnpm build
 ```
 
 ## 🎯 How to Play
@@ -86,16 +86,13 @@ npm build
 
 ### Victory Conditions
 **Phase 1: Main Game**
-- Gain collective fame to unlock Underground Scene
+- Defeat monsters to earn Fame. When any single player reaches 150 Fame, the Final Boss begins.
 
-**Phase 2: Underground Scene**
-- Each player defeats an elite monster
-
-**Phase 3: Final Boss**
-- Band together to fight the boss
-- Lowest damage dealer eliminated each round
-- Earn fame based on damage dealt
-- **Winner**: Player with most total fame!
+**Phase 2: Final Boss — The Showdown**
+- Three verses; each verse every bard performs one song against The Eternal Silence
+- Every point of damage earns 1 fandom
+- Between verses the boss adapts: immune (0×) to the strongest attack's element, weak (2×) to the weakest
+- **Winner**: the bard with the most total Fame (fandom is banked into Fame)!
 
 ## 🧪 Testing
 
@@ -103,13 +100,13 @@ The project includes comprehensive unit tests:
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Watch mode
-npm test -- --watch
+pnpm test -- --watch
 
 # Coverage report
-npm run test:coverage
+pnpm test:coverage
 ```
 
 **Test Coverage:**

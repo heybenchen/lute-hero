@@ -1,5 +1,5 @@
-import { BoardSpace, Monster, Genre, MonsterTemplate } from '@/types'
-import { getMonsterByGenre, getRoundLevelBonus } from '@/data/monsters'
+import { BoardSpace, Monster, Genre, MonsterTemplate, Rng, NewId } from '../../types'
+import { getMonsterByGenre, getRoundLevelBonus } from '../../data/monsters'
 
 /**
  * Count tags by genre and find the dominant genre
@@ -34,9 +34,9 @@ export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: num
 
 /**
  * Calculate HP multiplier based on monster level (capped at level 5)
- * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 2.75x, Level 4 = 4x, Level 5 = 5.5x
+ * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 3x, Level 4 = 5x, Level 5 = 7.5x
  */
-const HP_MULTIPLIERS = [1, 1.75, 2.75, 4, 5.5]
+const HP_MULTIPLIERS = [1, 1.75, 3, 5, 7.5]
 
 export function getHPMultiplier(level: number): number {
   const capped = Math.min(level, 5)
@@ -63,7 +63,9 @@ export function getMonsterNameWithLevel(baseName: string, level: number): string
 export function spawnMonstersFromTags(
   genreTags: Genre[],
   spaceId: number,
-  round: number = 1
+  round: number = 1,
+  rng: Rng = Math.random,
+  newId?: NewId
 ): Monster[] {
   const counts = countTagsByGenre(genreTags)
   const monsters: Monster[] = []
@@ -71,8 +73,8 @@ export function spawnMonstersFromTags(
   let index = 0
 
   counts.forEach((count, genre) => {
-    const template = getMonsterByGenre(genre, round)
-    const monster = createMonsterFromTemplate(template, spaceId, index, count + levelBonus)
+    const template = getMonsterByGenre(genre, round, rng)
+    const monster = createMonsterFromTemplate(template, spaceId, index, count + levelBonus, newId)
     monsters.push(monster)
     index++
   })
@@ -88,14 +90,16 @@ export function spawnMonsterFromDominantTag(
   genreTags: Genre[],
   spaceId: number,
   index: number = 0,
-  round: number = 1
+  round: number = 1,
+  rng: Rng = Math.random,
+  newId?: NewId
 ): Monster | null {
   const dominant = getDominantGenre(genreTags)
   if (!dominant) return null
 
   const levelBonus = getRoundLevelBonus(round)
-  const template = getMonsterByGenre(dominant.genre, round)
-  return createMonsterFromTemplate(template, spaceId, index, dominant.count + levelBonus)
+  const template = getMonsterByGenre(dominant.genre, round, rng)
+  return createMonsterFromTemplate(template, spaceId, index, dominant.count + levelBonus, newId)
 }
 
 /**
@@ -105,11 +109,13 @@ export function spawnMonsterFromDominantTag(
 export function spawnInitialMonsters(
   genreTags: Genre[],
   spaceId: number,
-  round: number = 1
+  round: number = 1,
+  rng: Rng = Math.random,
+  newId?: NewId
 ): Monster[] {
   if (genreTags.length === 0) return []
 
-  const monster = spawnMonsterFromDominantTag(genreTags, spaceId, 0, round)
+  const monster = spawnMonsterFromDominantTag(genreTags, spaceId, 0, round, rng, newId)
   return monster ? [monster] : []
 }
 
@@ -120,13 +126,14 @@ export function createMonsterFromTemplate(
   template: MonsterTemplate,
   spaceId: number,
   index: number,
-  level: number = 1
+  level: number = 1,
+  newId?: NewId
 ): Monster {
   const hpMultiplier = getHPMultiplier(level)
   const scaledHP = Math.floor(template.baseHP * hpMultiplier)
 
   return {
-    id: `monster-${spaceId}-${index}-${Date.now()}`,
+    id: newId ? newId('monster') : `monster-${spaceId}-${index}-${Date.now()}`,
     templateId: template.id,
     name: getMonsterNameWithLevel(template.name, level),
     currentHP: scaledHP,

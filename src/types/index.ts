@@ -4,6 +4,16 @@
 
 export type Genre = "Ballad" | "Folk" | "Hymn" | "Shanty";
 
+/**
+ * Random number source, drop-in for Math.random (returns [0, 1)).
+ * All game logic takes an Rng so the server can seed rolls deterministically;
+ * defaults to Math.random for local/hotseat use.
+ */
+export type Rng = () => number;
+
+/** Deterministic id factory (server: seq-based; hotseat: counter-based). */
+export type NewId = (prefix: string) => string;
+
 export type DiceType = "d4" | "d6" | "d12" | "d20";
 
 export type GamePhase = "setup" | "main" | "finalBoss" | "gameOver";
@@ -108,6 +118,7 @@ export interface Player {
   id: string;
   name: string;
   color: string;
+  starterGenre: Genre; // Element the player started with (drives their themed color)
   position: number; // Current space ID
   songs: Song[];
   exp: number;
@@ -155,41 +166,6 @@ export interface KillCredit {
   isCover: boolean;
 }
 
-export interface CombatState {
-  isActive: boolean;
-  playerId: string | null;
-  spaceId: number | null;
-  monsters: Monster[];
-  songsUsed: SongUsage[]; // Songs played with ownership tracking
-  killCredits: KillCredit[]; // Which songs killed which monsters
-  currentSongId: string | null;
-  damageDealt: number;
-  totalDamage: number;
-  rolls: DiceRoll[];
-  lastDamageCalculations: DamageCalculation[]; // Damage breakdown per monster
-}
-
-// ============================================
-// GAME STATE
-// ============================================
-
-export interface GameState {
-  phase: GamePhase;
-  currentRound: number;
-  currentTurnPlayerId: string | null;
-  turnOrder: string[]; // Player IDs
-  players: Player[];
-  board: BoardSpace[];
-  combat: CombatState;
-
-  finalBoss: Monster | null;
-
-  // Fame thresholds for progression
-  fameThresholds: {
-    finalBoss: number;
-  };
-}
-
 // ============================================
 // HELPER TYPES
 // ============================================
@@ -200,4 +176,14 @@ export interface DamageCalculation {
   effectBonuses: number;
   critBonuses: number;
   totalDamage: number;
+  // Per-die contribution against this monster, for the damage-report breakdown
+  perDie: DieContribution[];
+}
+
+export interface DieContribution {
+  genre: Genre | null; // null for extra dice (e.g. wildDice) with no slotted genre
+  value: number; // rolled face value
+  critBonus: number; // extra damage from cascading crits
+  multiplier: number; // genre × offbeat multiplier applied to this die
+  damage: number; // (value + critBonus) × multiplier — this die's contribution
 }

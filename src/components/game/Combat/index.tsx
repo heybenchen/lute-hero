@@ -1,15 +1,14 @@
-import { useState, useCallback, useMemo } from 'react'
-import { useGameStore, selectPlayerById, selectPlayersAtSpace } from '@/store'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useGameStore, selectPlayerById, selectPlayersAtSpace, selectCanAct } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
-import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { DamageBreakdown } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
-import { calculateFameEarned, calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
-import { calculateCoverFameSplit } from '@/game-logic/fame/coverSongFame'
-import { MAX_SONGS_PER_COMBAT } from '@/store/slices/combatSlice'
-import { Genre, Monster, Player, SongUsage } from '@/types'
+import { calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
+import { computeCombatRewards } from '@/engine/reducer'
+import { MAX_SONGS_PER_COMBAT } from '@/engine/validate'
+import { Genre, Monster, Song, SongUsage } from '@/types'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 
 /** Check if a song ID has been used in this combat */
@@ -25,22 +24,12 @@ export function CombatModal() {
   const songsUsed = useGameStore((state) => state.songsUsed)
   const killCredits = useGameStore((state) => state.killCredits)
   const rolls = useGameStore((state) => state.rolls)
+  const currentSongId = useGameStore((state) => state.currentSongId)
   const lastDamageCalculations = useGameStore((state) => state.lastDamageCalculations)
-  const lastPlayedSong = useGameStore((state) => state.lastPlayedSong)
-  const playSong = useGameStore((state) => state.playSong)
-  const rerollLastSong = useGameStore((state) => state.rerollLastSong)
-  const spendInspiration = useGameStore((state) => state.spendInspiration)
-  const endCombat = useGameStore((state) => state.endCombat)
-  const clearSpaceAfterCombat = useGameStore((state) => state.clearSpaceAfterCombat)
-  const awardPlayerFame = useGameStore((state) => state.awardPlayerFame)
-  const awardPlayerExp = useGameStore((state) => state.awardPlayerExp)
-  const incrementPlayerMonstersDefeated = useGameStore(
-    (state) => state.incrementPlayerMonstersDefeated
-  )
-  const checkPhaseTransition = useGameStore((state) => state.checkPhaseTransition)
-  const addGenreTagsForMonsters = useGameStore((state) => state.addGenreTagsForMonsters)
-  const removeGenreTagsForDefeatedMonsters = useGameStore((state) => state.removeGenreTagsForDefeatedMonsters)
-  const spreadElementToNeighbors = useGameStore((state) => state.spreadElementToNeighbors)
+  const lastPlayedSongId = useGameStore((state) => state.lastPlayedSongId)
+  const dispatch = useGameStore((state) => state.dispatch)
+  const canAct = useGameStore(selectCanAct)
+  const remoteEntry = useGameStore((state) => state.remoteEntry)
 
   const [chosenElement, setChosenElement] = useState<Genre | null>(null)
 
@@ -67,47 +56,39 @@ export function CombatModal() {
     return songs
   }, [player, colocatedPlayers])
 
-  const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
-  const totalFameEarned = player && monstersDefeatedCount > 0
-    ? calculateFameEarned(
-        monsters.filter((m: Monster) => m.currentHP <= 0).map((m: Monster) => m.level)
-      )
-    : 0
+  // Reward math lives in the engine; the component only maps names for display
+  const rewards = useMemo(
+    () => computeCombatRewards({ monsters, killCredits }),
+    [monsters, killCredits]
+  )
+  const monstersDefeatedCount = rewards.monstersDefeatedCount
+  const totalFameEarned = rewards.totalFameEarned
 
   const fameBreakdown = useMemo(() => {
-    if (monstersDefeatedCount === 0 || totalFameEarned === 0) {
-      return { playerFame: 0, coverFameByPlayer: new Map<string, { name: string; fame: number }>() }
-    }
-
-    // Fame per kill scales with the killed monster's level
-    const fameForKill = (monsterId: string) => {
-      const level = monsters.find((m: Monster) => m.id === monsterId)?.level ?? 1
-      return calculateMonsterFameValue(level)
-    }
-
-    let playerFame = killCredits
-      .filter((kc) => !kc.isCover)
-      .reduce((sum, kc) => sum + fameForKill(kc.monsterId), 0)
-
-    const coverFameByOwner = new Map<string, number>()
-    killCredits.filter((kc) => kc.isCover).forEach((kc) => {
-      coverFameByOwner.set(kc.songOwnerId, (coverFameByOwner.get(kc.songOwnerId) || 0) + fameForKill(kc.monsterId))
-    })
-
     const coverFameByPlayer = new Map<string, { name: string; fame: number }>()
-    coverFameByOwner.forEach((coverFame, ownerId) => {
-      const splitShare = calculateCoverFameSplit(coverFame)
-      const ownerPlayer = colocatedPlayers.find((p: Player) => p.id === ownerId)
-      if (ownerPlayer && splitShare > 0) {
-        coverFameByPlayer.set(ownerId, { name: ownerPlayer.name, fame: splitShare })
-      }
-      playerFame += splitShare // Fighting player also gets their half
+    rewards.coverFameByOwner.forEach((fame, ownerId) => {
+      const ownerPlayer = colocatedPlayers.find((p) => p.id === ownerId)
+      if (ownerPlayer) coverFameByPlayer.set(ownerId, { name: ownerPlayer.name, fame })
     })
+    return { playerFame: rewards.fighterFame, coverFameByPlayer }
+  }, [rewards, colocatedPlayers])
 
-    return { playerFame, coverFameByPlayer }
-  }, [killCredits, monsters, monstersDefeatedCount, totalFameEarned, colocatedPlayers])
+  // Spectators animate other players' songs from the SSE event stream
+  useEffect(() => {
+    if (!remoteEntry || !isActive) return
+    for (const event of remoteEntry.events) {
+      if (event.type === 'damageDealt') {
+        const newPopups = createDamagePopups(event.calculations, event.monstersBefore, event.monstersAfter)
+        setPopups((prev) => [...prev, ...newPopups])
+      }
+    }
+  }, [remoteEntry, isActive])
 
   if (!isActive || !player) return null
+
+  const lastPlayedSong: Song | null = lastPlayedSongId
+    ? allAvailableSongs.find((s) => s.id === lastPlayedSongId) ?? null
+    : null
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
   const playableSongs = player.songs.filter((s) => s.slots.some((slot) => slot.dice))
@@ -129,90 +110,38 @@ export function CombatModal() {
   const totalExp = calculateTotalMonsterExp(monsters)
   const isCombatOver = allMonstersDefeated || !canContinue
 
-  const handlePlaySong = (songId: string, ownerId: string) => {
-    // Find the song from the correct owner
-    const owner = ownerId === player.id
-      ? player
-      : colocatedPlayers.find((p: Player) => p.id === ownerId)
-    const song = owner?.songs.find((s) => s.id === songId)
-    if (!song || isSongUsed(songsUsed, songId)) return
-
-    // Snapshot monsters before damage
-    const monstersBefore = monsters.map((m) => ({ ...m }))
-
-    const result = playSong(song, ownerId)
-
-    // Create floating damage popups
-    const newPopups = createDamagePopups(
-      result.damageCalculations,
-      monstersBefore,
-      result.updatedMonsters,
-    )
-    setPopups((prev) => [...prev, ...newPopups])
+  const showDamageEvents = (events: { type: string }[]) => {
+    for (const event of events) {
+      if (event.type === 'damageDealt') {
+        const dmg = event as {
+          type: 'damageDealt'
+          calculations: Parameters<typeof createDamagePopups>[0]
+          monstersBefore: Monster[]
+          monstersAfter: Monster[]
+        }
+        const newPopups = createDamagePopups(dmg.calculations, dmg.monstersBefore, dmg.monstersAfter)
+        setPopups((prev) => [...prev, ...newPopups])
+      }
+    }
   }
 
-  const handleReroll = () => {
-    if (!lastPlayedSong || player.inspiration <= 0) return
-    if (!spendInspiration(player.id, 1)) return
-    const result = rerollLastSong()
-    if (!result) return
-    // Show the new performance's damage relative to the pre-play monster state
-    const newPopups = createDamagePopups(
-      result.damageCalculations,
-      result.monstersBefore,
-      result.updatedMonsters,
-    )
-    setPopups((prev) => [...prev, ...newPopups])
+  const handlePlaySong = async (songId: string, ownerId: string) => {
+    if (!canAct || isSongUsed(songsUsed, songId)) return
+    const result = await dispatch({ type: 'PLAY_SONG', songId, ownerId })
+    if (result.ok) showDamageEvents(result.events)
+  }
+
+  const handleReroll = async () => {
+    if (!canAct || !lastPlayedSong || player.inspiration <= 0) return
+    const result = await dispatch({ type: 'REROLL_SONG' })
+    if (result.ok) showDamageEvents(result.events)
   }
 
   const handleEndCombat = () => {
-    const success = allMonstersDefeated
-    const { playerFame, coverFameByPlayer } = fameBreakdown
     setChosenElement(null)
-    endCombat(success)
-
-    // EXP is always awarded for the full encounter
-    awardPlayerExp(player.id, calculateTotalMonsterExp(monsters))
-
-    // Fame awarded for each monster defeated, even on retreat
-    if (monstersDefeatedCount > 0) {
-      // Award fighting player their share
-      if (playerFame > 0) {
-        awardPlayerFame(player.id, playerFame)
-      }
-      // Award cover source players their share
-      coverFameByPlayer.forEach(({ fame }, ownerId) => {
-        awardPlayerFame(ownerId, fame)
-      })
-      incrementPlayerMonstersDefeated(player.id, monstersDefeatedCount)
-      checkPhaseTransition()
-    }
-
-    if (success && spaceId !== null) {
-      clearSpaceAfterCombat(spaceId)
-      // Victor radiates their chosen element to all cardinal neighbors
-      if (chosenElement) {
-        spreadElementToNeighbors(spaceId, chosenElement)
-      }
-    }
-
-    // On retreat, remove genre tags for defeated monsters and add tags for surviving ones
-    if (!success && spaceId !== null) {
-      // Remove genre tags equal to each defeated monster's level
-      const defeatedTags: Genre[] = monsters
-        .filter((m: Monster) => m.currentHP <= 0 && m.vulnerability !== null)
-        .flatMap((m: Monster) => Array(m.level).fill(m.vulnerability!))
-      if (defeatedTags.length > 0) {
-        removeGenreTagsForDefeatedMonsters(spaceId, defeatedTags)
-      }
-
-      const survivingGenres = monsters
-        .filter((m: Monster) => m.currentHP > 0 && m.vulnerability !== null)
-        .map((m: Monster) => m.vulnerability!)
-      if (survivingGenres.length > 0) {
-        addGenreTagsForMonsters(spaceId, survivingGenres)
-      }
-    }
+    // The engine awards EXP/fame, clears or re-tags the space, and checks
+    // the phase transition — all in one atomic action
+    dispatch({ type: 'END_COMBAT', spreadGenre: chosenElement ?? undefined })
   }
 
   return (
@@ -233,21 +162,9 @@ export function CombatModal() {
             <div className="flex items-center justify-center gap-3 sm:gap-4">
               <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
               <p className="text-sm sm:text-base text-parchment-500 font-game tracking-wide">
-                {player.name}'s Performance
+                {player.name}'s Performance{!canAct ? ' — watching live' : ''}
               </p>
               <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
-            </div>
-
-            {/* Live EXP counter — EXP is fixed per monster level, so this total
-                holds steady throughout the fight (not just in the end summary) */}
-            <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm"
-              style={{
-                background: 'rgba(212, 168, 83, 0.08)',
-                border: '1px solid rgba(212, 168, 83, 0.2)',
-              }}
-            >
-              <span className="text-parchment-500">EXP this fight:</span>
-              <span className="font-bold text-gold-400 tabular-nums">+{totalExp}</span>
             </div>
           </div>
 
@@ -258,7 +175,7 @@ export function CombatModal() {
               detail={monstersAliveCount > 0 ? `${monstersAliveCount} remaining` : 'All converted!'}
               detailColor={monstersAliveCount > 0 ? 'text-red-400' : 'text-green-400'}
             />
-            <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {monsters.map((monster: Monster, idx: number) => (
                 <MonsterCard
                   key={monster.id}
@@ -269,6 +186,16 @@ export function CombatModal() {
               ))}
             </div>
           </div>
+
+          {/* Damage report — sits right under the monsters it applies to */}
+          {lastDamageCalculations.length > 0 && (
+            <div className="mb-6 sm:mb-8">
+              <DamageBreakdown
+                calculations={lastDamageCalculations}
+                monsters={monsters}
+              />
+            </div>
+          )}
 
           {/* Songs Section */}
           <div className="mb-6 sm:mb-8">
@@ -283,8 +210,11 @@ export function CombatModal() {
                   key={song.id}
                   song={{ ...song, used: isSongUsed(songsUsed, song.id) }}
                   onPlay={() => handlePlaySong(song.id, player.id)}
-                  disabled={isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
+                  disabled={!canAct || isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
                   index={idx}
+                  rolls={currentSongId === song.id ? rolls : undefined}
+                  onReroll={canAct && currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
+                  inspiration={player.inspiration}
                 />
               ))}
             </div>
@@ -317,81 +247,18 @@ export function CombatModal() {
                         key={song.id}
                         song={{ ...song, used: isSongUsed(songsUsed, song.id) }}
                         onPlay={() => handlePlaySong(song.id, coverPlayer.id)}
-                        disabled={isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
+                        disabled={!canAct || isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
                         index={idx}
                         isCover
                         ownerName={coverPlayer.name}
+                        rolls={currentSongId === song.id ? rolls : undefined}
+                        onReroll={canAct && currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
+                        inspiration={player.inspiration}
                       />
                     ))}
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* Last Roll + Damage — side by side when both present */}
-          {(rolls.length > 0 || lastDamageCalculations.length > 0) && (
-            <div className={`mb-6 sm:mb-8 ${rolls.length > 0 && lastDamageCalculations.length > 0 ? 'grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-4 lg:gap-5' : ''}`}>
-              {/* Last roll result */}
-              {rolls.length > 0 && (
-                <div
-                  className="rounded-xl p-4 sm:p-5 animate-fade-in self-start max-w-full overflow-x-auto"
-                  style={{
-                    background: 'rgba(42, 33, 24, 0.5)',
-                    border: '1px solid rgba(212, 168, 83, 0.12)',
-                  }}
-                >
-                  <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-3">
-                    Last Roll
-                  </div>
-                  <div className="flex gap-3 items-center flex-wrap">
-                    {rolls.map((roll, idx) => {
-                      const dice = allAvailableSongs
-                        .flatMap((s) => s.slots)
-                        .find((slot) => slot.dice?.id === roll.diceId)?.dice
-
-                      if (!dice) return null
-
-                      return (
-                        <DiceDisplay
-                          key={idx}
-                          dice={dice}
-                          value={roll.value}
-                          isCrit={roll.isCrit}
-                          cascadeRolls={roll.cascadeRolls}
-                          compact
-                          animateRoll
-                        />
-                      )
-                    })}
-                  </div>
-
-                  {/* Reroll the last song with Inspiration */}
-                  {lastPlayedSong && !allMonstersDefeated && (
-                    <button
-                      onClick={handleReroll}
-                      disabled={player.inspiration <= 0}
-                      className="mt-3 text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
-                      style={{
-                        background: 'rgba(176, 124, 255, 0.12)',
-                        border: '1px solid rgba(176, 124, 255, 0.4)',
-                        color: '#d9c2ff',
-                      }}
-                      title={player.inspiration > 0 ? 'Reroll this song for 1 Inspiration' : 'Requires Inspiration'}
-                    >
-                      &#x2728; Reroll &mdash; {player.inspiration} Inspiration
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Damage breakdown */}
-              {lastDamageCalculations.length > 0 && (
-                <DamageBreakdown
-                  calculations={lastDamageCalculations}
-                  monsters={monsters}
-                />
-              )}
             </div>
           )}
 
@@ -499,7 +366,7 @@ export function CombatModal() {
 
                 <button
                   onClick={handleEndCombat}
-                  disabled={!chosenElement}
+                  disabled={!canAct || !chosenElement}
                   className="w-full max-w-md px-6 sm:px-10 py-3.5 font-medieval font-bold rounded-lg text-base sm:text-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
                   style={{
                     background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
@@ -524,7 +391,8 @@ export function CombatModal() {
             ) : (
               <button
                 onClick={handleEndCombat}
-                className="btn-secondary text-base sm:text-lg px-10 py-3.5 animate-fade-in w-full max-w-md"
+                disabled={!canAct}
+                className="btn-secondary text-base sm:text-lg px-10 py-3.5 animate-fade-in w-full max-w-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Retreat
               </button>

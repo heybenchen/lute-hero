@@ -1,4 +1,4 @@
-import { BoardSpace, Genre } from '@/types'
+import { BoardSpace, Genre, Rng } from '../../types'
 
 // Board is a 4x4 grid. Spaces are indexed row-major:
 //
@@ -37,13 +37,13 @@ export function createBoardGraph(): BoardSpace[] {
   // Space names, in grid order (corners read as distinct entry points)
   const names = [
     'The Forgotten Stage',   // 0  (corner / start)
-    'Echo Chamber',          // 1
+    'The Echo Chamber',      // 1
     'Melody Junction',       // 2
     'The Last Venue',        // 3  (corner / start)
     'Harmony Crossroads',    // 4
     'The Soundwave Nexus',   // 5
     'Resonance Plaza',       // 6
-    'The Silent Amphitheater', // 7
+    'Silent Amphitheater',   // 7
     'Symphony Ruins',        // 8
     'Dissonance Square',     // 9
     'The Muted Hall',        // 10
@@ -71,14 +71,14 @@ export function createBoardGraph(): BoardSpace[] {
 /**
  * Add a random genre tag to each space (legacy — no longer called during gameplay)
  */
-export function addGenreTagsToBoard(spaces: BoardSpace[]): BoardSpace[] {
+export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random): BoardSpace[] {
   const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
 
   return spaces.map((space) => ({
     ...space,
     genreTags: [
       ...space.genreTags,
-      genres[Math.floor(Math.random() * genres.length)],
+      genres[Math.floor(rng() * genres.length)],
     ],
   }))
 }
@@ -89,7 +89,8 @@ export function addGenreTagsToBoard(spaces: BoardSpace[]): BoardSpace[] {
  */
 export function addGenreTagsToNeighbors(
   spaces: BoardSpace[],
-  spaceId: number
+  spaceId: number,
+  rng: Rng = Math.random
 ): BoardSpace[] {
   const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
   const currentSpace = spaces.find((s) => s.id === spaceId)
@@ -103,7 +104,7 @@ export function addGenreTagsToNeighbors(
       ...space,
       genreTags: [
         ...space.genreTags,
-        genres[Math.floor(Math.random() * genres.length)],
+        genres[Math.floor(rng() * genres.length)],
       ],
     }
   })

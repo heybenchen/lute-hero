@@ -1,6 +1,6 @@
-import { TrackEffect, DiceRoll, Dice } from "@/types";
+import { TrackEffect, DiceRoll, Dice, Rng } from '../../types';
 import { getMaxValue, flipDiceValue, rollDiceWithCrit, rollCascadeDice } from "./roller";
-import { DICE_UPGRADE_PATH } from "@/data/startingData";
+import { DICE_UPGRADE_PATH } from '../../data/startingData';
 
 /**
  * Apply track effects to a dice roll
@@ -10,6 +10,7 @@ export function applyTrackEffect(
   roll: DiceRoll,
   dice: Dice,
   effect: TrackEffect | null,
+  rng: Rng = Math.random,
 ): {
   modifiedRoll: DiceRoll;
   updatedEffect: TrackEffect | null;
@@ -25,7 +26,7 @@ export function applyTrackEffect(
 
   let modifiedRoll = { ...roll };
   let updatedEffect: TrackEffect | null = effect;
-  let additionalRolls: DiceRoll[] = [];
+  const additionalRolls: DiceRoll[] = [];
 
   switch (effect.type) {
     case "freeReroll":
@@ -44,7 +45,7 @@ export function applyTrackEffect(
         if (modifiedRoll.value === getMaxValue(dice.type)) {
           modifiedRoll.isCrit = true;
           // Trigger cascade rolls for the new crit
-          const cascadeRolls = rollCascadeDice(dice.type);
+          const cascadeRolls = rollCascadeDice(dice.type, 10, rng);
           modifiedRoll.critBonus = cascadeRolls.reduce((sum, v) => sum + v, 0);
           modifiedRoll.cascadeRolls = cascadeRolls;
         } else {
@@ -67,13 +68,13 @@ export function applyTrackEffect(
           type: effect.diceType,
           genre: dice.genre,
         };
-        additionalRolls.push(rollDiceWithCrit(extraDice));
+        additionalRolls.push(rollDiceWithCrit(extraDice, rng));
         updatedEffect = { ...effect, used: true };
       }
       break;
 
     case "rollTwiceKeepHigher": {
-      const secondRoll = rollDiceWithCrit(dice);
+      const secondRoll = rollDiceWithCrit(dice, rng);
       if (secondRoll.value + secondRoll.critBonus > roll.value + roll.critBonus) {
         modifiedRoll = secondRoll;
       }
@@ -96,7 +97,7 @@ export function applyTrackEffect(
           type: "d4",
           genre: dice.genre,
         };
-        additionalRolls.push(rollDiceWithCrit(wildDie));
+        additionalRolls.push(rollDiceWithCrit(wildDie, rng));
         updatedEffect = { ...effect, used: true };
       }
       break;

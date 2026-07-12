@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useGameStore } from '@/store'
+import { useGameStore, selectCanPerform } from '@/store'
 import { Song, DiceRoll } from '@/types'
 import { SongCard } from '../Combat/SongCard'
-import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
@@ -20,7 +19,6 @@ interface FandomPopup {
 
 export function FinalShowdown() {
   const players = useGameStore((state) => state.players)
-  const showdownActive = useGameStore((state) => state.showdownActive)
   const showdownComplete = useGameStore((state) => state.showdownComplete)
   const showdownTurn = useGameStore((state) => state.showdownTurn)
   const showdownOrder = useGameStore((state) => state.showdownOrder)
@@ -31,27 +29,27 @@ export function FinalShowdown() {
   const showdownCurrentFandom = useGameStore((state) => state.showdownCurrentFandom)
   const showdownFandom = useGameStore((state) => state.showdownFandom)
   const showdownHistory = useGameStore((state) => state.showdownHistory)
-  const startShowdown = useGameStore((state) => state.startShowdown)
-  const playShowdownSong = useGameStore((state) => state.playShowdownSong)
-  const finishShowdownPerformance = useGameStore((state) => state.finishShowdownPerformance)
-  const setPhase = useGameStore((state) => state.setPhase)
+  const dispatch = useGameStore((state) => state.dispatch)
+  const canPerform = useGameStore(selectCanPerform)
+  const remoteEntry = useGameStore((state) => state.remoteEntry)
+  const mode = useGameStore((state) => state.mode)
 
-  // Resume mid-showdown after a refresh; otherwise open on the cinematic intro
+  // The engine starts the showdown when END_TURN flips the phase, so it is
+  // already active on mount. Show the intro only for a fresh showdown;
+  // resume mid-fight (after a refresh) straight into the perform stage.
   const [stage, setStage] = useState<Stage>(() => {
     if (showdownComplete) return 'winner'
-    if (showdownActive) return 'perform'
-    return 'intro'
+    const fresh =
+      showdownTurn === 1 &&
+      showdownPerformerIdx === 0 &&
+      showdownSongsUsed.length === 0 &&
+      showdownHistory.length === 0
+    return fresh ? 'intro' : 'perform'
   })
   const [lastRolls, setLastRolls] = useState<{ song: Song; rolls: DiceRoll[] } | null>(null)
   const [popups, setPopups] = useState<FandomPopup[]>([])
   const [adaptRecap, setAdaptRecap] = useState<ShowdownPerformance[]>([])
   const [adaptTurnEnded, setAdaptTurnEnded] = useState(1)
-
-  useEffect(() => {
-    if (!showdownActive && players.length > 0) {
-      startShowdown(players.map((p) => p.id))
-    }
-  }, [showdownActive, players, startShowdown])
 
   // Boss-shatter finale plays out, then the winner takes the stage
   useEffect(() => {
@@ -59,6 +57,39 @@ export function FinalShowdown() {
     const timer = setTimeout(() => setStage('winner'), 3200)
     return () => clearTimeout(timer)
   }, [stage])
+
+  // Spectators follow other performers live via the SSE event stream
+  useEffect(() => {
+    if (!remoteEntry) return
+    for (const event of remoteEntry.events) {
+      if (event.type === 'diceRolled' && event.context === 'showdown') {
+        const owner = useGameStore.getState().players.find((p) => p.id === event.playerId)
+        const song = owner?.songs.find((sg) => sg.id === event.songId)
+        if (song) setLastRolls({ song, rolls: event.rolls })
+      }
+      if (event.type === 'showdownPlay') {
+        const popup: FandomPopup = {
+          id: `fandom-${event.playerId}-${Date.now()}`,
+          fandom: event.fandom,
+          hadCrit: event.hadCrit,
+          hitWeakness: event.hitWeakness,
+          wasResisted: event.wasResisted,
+        }
+        setPopups((prev) => [...prev, popup])
+        setTimeout(() => setPopups((prev) => prev.filter((pp) => pp.id !== popup.id)), 1900)
+      }
+      if (event.type === 'showdownAdvance') {
+        setLastRolls(null)
+        if (event.advance === 'bossAdapts') {
+          setAdaptRecap(event.recap ?? [])
+          setAdaptTurnEnded(event.turnEnded ?? 1)
+          setStage('adapt')
+        } else if (event.advance === 'showdownComplete') {
+          setStage('finale')
+        }
+      }
+    }
+  }, [remoteEntry])
 
   const performerId = showdownOrder[showdownPerformerIdx]
   const performer = players.find((p) => p.id === performerId)
@@ -71,10 +102,7 @@ export function FinalShowdown() {
   const hasPerformed = showdownSongsUsed.length >= 1
   const performanceDone = hasPerformed || playableSongs.length === 0
 
-  const handlePlaySong = (song: Song) => {
-    const result = playShowdownSong(song)
-    if (!result) return
-    setLastRolls({ song, rolls: result.rolls })
+  const showFandomPopup = (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
     const popup: FandomPopup = {
       id: `fandom-${Date.now()}`,
       fandom: result.fandom,
@@ -86,27 +114,38 @@ export function FinalShowdown() {
     setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
   }
 
-  const handleFinishPerformance = () => {
-    // Capture this turn's recap before the store clears it
-    const storeState = useGameStore.getState()
-    const recap: ShowdownPerformance[] = [
-      ...storeState.showdownTurnPerformances,
-      {
-        playerId: performerId,
-        fandom: storeState.showdownCurrentFandom,
-        genre: storeState.showdownCurrentGenre,
-      },
-    ]
+  const handlePlaySong = async (song: Song) => {
+    const result = await dispatch({ type: 'PLAY_SHOWDOWN_SONG', songId: song.id })
+    if (!result.ok) return
+    for (const event of result.events) {
+      if (event.type === 'diceRolled') setLastRolls({ song, rolls: event.rolls })
+      if (event.type === 'showdownPlay') showFandomPopup(event)
+    }
+  }
+
+  const handleReroll = async () => {
+    if (!canPerform || !performer || !lastRolls || performer.inspiration <= 0) return
+    const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG' })
+    if (!result.ok) return
+    for (const event of result.events) {
+      if (event.type === 'diceRolled') setLastRolls({ song: lastRolls.song, rolls: event.rolls })
+      if (event.type === 'showdownPlay') showFandomPopup(event)
+    }
+  }
+
+  const handleFinishPerformance = async () => {
     const turnNow = showdownTurn
-
-    const advance = finishShowdownPerformance()
+    const result = await dispatch({ type: 'FINISH_SHOWDOWN_PERFORMANCE' })
     setLastRolls(null)
+    if (!result.ok) return
 
-    if (advance.kind === 'bossAdapts') {
-      setAdaptRecap(recap)
-      setAdaptTurnEnded(turnNow)
+    const advance = result.events.find((e) => e.type === 'showdownAdvance')
+    if (!advance || advance.type !== 'showdownAdvance') return
+    if (advance.advance === 'bossAdapts') {
+      setAdaptRecap(advance.recap ?? [])
+      setAdaptTurnEnded(advance.turnEnded ?? turnNow)
       setStage('adapt')
-    } else if (advance.kind === 'showdownComplete') {
+    } else if (advance.advance === 'showdownComplete') {
       setStage('finale')
     }
   }
@@ -139,7 +178,7 @@ export function FinalShowdown() {
       <WinnerSpotlight
         players={players}
         showdownFandom={showdownFandom}
-        onContinue={() => setPhase('gameOver')}
+        onContinue={() => dispatch({ type: 'ADVANCE_TO_SUMMARY' })}
       />
     )
   }
@@ -226,49 +265,30 @@ export function FinalShowdown() {
               </div>
             </div>
 
-            {/* Songs */}
+            {/* Songs — the roll animates in-card, with an Inspiration reroll, like the battle phase */}
             <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1 mb-4">
               {performer.songs.map((song, idx) => (
                 <SongCard
                   key={song.id}
                   song={{ ...song, used: showdownSongsUsed.includes(song.id) }}
                   onPlay={() => handlePlaySong(song)}
-                  disabled={hasPerformed}
+                  disabled={hasPerformed || !canPerform}
                   index={idx}
+                  rolls={lastRolls?.song.id === song.id ? lastRolls.rolls : undefined}
+                  onReroll={canPerform && lastRolls?.song.id === song.id ? handleReroll : undefined}
+                  inspiration={performer.inspiration}
                 />
               ))}
             </div>
 
-            {/* Last roll */}
-            {lastRolls && (
-              <div
-                className="rounded-xl p-4 mb-4 animate-fade-in max-w-full overflow-x-auto"
-                style={{ background: 'rgba(42, 33, 24, 0.5)', border: '1px solid rgba(212, 168, 83, 0.12)' }}
-              >
-                <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-3">Last Roll</div>
-                <div className="flex gap-3 items-center flex-wrap">
-                  {lastRolls.rolls.map((roll, idx) => {
-                    const dice = lastRolls.song.slots.find((slot) => slot.dice?.id === roll.diceId)?.dice
-                    if (!dice) return null
-                    return (
-                      <DiceDisplay
-                        key={idx}
-                        dice={dice}
-                        value={roll.value}
-                        isCrit={roll.isCrit}
-                        cascadeRolls={roll.cascadeRolls}
-                        compact
-                        animateRoll
-                      />
-                    )
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Finish performance */}
             <div className="flex justify-center pt-2">
-              {performanceDone ? (
+              {!canPerform && mode === 'online' ? (
+                <p className="text-base text-parchment-500 italic font-game animate-pulse-slow">
+                  {performer.name} holds the stage — watch the show...
+                </p>
+              ) : performanceDone ? (
                 <button
                   onClick={handleFinishPerformance}
                   className="btn-primary text-base px-10 py-3 animate-fade-in w-full max-w-md"

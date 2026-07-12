@@ -1,11 +1,11 @@
-import { MonsterTemplate, Genre } from '@/types'
+import { MonsterTemplate, Genre, Rng } from '../types'
 
 export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   // Fire monsters — vulnerable to Ballad (Fire), resistant to Shanty (Water)
   {
     id: 'ember_wraith',
     name: 'Ember Wraith',
-    baseHP: 10,
+    baseHP: 9,
     vulnerability: 'Ballad',
     resistance: 'Shanty',
     description: 'A smoldering spirit drawn to passionate melodies',
@@ -13,7 +13,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'cinder_drake',
     name: 'Cinder Drake',
-    baseHP: 12,
+    baseHP: 10,
     vulnerability: 'Ballad',
     resistance: 'Shanty',
     description: 'A fiery beast that feeds on silence',
@@ -29,7 +29,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'inferno_choir',
     name: 'Inferno Choir',
-    baseHP: 14,
+    baseHP: 11,
     vulnerability: 'Ballad',
     resistance: 'Shanty',
     description: 'A chorus of flame spirits singing in unison',
@@ -39,7 +39,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'stone_troll',
     name: 'Stone Troll',
-    baseHP: 11,
+    baseHP: 9,
     vulnerability: 'Folk',
     resistance: 'Hymn',
     description: 'A lumbering creature of root and rock',
@@ -47,7 +47,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'moss_golem',
     name: 'Moss Golem',
-    baseHP: 13,
+    baseHP: 10,
     vulnerability: 'Folk',
     resistance: 'Hymn',
     description: 'An ancient guardian overgrown with moss',
@@ -63,7 +63,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'quake_beetle',
     name: 'Quake Beetle',
-    baseHP: 14,
+    baseHP: 11,
     vulnerability: 'Folk',
     resistance: 'Hymn',
     description: 'A colossal insect whose steps crack the ground',
@@ -73,7 +73,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'gale_phantom',
     name: 'Gale Phantom',
-    baseHP: 10,
+    baseHP: 9,
     vulnerability: 'Hymn',
     resistance: 'Folk',
     description: 'A howling specter born of restless winds',
@@ -81,7 +81,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'storm_harpy',
     name: 'Storm Harpy',
-    baseHP: 12,
+    baseHP: 10,
     vulnerability: 'Hymn',
     resistance: 'Folk',
     description: 'A shrieking creature riding the tempest',
@@ -97,7 +97,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'thunder_roc',
     name: 'Thunder Roc',
-    baseHP: 14,
+    baseHP: 11,
     vulnerability: 'Hymn',
     resistance: 'Folk',
     description: 'A massive bird trailing bolts of lightning',
@@ -107,7 +107,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'tide_lurker',
     name: 'Tide Lurker',
-    baseHP: 10,
+    baseHP: 9,
     vulnerability: 'Shanty',
     resistance: 'Ballad',
     description: 'A creature of the deep that surfaces at high tide',
@@ -115,7 +115,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'fog_serpent',
     name: 'Fog Serpent',
-    baseHP: 12,
+    baseHP: 10,
     vulnerability: 'Shanty',
     resistance: 'Ballad',
     description: 'A mist-wreathed serpent from the harbor depths',
@@ -123,7 +123,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'coral_crab',
     name: 'Coral Crab',
-    baseHP: 9,
+    baseHP: 8,
     vulnerability: 'Shanty',
     resistance: 'Ballad',
     description: 'An armored crustacean encrusted with living reef',
@@ -131,7 +131,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   {
     id: 'abyssal_leviathan',
     name: 'Abyssal Leviathan',
-    baseHP: 14,
+    baseHP: 11,
     vulnerability: 'Shanty',
     resistance: 'Ballad',
     description: 'An ancient terror from the ocean floor',
@@ -161,11 +161,11 @@ const templatesByGenre: Record<Genre, MonsterTemplate[]> = {
  * Get a random monster template for a given genre.
  * In later rounds, heavier templates (higher baseHP) are more likely.
  */
-export function getMonsterByGenre(genre: Genre, round: number = 1): MonsterTemplate {
+export function getMonsterByGenre(genre: Genre, round: number = 1, rng: Rng = Math.random): MonsterTemplate {
   const candidates = templatesByGenre[genre]
   if (!candidates || candidates.length === 0) {
     const allNonBoss = MONSTER_TEMPLATES.filter((m) => !m.isBoss)
-    return allNonBoss[Math.floor(Math.random() * allNonBoss.length)]
+    return allNonBoss[Math.floor(rng() * allNonBoss.length)]
   }
 
   // Sort by ascending baseHP
@@ -175,15 +175,15 @@ export function getMonsterByGenre(genre: Genre, round: number = 1): MonsterTempl
   if (round <= 2) {
     // Weight toward first half
     const pool = sorted.slice(0, Math.ceil(sorted.length * 0.75))
-    return pool[Math.floor(Math.random() * pool.length)]
+    return pool[Math.floor(rng() * pool.length)]
   }
   if (round <= 5) {
     // Uniform random
-    return sorted[Math.floor(Math.random() * sorted.length)]
+    return sorted[Math.floor(rng() * sorted.length)]
   }
   // Round 6+: weight toward second half (tougher monsters)
   const pool = sorted.slice(Math.floor(sorted.length * 0.25))
-  return pool[Math.floor(Math.random() * pool.length)]
+  return pool[Math.floor(rng() * pool.length)]
 }
 
 /**

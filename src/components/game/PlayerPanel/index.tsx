@@ -1,111 +1,87 @@
 import { useState } from 'react'
-import { useGameStore, selectCurrentPlayer, selectCollectiveFame } from '@/store'
-import { FAME_THRESHOLDS } from '@/data/startingData'
+import { useGameStore, selectCurrentPlayer, selectCanAct, selectIsHost } from '@/store'
 import { DraftShop } from '../DraftShop'
-import { GenreBadge } from '@/components/ui/GenreBadge'
-import { DiceShape } from '@/components/ui/DiceShape'
-import { getMaxValue } from '@/game-logic/dice/roller'
-import { describeTrackEffect } from '@/data/trackEffects'
+import { SongCard } from '../SongCard'
+import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
 
 export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
-  const [hoveredSong, setHoveredSong] = useState<string | null>(null)
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
-  const collectiveFame = useGameStore(selectCollectiveFame)
-  const phase = useGameStore((state) => state.phase)
-  const currentRound = useGameStore((state) => state.currentRound)
-  const nextTurn = useGameStore((state) => state.nextTurn)
-  const nextRound = useGameStore((state) => state.nextRound)
-  const addGenreTags = useGameStore((state) => state.addGenreTags)
-  const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
-  const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
-  const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
-  const usePlayerFight = useGameStore((state) => state.usePlayerFight)
-  const startCombat = useGameStore((state) => state.startCombat)
-  const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
-  const refillShopSlots = useGameStore((state) => state.refillShopSlots)
-  const resetPlayerInspirationPurchases = useGameStore((state) => state.resetPlayerInspirationPurchases)
+  const dispatch = useGameStore((state) => state.dispatch)
+  const canAct = useGameStore(selectCanAct)
+  const isHost = useGameStore(selectIsHost)
+  const mode = useGameStore((state) => state.mode)
+  const lobby = useGameStore((state) => state.lobby)
 
   if (!currentPlayer) return null
 
-  const movesRemaining = 2 - currentPlayer.movesThisTurn
-  const fightsRemaining = 1 - currentPlayer.fightsThisTurn
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
-  const canFight = hasMonsters && fightsRemaining > 0
-  const currentThreshold = FAME_THRESHOLDS.finalBoss * players.length
-  const fameProgress = Math.min((collectiveFame / currentThreshold) * 100, 100)
+  const canFight = hasMonsters && currentPlayer.fightsThisTurn < 1 && canAct
+
+  // Online presence per engine player (via their seat)
+  const presenceFor = (playerId: string): boolean | null => {
+    if (mode !== 'online' || !lobby) return null
+    const seat = lobby.seats.find((se) => se.playerId === playerId)
+    if (!seat) return null
+    return lobby.presence[seat.seatId] !== false
+  }
 
   const handleEndTurn = () => {
-    resetPlayerMoves(currentPlayer.id)
-    resetPlayerFights(currentPlayer.id)
-    // Inspiration buy cost escalates within a turn, then resets
-    resetPlayerInspirationPurchases(currentPlayer.id)
-
-    if (currentTurnPlayerIndex >= players.length - 1) {
-      players.forEach((p) => {
-        resetPlayerMoves(p.id)
-        resetPlayerFights(p.id)
-      })
-      // Add 1 genre tag to all spaces once per round
-      addGenreTags()
-      // Apply any pending phase transition now that all players have had equal turns
-      applyPendingPhase()
-      nextRound()
-    } else {
-      nextTurn()
-    }
-
-    // Start the next player's turn with a full shop (fresh names, topped-up chips)
-    refillShopSlots()
+    dispatch({ type: 'END_TURN' })
   }
 
   const handleFight = () => {
     if (currentSpace && canFight) {
-      usePlayerFight(currentPlayer.id)
-      startCombat(currentPlayer.id, currentSpace.id, currentSpace.monsters)
+      dispatch({ type: 'START_COMBAT', playerId: currentPlayer.id })
     }
   }
 
   return (
     <div className="card-ornate p-4 sm:p-5 lg:h-full flex flex-col">
-      {/* Game info header */}
-      <div className="text-center mb-4">
-        <div className="font-display text-xl text-gold-400 mb-1">
-          Round {currentRound}
-        </div>
-        <div className="text-sm text-parchment-400 uppercase tracking-widest font-medieval">
-          {phase} Phase
-        </div>
-
-        {/* Fame progress bar */}
-        {phase === 'main' && (
-          <div className="mt-3">
-            <div className="flex justify-between text-xs text-parchment-400 mb-1">
-              <span>Fame to Final Boss</span>
-              <span className="text-gold-400 font-bold">{collectiveFame} / {currentThreshold}</span>
-            </div>
-            <div className="hp-bar h-2 bar-sheen">
+      {/* All players */}
+      <div className="flex gap-2">
+        {players.map((player) => {
+          const isCurrentTurn = player.id === currentPlayer.id
+          const genreColor = GENRE_THEME[player.starterGenre]?.color ?? player.color
+          const online = presenceFor(player.id)
+          return (
+            <div
+              key={player.id}
+              className={`rounded-lg transition-all duration-300 flex-1 min-w-0 overflow-hidden ${isCurrentTurn ? 'animate-active-glow -translate-y-0.5' : ''}`}
+              style={{
+                border: isCurrentTurn
+                  ? '2px solid rgba(255, 215, 130, 0.9)'
+                  : '1px solid rgba(0, 0, 0, 0.25)',
+              }}
+            >
               <div
-                className="hp-fill rounded-full"
-                style={{
-                  width: `${fameProgress}%`,
-                  background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
-                  boxShadow: fameProgress > 0 ? '0 0 6px rgba(240, 215, 140, 0.4)' : 'none',
-                }}
-              />
+                className="px-2 py-1 truncate font-bold text-[10px] flex items-center gap-1"
+                style={{ background: genreColor, color: readableTextColor(genreColor) }}
+              >
+                {online !== null && (
+                  <span
+                    className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0"
+                    style={{ background: online ? '#1f7a1f' : 'rgba(0,0,0,0.45)' }}
+                    title={online ? 'Online' : 'Disconnected'}
+                  />
+                )}
+                <span className="truncate">{player.name}</span>
+              </div>
+              <div className="text-[10px] text-parchment-300 flex flex-nowrap whitespace-nowrap overflow-hidden gap-1.5 px-2 py-1" style={{ background: 'rgba(20, 16, 10, 0.85)' }}>
+                <span title="Fame" className="flex-1 text-center">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })}
       </div>
 
-      <div className="divider-ornate" />
+      <div className="divider-ornate mt-5" />
 
       {/* Current player */}
-      <div className="mb-4">
+      <div>
         <div className="flex items-center gap-3 mb-3">
           <div
             className="player-avatar w-12 h-12 text-xl"
@@ -115,11 +91,11 @@ export function PlayerPanel() {
           </div>
           <div>
             <div className="font-medieval text-lg font-bold text-gold-300">{currentPlayer.name}</div>
-            <div className="text-sm text-parchment-400 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-              <span>Fame: <span className="text-gold-400 font-bold">{currentPlayer.fame}</span></span>
-              <span>EXP: <span className="text-parchment-200 font-bold">{currentPlayer.exp}</span></span>
+            <div className="text-sm text-parchment-200 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+              <span title="Fame">FAME: <span className="font-bold">{currentPlayer.fame}</span></span>
+              <span title="EXP">EXP: <span className="font-bold">{currentPlayer.exp}</span></span>
               <span title="Inspiration — spend to reroll a song, travel anywhere, or refresh the shop">
-                &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{currentPlayer.inspiration}</span>
+                INS: <span className="font-bold">{currentPlayer.inspiration}</span>
               </span>
             </div>
           </div>
@@ -127,259 +103,42 @@ export function PlayerPanel() {
 
         {/* Songs — right above the Moves/Fights trackers */}
         <div className="mb-3">
-          <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-1.5">
-            Songs
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex flex-row lg:flex-col gap-2">
             {currentPlayer.songs.map((song) => (
-              <div
-                key={song.id}
-                className="rounded-lg p-2 min-w-fit shrink-0 transition-all duration-150 hover:bg-tavern-600"
-                style={{
-                  background: 'rgba(61, 48, 32, 0.5)',
-                  border: '1px solid rgba(212, 168, 83, 0.12)',
-                }}
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  setTooltipPos({ x: rect.left, y: rect.bottom + 8 })
-                  setHoveredSong(song.id)
-                }}
-                onMouseLeave={() => setHoveredSong(null)}
-              >
-                <div className="h-4 text-xs font-bold text-parchment-400 mb-1 truncate max-w-[110px]">
-                  {song.name}
-                </div>
-                <div className="flex gap-1">
-                  {song.slots.map((slot, idx) => (
-                    <div
-                      key={idx}
-                      className="w-11 h-11 rounded flex flex-col items-center justify-center text-[9px]"
-                      style={{
-                        background: slot.dice
-                          ? 'rgba(212, 168, 83, 0.15)'
-                          : 'rgba(255, 255, 255, 0.03)',
-                        border: slot.dice
-                          ? '1px solid rgba(212, 168, 83, 0.25)'
-                          : '1px dashed rgba(212, 168, 83, 0.1)',
-                      }}
-                    >
-                      {slot.dice ? (
-                        <>
-                          <div className="text-gold-400 text-[18px] leading-none">
-                            <DiceShape type={slot.dice.type} />
-                          </div>
-                          <div className="font-bold text-[8px] text-parchment-300">
-                            {slot.dice.genre}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-parchment-500/30 text-[9px]">-</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <SongCard key={song.id} song={song} />
             ))}
           </div>
-
-          {/* Floating song tooltip */}
-          {hoveredSong && currentPlayer.songs.find((s) => s.id === hoveredSong) && (
-            <div
-              className="fixed z-[100] p-3 rounded-lg shadow-2xl w-64 pointer-events-none animate-fade-in"
-              style={{
-                left: `${tooltipPos.x}px`,
-                top: `${tooltipPos.y}px`,
-                background: 'linear-gradient(135deg, #2a2118, #1a1410)',
-                border: '1px solid rgba(212, 168, 83, 0.3)',
-              }}
-            >
-              {(() => {
-                const song = currentPlayer.songs.find((s) => s.id === hoveredSong)!
-                return (
-                  <>
-                    <div className="font-medieval font-bold mb-2 text-gold-400">{song.name}</div>
-                    <div className="space-y-2 text-sm">
-                      {song.slots.map((slot, idx) => (
-                        <div
-                          key={`slot-${idx}`}
-                          className="pb-1"
-                          style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.12)' }}
-                        >
-                          <div className="font-bold text-parchment-400 text-xs">Slot {idx + 1}</div>
-                          {slot.dice ? (
-                            <div className="mt-0.5">
-                              <div className="flex items-center gap-1">
-                                <span className="text-parchment-300 text-xs">{slot.dice.type}</span>
-                                <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
-                              </div>
-                              <div className="text-xs text-parchment-400">
-                                Roll: 1-{getMaxValue(slot.dice.type)} (2x on max)
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-parchment-500 text-xs">Empty slot</div>
-                          )}
-                        </div>
-                      ))}
-                      {song.effect && (
-                        <div className="pt-1">
-                          <div className="font-bold text-parchment-400 text-xs mb-1">Effect</div>
-                          <div className="text-classical text-xs">
-                            &#x2728; {describeTrackEffect(song.effect)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )
-              })()}
-            </div>
-          )}
         </div>
 
-        {/* Move and Action trackers */}
-        <div className="grid grid-cols-2 gap-2">
-          {/* Movement tracker */}
-          <div className="rounded-lg p-2" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-            <div className="text-xs font-medieval text-parchment-400 mb-1.5 text-center">
-              Moves
-            </div>
-            <div className="flex gap-1.5 justify-center">
-              {[1, 2].map((move) => (
-                <div
-                  key={move}
-                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-xs transition-all duration-200"
-                  style={{
-                    background: move <= movesRemaining
-                      ? 'linear-gradient(135deg, #3d8c40, #2d6e30)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: move <= movesRemaining
-                      ? '1px solid rgba(100, 220, 100, 0.4)'
-                      : '1px solid rgba(255, 255, 255, 0.05)',
-                    color: move <= movesRemaining ? '#d4ffd6' : 'rgba(255,255,255,0.15)',
-                    boxShadow: move <= movesRemaining ? '0 0 8px rgba(100, 220, 100, 0.15)' : 'none',
-                  }}
-                >
-                  {move}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Fight tracker */}
-          <div className="rounded-lg p-2" style={{ background: 'rgba(61, 48, 32, 0.4)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-            <div className="text-xs font-medieval text-parchment-400 mb-1.5 text-center">
-              Fights
-            </div>
-            <div className="flex gap-1.5 justify-center">
-              {[1].map((fight) => (
-                <div
-                  key={fight}
-                  className="w-8 h-8 rounded flex items-center justify-center font-bold text-xs transition-all duration-200"
-                  style={{
-                    background: fight <= fightsRemaining
-                      ? 'linear-gradient(135deg, #c43030, #8c2020)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: fight <= fightsRemaining
-                      ? '1px solid rgba(232, 80, 80, 0.4)'
-                      : '1px solid rgba(255, 255, 255, 0.05)',
-                    color: fight <= fightsRemaining ? '#ffd4d4' : 'rgba(255,255,255,0.15)',
-                    boxShadow: fight <= fightsRemaining ? '0 0 8px rgba(232, 80, 80, 0.15)' : 'none',
-                  }}
-                >
-                  &#x2694;
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="divider-ornate" />
-
-      {/* All players */}
-      <div className="lg:flex-1 lg:min-h-0 lg:overflow-auto mb-4">
-        <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider mb-2">
-          All Players
-        </div>
-        <div className="space-y-2">
-          {players.map((player) => {
-            const playerSpace = spaces.find((s) => s.id === player.position)
-            const playerFameProgress = Math.min((player.fame / currentThreshold) * 100, 100)
-            const diceCount = player.songs.reduce((n, s) => n + s.slots.filter((sl) => sl.dice).length, 0)
-            const isCurrentTurn = player.id === currentPlayer.id
-            return (
-              <div
-                key={player.id}
-                className="p-2.5 rounded-lg transition-all duration-150"
-                style={{
-                  background: isCurrentTurn
-                    ? 'rgba(100, 220, 100, 0.08)'
-                    : 'rgba(61, 48, 32, 0.3)',
-                  border: isCurrentTurn
-                    ? '1px solid rgba(100, 220, 100, 0.25)'
-                    : '1px solid rgba(212, 168, 83, 0.08)',
-                }}
-              >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div
-                    className="player-avatar w-8 h-8 text-xs flex-shrink-0"
-                    style={{ backgroundColor: player.color }}
-                  >
-                    {player.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <div className="font-bold text-sm text-parchment-200 truncate">{player.name}</div>
-                      {isCurrentTurn && (
-                        <span
-                          className="text-[10px] font-medieval font-bold text-green-300 shrink-0 px-1.5 py-0.5 rounded-full animate-glow-pulse"
-                          style={{
-                            background: 'rgba(100, 220, 100, 0.12)',
-                            border: '1px solid rgba(100, 220, 100, 0.3)',
-                          }}
-                        >
-                          ▶ TURN
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-parchment-500 truncate">
-                      {playerSpace?.name ?? '—'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats row */}
-                <div className="flex gap-2 text-xs mb-1.5">
-                  <span className="text-gold-400 font-bold">⭐ {player.fame}</span>
-                  <span className="text-parchment-400">{player.exp} EXP</span>
-                  <span className="text-parchment-500">{player.songs.length} songs · {diceCount} dice</span>
-                </div>
-
-                {/* Mini fame progress */}
-                <div className="hp-bar h-1">
-                  <div
-                    className="hp-fill rounded-full"
-                    style={{
-                      width: `${playerFameProgress}%`,
-                      background: 'linear-gradient(90deg, #b8922e, #f0d78c)',
-                      transition: 'width 0.3s ease',
-                    }}
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
       </div>
 
       {/* Actions */}
       <div className="space-y-2 mt-auto">
-        {hasMonsters && (
+        {mode === 'online' && !canAct && (
+          <div className="text-center text-sm text-parchment-500 italic py-2 animate-pulse-slow">
+            Waiting for {currentPlayer.name}&rsquo;s turn&hellip;
+          </div>
+        )}
+        {mode === 'online' && !canAct && isHost && presenceFor(currentPlayer.id) === false && (
+          <button
+            onClick={() => dispatch({ type: 'HOST_SKIP_TURN', targetPlayerId: currentPlayer.id })}
+            className="w-full py-2 text-sm font-medieval font-bold rounded-lg transition-all duration-150 hover:-translate-y-0.5"
+            style={{
+              background: 'rgba(255, 180, 60, 0.1)',
+              border: '1px solid rgba(255, 180, 60, 0.4)',
+              color: '#ffd591',
+            }}
+            title="The current player looks disconnected — skip their turn (auto-retreats their combat)"
+          >
+            &#x23ED; Skip {currentPlayer.name}&apos;s Turn (offline)
+          </button>
+        )}
+
+        {hasMonsters && canAct && (
           <button
             onClick={handleFight}
             disabled={!canFight}
-            className={`w-full py-2.5 px-4 font-medieval font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:brightness-110 hover:enabled:-translate-y-0.5 active:enabled:translate-y-0 ${canFight ? 'animate-danger-pulse' : ''}`}
+            className={`w-full py-1.5 px-2.5 text-sm sm:py-2.5 sm:px-4 sm:text-base font-medieval font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:brightness-110 hover:enabled:-translate-y-0.5 active:enabled:translate-y-0 ${canFight ? 'animate-danger-pulse' : ''}`}
             style={{
               background: canFight
                 ? 'linear-gradient(135deg, #c43030, #8c2020)'
@@ -390,20 +149,29 @@ export function PlayerPanel() {
               boxShadow: canFight ? '0 0 12px rgba(232, 32, 64, 0.2)' : 'none',
             }}
           >
-            &#x2694; Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
+            <span className="text-[1.2em]">&#x2694;</span> Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
             {!canFight && ' (No fights left)'}
           </button>
         )}
 
-        <button
-          onClick={() => setShowDraftShop(true)}
-          className="btn-secondary w-full"
-        >
-          Studio ({currentPlayer.exp} EXP)
-        </button>
-        <button onClick={handleEndTurn} className="btn-primary w-full">
-          End Turn
-        </button>
+        {canAct && (
+          <>
+            <button
+              onClick={() => setShowDraftShop(true)}
+              className="btn-secondary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5"
+            >
+              Studio ({currentPlayer.exp} EXP)
+            </button>
+            <button
+              onClick={handleEndTurn}
+              disabled={canFight}
+              title={canFight ? 'Fight the monster here before ending your turn' : undefined}
+              className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              End Turn
+            </button>
+          </>
+        )}
       </div>
 
       {/* Studio modal */}

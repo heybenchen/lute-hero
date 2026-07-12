@@ -17,6 +17,7 @@ describe('Fame Calculator', () => {
     id: 'test-player',
     name: 'Test Player',
     color: '#ff0000',
+    starterGenre: 'Ballad',
     position: 0,
     songs: [],
     exp: 0,
@@ -34,33 +35,33 @@ describe('Fame Calculator', () => {
 
   describe('calculateMonsterFameValue', () => {
     it('ramps steeply by level since songs hit all monsters at once', () => {
-      expect(calculateMonsterFameValue(1)).toBe(10)
-      expect(calculateMonsterFameValue(2)).toBe(30)
-      expect(calculateMonsterFameValue(3)).toBe(70)
-      expect(calculateMonsterFameValue(4)).toBe(150)
-      expect(calculateMonsterFameValue(5)).toBe(250)
+      expect(calculateMonsterFameValue(1)).toBe(0)
+      expect(calculateMonsterFameValue(2)).toBe(10)
+      expect(calculateMonsterFameValue(3)).toBe(30)
+      expect(calculateMonsterFameValue(4)).toBe(60)
+      expect(calculateMonsterFameValue(5)).toBe(100)
     })
 
     it('clamps levels past 5 to the top value (like the HP cap)', () => {
-      expect(calculateMonsterFameValue(6)).toBe(250)
-      expect(calculateMonsterFameValue(9)).toBe(250)
+      expect(calculateMonsterFameValue(6)).toBe(100)
+      expect(calculateMonsterFameValue(9)).toBe(100)
     })
 
     it('treats out-of-range low levels as level 1', () => {
-      expect(calculateMonsterFameValue(0)).toBe(10)
+      expect(calculateMonsterFameValue(0)).toBe(0)
     })
   })
 
   describe('calculateFameEarned', () => {
     it('awards each monster its level-based fame value', () => {
-      expect(calculateFameEarned([1])).toBe(10)
-      expect(calculateFameEarned([2])).toBe(30)
-      expect(calculateFameEarned([4])).toBe(150)
+      expect(calculateFameEarned([1])).toBe(0)
+      expect(calculateFameEarned([2])).toBe(10)
+      expect(calculateFameEarned([4])).toBe(60)
     })
 
     it('sums fame across all defeated monsters', () => {
-      expect(calculateFameEarned([1, 2, 3])).toBe(110) // 10 + 30 + 70
-      expect(calculateFameEarned([2, 4])).toBe(180) // 30 + 150
+      expect(calculateFameEarned([1, 2, 3])).toBe(40) // 0 + 10 + 30
+      expect(calculateFameEarned([2, 4])).toBe(70) // 10 + 60
     })
 
     it('returns 0 when nothing was defeated', () => {
@@ -180,23 +181,22 @@ describe('Fame Calculator', () => {
   })
 
   describe('getNextPhase', () => {
-    it('should transition from main to finalBoss at fame threshold (100 per player)', () => {
-      // 4 players × 100 fame/player = 400 collective threshold
-      expect(getNextPhase('main', 400, 4)).toBe('finalBoss')
-      expect(getNextPhase('main', 500, 4)).toBe('finalBoss')
-      // 2 players × 100 = 200
-      expect(getNextPhase('main', 200, 2)).toBe('finalBoss')
+    it('should transition from main to finalBoss when any player reaches 150 fame', () => {
+      expect(getNextPhase('main', [150, 0, 0, 0])).toBe('finalBoss')
+      expect(getNextPhase('main', [100, 400, 50])).toBe('finalBoss')
+      expect(getNextPhase('main', [150])).toBe('finalBoss')
     })
 
-    it('should not transition from main below threshold', () => {
-      expect(getNextPhase('main', 399, 4)).toBeNull()
-      expect(getNextPhase('main', 0, 4)).toBeNull()
+    it('should not transition from main when no player reaches threshold', () => {
+      expect(getNextPhase('main', [149, 149, 149, 149])).toBeNull()
+      expect(getNextPhase('main', [0, 0])).toBeNull()
+      expect(getNextPhase('main', [])).toBeNull()
     })
 
     it('should not transition from setup, finalBoss, or gameOver', () => {
-      expect(getNextPhase('setup', 1000, 4)).toBeNull()
-      expect(getNextPhase('finalBoss', 1000, 4)).toBeNull()
-      expect(getNextPhase('gameOver', 1000, 4)).toBeNull()
+      expect(getNextPhase('setup', [1000])).toBeNull()
+      expect(getNextPhase('finalBoss', [1000])).toBeNull()
+      expect(getNextPhase('gameOver', [1000])).toBeNull()
     })
   })
 })

@@ -1,4 +1,4 @@
-import { Song, Monster, DiceRoll, Genre, DamageCalculation, TrackEffect } from "@/types";
+import { Song, Monster, DiceRoll, Genre, DamageCalculation, DieContribution, TrackEffect, Rng } from '../../types';
 import { rollDiceWithCrit } from "../dice/roller";
 import {
   applyTrackEffect,
@@ -32,7 +32,7 @@ export function getGenreMultiplier(genre: Genre, monster: Monster): number {
  * A song has at most one effect, which applies to every dice slot.
  * Special case: monoOut rolls once and shares that value across both slots.
  */
-export function rollSong(song: Song): {
+export function rollSong(song: Song, rng: Rng = Math.random): {
   rolls: DiceRoll[];
   updatedSong: Song;
 } {
@@ -41,7 +41,7 @@ export function rollSong(song: Song): {
     const slot0 = song.slots[0];
     const slot1 = song.slots[1];
     if (slot0.dice && slot1.dice) {
-      const singleRoll = rollDiceWithCrit(slot0.dice);
+      const singleRoll = rollDiceWithCrit(slot0.dice, rng);
       return {
         rolls: [
           { ...singleRoll, diceId: slot0.dice.id },
@@ -60,12 +60,13 @@ export function rollSong(song: Song): {
     const slot = song.slots[idx];
     if (!slot.dice) continue;
 
-    const baseRoll = rollDiceWithCrit(slot.dice);
+    const baseRoll = rollDiceWithCrit(slot.dice, rng);
 
     const { modifiedRoll, updatedEffect, additionalRolls } = applyTrackEffect(
       baseRoll,
       slot.dice,
       currentEffect,
+      rng,
     );
 
     allRolls.push(modifiedRoll);
@@ -118,6 +119,7 @@ export function calculateDamage(
 
   // 4. Calculate genre multipliers for each die
   const genreMultipliers: { genre: Genre; multiplier: number }[] = [];
+  const perDie: DieContribution[] = [];
   let genreAdjustedDamage = 0;
 
   rolls.forEach((roll) => {
@@ -132,11 +134,16 @@ export function calculateDamage(
 
       // Use the song's single effect for the offbeat multiplier
       const offbeatMultiplier = calculateOffbeatMultiplier(roll, song.effect);
+      const multiplier = genreMultiplier * offbeatMultiplier;
+      const damage = (roll.value + roll.critBonus) * multiplier;
 
-      genreAdjustedDamage += (roll.value + roll.critBonus) * genreMultiplier * offbeatMultiplier;
+      genreAdjustedDamage += damage;
+      perDie.push({ genre: dice.genre, value: roll.value, critBonus: roll.critBonus, multiplier, damage });
     } else {
       // Extra dice (e.g. from wildDice) — no genre multiplier lookup
-      genreAdjustedDamage += roll.value + roll.critBonus;
+      const damage = roll.value + roll.critBonus;
+      genreAdjustedDamage += damage;
+      perDie.push({ genre: null, value: roll.value, critBonus: roll.critBonus, multiplier: 1, damage });
     }
   });
 
@@ -149,6 +156,7 @@ export function calculateDamage(
     effectBonuses,
     critBonuses,
     totalDamage,
+    perDie,
   };
 }
 
