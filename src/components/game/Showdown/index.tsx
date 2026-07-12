@@ -2,12 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '@/store'
 import { Song, DiceRoll } from '@/types'
 import { SongCard } from '../Combat/SongCard'
-import { DamageBreakdown } from '../Combat/DamageBreakdown'
 import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
-import { calculateDamage } from '@/game-logic/combat/damageCalculator'
-import { getPlayableSongs, createShowdownBoss, ShowdownPerformance } from '@/game-logic/showdown/showdown'
+import { getPlayableSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
 
 type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
 
@@ -69,16 +67,6 @@ export function FinalShowdown() {
   const playableSongs = useMemo(
     () => (performer ? getPlayableSongs(performer.songs) : []),
     [performer]
-  )
-
-  // The boss as an ordinary monster (with its current adaptation), for the damage report
-  const boss = useMemo(
-    () => createShowdownBoss({ resistGenre: showdownResistGenre, weakGenre: showdownWeakGenre }),
-    [showdownResistGenre, showdownWeakGenre]
-  )
-  const lastDamage = useMemo(
-    () => (lastRolls ? calculateDamage(lastRolls.song, lastRolls.rolls, boss) : null),
-    [lastRolls, boss]
   )
   // Each player performs exactly one song per turn
   const hasPerformed = showdownSongsUsed.length >= 1
@@ -268,12 +256,6 @@ export function FinalShowdown() {
               ))}
             </div>
 
-            {/* Damage report against the Silence */}
-            {lastDamage && (
-              <div className="mb-4">
-                <DamageBreakdown calculations={[lastDamage]} monsters={[boss]} />
-              </div>
-            )}
 
             {/* Finish performance */}
             <div className="flex justify-center pt-2">
