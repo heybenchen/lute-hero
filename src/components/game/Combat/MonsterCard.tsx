@@ -29,7 +29,7 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
     >
       <div
-        className={`relative w-[220px] sm:w-[260px] rounded-xl overflow-hidden transition-all duration-500 ${
+        className={`relative w-full rounded-xl overflow-hidden transition-all duration-500 ${
           isDefeated ? 'opacity-30 scale-[0.97] grayscale' : isLowHP ? 'animate-pulse-slow' : ''
         }`}
         style={{

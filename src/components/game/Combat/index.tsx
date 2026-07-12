@@ -238,7 +238,7 @@ export function CombatModal() {
               detail={monstersAliveCount > 0 ? `${monstersAliveCount} remaining` : 'All converted!'}
               detailColor={monstersAliveCount > 0 ? 'text-red-400' : 'text-green-400'}
             />
-            <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {monsters.map((monster: Monster, idx: number) => (
                 <MonsterCard
                   key={monster.id}
@@ -266,6 +266,8 @@ export function CombatModal() {
                   disabled={isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
                   index={idx}
                   rolls={currentSongId === song.id ? rolls : undefined}
+                  onReroll={currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
+                  inspiration={player.inspiration}
                 />
               ))}
             </div>
@@ -303,6 +305,8 @@ export function CombatModal() {
                         isCover
                         ownerName={coverPlayer.name}
                         rolls={currentSongId === song.id ? rolls : undefined}
+                        onReroll={currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
+                        inspiration={player.inspiration}
                       />
                     ))}
                   </div>
@@ -311,35 +315,13 @@ export function CombatModal() {
             </div>
           )}
 
-          {/* Reroll + Damage — the roll itself now animates inside the song card */}
-          {(lastPlayedSong || lastDamageCalculations.length > 0) && (
-            <div className="mb-6 sm:mb-8 space-y-4">
-              {/* Reroll the last song with Inspiration */}
-              {lastPlayedSong && !allMonstersDefeated && (
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleReroll}
-                    disabled={player.inspiration <= 0}
-                    className="text-sm font-medieval font-bold rounded-lg px-4 py-2 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
-                    style={{
-                      background: 'rgba(176, 124, 255, 0.12)',
-                      border: '1px solid rgba(176, 124, 255, 0.4)',
-                      color: '#d9c2ff',
-                    }}
-                    title={player.inspiration > 0 ? 'Reroll the last song for 1 Inspiration' : 'Requires Inspiration'}
-                  >
-                    &#x2728; Reroll &mdash; {player.inspiration} Inspiration
-                  </button>
-                </div>
-              )}
-
-              {/* Damage breakdown */}
-              {lastDamageCalculations.length > 0 && (
-                <DamageBreakdown
-                  calculations={lastDamageCalculations}
-                  monsters={monsters}
-                />
-              )}
+          {/* Damage report — the roll + reroll now live inside the song card */}
+          {lastDamageCalculations.length > 0 && (
+            <div className="mb-6 sm:mb-8">
+              <DamageBreakdown
+                calculations={lastDamageCalculations}
+                monsters={monsters}
+              />
             </div>
           )}
 

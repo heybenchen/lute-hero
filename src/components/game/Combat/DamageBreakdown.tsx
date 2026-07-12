@@ -37,74 +37,76 @@ export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps
         </div>
       </div>
 
-      <div className="p-3 sm:p-5 space-y-3">
-        {calculations.map((calc, idx) => {
-          const monster = monsters[idx]
-          if (!monster) return null
-          const isKill = monster.currentHP <= 0
+      <div className="p-3 sm:p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+          {calculations.map((calc, idx) => {
+            const monster = monsters[idx]
+            if (!monster) return null
+            const isKill = monster.currentHP <= 0
 
-          return (
-            <div
-              key={idx}
-              className="p-4 rounded-lg"
-              style={{
-                background: isKill ? 'rgba(45, 140, 48, 0.06)' : 'rgba(30, 24, 18, 0.5)',
-                border: `1px solid ${isKill ? 'rgba(76, 175, 80, 0.15)' : 'rgba(212, 168, 83, 0.08)'}`,
-              }}
-            >
-              {/* Monster name and damage */}
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="font-bold text-lg text-parchment-200">{monster.name}</span>
+            return (
+              <div
+                key={idx}
+                className="p-2 rounded-lg flex flex-col gap-1.5"
+                style={{
+                  background: isKill ? 'rgba(45, 140, 48, 0.06)' : 'rgba(30, 24, 18, 0.5)',
+                  border: `1px solid ${isKill ? 'rgba(76, 175, 80, 0.15)' : 'rgba(212, 168, 83, 0.08)'}`,
+                }}
+              >
+                {/* Monster name + KO */}
+                <div className="flex items-center gap-1 min-w-0">
+                  <span className="font-bold text-xs text-parchment-200 truncate">{monster.name}</span>
                   {isKill && (
-                    <span className="text-xs font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded">
+                    <span className="text-[9px] font-bold text-green-400 bg-green-400/10 px-1 py-0.5 rounded shrink-0">
                       KO
                     </span>
                   )}
                 </div>
-                <span className="text-red-400 font-bold text-xl tabular-nums"
+
+                {/* Damage total */}
+                <span className="text-red-400 font-bold text-lg leading-none tabular-nums"
                   style={{ textShadow: '0 0 6px rgba(232, 80, 80, 0.2)' }}
                 >
                   -{calc.totalDamage}
                 </span>
-              </div>
 
-              {/* Damage formula row */}
-              <div className="flex items-center gap-2.5 flex-wrap">
-                {calc.genreMultipliers.map((gm, gmIdx) => (
-                  <div key={gmIdx} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
-                    style={{ background: 'rgba(212, 168, 83, 0.06)', border: '1px solid rgba(212, 168, 83, 0.08)' }}
-                  >
-                    <GenreBadge genre={gm.genre} className="text-xs px-2 py-0.5 rounded" />
-                    {gm.multiplier !== 1 && (
-                      <span className={`font-bold text-sm ${
-                        gm.multiplier === 2 ? 'text-green-400' :
-                        gm.multiplier === 0 ? 'text-red-400' :
-                        'text-parchment-300'
-                      }`}>
-                        {gm.multiplier === 0 ? 'immune' : `×${gm.multiplier}`}
-                      </span>
-                    )}
-                  </div>
-                ))}
-                {calc.critBonuses > 0 && (
-                  <span className="text-sm font-bold text-gold-400 px-2.5 py-1.5 rounded-lg"
-                    style={{ background: 'rgba(230, 195, 90, 0.08)', border: '1px solid rgba(230, 195, 90, 0.12)' }}
-                  >
-                    +{calc.critBonuses} crit
-                  </span>
-                )}
-                {calc.effectBonuses > 0 && (
-                  <span className="text-sm font-bold text-classical px-2.5 py-1.5 rounded-lg"
-                    style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.12)' }}
-                  >
-                    +{calc.effectBonuses} fx
-                  </span>
-                )}
+                {/* Compact formula chips */}
+                <div className="flex flex-wrap gap-1">
+                  {calc.genreMultipliers.map((gm, gmIdx) => (
+                    <div key={gmIdx} className="flex items-center gap-1 px-1 py-0.5 rounded"
+                      style={{ background: 'rgba(212, 168, 83, 0.06)', border: '1px solid rgba(212, 168, 83, 0.08)' }}
+                    >
+                      <GenreBadge genre={gm.genre} className="text-[9px] px-1 py-0 rounded" />
+                      {gm.multiplier !== 1 && (
+                        <span className={`font-bold text-[10px] ${
+                          gm.multiplier === 2 ? 'text-green-400' :
+                          gm.multiplier === 0 ? 'text-red-400' :
+                          'text-parchment-300'
+                        }`}>
+                          {gm.multiplier === 0 ? '0×' : `×${gm.multiplier}`}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {calc.critBonuses > 0 && (
+                    <span className="text-[10px] font-bold text-gold-400 px-1 py-0.5 rounded"
+                      style={{ background: 'rgba(230, 195, 90, 0.08)', border: '1px solid rgba(230, 195, 90, 0.12)' }}
+                    >
+                      +{calc.critBonuses} crit
+                    </span>
+                  )}
+                  {calc.effectBonuses > 0 && (
+                    <span className="text-[10px] font-bold text-classical px-1 py-0.5 rounded"
+                      style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.12)' }}
+                    >
+                      +{calc.effectBonuses} fx
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
     </div>
   )
