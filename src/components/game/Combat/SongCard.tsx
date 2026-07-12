@@ -68,9 +68,23 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
             {song.name || <span className="text-parchment-500 italic">Untitled</span>}
           </div>
 
-          {/* Dice on the left, effect on the right — same layout as the main page */}
-          <div className="flex items-stretch gap-3 mb-4">
-            <div className="flex gap-2 shrink-0">
+          {/* Effect above the dice */}
+          <div className="mb-4 space-y-3">
+            {song.effect ? (
+              <div className="w-full p-1.5 rounded text-xs flex items-center justify-center text-center"
+                style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
+              >
+                <span className="text-classical break-words">{describeTrackEffect(song.effect)}</span>
+              </div>
+            ) : (
+              <div className="w-full p-1.5 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
+                style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
+              >
+                No effects
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-center">
               {song.slots.map((slot, idx) => {
                 const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
                 return (
@@ -93,22 +107,6 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
                   </div>
                 )
               })}
-            </div>
-
-            <div className="flex flex-1 min-w-0">
-              {song.effect ? (
-                <div className="h-full w-full p-1.5 rounded text-xs flex items-center justify-center text-center"
-                  style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
-                >
-                  <span className="text-classical break-words">{describeTrackEffect(song.effect)}</span>
-                </div>
-              ) : (
-                <div className="h-full w-full p-1.5 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
-                  style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
-                >
-                  No effects
-                </div>
-              )}
             </div>
           </div>
 

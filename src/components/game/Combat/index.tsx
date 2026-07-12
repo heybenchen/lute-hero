@@ -237,18 +237,6 @@ export function CombatModal() {
               </p>
               <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
             </div>
-
-            {/* Live EXP counter — EXP is fixed per monster level, so this total
-                holds steady throughout the fight (not just in the end summary) */}
-            <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm"
-              style={{
-                background: 'rgba(212, 168, 83, 0.08)',
-                border: '1px solid rgba(212, 168, 83, 0.2)',
-              }}
-            >
-              <span className="text-parchment-500">EXP this fight:</span>
-              <span className="font-bold text-gold-400 tabular-nums">+{totalExp}</span>
-            </div>
           </div>
 
           {/* Monsters Section */}

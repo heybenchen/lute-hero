@@ -52,13 +52,13 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
         )}
 
         <div className="p-4 sm:p-5">
-          {/* Header row */}
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex-1 min-w-0">
-              <div className="font-medieval text-lg font-bold text-gold-400 truncate leading-tight">
-                {monster.name}
-              </div>
-              <div className="flex items-center gap-2 mt-1.5">
+          {/* Header — name on its own line so the HP never crowds it */}
+          <div className="mb-3">
+            <div className="font-medieval text-lg font-bold text-gold-400 truncate leading-tight">
+              {monster.name}
+            </div>
+            <div className="flex items-center justify-between gap-2 mt-1.5">
+              <div className="flex items-center gap-2 min-w-0">
                 {monster.isBoss && (
                   <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: '#4dd0e1', background: 'rgba(0, 188, 212, 0.1)', border: '1px solid rgba(0, 184, 212, 0.2)' }}>
                     BOSS
@@ -74,16 +74,16 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
                   </span>
                 )}
               </div>
-            </div>
 
-            {/* HP number */}
-            <div className="text-right flex-shrink-0">
-              <div className={`text-3xl font-bold leading-none tabular-nums ${
-                isDefeated ? 'text-green-400/60' : hpPercent > 50 ? 'text-parchment-200' : hpPercent > 25 ? 'text-gold-400' : 'text-red-400'
-              }`}>
-                {Math.max(0, monster.currentHP)}
+              {/* HP number */}
+              <div className="flex items-baseline gap-0.5 flex-shrink-0">
+                <span className={`text-2xl font-bold leading-none tabular-nums ${
+                  isDefeated ? 'text-green-400/60' : hpPercent > 50 ? 'text-parchment-200' : hpPercent > 25 ? 'text-gold-400' : 'text-red-400'
+                }`}>
+                  {Math.max(0, monster.currentHP)}
+                </span>
+                <span className="text-sm text-parchment-500">/{monster.maxHP}</span>
               </div>
-              <div className="text-sm text-parchment-500">/{monster.maxHP}</div>
             </div>
           </div>
 
@@ -111,18 +111,19 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
           <div className="flex gap-2.5">
             {monster.vulnerability && (
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm"
-                style={{ background: 'rgba(45, 140, 48, 0.12)', border: '1px solid rgba(76, 175, 80, 0.2)' }}
+                style={{ background: 'rgba(245, 197, 66, 0.12)', border: '1px solid rgba(245, 197, 66, 0.3)' }}
+                title="Weak — takes double damage from this genre"
               >
-                <span className="text-green-400 font-bold">2x</span>
+                <span className="font-bold" style={{ color: '#f5c542' }}>2x</span>
                 <GenreBadge genre={monster.vulnerability} className="text-xs px-2 py-0.5 rounded" />
               </div>
             )}
             {monster.resistance && (
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm"
-                style={{ background: 'rgba(196, 48, 48, 0.1)', border: '1px solid rgba(232, 80, 80, 0.2)' }}
+                style={{ background: 'rgba(148, 163, 184, 0.12)', border: '1px solid rgba(148, 163, 184, 0.35)' }}
                 title="Immune — takes no damage from this genre"
               >
-                <span className="text-red-400 font-bold">0×</span>
+                <span className="font-bold" style={{ color: '#cbd5e1' }}>0×</span>
                 <GenreBadge genre={monster.resistance} className="text-xs px-2 py-0.5 rounded" />
               </div>
             )}
