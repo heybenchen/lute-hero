@@ -26,7 +26,8 @@ function polygonClipPath(sides: number): string {
 
 const CLIP_PATHS: Record<DiceType, string> = {
   d4: polygonClipPath(ICON_SIDES.d4),
-  d6: polygonClipPath(ICON_SIDES.d6),
+  // Axis-aligned square (not a diamond) for d6
+  d6: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
   d12: polygonClipPath(ICON_SIDES.d12),
   d20: polygonClipPath(ICON_SIDES.d20),
 }
