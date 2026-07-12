@@ -1,16 +1,12 @@
 import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
 import { DraftShop } from '../DraftShop'
-import { GenreBadge } from '@/components/ui/GenreBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
-import { getMaxValue } from '@/game-logic/dice/roller'
 import { describeTrackEffect } from '@/data/trackEffects'
 import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
 
 export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
-  const [hoveredSong, setHoveredSong] = useState<string | null>(null)
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
@@ -124,22 +120,16 @@ export function PlayerPanel() {
             {currentPlayer.songs.map((song) => (
               <div
                 key={song.id}
-                className="rounded-lg p-1.5 flex-1 min-w-0 lg:w-full lg:flex-none transition-all duration-150 hover:bg-tavern-600"
+                className="rounded-lg p-1.5 flex-1 min-w-0 lg:w-full lg:flex-none"
                 style={{
                   background: 'rgba(61, 48, 32, 0.5)',
                   border: '1px solid rgba(212, 168, 83, 0.12)',
                 }}
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  setTooltipPos({ x: rect.left, y: rect.bottom + 8 })
-                  setHoveredSong(song.id)
-                }}
-                onMouseLeave={() => setHoveredSong(null)}
               >
                 <div className="h-3.5 lg:h-auto text-[10px] lg:text-xs font-bold text-parchment-300 mb-0.5 truncate lg:whitespace-normal">
                   {song.name || <span className="italic text-parchment-500">Untitled</span>}
                 </div>
-                <div className="flex gap-0.5">
+                <div className="flex gap-0.5 lg:gap-1.5">
                   {song.slots.map((slot, idx) => (
                     <div
                       key={idx}
@@ -155,81 +145,30 @@ export function PlayerPanel() {
                     >
                       {slot.dice ? (
                         <>
-                          <div className="text-gold-400 text-[14px] leading-none">
+                          <div className="text-gold-400 text-[14px] lg:text-3xl leading-none">
                             <DiceShape type={slot.dice.type} />
                           </div>
-                          <div className="font-bold text-[7px] text-parchment-300">
+                          <div className="font-bold text-[7px] lg:text-[10px] text-parchment-300">
                             {slot.dice.genre}
                           </div>
                         </>
                       ) : (
-                        <div className="text-parchment-500/30 text-[8px]">-</div>
+                        <div className="text-parchment-500/30 text-[8px] lg:text-sm">-</div>
                       )}
                     </div>
                   ))}
                 </div>
-                {song.effect && (
-                  <div className="hidden lg:block mt-1.5 text-[11px] leading-snug text-classical">
-                    &#x2728; {describeTrackEffect(song.effect)}
-                  </div>
-                )}
+                {/* Effect description — space reserved even when a song has none */}
+                <div className="hidden lg:block mt-1.5 min-h-[1.75rem] text-[11px] leading-snug text-classical">
+                  {song.effect ? (
+                    <>&#x2728; {describeTrackEffect(song.effect)}</>
+                  ) : (
+                    <span className="italic text-parchment-600">No effect</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-
-          {/* Floating song tooltip */}
-          {hoveredSong && currentPlayer.songs.find((s) => s.id === hoveredSong) && (
-            <div
-              className="fixed z-[100] p-3 rounded-lg shadow-2xl w-64 pointer-events-none animate-fade-in"
-              style={{
-                left: `${tooltipPos.x}px`,
-                top: `${tooltipPos.y}px`,
-                background: 'linear-gradient(135deg, #2a2118, #1a1410)',
-                border: '1px solid rgba(212, 168, 83, 0.3)',
-              }}
-            >
-              {(() => {
-                const song = currentPlayer.songs.find((s) => s.id === hoveredSong)!
-                return (
-                  <>
-                    <div className="font-medieval font-bold mb-2 text-gold-400">{song.name}</div>
-                    <div className="space-y-2 text-sm">
-                      {song.slots.map((slot, idx) => (
-                        <div
-                          key={`slot-${idx}`}
-                          className="pb-1"
-                          style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.12)' }}
-                        >
-                          <div className="font-bold text-parchment-400 text-xs">Slot {idx + 1}</div>
-                          {slot.dice ? (
-                            <div className="mt-0.5">
-                              <div className="flex items-center gap-1">
-                                <span className="text-parchment-300 text-xs">{slot.dice.type}</span>
-                                <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
-                              </div>
-                              <div className="text-xs text-parchment-400">
-                                Roll: 1-{getMaxValue(slot.dice.type)} (2x on max)
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-parchment-500 text-xs">Empty slot</div>
-                          )}
-                        </div>
-                      ))}
-                      {song.effect && (
-                        <div className="pt-1">
-                          <div className="font-bold text-parchment-400 text-xs mb-1">Effect</div>
-                          <div className="text-classical text-xs">
-                            &#x2728; {describeTrackEffect(song.effect)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )
-              })()}
-            </div>
-          )}
         </div>
 
       </div>
