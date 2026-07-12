@@ -111,19 +111,19 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
           <div className="flex gap-2.5">
             {monster.vulnerability && (
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm"
-                style={{ background: 'rgba(245, 197, 66, 0.12)', border: '1px solid rgba(245, 197, 66, 0.3)' }}
+                style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(212, 168, 83, 0.2)' }}
                 title="Weak — takes double damage from this genre"
               >
-                <span className="font-bold" style={{ color: '#f5c542' }}>2x</span>
+                <span className="font-bold text-parchment-300">2x</span>
                 <GenreBadge genre={monster.vulnerability} className="text-xs px-2 py-0.5 rounded" />
               </div>
             )}
             {monster.resistance && (
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm"
-                style={{ background: 'rgba(148, 163, 184, 0.12)', border: '1px solid rgba(148, 163, 184, 0.35)' }}
+                style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(212, 168, 83, 0.2)' }}
                 title="Immune — takes no damage from this genre"
               >
-                <span className="font-bold" style={{ color: '#cbd5e1' }}>0×</span>
+                <span className="font-bold text-parchment-300">0×</span>
                 <GenreBadge genre={monster.resistance} className="text-xs px-2 py-0.5 rounded" />
               </div>
             )}
