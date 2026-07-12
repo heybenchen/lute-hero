@@ -166,41 +166,6 @@ export interface KillCredit {
   isCover: boolean;
 }
 
-export interface CombatState {
-  isActive: boolean;
-  playerId: string | null;
-  spaceId: number | null;
-  monsters: Monster[];
-  songsUsed: SongUsage[]; // Songs played with ownership tracking
-  killCredits: KillCredit[]; // Which songs killed which monsters
-  currentSongId: string | null;
-  damageDealt: number;
-  totalDamage: number;
-  rolls: DiceRoll[];
-  lastDamageCalculations: DamageCalculation[]; // Damage breakdown per monster
-}
-
-// ============================================
-// GAME STATE
-// ============================================
-
-export interface GameState {
-  phase: GamePhase;
-  currentRound: number;
-  currentTurnPlayerId: string | null;
-  turnOrder: string[]; // Player IDs
-  players: Player[];
-  board: BoardSpace[];
-  combat: CombatState;
-
-  finalBoss: Monster | null;
-
-  // Fame thresholds for progression
-  fameThresholds: {
-    finalBoss: number;
-  };
-}
-
 // ============================================
 // HELPER TYPES
 // ============================================

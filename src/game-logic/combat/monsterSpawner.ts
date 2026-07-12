@@ -34,9 +34,9 @@ export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: num
 
 /**
  * Calculate HP multiplier based on monster level (capped at level 5)
- * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 2.75x, Level 4 = 4x, Level 5 = 5.5x
+ * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 3x, Level 4 = 5x, Level 5 = 7.5x
  */
-const HP_MULTIPLIERS = [1, 1.75, 2.75, 4, 5.5]
+const HP_MULTIPLIERS = [1, 1.75, 3, 5, 7.5]
 
 export function getHPMultiplier(level: number): number {
   const capped = Math.min(level, 5)

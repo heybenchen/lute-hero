@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { PlayerPanel } from './PlayerPanel'
@@ -17,6 +17,7 @@ export function GameView() {
   const pendingPhase = useGameStore((state) => state.pendingPhase)
   const finalTurnGranted = useGameStore((state) => state.finalTurnGranted)
   const [showMenu, setShowMenu] = useState(false)
+  const [showHowTo, setShowHowTo] = useState(false)
 
   // Rejected actions (422/403/409) surface briefly, then clear
   useEffect(() => {
@@ -114,6 +115,12 @@ export function GameView() {
               >
                 Resume Game
               </button>
+              <button
+                onClick={() => { setShowMenu(false); setShowHowTo(true) }}
+                className="btn-secondary w-full py-3"
+              >
+                How to Play
+              </button>
               {isHost && (
                 <button
                   onClick={handleNewGame}
@@ -141,6 +148,9 @@ export function GameView() {
           </div>
         </div>
       )}
+
+      {/* How to Play modal */}
+      {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)} />}
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col lg:flex-row gap-2 sm:gap-3 flex-1 min-h-0 px-2 sm:px-3 pb-2 sm:pb-3">
@@ -178,4 +188,107 @@ export function GameView() {
       )}
     </div>
   )
+}
+
+/** Rules reference opened from the Menu. */
+function HowToPlay({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0, 0, 0, 0.6)' }}
+      onClick={onClose}
+    >
+      <div
+        className="card-ornate max-w-lg w-full max-h-[85dvh] overflow-y-auto p-6 sm:p-8 animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center mb-5">
+          <div className="font-display text-2xl text-gold-400 mb-2">How to Play</div>
+          <div className="h-px mx-auto w-40" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.4), transparent)' }} />
+        </div>
+
+        <div className="space-y-5 text-sm text-parchment-200 leading-relaxed">
+          <Section title="🎯 Goal">
+            You are a Bard defeating monsters with music. Earn <Hl>Fame</Hl> by winning
+            fights. The first bard to reach <Hl>150 Fame</Hl> triggers the Final Showdown,
+            and whoever has the most Fame after it is crowned Legend of the Realm.
+          </Section>
+
+          <Section title="🔄 Your Turn">
+            <List items={[
+              <>Move up to <Hl>2 spaces</Hl> across the board (or spend 1 Inspiration to travel to any space).</>,
+              <>If monsters are on your space, <Hl>Fight</Hl> once — one combat per turn.</>,
+              <>Visit the <Hl>Studio</Hl> to spend EXP on dice and song names (unlimited buys).</>,
+              <>Press <Hl>End Turn</Hl> to pass to the next bard.</>,
+            ]} />
+          </Section>
+
+          <Section title="🎲 Combat">
+            <List items={[
+              <>Play up to <Hl>3 songs</Hl> per fight. Each song rolls the dice slotted into it.</>,
+              <>Every song is <Hl>AOE</Hl> — its damage hits <Hl>all</Hl> monsters at once.</>,
+              <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for bonus damage.</>,
+              <>Spend <Hl>Inspiration</Hl> to reroll the song you just performed.</>,
+            ]} />
+          </Section>
+
+          <Section title="🎵 Genres & Elements">
+            <p className="mb-2">Each die belongs to an element. Monsters are weak or immune to certain elements:</p>
+            <List items={[
+              <><Hl>2× damage</Hl> from the element a monster is <Hl>weak</Hl> to.</>,
+              <><Hl>0× damage</Hl> (immune) from the element a monster <Hl>resists</Hl>.</>,
+              <>Elements: <span className="text-red-300">Ballad (Fire)</span>, <span className="text-green-300">Folk (Earth)</span>, <span className="text-yellow-200">Hymn (Wind)</span>, <span className="text-blue-300">Shanty (Water)</span>.</>,
+            ]} />
+          </Section>
+
+          <Section title="🛠 The Studio (Shop)">
+            <List items={[
+              <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d6 → d12 → d20</Hl>.</>,
+              <>Buy <Hl>song names</Hl> that grant powerful effects to a song.</>,
+              <>Spend EXP to buy <Hl>Inspiration</Hl> — used for rerolls, travel, and refreshing offers.</>,
+            ]} />
+          </Section>
+
+          <Section title="⚡ The Final Showdown">
+            <List items={[
+              <>Three verses; each verse every bard performs <Hl>one song</Hl> against The Eternal Silence.</>,
+              <>Every point of damage earns <Hl>1 fandom</Hl>, banked into your Fame.</>,
+              <>Between verses the boss <Hl>adapts</Hl>: immune to the strongest attack's element, weak to the weakest.</>,
+              <>The bard with the most Fame at the end wins.</>,
+            ]} />
+          </Section>
+        </div>
+
+        <button onClick={onClose} className="btn-primary w-full py-3 mt-6">
+          Got it
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <div className="font-medieval font-bold text-gold-300 mb-1.5">{title}</div>
+      {children}
+    </div>
+  )
+}
+
+function List({ items }: { items: ReactNode[] }) {
+  return (
+    <ul className="space-y-1.5">
+      {items.map((item, idx) => (
+        <li key={idx} className="flex gap-2">
+          <span className="text-gold-400 flex-shrink-0">♪</span>
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function Hl({ children }: { children: ReactNode }) {
+  return <span className="font-bold text-gold-300">{children}</span>
 }

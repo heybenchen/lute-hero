@@ -45,9 +45,9 @@ React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel N
 ## Key Game Mechanics
 
 - **Damage flow**: Roll dice (crits cascade) → apply track effects → genre multipliers (2x vulnerable, 0x resistant/immune) → each song hits ALL monsters (AOE)
-- **Monster spawning**: one monster per unique genre tag on a space; duplicate tags raise its level; fame per kill = 10/30/70/150/250 by level
+- **Monster spawning**: one monster per unique genre tag on a space; duplicate tags raise its level; fame per kill = 0/10/30/60/100 by level (Lv1–Lv5+)
 - **Turn structure**: Move up to 2 spaces, fight 1 combat (up to 3 songs), shop in the Studio, end turn
-- **Phase progression**: 100 collective fame per player → the Final Showdown (3 verses, one song each, boss adapts elementally between verses; damage = fandom; most total fans wins)
+- **Phase progression**: any single player reaching 150 fame (`FAME_THRESHOLDS.finalBoss`) grants one "final turn," then triggers the Final Showdown (3 verses, one song each, boss adapts elementally between verses; damage = fandom; most total fans wins)
 - **Dice upgrade path**: d4 → d6 → d12 → d20
 
 ## Deploying online multiplayer (Vercel)

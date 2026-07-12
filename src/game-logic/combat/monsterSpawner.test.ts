@@ -81,10 +81,10 @@ describe('Monster Spawner', () => {
 
       expect(lv1.maxHP).toBe(20)   // 20 * 1.0
       expect(lv2.maxHP).toBe(35)   // 20 * 1.75
-      expect(lv3.maxHP).toBe(55)   // 20 * 2.75
-      expect(lv4.maxHP).toBe(80)   // 20 * 4.0
-      expect(lv5.maxHP).toBe(110)  // 20 * 5.5
-      expect(lv6.maxHP).toBe(110)  // capped at level 5
+      expect(lv3.maxHP).toBe(60)   // 20 * 3.0
+      expect(lv4.maxHP).toBe(100)  // 20 * 5.0
+      expect(lv5.maxHP).toBe(150)  // 20 * 7.5
+      expect(lv6.maxHP).toBe(150)  // capped at level 5
     })
 
     it('should prefix name based on level', () => {
@@ -109,10 +109,10 @@ describe('Monster Spawner', () => {
     it('should use accelerating curve capped at level 5', () => {
       expect(getHPMultiplier(1)).toBe(1)
       expect(getHPMultiplier(2)).toBe(1.75)
-      expect(getHPMultiplier(3)).toBe(2.75)
-      expect(getHPMultiplier(4)).toBe(4)
-      expect(getHPMultiplier(5)).toBe(5.5)
-      expect(getHPMultiplier(6)).toBe(5.5) // capped
+      expect(getHPMultiplier(3)).toBe(3)
+      expect(getHPMultiplier(4)).toBe(5)
+      expect(getHPMultiplier(5)).toBe(7.5)
+      expect(getHPMultiplier(6)).toBe(7.5) // capped
     })
   })
 

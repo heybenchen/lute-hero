@@ -353,7 +353,7 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
       movesThisTurn: 0,
       fightsThisTurn: 0,
       hasShoppedThisTurn: false,
-      inspiration: 0,
+      inspiration: 1,
       inspirationBoughtThisTurn: 0,
     }
   })
