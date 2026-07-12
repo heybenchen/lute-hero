@@ -53,11 +53,11 @@ export function Board() {
     <div
       className="relative w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
       style={{
-        // Warm coffee-brown matching the map image's torn-paper border texture
+        // Warm wood-plank brown matching the map image's wooden border
         background: `
           radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.06) 0%, transparent 45%),
           radial-gradient(ellipse at 70% 80%, rgba(139, 111, 71, 0.07) 0%, transparent 45%),
-          linear-gradient(160deg, #3b3125 0%, #322817 50%, #3b3125 100%)
+          linear-gradient(160deg, #5a4835 0%, #695641 50%, #5a4835 100%)
         `,
       }}
     >
