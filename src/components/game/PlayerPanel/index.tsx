@@ -108,11 +108,11 @@ export function PlayerPanel() {
           </div>
           <div>
             <div className="font-medieval text-lg font-bold text-gold-300">{currentPlayer.name}</div>
-            <div className="text-sm text-parchment-400 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-              <span>Fame: <span className="text-gold-400 font-bold">{currentPlayer.fame}</span></span>
-              <span>EXP: <span className="text-parchment-200 font-bold">{currentPlayer.exp}</span></span>
+            <div className="text-sm text-parchment-200 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+              <span title="Fame">&#x2B50; FAME: <span className="font-bold">{currentPlayer.fame}</span></span>
+              <span title="EXP">&#x1F4D6; EXP: <span className="font-bold">{currentPlayer.exp}</span></span>
               <span title="Inspiration — spend to reroll a song, travel anywhere, or refresh the shop">
-                &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{currentPlayer.inspiration}</span>
+                &#x2728; INS: <span className="font-bold">{currentPlayer.inspiration}</span>
               </span>
             </div>
           </div>

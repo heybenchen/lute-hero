@@ -19,13 +19,13 @@ import rhythmsEnd from '@/assets/board/rhythms-end.png'
 
 export const SPACE_ILLUSTRATIONS: Record<string, string> = {
   'The Forgotten Stage': forgottenStage,
-  'Echo Chamber': echoChamber,
+  'The Echo Chamber': echoChamber,
   'Melody Junction': melodyJunction,
   'The Last Venue': lastVenue,
   'Harmony Crossroads': harmonyCrossroads,
   'The Soundwave Nexus': soundwaveNexus,
   'Resonance Plaza': resonancePlaza,
-  'The Silent Amphitheater': silentAmphitheater,
+  'Silent Amphitheater': silentAmphitheater,
   'Symphony Ruins': symphonyRuins,
   'Dissonance Square': dissonanceSquare,
   'The Muted Hall': mutedHall,
