@@ -1,4 +1,4 @@
-import { DiceType, DiceRoll, Dice } from '@/types'
+import { DiceType, DiceRoll, Dice, Rng } from '../../types'
 
 /**
  * Get the maximum value for a given dice type
@@ -26,22 +26,26 @@ export function getMinValue(): number {
 /**
  * Roll a single die and return the value
  */
-export function rollDie(diceType: DiceType): number {
+export function rollDie(diceType: DiceType, rng: Rng = Math.random): number {
   const max = getMaxValue(diceType)
-  return Math.floor(Math.random() * max) + 1
+  return Math.floor(rng() * max) + 1
 }
 
 /**
  * Roll cascade dice: keeps rolling while max value is hit.
  * Returns array of additional roll values (not including the triggering roll).
  */
-export function rollCascadeDice(diceType: DiceType, maxCascades: number = 10): number[] {
+export function rollCascadeDice(
+  diceType: DiceType,
+  maxCascades: number = 10,
+  rng: Rng = Math.random
+): number[] {
   const maxValue = getMaxValue(diceType)
   const rolls: number[] = []
-  let value = rollDie(diceType)
+  let value = rollDie(diceType, rng)
   rolls.push(value)
   while (value === maxValue && rolls.length < maxCascades) {
-    value = rollDie(diceType)
+    value = rollDie(diceType, rng)
     rolls.push(value)
   }
   return rolls
@@ -52,14 +56,14 @@ export function rollCascadeDice(diceType: DiceType, maxCascades: number = 10): n
  * Crits cascade: rolling max value triggers another roll of the same die,
  * which itself can cascade indefinitely.
  */
-export function rollDiceWithCrit(dice: Dice): DiceRoll {
-  const value = rollDie(dice.type)
+export function rollDiceWithCrit(dice: Dice, rng: Rng = Math.random): DiceRoll {
+  const value = rollDie(dice.type, rng)
   const maxValue = getMaxValue(dice.type)
   const isCrit = value === maxValue
 
   const cascadeRolls: number[] = []
   if (isCrit) {
-    cascadeRolls.push(...rollCascadeDice(dice.type))
+    cascadeRolls.push(...rollCascadeDice(dice.type, 10, rng))
   }
 
   const critBonus = cascadeRolls.reduce((sum, v) => sum + v, 0)
@@ -84,8 +88,8 @@ export function flipDiceValue(value: number, diceType: DiceType): number {
 /**
  * Roll multiple dice at once
  */
-export function rollMultipleDice(dice: Dice[]): DiceRoll[] {
-  return dice.map(rollDiceWithCrit)
+export function rollMultipleDice(dice: Dice[], rng: Rng = Math.random): DiceRoll[] {
+  return dice.map((d) => rollDiceWithCrit(d, rng))
 }
 
 /**

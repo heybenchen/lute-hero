@@ -4,6 +4,16 @@
 
 export type Genre = "Ballad" | "Folk" | "Hymn" | "Shanty";
 
+/**
+ * Random number source, drop-in for Math.random (returns [0, 1)).
+ * All game logic takes an Rng so the server can seed rolls deterministically;
+ * defaults to Math.random for local/hotseat use.
+ */
+export type Rng = () => number;
+
+/** Deterministic id factory (server: seq-based; hotseat: counter-based). */
+export type NewId = (prefix: string) => string;
+
 export type DiceType = "d4" | "d6" | "d12" | "d20";
 
 export type GamePhase = "setup" | "main" | "finalBoss" | "gameOver";

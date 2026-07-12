@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameStore, hasSavedGame, clearSavedGame } from '@/store'
+import { useGameStore } from '@/store'
 import { Genre } from '@/types'
 
 const GENRES: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
@@ -10,47 +10,18 @@ export function Setup() {
   const [playerNames, setPlayerNames] = useState(['Player 1', 'Player 2', 'Player 3', 'Player 4'])
   const [selectedGenres, setSelectedGenres] = useState<Genre[]>(['Ballad', 'Folk', 'Hymn', 'Shanty'])
 
-  const initializePlayers = useGameStore((state) => state.initializePlayers)
-  const initializeBoard = useGameStore((state) => state.initializeBoard)
-  const addGenreTags = useGameStore((state) => state.addGenreTags)
-  const limitSpaceTags = useGameStore((state) => state.limitSpaceTags)
-  const spawnInitialMonstersOnBoard = useGameStore((state) => state.spawnInitialMonstersOnBoard)
-  const startGame = useGameStore((state) => state.startGame)
-  const initializeShop = useGameStore((state) => state.initializeShop)
+  const dispatch = useGameStore((state) => state.dispatch)
 
   const handleStart = () => {
-    const configs = []
+    const playerConfigs = []
     for (let i = 0; i < playerCount; i++) {
-      configs.push({
+      playerConfigs.push({
         name: playerNames[i] || `Player ${i + 1}`,
         starterGenre: selectedGenres[i] || GENRES[0],
         color: PLAYER_COLORS[i] || '#888888',
       })
     }
-
-    initializeBoard()
-    initializePlayers(configs)
-
-    const board = useGameStore.getState().spaces
-    const players = useGameStore.getState().players
-
-    players.forEach((player) => {
-      const playerSpace = board.find((s) => s.id === player.position)
-      if (playerSpace) {
-        playerSpace.connections.forEach((connId) => {
-          const freshGenreTags = useGameStore.getState().spaces.find((s) => s.id === connId)?.genreTags || []
-          useGameStore.getState().updateSpace(connId, {
-            genreTags: [...freshGenreTags, player.songs[0].slots[0].dice?.genre || 'Ballad']
-          })
-        })
-      }
-    })
-
-    addGenreTags()
-    limitSpaceTags(1)
-    spawnInitialMonstersOnBoard()
-    initializeShop(playerCount)
-    startGame()
+    dispatch({ type: 'START_GAME', playerConfigs })
   }
 
   return (
@@ -158,44 +129,16 @@ export function Setup() {
           </div>
         </div>
 
-        {/* Start / Continue buttons */}
+        {/* Start button */}
         <div className="space-y-3">
-          {hasSavedGame() && (
-            <button
-              onClick={() => {
-                // Hydration already happened — just flip to the game phase
-                const state = useGameStore.getState()
-                if (state.phase !== 'setup') {
-                  // The element bag persists with the save; only initialize the
-                  // shop if this save predates it (or has no shop state at all)
-                  const bagSize = state.elementBag.length + state.elementDiscard.length + state.elementOffers.length
-                  if (bagSize === 0) {
-                    state.initializeShop(state.players.length)
-                  }
-                  // Trigger a re-render — setPhase to current phase
-                  useGameStore.getState().setPhase(state.phase)
-                }
-              }}
-              className="w-full text-lg py-4 font-medieval font-bold rounded-lg transition-all duration-200"
-              style={{
-                background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
-                border: '1px solid rgba(100, 220, 100, 0.4)',
-                color: '#d4ffd6',
-                textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
-                boxShadow: '0 0 20px rgba(100, 220, 100, 0.12), 0 4px 15px rgba(0,0,0,0.3)',
-              }}
-            >
-              Continue Saved Game
-            </button>
-          )}
           <button
-            onClick={() => { clearSavedGame(); handleStart() }}
+            onClick={handleStart}
             className="btn-primary w-full text-lg py-4"
             style={{
               boxShadow: '0 0 20px rgba(212, 168, 83, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
             }}
           >
-            {hasSavedGame() ? 'New Game' : 'Start Game'}
+            Start Game
           </button>
         </div>
 

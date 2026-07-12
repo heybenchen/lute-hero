@@ -1,4 +1,4 @@
-import { DraftCard, Dice, Genre, DiceType } from "@/types";
+import { DraftCard, Dice, Genre, DiceType, Rng, NewId } from '../types';
 import { TRACK_EFFECTS } from "./trackEffects";
 import { DICE_UPGRADE_PATH } from "./startingData";
 
@@ -48,9 +48,9 @@ export function getUpgradeCost(type: DiceType): number | null {
 /**
  * Create a fresh d4 die of the purchased element.
  */
-export function createElementalDie(genre: Genre): Dice {
+export function createElementalDie(genre: Genre, newId?: NewId): Dice {
   return {
-    id: `die-${Date.now()}-${dieIdCounter++}`,
+    id: newId ? newId("die") : `die-${Date.now()}-${dieIdCounter++}`,
     type: "d4",
     genre,
   };
@@ -69,18 +69,22 @@ const SONG_NAMES = [
   "Digital Dreams",
 ];
 
-export function generateNameCard(excludeNames: Set<string> = new Set()): DraftCard {
+export function generateNameCard(
+  excludeNames: Set<string> = new Set(),
+  rng: Rng = Math.random,
+  newId?: NewId
+): DraftCard {
   const effects = Object.keys(TRACK_EFFECTS);
-  const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+  const randomEffect = effects[Math.floor(rng() * effects.length)];
 
   const available = SONG_NAMES.filter((n) => !excludeNames.has(n));
   const pool = available.length > 0 ? available : SONG_NAMES;
 
   return {
-    id: generateCardId(),
+    id: newId ? newId("card") : generateCardId(),
     type: "name",
     cost: 10,
-    songName: pool[Math.floor(Math.random() * pool.length)],
+    songName: pool[Math.floor(rng() * pool.length)],
     songEffect: TRACK_EFFECTS[randomEffect],
   };
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameStore, selectCurrentPlayer } from '@/store'
+import { useGameStore, selectCurrentPlayer, selectCanAct, selectIsHost } from '@/store'
 import { DraftShop } from '../DraftShop'
 import { SongCard } from '../SongCard'
 import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
@@ -9,52 +9,33 @@ export function PlayerPanel() {
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
-  const nextTurn = useGameStore((state) => state.nextTurn)
-  const nextRound = useGameStore((state) => state.nextRound)
-  const addGenreTags = useGameStore((state) => state.addGenreTags)
-  const currentTurnPlayerIndex = useGameStore((state) => state.currentTurnPlayerIndex)
-  const resetPlayerMoves = useGameStore((state) => state.resetPlayerMoves)
-  const resetPlayerFights = useGameStore((state) => state.resetPlayerFights)
-  const consumePlayerFight = useGameStore((state) => state.consumePlayerFight)
-  const startCombat = useGameStore((state) => state.startCombat)
-  const applyPendingPhase = useGameStore((state) => state.applyPendingPhase)
-  const refillShopSlots = useGameStore((state) => state.refillShopSlots)
-  const resetPlayerInspirationPurchases = useGameStore((state) => state.resetPlayerInspirationPurchases)
+  const dispatch = useGameStore((state) => state.dispatch)
+  const canAct = useGameStore(selectCanAct)
+  const isHost = useGameStore(selectIsHost)
+  const mode = useGameStore((state) => state.mode)
+  const lobby = useGameStore((state) => state.lobby)
 
   if (!currentPlayer) return null
 
   const currentSpace = spaces.find((s) => s.id === currentPlayer.position)
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
-  const canFight = hasMonsters && currentPlayer.fightsThisTurn < 1
+  const canFight = hasMonsters && currentPlayer.fightsThisTurn < 1 && canAct
+
+  // Online presence per engine player (via their seat)
+  const presenceFor = (playerId: string): boolean | null => {
+    if (mode !== 'online' || !lobby) return null
+    const seat = lobby.seats.find((se) => se.playerId === playerId)
+    if (!seat) return null
+    return lobby.presence[seat.seatId] !== false
+  }
 
   const handleEndTurn = () => {
-    resetPlayerMoves(currentPlayer.id)
-    resetPlayerFights(currentPlayer.id)
-    // Inspiration buy cost escalates within a turn, then resets
-    resetPlayerInspirationPurchases(currentPlayer.id)
-
-    if (currentTurnPlayerIndex >= players.length - 1) {
-      players.forEach((p) => {
-        resetPlayerMoves(p.id)
-        resetPlayerFights(p.id)
-      })
-      // Add 1 genre tag to all spaces once per round
-      addGenreTags()
-      // Apply any pending phase transition now that all players have had equal turns
-      applyPendingPhase()
-      nextRound()
-    } else {
-      nextTurn()
-    }
-
-    // Start the next player's turn with a full shop (fresh names, topped-up chips)
-    refillShopSlots()
+    dispatch({ type: 'END_TURN' })
   }
 
   const handleFight = () => {
     if (currentSpace && canFight) {
-      consumePlayerFight(currentPlayer.id)
-      startCombat(currentPlayer.id, currentSpace.id, currentSpace.monsters)
+      dispatch({ type: 'START_COMBAT', playerId: currentPlayer.id })
     }
   }
 
@@ -65,6 +46,7 @@ export function PlayerPanel() {
         {players.map((player) => {
           const isCurrentTurn = player.id === currentPlayer.id
           const genreColor = GENRE_THEME[player.starterGenre]?.color ?? player.color
+          const online = presenceFor(player.id)
           return (
             <div
               key={player.id}
@@ -76,10 +58,17 @@ export function PlayerPanel() {
               }}
             >
               <div
-                className="px-2 py-1 truncate font-bold text-[10px]"
+                className="px-2 py-1 truncate font-bold text-[10px] flex items-center gap-1"
                 style={{ background: genreColor, color: readableTextColor(genreColor) }}
               >
-                {player.name}
+                {online !== null && (
+                  <span
+                    className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0"
+                    style={{ background: online ? '#1f7a1f' : 'rgba(0,0,0,0.45)' }}
+                    title={online ? 'Online' : 'Disconnected'}
+                  />
+                )}
+                <span className="truncate">{player.name}</span>
               </div>
               <div className="text-[10px] text-parchment-300 flex flex-nowrap whitespace-nowrap overflow-hidden gap-1.5 px-2 py-1" style={{ background: 'rgba(20, 16, 10, 0.85)' }}>
                 <span title="Fame" className="flex-1 text-center">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
@@ -125,7 +114,27 @@ export function PlayerPanel() {
 
       {/* Actions */}
       <div className="space-y-2 mt-auto">
-        {hasMonsters && (
+        {mode === 'online' && !canAct && (
+          <div className="text-center text-sm text-parchment-500 italic py-2 animate-pulse-slow">
+            Waiting for {currentPlayer.name}&rsquo;s turn&hellip;
+          </div>
+        )}
+        {mode === 'online' && !canAct && isHost && presenceFor(currentPlayer.id) === false && (
+          <button
+            onClick={() => dispatch({ type: 'HOST_SKIP_TURN', targetPlayerId: currentPlayer.id })}
+            className="w-full py-2 text-sm font-medieval font-bold rounded-lg transition-all duration-150 hover:-translate-y-0.5"
+            style={{
+              background: 'rgba(255, 180, 60, 0.1)',
+              border: '1px solid rgba(255, 180, 60, 0.4)',
+              color: '#ffd591',
+            }}
+            title="The current player looks disconnected — skip their turn (auto-retreats their combat)"
+          >
+            &#x23ED; Skip {currentPlayer.name}&apos;s Turn (offline)
+          </button>
+        )}
+
+        {hasMonsters && canAct && (
           <button
             onClick={handleFight}
             disabled={!canFight}
@@ -145,20 +154,24 @@ export function PlayerPanel() {
           </button>
         )}
 
-        <button
-          onClick={() => setShowDraftShop(true)}
-          className="btn-secondary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5"
-        >
-          Studio ({currentPlayer.exp} EXP)
-        </button>
-        <button
-          onClick={handleEndTurn}
-          disabled={canFight}
-          title={canFight ? 'Fight the monster here before ending your turn' : undefined}
-          className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          End Turn
-        </button>
+        {canAct && (
+          <>
+            <button
+              onClick={() => setShowDraftShop(true)}
+              className="btn-secondary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5"
+            >
+              Studio ({currentPlayer.exp} EXP)
+            </button>
+            <button
+              onClick={handleEndTurn}
+              disabled={canFight}
+              title={canFight ? 'Fight the monster here before ending your turn' : undefined}
+              className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              End Turn
+            </button>
+          </>
+        )}
       </div>
 
       {/* Studio modal */}

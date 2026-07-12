@@ -1,4 +1,4 @@
-import { Genre } from "@/types";
+import { Genre } from '../types';
 
 /**
  * Single source of truth for genre/element presentation:
