@@ -213,7 +213,7 @@ export function CombatModal() {
                   disabled={!canAct || isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
                   index={idx}
                   rolls={currentSongId === song.id ? rolls : undefined}
-                  onReroll={currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
+                  onReroll={canAct && currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
                   inspiration={player.inspiration}
                 />
               ))}
@@ -252,7 +252,7 @@ export function CombatModal() {
                         isCover
                         ownerName={coverPlayer.name}
                         rolls={currentSongId === song.id ? rolls : undefined}
-                        onReroll={currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
+                        onReroll={canAct && currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
                         inspiration={player.inspiration}
                       />
                     ))}

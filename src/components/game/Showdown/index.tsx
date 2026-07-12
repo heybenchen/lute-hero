@@ -124,7 +124,7 @@ export function FinalShowdown() {
   }
 
   const handleReroll = async () => {
-    if (!performer || !lastRolls || performer.inspiration <= 0) return
+    if (!canPerform || !performer || !lastRolls || performer.inspiration <= 0) return
     const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG' })
     if (!result.ok) return
     for (const event of result.events) {
@@ -275,7 +275,7 @@ export function FinalShowdown() {
                   disabled={hasPerformed || !canPerform}
                   index={idx}
                   rolls={lastRolls?.song.id === song.id ? lastRolls.rolls : undefined}
-                  onReroll={lastRolls?.song.id === song.id ? handleReroll : undefined}
+                  onReroll={canPerform && lastRolls?.song.id === song.id ? handleReroll : undefined}
                   inspiration={performer.inspiration}
                 />
               ))}
