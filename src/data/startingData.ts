@@ -59,5 +59,5 @@ export const DICE_UPGRADE_PATH: { [key in DiceType]: DiceType | null } = {
 
 // Fame thresholds for phase transitions
 export const FAME_THRESHOLDS = {
-  finalBoss: 300, // Any single player reaching this triggers the final boss
+  finalBoss: 150, // Any single player reaching this triggers the final boss
 };

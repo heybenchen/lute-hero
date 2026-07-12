@@ -62,7 +62,7 @@ export const createPlayersSlice: StateCreator<PlayersSlice> = (set, get) => ({
         movesThisTurn: 0,
         fightsThisTurn: 0,
         hasShoppedThisTurn: false,
-        inspiration: 0,
+        inspiration: 1,
         inspirationBoughtThisTurn: 0,
       }
     })
