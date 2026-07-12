@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
-import realmMap from '@/assets/board/realm-map.png'
+import realmMap from '@/imports/Map_Background_2.png'
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)

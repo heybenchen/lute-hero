@@ -53,11 +53,10 @@ export function SongCard({ song }: SongCardProps) {
         {/* Effect on the right — hidden on mobile */}
         <div className="hidden lg:flex flex-1 min-w-0">
           {song.effect ? (
-            <div className="h-full w-full p-1.5 rounded text-xs flex flex-wrap items-center justify-center gap-1.5 text-center"
+            <div className="h-full w-full p-1.5 rounded text-xs flex items-center justify-center text-center"
               style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
             >
-              <span className="font-bold text-classical shrink-0">FX:</span>
-              <span className="text-classical/80 break-words">{describeTrackEffect(song.effect)}</span>
+              <span className="text-classical break-words">{describeTrackEffect(song.effect)}</span>
             </div>
           ) : (
             <div className="h-full w-full p-1.5 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
