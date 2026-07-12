@@ -85,7 +85,7 @@ function reduce(
       return startGame(state, action.playerConfigs, rng, newId)
 
     case 'MOVE': {
-      let players = state.players.map((p) =>
+      const players = state.players.map((p) =>
         p.id === action.playerId
           ? {
               ...p,
@@ -214,10 +214,13 @@ function reduce(
         name: card.songName || 'New Song',
         effect: card.songEffect ?? null,
       }
+      const exclude = usedSongNames(state.players, state.namePool)
       return {
         ...state,
         players: adjustExp(state.players, player.id, -card.cost),
-        namePool: state.namePool.map((c) => (c.id === card.id ? generateNameCard(rng, newId) : c)),
+        namePool: state.namePool.map((c) =>
+          c.id === card.id ? generateNameCard(exclude, rng, newId) : c
+        ),
         pendingRewards: {
           ...state.pendingRewards,
           [player.id]: [...(state.pendingRewards[player.id] ?? []), reward],
@@ -243,7 +246,7 @@ function reduce(
       return {
         ...state,
         players: adjustInspiration(state.players, player.id, -INSPIRATION_SPEND),
-        namePool: freshNamePool(rng, newId),
+        namePool: freshNamePool(rng, newId, usedSongNames(state.players)),
       }
     }
 
@@ -301,6 +304,9 @@ function reduce(
     case 'PLAY_SHOWDOWN_SONG':
       return playShowdownSong(state, action.songId, rng, events)
 
+    case 'REROLL_SHOWDOWN_SONG':
+      return rerollShowdownSong(state, rng, events)
+
     case 'FINISH_SHOWDOWN_PERFORMANCE':
       return finishShowdownPerformance(state, events)
 
@@ -336,6 +342,7 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
       id: playerId,
       name: config.name,
       color: config.color || PLAYER_COLORS[index] || '#888888',
+      starterGenre: config.starterGenre,
       position: STARTING_POSITIONS[index] || 0,
       songs: createStarterSongs(config.starterGenre, playerId),
       exp: 0,
@@ -383,9 +390,10 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
     currentRound: 1,
     currentTurnPlayerIndex: 0,
     pendingPhase: null,
+    finalTurnGranted: false,
     spaces,
     players,
-    namePool: freshNamePool(rng, newId),
+    namePool: freshNamePool(rng, newId, usedSongNames(players)),
     elementBag: bag,
     elementDiscard: discard,
     elementOffers: drawn,
@@ -509,11 +517,11 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
     )
   }
 
-  // Phase transition check (fires as pendingPhase; applied at round end)
+  // Phase transition check (fires as pendingPhase; applied at round end).
+  // Triggers when ANY single player reaches the threshold; latches once set.
   let pendingPhase = state.pendingPhase
-  if (rewards.monstersDefeatedCount > 0) {
-    const collectiveFame = players.reduce((total, p) => total + p.fame, 0)
-    const nextPhase = getNextPhase(state.phase, collectiveFame, players.length)
+  if (rewards.monstersDefeatedCount > 0 && !pendingPhase) {
+    const nextPhase = getNextPhase(state.phase, players.map((p) => p.fame))
     if (nextPhase) pendingPhase = nextPhase
   }
 
@@ -572,16 +580,23 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
       : p
   )
 
-  let { phase, pendingPhase, currentRound, currentTurnPlayerIndex, spaces } = state
+  let { phase, pendingPhase, finalTurnGranted, currentRound, currentTurnPlayerIndex, spaces } = state
   let showdownFields: Partial<EngineState> = {}
 
   if (state.currentTurnPlayerIndex >= state.players.length - 1) {
-    // Round over: everyone resets, the board grows, pending phase applies
+    // Round over: everyone resets, the board grows, pending phase applies.
     players = players.map((p) => ({ ...p, movesThisTurn: 0, fightsThisTurn: 0 }))
     spaces = addGenreTagsToBoard(spaces, rng)
+    // Reaching the threshold grants one more full round ("Final Turn!") before
+    // the phase actually flips — so the leaders can't be caught off guard.
     if (pendingPhase) {
-      phase = pendingPhase
-      pendingPhase = null
+      if (!finalTurnGranted) {
+        finalTurnGranted = true
+      } else {
+        phase = pendingPhase
+        pendingPhase = null
+        finalTurnGranted = false
+      }
     }
     currentRound = currentRound + 1
     currentTurnPlayerIndex = 0
@@ -606,6 +621,7 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
         showdownFandom: Object.fromEntries(playerIds.map((id) => [id, 0])),
         showdownBestHit: {},
         showdownCrits: Object.fromEntries(playerIds.map((id) => [id, 0])),
+        showdownUndo: null,
       }
     }
   } else {
@@ -621,7 +637,7 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
     elementBag = bag
     elementDiscard = discard
   }
-  namePool = freshNamePool(rng, newId)
+  namePool = freshNamePool(rng, newId, usedSongNames(players))
 
   return {
     ...state,
@@ -629,6 +645,7 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
     spaces,
     phase,
     pendingPhase,
+    finalTurnGranted,
     currentRound,
     currentTurnPlayerIndex,
     elementBag,
@@ -643,11 +660,15 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
 // Showdown
 // ============================================================
 
-function playShowdownSong(state: EngineState, songId: string, rng: Rng, events: EngineEvent[]): EngineState {
-  const performerId = state.showdownOrder[state.showdownPerformerIdx]
-  const performer = state.players.find((p) => p.id === performerId)!
-  const song = performer.songs.find((s) => s.id === songId)!
-
+/** Roll a song against the adapted boss and derive the performance stats. */
+function rollShowdownPlay(
+  state: EngineState,
+  song: Song,
+  performerId: string,
+  base: { currentFandom: number; fandomTotal: number; bestHit: { damage: number; songName: string } | undefined; crits: number },
+  rng: Rng,
+  events: EngineEvent[]
+) {
   const boss = createShowdownBoss({
     resistGenre: state.showdownResistGenre,
     weakGenre: state.showdownWeakGenre,
@@ -664,17 +685,16 @@ function playShowdownSong(state: EngineState, songId: string, rng: Rng, events: 
   const hitWeakness = state.showdownWeakGenre !== null && songGenres.includes(state.showdownWeakGenre)
   const wasResisted = state.showdownResistGenre !== null && songGenres.includes(state.showdownResistGenre)
 
-  const prevBest = state.showdownBestHit[performerId]
   const bestHit =
-    !prevBest || fandom > prevBest.damage
+    !base.bestHit || fandom > base.bestHit.damage
       ? { damage: fandom, songName: song.name || 'Untitled' }
-      : prevBest
+      : base.bestHit
 
-  events.push({ type: 'diceRolled', playerId: performerId, songId, context: 'showdown', rolls })
+  events.push({ type: 'diceRolled', playerId: performerId, songId: song.id, context: 'showdown', rolls })
   events.push({
     type: 'showdownPlay',
     playerId: performerId,
-    songId,
+    songId: song.id,
     fandom,
     hadCrit: critCount > 0,
     hitWeakness,
@@ -683,20 +703,61 @@ function playShowdownSong(state: EngineState, songId: string, rng: Rng, events: 
   })
 
   return {
-    ...state,
-    showdownSongsUsed: [...state.showdownSongsUsed, songId],
-    showdownCurrentFandom: state.showdownCurrentFandom + fandom,
+    showdownCurrentFandom: base.currentFandom + fandom,
     showdownCurrentGenre: genre,
-    showdownFandom: {
-      ...state.showdownFandom,
-      [performerId]: (state.showdownFandom[performerId] || 0) + fandom,
-    },
+    showdownFandom: { ...state.showdownFandom, [performerId]: base.fandomTotal + fandom },
     showdownBestHit: { ...state.showdownBestHit, [performerId]: bestHit },
-    showdownCrits: {
-      ...state.showdownCrits,
-      [performerId]: (state.showdownCrits[performerId] || 0) + critCount,
+    showdownCrits: { ...state.showdownCrits, [performerId]: base.crits + critCount },
+  }
+}
+
+function playShowdownSong(state: EngineState, songId: string, rng: Rng, events: EngineEvent[]): EngineState {
+  const performerId = state.showdownOrder[state.showdownPerformerIdx]
+  const performer = state.players.find((p) => p.id === performerId)!
+  const song = performer.songs.find((s) => s.id === songId)!
+
+  // Snapshot the performer's accumulators before this play, so it can be rerolled
+  const base = {
+    currentFandom: state.showdownCurrentFandom,
+    fandomTotal: state.showdownFandom[performerId] || 0,
+    bestHit: state.showdownBestHit[performerId],
+    crits: state.showdownCrits[performerId] || 0,
+  }
+  const fields = rollShowdownPlay(state, song, performerId, base, rng, events)
+
+  return {
+    ...state,
+    ...fields,
+    showdownSongsUsed: [...state.showdownSongsUsed, songId],
+    showdownUndo: {
+      songId,
+      performerId,
+      currentFandom: base.currentFandom,
+      fandomTotal: base.fandomTotal,
+      bestHit: base.bestHit,
+      crits: base.crits,
+      songsUsed: state.showdownSongsUsed,
     },
   }
+}
+
+function rerollShowdownSong(state: EngineState, rng: Rng, events: EngineEvent[]): EngineState {
+  const undo = state.showdownUndo!
+  const performer = state.players.find((p) => p.id === undo.performerId)!
+  const song = performer.songs.find((s) => s.id === undo.songId)!
+
+  // Spend 1 Inspiration, then replay from the snapshot — the snapshot stays put
+  // so the performance can be rerolled again.
+  const players = adjustInspiration(state.players, undo.performerId, -INSPIRATION_SPEND)
+  const fields = rollShowdownPlay(
+    state,
+    song,
+    undo.performerId,
+    { currentFandom: undo.currentFandom, fandomTotal: undo.fandomTotal, bestHit: undo.bestHit, crits: undo.crits },
+    rng,
+    events
+  )
+  return { ...state, players, ...fields }
 }
 
 function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): EngineState {
@@ -719,6 +780,7 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
       showdownSongsUsed: [],
       showdownCurrentFandom: 0,
       showdownCurrentGenre: null,
+      showdownUndo: null,
     }
   }
 
@@ -744,6 +806,7 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
       showdownCurrentGenre: null,
       showdownResistGenre: adaptation.resistGenre,
       showdownWeakGenre: adaptation.weakGenre,
+      showdownUndo: null,
     }
   }
 
@@ -764,6 +827,7 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
     showdownCurrentFandom: 0,
     showdownCurrentGenre: null,
     showdownComplete: true,
+    showdownUndo: null,
   }
 }
 
@@ -771,10 +835,24 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
 // Small shared helpers
 // ============================================================
 
-function freshNamePool(rng: Rng, newId: NewId): DraftCard[] {
+/** Song names already in play (on songs) plus a running exclude set, so the
+ * shop never offers a duplicate name. */
+function usedSongNames(players: Player[], extra: DraftCard[] = []): Set<string> {
+  const used = new Set<string>()
+  for (const p of players) {
+    for (const s of p.songs) if (s.name) used.add(s.name)
+  }
+  for (const card of extra) if (card.songName) used.add(card.songName)
+  return used
+}
+
+function freshNamePool(rng: Rng, newId: NewId, exclude: Set<string> = new Set()): DraftCard[] {
+  const used = new Set(exclude)
   const pool: DraftCard[] = []
   for (let i = 0; i < NAME_POOL_SIZE; i++) {
-    pool.push(generateNameCard(rng, newId))
+    const card = generateNameCard(used, rng, newId)
+    if (card.songName) used.add(card.songName)
+    pool.push(card)
   }
   return pool
 }

@@ -52,7 +52,9 @@ export interface EventLogEntry {
 }
 
 export function toPublicSeat(seat: Seat): PublicSeat {
-  const { tokenHash: _tokenHash, ...pub } = seat
+  // Strip the secret token hash before exposing a seat to clients
+  const pub: PublicSeat & { tokenHash?: string } = { ...seat }
+  delete pub.tokenHash
   return pub
 }
 

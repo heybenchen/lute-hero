@@ -112,7 +112,7 @@ export function Setup() {
                     newGenres[idx] = e.target.value as Genre
                     setSelectedGenres(newGenres)
                   }}
-                  className="flex-shrink-0 px-2 sm:px-4 py-2 rounded-lg text-white font-game"
+                  className="flex-shrink-0 px-2 sm:px-4 py-2 pr-6 sm:pr-8 rounded-lg text-white font-game"
                   style={{
                     background: 'rgba(42, 33, 24, 0.9)',
                     border: '1px solid rgba(212, 168, 83, 0.2)',

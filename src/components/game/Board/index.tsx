@@ -2,24 +2,7 @@ import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer, selectCanAct } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
-import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
-
-// Corner flourish for the map frame
-function Corner({ position }: { position: string }) {
-  return (
-    <div
-      className={`absolute w-6 h-6 sm:w-8 sm:h-8 pointer-events-none ${position}`}
-      style={{
-        borderColor: 'rgba(212, 168, 83, 0.35)',
-        borderStyle: 'solid',
-        borderWidth: position.includes('top') ? '2px 0 0' : '0 0 2px',
-        ...(position.includes('left')
-          ? { borderLeftWidth: '2px' }
-          : { borderRightWidth: '2px' }),
-      }}
-    />
-  )
-}
+import realmMap from '@/imports/Map_Background_2.png'
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)
@@ -62,28 +45,31 @@ export function Board() {
 
   return (
     <div
-      className="relative w-full h-full rounded-xl overflow-auto flex items-center justify-center"
+      className="relative w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
       style={{
+        // Warm wood-plank brown matching the map image's wooden border
         background: `
-          radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.04) 0%, transparent 45%),
-          radial-gradient(ellipse at 70% 80%, rgba(139, 111, 71, 0.05) 0%, transparent 45%),
-          linear-gradient(160deg, #1b1510 0%, #131009 45%, #1b1510 100%)
+          radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.06) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 80%, rgba(139, 111, 71, 0.07) 0%, transparent 45%),
+          linear-gradient(160deg, #5a4835 0%, #695641 50%, #5a4835 100%)
         `,
       }}
     >
+      {/* Parchment realm map background */}
+      <img
+        src={realmMap}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-contain pointer-events-none"
+      />
+
       {/* Subtle dot-grid map texture */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: 'radial-gradient(rgba(212, 168, 83, 0.08) 0.8px, transparent 0.8px)',
           backgroundSize: '28px 28px',
-        }}
-      />
-
-      {/* Warm vignette */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 35%, rgba(9, 6, 3, 0.65) 100%)',
         }}
       />
 
@@ -105,65 +91,10 @@ export function Board() {
         </button>
       )}
 
-      {/* Legend — bottom-left (desktop only; on mobile the tile dots + hint carry it) */}
-      <div
-        className="hidden lg:block absolute bottom-3 left-3 z-20 rounded-lg p-2.5 animate-fade-in"
-        style={{
-          background: 'rgba(18, 13, 8, 0.9)',
-          border: '1px solid rgba(212, 168, 83, 0.18)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 10px rgba(0,0,0,0.4)',
-        }}
-      >
-        <div className="text-[9px] font-medieval text-gold-500 tracking-widest mb-1.5 uppercase opacity-80">
-          Legend
-        </div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: 'rgba(232, 32, 64, 0.18)', border: '1px solid rgba(232, 32, 64, 0.4)' }} />
-            <span className="text-[9px] text-parchment-400">Has monsters</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: 'rgba(255, 157, 27, 0.12)', border: '1px solid rgba(255, 157, 27, 0.3)' }} />
-            <span className="text-[9px] text-parchment-400">Danger building</span>
-          </div>
-          <div className="pt-1 mt-1" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.12)' }}>
-            {ALL_GENRES.map((genre) => {
-              const { color, emoji } = GENRE_THEME[genre]
-              return (
-                <div key={genre} className="flex items-center gap-1.5 py-0.5">
-                  <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}88` }}
-                  />
-                  <span className="text-[9px] text-parchment-400">
-                    {genre} <span className="opacity-60">{emoji}</span>
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="relative w-full max-w-[460px] p-4 sm:p-6 lg:p-8">
-        {/* Map frame corners */}
-        <Corner position="top-0 left-0" />
-        <Corner position="top-0 right-0" />
-        <Corner position="bottom-0 left-0" />
-        <Corner position="bottom-0 right-0" />
-
-        {/* Map title decoration */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-5 pointer-events-none">
-          <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
-          <div className="font-display text-base sm:text-xl text-gold-500 opacity-45 tracking-[0.2em] sm:tracking-[0.25em] text-center select-none">
-            The Bardic Realm
-          </div>
-          <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
-        </div>
-
+      <div className="relative w-full p-2 sm:p-6 lg:p-8 max-w-[calc(50dvh_-_6rem)] lg:max-w-[calc(100dvh_-_5rem)]">
         {/* 4x4 tile grid — space ids are row-major grid positions */}
         <div
-          className="grid grid-cols-4 gap-2 sm:gap-3"
+          className="grid grid-cols-4 gap-2 sm:gap-3 lg:px-20"
           onMouseLeave={() => setHoveredSpaceId(null)}
         >
           {spaces.map((space) => (
@@ -190,21 +121,6 @@ export function Board() {
               />
             </div>
           ))}
-        </div>
-
-        {/* Hover hint */}
-        <div className="mt-3 sm:mt-4 text-center text-[11px] sm:text-xs pointer-events-none min-h-[1rem]">
-          {travelMode ? (
-            <span className="text-classical font-bold">Click any space to travel there — costs 1 Inspiration and 1 move</span>
-          ) : (
-            <span className="text-parchment-500">
-              {hoveredSpace
-                ? `${hoveredSpace.name} — paths to ${hoveredSpace.connections.map((id) => spaces.find((s) => s.id === id)?.name).filter(Boolean).join(', ')}`
-                : canMove
-                ? 'Glowing tiles are within reach'
-                : ''}
-            </span>
-          )}
         </div>
       </div>
     </div>

@@ -23,15 +23,8 @@ export function DraftCardDisplay({
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      <div className="flex justify-between items-center mb-3 pb-2" style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}>
-        <span className="font-medieval font-bold text-gold-400">
-          Song Name
-        </span>
-        <span className="text-gold-300 font-bold text-sm">{card.cost} EXP</span>
-      </div>
-
       {/* Song preview */}
-      <div className="mb-4">
+      <div className="mb-3">
         <div className="text-base font-bold text-center mb-3 text-parchment-200 truncate">
           {card.songName}
         </div>
@@ -85,7 +78,7 @@ export function DraftCardDisplay({
         disabled={!canAfford || disabled}
         className="btn-primary w-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {canAfford ? 'Purchase' : 'Not Available'}
+        {canAfford ? `Purchase (${card.cost} EXP)` : 'Not Available'}
       </button>
     </div>
   )

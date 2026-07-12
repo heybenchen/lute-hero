@@ -8,14 +8,17 @@ Lute Hero is a multiplayer tabletop board game where Bards defeat monsters using
 
 ## Commands
 
-- `npm run dev` — Start Vite dev server (proxies `/api` to :8787)
-- `npm run dev:api` — Start the local API harness (in-memory Redis) for online mode
-- `npm run build` — TypeScript compile + Vite production build
-- `npm run typecheck:api` — Type-check the serverless functions
-- `npm run lint` — ESLint
-- `npm test` — Run Vitest tests
-- `npm test -- --run <path>` — Run a single test file
-- `npm run test:coverage` — Coverage report
+This project uses **pnpm** as its package manager.
+
+- `pnpm install` — Install dependencies
+- `pnpm dev` — Start Vite dev server (proxies `/api` to :8787)
+- `pnpm dev:api` — Start the local API harness (in-memory Redis) for online mode
+- `pnpm build` — TypeScript compile + Vite production build
+- `pnpm typecheck:api` — Type-check the serverless functions
+- `pnpm lint` — ESLint
+- `pnpm test` — Run Vitest tests
+- `pnpm test -- --run <path>` — Run a single test file
+- `pnpm test:coverage` — Coverage report
 
 ## Tech Stack
 

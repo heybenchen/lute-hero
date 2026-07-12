@@ -17,7 +17,16 @@
       "Bash(npx vitest:*)",
       "WebSearch",
       "Bash(npm run lint)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(chmod +x /Users/shuyi.chen/src/lute-hero/.figma/make/setup /Users/shuyi.chen/src/lute-hero/.figma/make/install /Users/shuyi.chen/src/lute-hero/.figma/make/dev /Users/shuyi.chen/src/lute-hero/.figma/make/verify)"
+    ],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "/Users/shuyi.chen/src/lute-hero/.figma"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "paper",
+    "pencil"
+  ]
 }

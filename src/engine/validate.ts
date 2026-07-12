@@ -241,6 +241,17 @@ export function validateAction(
       return ok
     }
 
+    case 'REROLL_SHOWDOWN_SONG': {
+      if (state.phase !== 'finalBoss' || !state.showdownActive) return illegal('No active showdown')
+      if (state.showdownComplete) return illegal('Showdown is over')
+      const performerId = currentPerformerId(state)
+      if (isSeat && seatPlayerId !== performerId) return forbidden('Not your performance')
+      if (!state.showdownUndo) return illegal('Nothing to reroll')
+      const performer = state.players.find((p) => p.id === performerId)
+      if (!performer || performer.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration')
+      return ok
+    }
+
     case 'FINISH_SHOWDOWN_PERFORMANCE': {
       if (state.phase !== 'finalBoss' || !state.showdownActive) return illegal('No active showdown')
       if (state.showdownComplete) return illegal('Showdown is over')

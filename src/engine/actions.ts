@@ -29,6 +29,7 @@ export type GameAction =
   | { type: 'SLOT_DIE_REWARD'; rewardId: string; songId: string; slotIndex: number }
   | { type: 'BUY_INSPIRATION' }
   | { type: 'PLAY_SHOWDOWN_SONG'; songId: string }
+  | { type: 'REROLL_SHOWDOWN_SONG' }
   | { type: 'FINISH_SHOWDOWN_PERFORMANCE' }
   | { type: 'ADVANCE_TO_SUMMARY' }
   | { type: 'RESET_GAME' }

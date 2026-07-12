@@ -1,5 +1,6 @@
 import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
-import { GENRE_THEME } from '@/data/genreTheme'
+import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
+import { SPACE_ILLUSTRATIONS } from '@/data/boardIllustrations'
 
 interface BoardSpaceProps {
   space: BoardSpaceType
@@ -30,17 +31,20 @@ export function BoardSpace({
     return acc
   }, {})
   const genreEntries = Object.entries(genreTagCounts) as [Genre, number][]
+  const illustration = SPACE_ILLUSTRATIONS[space.id]
+  // Spaces the player can act on this turn (reachable / current / travel target)
+  const isReachable = canMoveTo || isTravelTarget || isCurrentPlayer
 
   return (
     <button
       onClick={onClick}
       disabled={!canMoveTo && !isTravelTarget}
       className={`
-        relative hover:z-40 w-full aspect-square rounded-lg sm:rounded-xl
+        relative sm:hover:z-40 w-full aspect-square rounded-lg sm:rounded-xl
         flex flex-col justify-between p-1.5 sm:p-2
         transition-all duration-200 ease-out
         ${canMoveTo || isTravelTarget
-          ? 'cursor-pointer hover:-translate-y-1 hover:brightness-110'
+          ? 'cursor-pointer sm:hover:-translate-y-1'
           : 'cursor-default'
         }
         ${hasMonsters && (canMoveTo || isTravelTarget) ? 'animate-danger-pulse' : ''}
@@ -56,92 +60,92 @@ export function BoardSpace({
           : isTravelTarget
           ? '2px solid rgba(176, 124, 255, 0.7)'
           : canMoveTo
-          ? '2px solid rgba(212, 168, 83, 0.55)'
+          ? '3px solid rgba(240, 200, 110, 0.95)'
           : isLinkedToHovered
           ? '1px dashed rgba(212, 168, 83, 0.5)'
-          : hasMonsters
-          ? '1px solid rgba(232, 32, 64, 0.4)'
-          : '1px solid rgba(212, 168, 83, 0.15)',
+          : '1px solid rgba(212, 168, 83, 0.1)',
         boxShadow: isCurrentPlayer
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px rgba(100, 220, 100, 0.22), 0 4px 8px rgba(0,0,0,0.3)'
           : isTravelTarget
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(176, 124, 255, 0.3), 0 4px 8px rgba(0,0,0,0.3)'
           : canMoveTo
-          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 12px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(0,0,0,0.3)'
+          ? 'inset 0 1px 0 rgba(255,255,255,0.08), 0 0 18px rgba(240, 200, 110, 0.5), 0 4px 8px rgba(0,0,0,0.3)'
           : isLinkedToHovered
           ? 'inset 0 1px 0 rgba(255,255,255,0.04), 0 0 10px rgba(212, 168, 83, 0.12), 0 2px 6px rgba(0,0,0,0.3)'
           : 'inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 6px rgba(0,0,0,0.3)',
       }}
       title={space.name}
     >
+      {/* Hand-drawn map illustration behind the tile content */}
+      {illustration && (
+        <img
+          src={illustration}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          className={`absolute inset-0 z-0 h-full w-full rounded-lg sm:rounded-xl object-cover pointer-events-none transition-all duration-200 ${isReachable ? 'opacity-90' : 'opacity-65 grayscale'}`}
+        />
+      )}
+
       {/* Dim overlay for out-of-reach tiles (kept off the container so
           tooltips inside stay at full opacity) */}
-      {!canMoveTo && !isCurrentPlayer && !isTravelTarget && (
+      {!isReachable && (
         <div className="absolute inset-0 rounded-xl bg-black/25 pointer-events-none z-10" />
       )}
 
-      {/* Space name */}
-      <div className="text-[9px] font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 truncate w-full">
+      {/* Space name — dark banner keeps the label legible over the light map art */}
+      <div className="relative z-10 w-full rounded px-1 py-0.5 bg-black/30 text-[9px] lg:text-sm font-medieval font-bold text-center leading-tight text-gold-200 line-clamp-2">
         {space.name}
       </div>
 
-      {/* Player indicator — reserved row right under the title so it never
-          overlaps the name or tags below it (only other player tags may overlap it) */}
-      {playersHere.length > 0 && (
-        <div className="flex justify-center -space-x-1.5 h-5 sm:h-6 mt-0.5 shrink-0">
-          {playersHere.map((player) => (
-            <div
-              key={player.id}
-              className={`player-avatar w-5 h-5 sm:w-6 sm:h-6 text-[9px] sm:text-[10px] ${isCurrentPlayer ? 'animate-token-bob' : ''}`}
-              style={{
-                backgroundColor: player.color,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              }}
-              title={player.name}
-            >
-              {player.name.charAt(0)}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Content area */}
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden">
-        {/* Genre tags — compact color-coded beads with counts */}
-        {genreEntries.length > 0 && (
-          <div className="flex flex-wrap gap-x-1 gap-y-0.5 justify-center max-w-full mt-0.5">
-            {genreEntries.map(([genre, count]) => {
-              const { color } = GENRE_THEME[genre]
-              return (
-                <div
-                  key={genre}
-                  className="flex items-center gap-0.5 rounded-md pl-1 pr-1.5 py-0.5 leading-none"
-                  style={{
-                    background: `linear-gradient(135deg, ${color}33, ${color}14)`,
-                    border: `1px solid ${color}66`,
-                    boxShadow: `inset 0 0 4px ${color}22`,
-                  }}
-                  title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
-                >
-                  <span
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{
-                      backgroundColor: color,
-                      boxShadow: `0 0 5px ${color}, inset 0 0 1px rgba(255,255,255,0.5)`,
-                    }}
-                  />
-                  <span
-                    className="text-[9px] font-bold tabular-nums"
-                    style={{ color, textShadow: '0 1px 1px rgba(0,0,0,0.5)' }}
-                  >
-                    {count}
-                  </span>
-                </div>
-              )
-            })}
+      {/* Player tokens — centered on the tile */}
+      <div className="relative z-20 flex-1 min-h-0 flex items-center justify-center pointer-events-none">
+        {playersHere.length > 0 && (
+          <div className="flex -space-x-1.5">
+            {playersHere.map((player) => (
+              <div
+                key={player.id}
+                className={`player-avatar w-5 h-5 sm:w-6 sm:h-6 text-[9px] sm:text-[10px] ${isCurrentPlayer ? 'animate-token-bob' : ''}`}
+                style={{
+                  backgroundColor: player.color,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                }}
+                title={player.name}
+              >
+                {player.name.charAt(0)}
+              </div>
+            ))}
           </div>
         )}
       </div>
+
+      {/* Genre tags — pinned to the bottom of the tile */}
+      {genreEntries.length > 0 && (
+        <div className="relative z-10 flex flex-wrap gap-x-1 gap-y-0.5 lg:gap-x-1.5 lg:gap-y-1 justify-center max-w-full">
+          {genreEntries.map(([genre, count]) => {
+            const { color } = GENRE_THEME[genre]
+            return (
+              <div
+                key={genre}
+                className="flex items-center justify-center rounded-md px-1.5 py-0.5 lg:px-2 lg:py-1 leading-none"
+                style={{
+                  background: color,
+                  border: '1px solid rgba(0, 0, 0, 0.35)',
+                  boxShadow: `0 0 6px ${color}80, 0 1px 2px rgba(0,0,0,0.4)`,
+                }}
+                title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
+              >
+                <span
+                  className="text-[9px] lg:text-xs font-bold tabular-nums"
+                  style={{ color: readableTextColor(color) }}
+                >
+                  {count}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Move indicator glow */}
       {(canMoveTo || isTravelTarget) && (

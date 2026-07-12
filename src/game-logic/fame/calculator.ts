@@ -99,12 +99,11 @@ export function incrementMonstersDefeated(
 }
 
 /**
- * Determine the next game phase based on collective fame.
- * Returns the new phase if a transition should occur, or null if no change.
- * FAME_THRESHOLDS.finalBoss is a per-player value; multiply by numPlayers.
+ * Determine the next game phase based on individual player fame.
+ * Triggers when ANY single player reaches FAME_THRESHOLDS.finalBoss.
  */
-export function getNextPhase(currentPhase: GamePhase, collectiveFame: number, numPlayers: number): GamePhase | null {
-  if (currentPhase === 'main' && collectiveFame >= FAME_THRESHOLDS.finalBoss * numPlayers) {
+export function getNextPhase(currentPhase: GamePhase, playerFames: number[]): GamePhase | null {
+  if (currentPhase === 'main' && playerFames.some(f => f >= FAME_THRESHOLDS.finalBoss)) {
     return 'finalBoss'
   }
   return null

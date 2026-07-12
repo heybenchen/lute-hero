@@ -238,11 +238,19 @@ describe('END_TURN', () => {
     state.spaces.forEach((s, i) => expect(s.genreTags.length).toBe(tagCounts[i] + 1))
   })
 
-  it('applies a pending phase at round end and auto-starts the showdown', () => {
+  it('grants one final turn, then transitions and auto-starts the showdown', () => {
     let state = startTwoPlayerGame()
     state = { ...state, pendingPhase: 'finalBoss' as const, currentTurnPlayerIndex: 1 }
+    // First round-end: the threshold was hit, so everyone gets one more round
     state = apply(state, { type: 'END_TURN' }).state
+    expect(state.phase).toBe('main')
+    expect(state.finalTurnGranted).toBe(true)
+    expect(state.showdownActive).toBe(false)
+    // Play out the granted round; the next round-end flips to the showdown
+    state = apply(state, { type: 'END_TURN' }).state // player-1 → player-2
+    state = apply(state, { type: 'END_TURN' }).state // round end → transition
     expect(state.phase).toBe('finalBoss')
+    expect(state.finalTurnGranted).toBe(false)
     expect(state.showdownActive).toBe(true)
     expect(state.showdownOrder).toEqual(['player-1', 'player-2'])
     expect(state.showdownFandom).toEqual({ 'player-1': 0, 'player-2': 0 })
@@ -325,7 +333,8 @@ describe('shop actions', () => {
 describe('showdown actions', () => {
   function showdownState(): EngineState {
     let state = startTwoPlayerGame()
-    state = { ...state, pendingPhase: 'finalBoss' as const, currentTurnPlayerIndex: 1 }
+    // finalTurnGranted already true → the next round-end flips straight to the showdown
+    state = { ...state, pendingPhase: 'finalBoss' as const, finalTurnGranted: true, currentTurnPlayerIndex: 1 }
     return apply(state, { type: 'END_TURN' }).state
   }
 
@@ -404,7 +413,7 @@ describe('seat validation (online)', () => {
 
   it('showdown performances are seat-locked to the current performer', () => {
     let state = startTwoPlayerGame()
-    state = { ...state, pendingPhase: 'finalBoss' as const, currentTurnPlayerIndex: 1 }
+    state = { ...state, pendingPhase: 'finalBoss' as const, finalTurnGranted: true, currentTurnPlayerIndex: 1 }
     state = applyAction(state, { type: 'END_TURN' }, seatCtx('player-2')).ok
       ? (applyAction(state, { type: 'END_TURN' }, seatCtx('player-2')) as { ok: true; state: EngineState }).state
       : state

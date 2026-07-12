@@ -50,6 +50,8 @@ export interface EngineState {
   currentRound: number
   currentTurnPlayerIndex: number
   pendingPhase: GamePhase | null
+  /** Once the threshold is hit, everyone gets one more round before the boss. */
+  finalTurnGranted: boolean
 
   // Board & players
   spaces: BoardSpace[]
@@ -81,9 +83,22 @@ export interface EngineState {
   showdownFandom: Record<string, number>
   showdownBestHit: Record<string, { damage: number; songName: string }>
   showdownCrits: Record<string, number>
+  /** Pre-play accumulators so the current performance can be rerolled. */
+  showdownUndo: ShowdownUndo | null
 
   /** Monotonic counter backing deterministic id generation. */
   nextIdSeq: number
+}
+
+/** Performer accumulators captured before a showdown play, enabling reroll. */
+export interface ShowdownUndo {
+  songId: string
+  performerId: string
+  currentFandom: number
+  fandomTotal: number
+  bestHit: { damage: number; songName: string } | undefined
+  crits: number
+  songsUsed: string[]
 }
 
 export function createInitialCombatState(): EngineCombatState {
@@ -110,6 +125,7 @@ export function createInitialEngineState(): EngineState {
     currentRound: 0,
     currentTurnPlayerIndex: 0,
     pendingPhase: null,
+    finalTurnGranted: false,
 
     spaces: [],
     players: [],
@@ -137,6 +153,7 @@ export function createInitialEngineState(): EngineState {
     showdownFandom: {},
     showdownBestHit: {},
     showdownCrits: {},
+    showdownUndo: null,
 
     nextIdSeq: 1,
   }

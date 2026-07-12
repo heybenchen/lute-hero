@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useGameStore, selectCanPerform } from '@/store'
 import { Song, DiceRoll } from '@/types'
 import { SongCard } from '../Combat/SongCard'
-import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
@@ -103,24 +102,34 @@ export function FinalShowdown() {
   const hasPerformed = showdownSongsUsed.length >= 1
   const performanceDone = hasPerformed || playableSongs.length === 0
 
+  const showFandomPopup = (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
+    const popup: FandomPopup = {
+      id: `fandom-${Date.now()}`,
+      fandom: result.fandom,
+      hadCrit: result.hadCrit,
+      hitWeakness: result.hitWeakness,
+      wasResisted: result.wasResisted,
+    }
+    setPopups((prev) => [...prev, popup])
+    setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
+  }
+
   const handlePlaySong = async (song: Song) => {
     const result = await dispatch({ type: 'PLAY_SHOWDOWN_SONG', songId: song.id })
     if (!result.ok) return
     for (const event of result.events) {
-      if (event.type === 'diceRolled') {
-        setLastRolls({ song, rolls: event.rolls })
-      }
-      if (event.type === 'showdownPlay') {
-        const popup: FandomPopup = {
-          id: `fandom-${Date.now()}`,
-          fandom: event.fandom,
-          hadCrit: event.hadCrit,
-          hitWeakness: event.hitWeakness,
-          wasResisted: event.wasResisted,
-        }
-        setPopups((prev) => [...prev, popup])
-        setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
-      }
+      if (event.type === 'diceRolled') setLastRolls({ song, rolls: event.rolls })
+      if (event.type === 'showdownPlay') showFandomPopup(event)
+    }
+  }
+
+  const handleReroll = async () => {
+    if (!performer || !lastRolls || performer.inspiration <= 0) return
+    const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG' })
+    if (!result.ok) return
+    for (const event of result.events) {
+      if (event.type === 'diceRolled') setLastRolls({ song: lastRolls.song, rolls: event.rolls })
+      if (event.type === 'showdownPlay') showFandomPopup(event)
     }
   }
 
@@ -256,7 +265,7 @@ export function FinalShowdown() {
               </div>
             </div>
 
-            {/* Songs */}
+            {/* Songs — the roll animates in-card, with an Inspiration reroll, like the battle phase */}
             <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1 mb-4">
               {performer.songs.map((song, idx) => (
                 <SongCard
@@ -265,36 +274,13 @@ export function FinalShowdown() {
                   onPlay={() => handlePlaySong(song)}
                   disabled={hasPerformed || !canPerform}
                   index={idx}
+                  rolls={lastRolls?.song.id === song.id ? lastRolls.rolls : undefined}
+                  onReroll={lastRolls?.song.id === song.id ? handleReroll : undefined}
+                  inspiration={performer.inspiration}
                 />
               ))}
             </div>
 
-            {/* Last roll */}
-            {lastRolls && (
-              <div
-                className="rounded-xl p-4 mb-4 animate-fade-in max-w-full overflow-x-auto"
-                style={{ background: 'rgba(42, 33, 24, 0.5)', border: '1px solid rgba(212, 168, 83, 0.12)' }}
-              >
-                <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-3">Last Roll</div>
-                <div className="flex gap-3 items-center flex-wrap">
-                  {lastRolls.rolls.map((roll, idx) => {
-                    const dice = lastRolls.song.slots.find((slot) => slot.dice?.id === roll.diceId)?.dice
-                    if (!dice) return null
-                    return (
-                      <DiceDisplay
-                        key={idx}
-                        dice={dice}
-                        value={roll.value}
-                        isCrit={roll.isCrit}
-                        cascadeRolls={roll.cascadeRolls}
-                        compact
-                        animateRoll
-                      />
-                    )
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Finish performance */}
             <div className="flex justify-center pt-2">
