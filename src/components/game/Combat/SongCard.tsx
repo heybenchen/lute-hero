@@ -1,6 +1,7 @@
 import { Song } from '@/types'
-import { DiceDisplay } from '@/components/ui/DiceDisplay'
-import { describeTrackEffect, TRACK_EFFECT_NAMES } from '@/data/trackEffects'
+import { DiceShape } from '@/components/ui/DiceShape'
+import { describeTrackEffect } from '@/data/trackEffects'
+import { GENRE_THEME } from '@/data/genreTheme'
 
 interface SongCardProps {
   song: Song
@@ -13,7 +14,6 @@ interface SongCardProps {
 
 export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName }: SongCardProps) {
   const hasDice = song.slots.some((s) => s.dice)
-  const filledSlots = song.slots.filter((s) => s.dice).length
 
   return (
     <div
@@ -60,65 +60,57 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
             </div>
           )}
 
-          {/* Song title */}
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div className={`font-medieval text-lg font-bold truncate leading-tight flex-1 ${song.name ? 'text-gold-400' : 'text-parchment-500 italic'}`}>
-              {song.name || 'Untitled'}
-            </div>
-            <div className="text-sm text-parchment-500 flex-shrink-0 tabular-nums">
-              {filledSlots}/2
-            </div>
+          {/* Song title — matches the main-page song card */}
+          <div
+            className="font-medieval text-base font-bold text-gold-400 mb-3 pb-2 text-center"
+            style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
+          >
+            {song.name || <span className="text-parchment-500 italic">Untitled</span>}
           </div>
 
-          {/* Dice slots - visual track */}
-          <div className="flex gap-4 mb-4">
-            {song.slots.map((slot, idx) => (
-              <div key={idx} className="relative flex-1">
-                {slot.dice ? (
-                  <DiceDisplay dice={slot.dice} className="w-full h-full" compact />
-                ) : (
+          {/* Dice on the left, effect on the right — same layout as the main page */}
+          <div className="flex items-stretch gap-3 mb-4">
+            <div className="flex gap-2 shrink-0">
+              {song.slots.map((slot, idx) => {
+                const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
+                return (
                   <div
-                    className="h-14 rounded-lg flex items-center justify-center"
+                    key={idx}
+                    className="w-[60px] h-[60px] aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs"
                     style={{
-                      border: '1px dashed rgba(212, 168, 83, 0.15)',
-                      background: 'rgba(13, 10, 7, 0.3)',
+                      background: genreColor ? `${genreColor}1f` : 'rgba(255, 255, 255, 0.02)',
+                      border: genreColor ? `1px solid ${genreColor}80` : '1px dashed rgba(212, 168, 83, 0.12)',
                     }}
                   >
-                    <div className="w-2 h-2 rounded-full bg-parchment-600/30" />
+                    {slot.dice ? (
+                      <div className="text-center">
+                        <div className="text-2xl mb-0.5" style={{ color: genreColor }}><DiceShape type={slot.dice.type} /></div>
+                        <div className="font-bold text-[9px]" style={{ color: genreColor }}>{slot.dice.genre}</div>
+                      </div>
+                    ) : (
+                      <div className="text-parchment-500/40 text-[10px]">-</div>
+                    )}
                   </div>
-                )}
-
-                {/* Slot connector line */}
-                {idx < 1 && (
-                  <div className="absolute top-1/2 -right-2.5 w-4 h-px bg-parchment-600/15" />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Effect */}
-          {song.effect && (
-            <div className="mb-4">
-              <div className="flex items-center gap-2 text-sm">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: 'linear-gradient(135deg, #9040cc, #6a20aa)',
-                    border: '1px solid rgba(176, 124, 255, 0.5)',
-                    boxShadow: '0 0 6px rgba(176, 124, 255, 0.3)',
-                  }}
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/80" />
-                </div>
-                <span
-                  className="text-classical/70 truncate"
-                  title={describeTrackEffect(song.effect)}
-                >
-                  {TRACK_EFFECT_NAMES[song.effect.type] || song.effect.type}
-                </span>
-              </div>
+                )
+              })}
             </div>
-          )}
+
+            <div className="flex flex-1 min-w-0">
+              {song.effect ? (
+                <div className="h-full w-full p-1.5 rounded text-xs flex items-center justify-center text-center"
+                  style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
+                >
+                  <span className="text-classical break-words">{describeTrackEffect(song.effect)}</span>
+                </div>
+              ) : (
+                <div className="h-full w-full p-1.5 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
+                  style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
+                >
+                  No effects
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Play button */}
           <button
@@ -137,7 +129,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
               boxShadow: song.used ? 'none' : '0 2px 8px rgba(0,0,0,0.3)',
             }}
           >
-            {song.used ? '\u2713 Played' : !hasDice ? 'No Dice' : '\u266B Perform'}
+            {song.used ? '✓ Played' : !hasDice ? 'No Dice' : '♫ Perform'}
           </button>
         </div>
 
