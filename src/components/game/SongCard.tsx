@@ -1,6 +1,7 @@
 import { Song } from '@/types'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { describeTrackEffect } from '@/data/trackEffects'
+import { GENRE_THEME } from '@/data/genreTheme'
 
 interface SongCardProps {
   song: Song
@@ -24,33 +25,35 @@ export function SongCard({ song }: SongCardProps) {
       <div className="flex items-stretch justify-center lg:justify-start gap-3">
         {/* Dice on the left */}
         <div className="flex gap-1.5 lg:gap-2 shrink-0">
-          {song.slots.map((slot, idx) => (
-            <div
-              key={idx}
-              className="w-8 h-8 lg:w-[60px] lg:h-[60px] aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs"
-              style={{
-                background: slot.dice ? 'rgba(212, 168, 83, 0.1)' : 'rgba(255, 255, 255, 0.02)',
-                border: slot.dice
-                  ? '1px solid rgba(212, 168, 83, 0.25)'
-                  : '1px dashed rgba(212, 168, 83, 0.12)',
-              }}
-            >
-              {slot.dice ? (
-                <div className="text-center">
-                  <div className="text-base lg:text-2xl mb-0.5 text-gold-400"><DiceShape type={slot.dice.type} /></div>
-                  <div className="hidden lg:block font-bold text-[9px] text-parchment-300">{slot.dice.genre}</div>
-                </div>
-              ) : (
-                <div className="text-parchment-500/40 text-[8px] lg:text-[10px]">-</div>
-              )}
-            </div>
-          ))}
+          {song.slots.map((slot, idx) => {
+            // Tint each die by its genre element color
+            const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
+            return (
+              <div
+                key={idx}
+                className="w-8 h-8 lg:w-[60px] lg:h-[60px] aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs"
+                style={{
+                  background: genreColor ? `${genreColor}1f` : 'rgba(255, 255, 255, 0.02)',
+                  border: genreColor ? `1px solid ${genreColor}80` : '1px dashed rgba(212, 168, 83, 0.12)',
+                }}
+              >
+                {slot.dice ? (
+                  <div className="text-center">
+                    <div className="text-base lg:text-2xl mb-0.5" style={{ color: genreColor }}><DiceShape type={slot.dice.type} /></div>
+                    <div className="hidden lg:block font-bold text-[9px]" style={{ color: genreColor }}>{slot.dice.genre}</div>
+                  </div>
+                ) : (
+                  <div className="text-parchment-500/40 text-[8px] lg:text-[10px]">-</div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {/* Effect on the right — hidden on mobile */}
         <div className="hidden lg:flex flex-1 min-w-0">
           {song.effect ? (
-            <div className="h-full w-full p-1.5 rounded text-xs flex items-start gap-1.5"
+            <div className="h-full w-full p-1.5 rounded text-xs flex flex-wrap items-center justify-center gap-1.5 text-center"
               style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
             >
               <span className="font-bold text-classical shrink-0">FX:</span>
