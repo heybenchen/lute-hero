@@ -250,6 +250,16 @@ export function CombatModal() {
             </div>
           </div>
 
+          {/* Damage report — sits right under the monsters it applies to */}
+          {lastDamageCalculations.length > 0 && (
+            <div className="mb-6 sm:mb-8">
+              <DamageBreakdown
+                calculations={lastDamageCalculations}
+                monsters={monsters}
+              />
+            </div>
+          )}
+
           {/* Songs Section */}
           <div className="mb-6 sm:mb-8">
             <SectionHeader
@@ -312,16 +322,6 @@ export function CombatModal() {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* Damage report — the roll + reroll now live inside the song card */}
-          {lastDamageCalculations.length > 0 && (
-            <div className="mb-6 sm:mb-8">
-              <DamageBreakdown
-                calculations={lastDamageCalculations}
-                monsters={monsters}
-              />
             </div>
           )}
 
