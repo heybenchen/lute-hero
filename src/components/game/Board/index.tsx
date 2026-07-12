@@ -67,7 +67,7 @@ export function Board() {
         alt=""
         aria-hidden="true"
         draggable={false}
-        className="absolute inset-0 h-full w-full object-contain pointer-events-none"
+        className="absolute inset-0 h-full w-full object-cover pointer-events-none"
       />
 
       {/* Subtle dot-grid map texture */}
