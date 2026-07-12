@@ -120,20 +120,20 @@ export function PlayerPanel() {
             {currentPlayer.songs.map((song) => (
               <div
                 key={song.id}
-                className="rounded-lg p-1.5 flex-1 min-w-0 lg:w-full lg:flex-none"
+                className="rounded-md p-1 flex-1 min-w-0 lg:w-full lg:flex-none"
                 style={{
                   background: 'rgba(61, 48, 32, 0.5)',
                   border: '1px solid rgba(212, 168, 83, 0.12)',
                 }}
               >
-                <div className="h-3.5 lg:h-auto text-[10px] lg:text-xs font-bold text-parchment-300 mb-0.5 truncate lg:whitespace-normal">
+                <div className="text-[9px] font-bold text-parchment-300 mb-0.5 truncate">
                   {song.name || <span className="italic text-parchment-500">Untitled</span>}
                 </div>
-                <div className="flex gap-0.5 lg:gap-1.5">
+                <div className="flex gap-1">
                   {song.slots.map((slot, idx) => (
                     <div
                       key={idx}
-                      className="flex-1 aspect-square rounded flex flex-col items-center justify-center text-[8px]"
+                      className="w-7 h-7 rounded flex flex-col items-center justify-center leading-none"
                       style={{
                         background: slot.dice
                           ? 'rgba(212, 168, 83, 0.15)'
@@ -145,21 +145,21 @@ export function PlayerPanel() {
                     >
                       {slot.dice ? (
                         <>
-                          <div className="text-gold-400 text-[14px] lg:text-3xl leading-none">
+                          <div className="text-gold-400 text-sm leading-none">
                             <DiceShape type={slot.dice.type} />
                           </div>
-                          <div className="font-bold text-[7px] lg:text-[10px] text-parchment-300">
+                          <div className="font-bold text-[6px] text-parchment-300">
                             {slot.dice.genre}
                           </div>
                         </>
                       ) : (
-                        <div className="text-parchment-500/30 text-[8px] lg:text-sm">-</div>
+                        <div className="text-parchment-500/30 text-[8px]">-</div>
                       )}
                     </div>
                   ))}
                 </div>
-                {/* Effect description — space reserved even when a song has none */}
-                <div className="hidden lg:block mt-1.5 min-h-[1.75rem] text-[11px] leading-snug text-classical">
+                {/* Effect description — compact single line */}
+                <div className="hidden lg:block mt-0.5 text-[9px] leading-tight text-classical truncate">
                   {song.effect ? (
                     <>&#x2728; {describeTrackEffect(song.effect)}</>
                   ) : (
