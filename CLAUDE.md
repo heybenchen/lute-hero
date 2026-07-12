@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Lute Hero is a multiplayer tabletop board game where Bards defeat monsters using music. Players navigate a 14-space graph board, encounter monsters spawned by genre tags, use songs with slotted dice to deal damage (with genre-based multipliers), earn Fame and EXP, and progress through three phases: Main Game → Underground Scene → Final Boss.
+Lute Hero is a multiplayer tabletop board game where Bards defeat monsters using music. Players navigate a 14-space graph board, encounter monsters spawned by genre tags, use songs with slotted dice to deal damage (with genre-based multipliers), earn Fame and EXP, and progress through two phases: Main Game → Final Boss (the fandom-based Showdown).
 
 ## Commands
 
@@ -44,7 +44,7 @@ All slices merge into one store (`src/store/index.ts`) with devtools middleware.
 
 - **Damage flow**: Roll dice → apply track effects → sum base damage + crit bonuses (+5 per max roll) → apply genre multipliers (2x vulnerable, 0.5x resistant) → apply effect multipliers → each song hits ALL monsters (AOE)
 - **Monster spawning**: Each round adds 1 genre tag per space; every 2 tags of a genre spawns 1 monster of that genre
-- **Phase progression**: Collective fame thresholds (30 → Underground, 50 → Final Boss)
+- **Phase progression**: Main → Final Boss when any single player reaches 300 fame (`FAME_THRESHOLDS.finalBoss`)
 - **Dice upgrade path**: d4 → d6 → d12 → d20
 - **Turn structure**: Move up to 2 spaces, fight 1 combat, then shop (unlimited purchases after fighting)
 
