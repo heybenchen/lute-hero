@@ -1,5 +1,6 @@
 import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
 import { GENRE_THEME } from '@/data/genreTheme'
+import { SPACE_ILLUSTRATIONS } from '@/data/boardIllustrations'
 
 interface BoardSpaceProps {
   space: BoardSpaceType
@@ -30,6 +31,7 @@ export function BoardSpace({
     return acc
   }, {})
   const genreEntries = Object.entries(genreTagCounts) as [Genre, number][]
+  const illustration = SPACE_ILLUSTRATIONS[space.name]
 
   return (
     <button
@@ -74,6 +76,17 @@ export function BoardSpace({
       }}
       title={space.name}
     >
+      {/* Hand-drawn map illustration behind the tile content */}
+      {illustration && (
+        <img
+          src={illustration}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          className="absolute inset-0 z-0 h-full w-full rounded-lg sm:rounded-xl object-cover opacity-90 pointer-events-none"
+        />
+      )}
+
       {/* Dim overlay for out-of-reach tiles (kept off the container so
           tooltips inside stay at full opacity) */}
       {!canMoveTo && !isCurrentPlayer && !isTravelTarget && (
@@ -81,7 +94,7 @@ export function BoardSpace({
       )}
 
       {/* Space name */}
-      <div className="text-[9px] lg:text-sm font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 w-full line-clamp-2">
+      <div className="relative z-10 text-[9px] lg:text-sm font-medieval font-bold text-center leading-tight text-gold-300 opacity-80 w-full line-clamp-2">
         {space.name}
       </div>
 
@@ -104,7 +117,7 @@ export function BoardSpace({
       )}
 
       {/* Content area */}
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 lg:gap-1.5 overflow-hidden">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 lg:gap-1.5 overflow-hidden">
         {/* Genre tags — compact color-coded beads with counts */}
         {genreEntries.length > 0 && (
           <div className="flex flex-wrap gap-x-1 gap-y-0.5 lg:gap-x-1.5 lg:gap-y-1 justify-center max-w-full mt-0.5">
