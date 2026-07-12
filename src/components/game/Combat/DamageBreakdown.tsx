@@ -6,10 +6,13 @@ interface DamageBreakdownProps {
   monsters: Monster[]
 }
 
+/** Format a multiplier compactly: 0 → "0×", others → "×2", "×0.5", etc. */
+function formatMultiplier(multiplier: number): string {
+  return multiplier === 0 ? '0×' : `×${multiplier}`
+}
+
 export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps) {
   if (calculations.length === 0) return null
-
-  const totalAllDamage = calculations.reduce((sum, c) => sum + c.totalDamage, 0)
 
   return (
     <div
@@ -20,23 +23,6 @@ export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps
         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
       }}
     >
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5"
-        style={{ background: 'rgba(30, 24, 18, 0.6)', borderBottom: '1px solid rgba(212, 168, 83, 0.1)' }}
-      >
-        <div className="text-sm font-medieval text-parchment-400 uppercase tracking-wider">
-          Damage Report
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-parchment-500">Total</span>
-          <span className="text-xl font-bold text-red-400 tabular-nums"
-            style={{ textShadow: '0 0 8px rgba(232, 80, 80, 0.3)' }}
-          >
-            -{totalAllDamage}
-          </span>
-        </div>
-      </div>
-
       <div className="p-3 sm:p-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
           {calculations.map((calc, idx) => {
@@ -47,14 +33,14 @@ export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps
             return (
               <div
                 key={idx}
-                className="p-2 rounded-lg flex flex-col gap-1.5"
+                className="p-2 rounded-lg flex flex-col items-center gap-1.5 text-center"
                 style={{
                   background: isKill ? 'rgba(45, 140, 48, 0.06)' : 'rgba(30, 24, 18, 0.5)',
                   border: `1px solid ${isKill ? 'rgba(76, 175, 80, 0.15)' : 'rgba(212, 168, 83, 0.08)'}`,
                 }}
               >
                 {/* Monster name + KO */}
-                <div className="flex items-center gap-1 min-w-0">
+                <div className="flex items-center justify-center gap-1 max-w-full">
                   <span className="font-bold text-xs text-parchment-200 truncate">{monster.name}</span>
                   {isKill && (
                     <span className="text-[9px] font-bold text-green-400 bg-green-400/10 px-1 py-0.5 rounded shrink-0">
@@ -70,31 +56,29 @@ export function DamageBreakdown({ calculations, monsters }: DamageBreakdownProps
                   -{calc.totalDamage}
                 </span>
 
-                {/* Compact formula chips */}
-                <div className="flex flex-wrap gap-1">
-                  {calc.genreMultipliers.map((gm, gmIdx) => (
-                    <div key={gmIdx} className="flex items-center gap-1 px-1 py-0.5 rounded"
+                {/* Per-die math breakdown */}
+                <div className="flex flex-col items-center gap-1 w-full">
+                  {calc.perDie.map((die, dieIdx) => (
+                    <div
+                      key={dieIdx}
+                      className="flex items-center justify-center gap-1 px-1 py-0.5 rounded text-[10px] tabular-nums"
                       style={{ background: 'rgba(212, 168, 83, 0.06)', border: '1px solid rgba(212, 168, 83, 0.08)' }}
                     >
-                      <GenreBadge genre={gm.genre} className="text-[9px] px-1 py-0 rounded" />
-                      {gm.multiplier !== 1 && (
-                        <span className={`font-bold text-[10px] ${
-                          gm.multiplier === 2 ? 'text-green-400' :
-                          gm.multiplier === 0 ? 'text-red-400' :
-                          'text-parchment-300'
-                        }`}>
-                          {gm.multiplier === 0 ? '0×' : `×${gm.multiplier}`}
+                      {die.genre && <GenreBadge genre={die.genre} className="text-[9px] px-1 py-0 rounded" />}
+                      <span className="text-parchment-300">{die.value}</span>
+                      {die.critBonus > 0 && <span className="text-gold-400">+{die.critBonus}</span>}
+                      {die.multiplier !== 1 && (
+                        <span
+                          className="font-bold"
+                          style={{ color: die.multiplier === 0 ? '#cbd5e1' : die.multiplier > 1 ? '#f5c542' : '#f0a35a' }}
+                        >
+                          {formatMultiplier(die.multiplier)}
                         </span>
                       )}
+                      <span className="text-parchment-500">=</span>
+                      <span className="font-bold text-parchment-100">{Math.round(die.damage)}</span>
                     </div>
                   ))}
-                  {calc.critBonuses > 0 && (
-                    <span className="text-[10px] font-bold text-gold-400 px-1 py-0.5 rounded"
-                      style={{ background: 'rgba(230, 195, 90, 0.08)', border: '1px solid rgba(230, 195, 90, 0.12)' }}
-                    >
-                      +{calc.critBonuses} crit
-                    </span>
-                  )}
                   {calc.effectBonuses > 0 && (
                     <span className="text-[10px] font-bold text-classical px-1 py-0.5 rounded"
                       style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.12)' }}
