@@ -42,7 +42,7 @@ export function BoardSpace({
         flex flex-col justify-between p-1.5 sm:p-2
         transition-all duration-200 ease-out
         ${canMoveTo || isTravelTarget
-          ? 'cursor-pointer sm:hover:-translate-y-1 sm:hover:brightness-110'
+          ? 'cursor-pointer sm:hover:-translate-y-1'
           : 'cursor-default'
         }
         ${hasMonsters && (canMoveTo || isTravelTarget) ? 'animate-danger-pulse' : ''}
