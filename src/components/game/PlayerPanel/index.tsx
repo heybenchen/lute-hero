@@ -1,27 +1,11 @@
 import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
 import { DraftShop } from '../DraftShop'
-import { GenreBadge } from '@/components/ui/GenreBadge'
-import { DiceShape } from '@/components/ui/DiceShape'
-import { getMaxValue } from '@/game-logic/dice/roller'
-import { describeTrackEffect } from '@/data/trackEffects'
-
-// Choose black or white text for legibility on an arbitrary player color.
-// Uses the perceptual (sRGB-weighted) luminance so names stay readable on both
-// light chips (e.g. amber) and dark ones (e.g. blue/red).
-function readableTextColor(hex: string): string {
-  const value = hex.replace('#', '')
-  const r = parseInt(value.slice(0, 2), 16)
-  const g = parseInt(value.slice(2, 4), 16)
-  const b = parseInt(value.slice(4, 6), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.6 ? '#1a140a' : '#ffffff'
-}
+import { SongCard } from '../SongCard'
+import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
 
 export function PlayerPanel() {
   const [showDraftShop, setShowDraftShop] = useState(false)
-  const [hoveredSong, setHoveredSong] = useState<string | null>(null)
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
@@ -80,6 +64,7 @@ export function PlayerPanel() {
       <div className="flex gap-2">
         {players.map((player) => {
           const isCurrentTurn = player.id === currentPlayer.id
+          const genreColor = GENRE_THEME[player.starterGenre]?.color ?? player.color
           return (
             <div
               key={player.id}
@@ -92,13 +77,12 @@ export function PlayerPanel() {
             >
               <div
                 className="px-2 py-1 truncate font-bold text-[10px]"
-                style={{ background: player.color, color: readableTextColor(player.color) }}
+                style={{ background: genreColor, color: readableTextColor(genreColor) }}
               >
                 {player.name}
               </div>
-              <div className="text-[10px] text-parchment-300 flex gap-1.5 px-2 py-1" style={{ background: 'rgba(20, 16, 10, 0.85)' }}>
-                <span title="Fame">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
-                <span title="EXP">&#x1F4D6;<span className="text-parchment-100 font-bold ml-0.5">{player.exp}</span></span>
+              <div className="text-[10px] text-parchment-300 flex flex-nowrap whitespace-nowrap overflow-hidden gap-1.5 px-2 py-1" style={{ background: 'rgba(20, 16, 10, 0.85)' }}>
+                <span title="Fame" className="flex-1 text-center">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
               </div>
             </div>
           )
@@ -118,11 +102,11 @@ export function PlayerPanel() {
           </div>
           <div>
             <div className="font-medieval text-lg font-bold text-gold-300">{currentPlayer.name}</div>
-            <div className="text-sm text-parchment-400 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-              <span>Fame: <span className="text-gold-400 font-bold">{currentPlayer.fame}</span></span>
-              <span>EXP: <span className="text-parchment-200 font-bold">{currentPlayer.exp}</span></span>
+            <div className="text-sm text-parchment-200 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+              <span title="Fame">FAME: <span className="font-bold">{currentPlayer.fame}</span></span>
+              <span title="EXP">EXP: <span className="font-bold">{currentPlayer.exp}</span></span>
               <span title="Inspiration — spend to reroll a song, travel anywhere, or refresh the shop">
-                &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{currentPlayer.inspiration}</span>
+                INS: <span className="font-bold">{currentPlayer.inspiration}</span>
               </span>
             </div>
           </div>
@@ -130,111 +114,11 @@ export function PlayerPanel() {
 
         {/* Songs — right above the Moves/Fights trackers */}
         <div className="mb-3">
-          <div className="flex flex-wrap justify-between gap-2">
+          <div className="flex flex-row lg:flex-col gap-2">
             {currentPlayer.songs.map((song) => (
-              <div
-                key={song.id}
-                className="rounded-lg p-1.5 flex-1 min-w-0 transition-all duration-150 hover:bg-tavern-600"
-                style={{
-                  background: 'rgba(61, 48, 32, 0.5)',
-                  border: '1px solid rgba(212, 168, 83, 0.12)',
-                }}
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  setTooltipPos({ x: rect.left, y: rect.bottom + 8 })
-                  setHoveredSong(song.id)
-                }}
-                onMouseLeave={() => setHoveredSong(null)}
-              >
-                <div className="h-3.5 text-[10px] font-bold text-parchment-400 mb-0.5 truncate">
-                  {song.name}
-                </div>
-                <div className="flex gap-0.5">
-                  {song.slots.map((slot, idx) => (
-                    <div
-                      key={idx}
-                      className="flex-1 aspect-square rounded flex flex-col items-center justify-center text-[8px]"
-                      style={{
-                        background: slot.dice
-                          ? 'rgba(212, 168, 83, 0.15)'
-                          : 'rgba(255, 255, 255, 0.03)',
-                        border: slot.dice
-                          ? '1px solid rgba(212, 168, 83, 0.25)'
-                          : '1px dashed rgba(212, 168, 83, 0.1)',
-                      }}
-                    >
-                      {slot.dice ? (
-                        <>
-                          <div className="text-gold-400 text-[14px] leading-none">
-                            <DiceShape type={slot.dice.type} />
-                          </div>
-                          <div className="font-bold text-[7px] text-parchment-300">
-                            {slot.dice.genre}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-parchment-500/30 text-[8px]">-</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <SongCard key={song.id} song={song} />
             ))}
           </div>
-
-          {/* Floating song tooltip */}
-          {hoveredSong && currentPlayer.songs.find((s) => s.id === hoveredSong) && (
-            <div
-              className="fixed z-[100] p-3 rounded-lg shadow-2xl w-64 pointer-events-none animate-fade-in"
-              style={{
-                left: `${tooltipPos.x}px`,
-                top: `${tooltipPos.y}px`,
-                background: 'linear-gradient(135deg, #2a2118, #1a1410)',
-                border: '1px solid rgba(212, 168, 83, 0.3)',
-              }}
-            >
-              {(() => {
-                const song = currentPlayer.songs.find((s) => s.id === hoveredSong)!
-                return (
-                  <>
-                    <div className="font-medieval font-bold mb-2 text-gold-400">{song.name}</div>
-                    <div className="space-y-2 text-sm">
-                      {song.slots.map((slot, idx) => (
-                        <div
-                          key={`slot-${idx}`}
-                          className="pb-1"
-                          style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.12)' }}
-                        >
-                          <div className="font-bold text-parchment-400 text-xs">Slot {idx + 1}</div>
-                          {slot.dice ? (
-                            <div className="mt-0.5">
-                              <div className="flex items-center gap-1">
-                                <span className="text-parchment-300 text-xs">{slot.dice.type}</span>
-                                <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
-                              </div>
-                              <div className="text-xs text-parchment-400">
-                                Roll: 1-{getMaxValue(slot.dice.type)} (2x on max)
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-parchment-500 text-xs">Empty slot</div>
-                          )}
-                        </div>
-                      ))}
-                      {song.effect && (
-                        <div className="pt-1">
-                          <div className="font-bold text-parchment-400 text-xs mb-1">Effect</div>
-                          <div className="text-classical text-xs">
-                            &#x2728; {describeTrackEffect(song.effect)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )
-              })()}
-            </div>
-          )}
         </div>
 
       </div>
@@ -267,7 +151,12 @@ export function PlayerPanel() {
         >
           Studio ({currentPlayer.exp} EXP)
         </button>
-        <button onClick={handleEndTurn} className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5">
+        <button
+          onClick={handleEndTurn}
+          disabled={canFight}
+          title={canFight ? 'Fight the monster here before ending your turn' : undefined}
+          className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
           End Turn
         </button>
       </div>

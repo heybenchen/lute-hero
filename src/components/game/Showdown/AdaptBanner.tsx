@@ -92,7 +92,7 @@ export function AdaptBanner({
             <>
               {resistGenre && (
                 <div
-                  className="animate-slide-up rounded-lg px-4 py-3 max-w-md mx-auto"
+                  className="animate-slide-up rounded-lg px-4 py-3 max-w-md mx-auto text-left"
                   style={{
                     animationDelay: '600ms',
                     animationFillMode: 'both',
@@ -111,7 +111,7 @@ export function AdaptBanner({
               )}
               {weakGenre && (
                 <div
-                  className="animate-slide-up rounded-lg px-4 py-3 max-w-md mx-auto"
+                  className="animate-slide-up rounded-lg px-4 py-3 max-w-md mx-auto text-left"
                   style={{
                     animationDelay: '850ms',
                     animationFillMode: 'both',

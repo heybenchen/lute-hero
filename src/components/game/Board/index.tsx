@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
+import realmMap from '@/imports/Map_Background_2.png'
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)
@@ -52,26 +53,29 @@ export function Board() {
     <div
       className="relative w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
       style={{
+        // Warm wood-plank brown matching the map image's wooden border
         background: `
-          radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.04) 0%, transparent 45%),
-          radial-gradient(ellipse at 70% 80%, rgba(139, 111, 71, 0.05) 0%, transparent 45%),
-          linear-gradient(160deg, #1b1510 0%, #131009 45%, #1b1510 100%)
+          radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.06) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 80%, rgba(139, 111, 71, 0.07) 0%, transparent 45%),
+          linear-gradient(160deg, #5a4835 0%, #695641 50%, #5a4835 100%)
         `,
       }}
     >
+      {/* Parchment realm map background */}
+      <img
+        src={realmMap}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-contain pointer-events-none"
+      />
+
       {/* Subtle dot-grid map texture */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: 'radial-gradient(rgba(212, 168, 83, 0.08) 0.8px, transparent 0.8px)',
           backgroundSize: '28px 28px',
-        }}
-      />
-
-      {/* Warm vignette */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 35%, rgba(9, 6, 3, 0.65) 100%)',
         }}
       />
 
@@ -94,18 +98,9 @@ export function Board() {
       )}
 
       <div className="relative w-full p-2 sm:p-6 lg:p-8 max-w-[calc(50dvh_-_6rem)] lg:max-w-[calc(100dvh_-_5rem)]">
-        {/* Map title decoration — hidden on mobile to save vertical space */}
-        <div className="hidden sm:flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-5 pointer-events-none">
-          <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
-          <div className="font-display text-base sm:text-xl text-gold-500 opacity-45 tracking-[0.2em] sm:tracking-[0.25em] text-center select-none">
-            The Bardic Realm
-          </div>
-          <div className="h-px w-8 sm:w-16" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
-        </div>
-
         {/* 4x4 tile grid — space ids are row-major grid positions */}
         <div
-          className="grid grid-cols-4 gap-2 sm:gap-3"
+          className="grid grid-cols-4 gap-2 sm:gap-3 lg:px-20"
           onMouseLeave={() => setHoveredSpaceId(null)}
         >
           {spaces.map((space) => (

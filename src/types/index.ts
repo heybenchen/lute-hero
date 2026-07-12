@@ -108,6 +108,7 @@ export interface Player {
   id: string;
   name: string;
   color: string;
+  starterGenre: Genre; // Element the player started with (drives their themed color)
   position: number; // Current space ID
   songs: Song[];
   exp: number;
@@ -200,4 +201,14 @@ export interface DamageCalculation {
   effectBonuses: number;
   critBonuses: number;
   totalDamage: number;
+  // Per-die contribution against this monster, for the damage-report breakdown
+  perDie: DieContribution[];
+}
+
+export interface DieContribution {
+  genre: Genre | null; // null for extra dice (e.g. wildDice) with no slotted genre
+  value: number; // rolled face value
+  critBonus: number; // extra damage from cascading crits
+  multiplier: number; // genre × offbeat multiplier applied to this die
+  damage: number; // (value + critBonus) × multiplier — this die's contribution
 }

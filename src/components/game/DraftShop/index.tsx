@@ -197,74 +197,6 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
             </button>
           </div>
 
-          {/* Pending rewards tray — queued purchases waiting to be placed */}
-          {pendingRewards.length > 0 && (
-            <div className="rounded-lg p-3 sm:p-4 mb-6 animate-fade-in"
-              style={{
-                background: 'rgba(212, 168, 83, 0.06)',
-                border: '1px solid rgba(212, 168, 83, 0.3)',
-              }}
-            >
-              <div className="flex items-center gap-2 mb-2.5">
-                <span className="text-sm font-bold text-gold-300">Unclaimed Rewards</span>
-                <span className="text-xs text-parchment-500">
-                  ({pendingRewards.length}) — pick one, then click a song below to place it
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {pendingRewards.map((reward) => {
-                  const isActive = reward.id === activeRewardId
-                  if (reward.kind === 'die') {
-                    const { rgb } = GENRE_THEME[reward.dice.genre]
-                    return (
-                      <button
-                        key={reward.id}
-                        onClick={() => setActiveRewardId(isActive ? null : reward.id)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 hover:-translate-y-0.5"
-                        style={{
-                          background: isActive ? `rgba(${rgb}, 0.2)` : 'rgba(0,0,0,0.25)',
-                          border: `1px solid rgba(${rgb}, ${isActive ? 0.8 : 0.35})`,
-                          boxShadow: isActive ? `0 0 12px rgba(${rgb}, 0.3)` : undefined,
-                        }}
-                      >
-                        <span className="text-lg text-gold-400"><DiceShape type={reward.dice.type} /></span>
-                        <span className="text-sm font-bold text-parchment-200">{reward.dice.type}</span>
-                        <GenreBadge genre={reward.dice.genre} className="text-[10px] px-1.5 py-0" />
-                      </button>
-                    )
-                  }
-                  return (
-                    <button
-                      key={reward.id}
-                      onClick={() => setActiveRewardId(isActive ? null : reward.id)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 hover:-translate-y-0.5"
-                      style={{
-                        background: isActive ? 'rgba(176, 124, 255, 0.2)' : 'rgba(0,0,0,0.25)',
-                        border: `1px solid rgba(176, 124, 255, ${isActive ? 0.8 : 0.35})`,
-                        boxShadow: isActive ? '0 0 12px rgba(176, 124, 255, 0.3)' : undefined,
-                      }}
-                    >
-                      <span className="text-sm">🎵</span>
-                      <span className="text-sm font-bold text-classical">"{reward.name}"</span>
-                      {reward.effect && (
-                        <span className="text-[10px] text-classical/70 hidden sm:inline">
-                          {describeTrackEffect(reward.effect)}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-              {activeReward && (
-                <div className="mt-2.5 text-xs text-parchment-400">
-                  {activeDie
-                    ? 'Click a song slot below to place this die (replacing an existing die = remix).'
-                    : 'Click a song below to name it and grant its effect.'}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Element chips drawn from the bag */}
           <div className="mb-6">
             <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
@@ -434,6 +366,74 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               ))}
             </div>
           </div>
+
+          {/* Pending rewards tray — queued purchases waiting to be placed */}
+          {pendingRewards.length > 0 && (
+            <div className="rounded-lg p-3 sm:p-4 mb-6 animate-fade-in"
+              style={{
+                background: 'rgba(212, 168, 83, 0.06)',
+                border: '1px solid rgba(212, 168, 83, 0.3)',
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2.5">
+                <span className="text-sm font-bold text-gold-300">Unclaimed Rewards</span>
+                <span className="text-xs text-parchment-500">
+                  ({pendingRewards.length}) — pick one, then click a song below to place it
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {pendingRewards.map((reward) => {
+                  const isActive = reward.id === activeRewardId
+                  if (reward.kind === 'die') {
+                    const { rgb } = GENRE_THEME[reward.dice.genre]
+                    return (
+                      <button
+                        key={reward.id}
+                        onClick={() => setActiveRewardId(isActive ? null : reward.id)}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 hover:-translate-y-0.5"
+                        style={{
+                          background: isActive ? `rgba(${rgb}, 0.2)` : 'rgba(0,0,0,0.25)',
+                          border: `1px solid rgba(${rgb}, ${isActive ? 0.8 : 0.35})`,
+                          boxShadow: isActive ? `0 0 12px rgba(${rgb}, 0.3)` : undefined,
+                        }}
+                      >
+                        <span className="text-lg text-gold-400"><DiceShape type={reward.dice.type} /></span>
+                        <span className="text-sm font-bold text-parchment-200">{reward.dice.type}</span>
+                        <GenreBadge genre={reward.dice.genre} className="text-[10px] px-1.5 py-0" />
+                      </button>
+                    )
+                  }
+                  return (
+                    <button
+                      key={reward.id}
+                      onClick={() => setActiveRewardId(isActive ? null : reward.id)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 hover:-translate-y-0.5"
+                      style={{
+                        background: isActive ? 'rgba(176, 124, 255, 0.2)' : 'rgba(0,0,0,0.25)',
+                        border: `1px solid rgba(176, 124, 255, ${isActive ? 0.8 : 0.35})`,
+                        boxShadow: isActive ? '0 0 12px rgba(176, 124, 255, 0.3)' : undefined,
+                      }}
+                    >
+                      <span className="text-sm">🎵</span>
+                      <span className="text-sm font-bold text-classical">"{reward.name}"</span>
+                      {reward.effect && (
+                        <span className="text-[10px] text-classical/70 hidden sm:inline">
+                          {describeTrackEffect(reward.effect)}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {activeReward && (
+                <div className="mt-2.5 text-xs text-parchment-400">
+                  {activeDie
+                    ? 'Click a song slot below to place this die (replacing an existing die = remix).'
+                    : 'Click a song below to name it and grant its effect.'}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Player's songs */}
           <div>

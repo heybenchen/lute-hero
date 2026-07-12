@@ -31,6 +31,43 @@ export type ShowdownAdvance =
   | { kind: 'bossAdapts'; turnEnded: number }
   | { kind: 'showdownComplete' }
 
+/** Performer accumulators captured before a play, so it can be rerolled. */
+interface ShowdownPlaySnapshot {
+  song: Song
+  performerId: string
+  currentFandom: number
+  fandomTotal: number
+  bestHit: { damage: number; songName: string } | undefined
+  crits: number
+  songsUsed: string[]
+}
+
+/** Roll a song against the adapted boss and derive the performance stats. */
+function rollShowdownPlay(base: ShowdownPlaySnapshot, resistGenre: Genre | null, weakGenre: Genre | null) {
+  const { song } = base
+  // The boss carries its adaptation as ordinary monster weakness/resistance,
+  // so the standard damage pipeline applies the 2x / 0x element multipliers.
+  const boss = createShowdownBoss({ resistGenre, weakGenre })
+  const { rolls } = rollSong(song)
+  const calc = calculateDamage(song, rolls, boss)
+  const fandom = Math.max(0, calc.totalDamage)
+  const genre = getDominantGenre(song, rolls)
+  const critCount = rolls.filter((r) => r.isCrit).length
+
+  const songGenres = song.slots
+    .map((slot) => slot.dice?.genre)
+    .filter((g): g is Genre => g !== undefined)
+  const hitWeakness = weakGenre !== null && songGenres.includes(weakGenre)
+  const wasResisted = resistGenre !== null && songGenres.includes(resistGenre)
+
+  const bestHit =
+    !base.bestHit || fandom > base.bestHit.damage
+      ? { damage: fandom, songName: song.name || 'Untitled' }
+      : base.bestHit
+
+  return { rolls, fandom, genre, critCount, hitWeakness, wasResisted, bestHit }
+}
+
 export interface ShowdownSlice {
   // State
   showdownActive: boolean
@@ -48,10 +85,12 @@ export interface ShowdownSlice {
   showdownFandom: Record<string, number> // total fandom per player
   showdownBestHit: Record<string, { damage: number; songName: string }>
   showdownCrits: Record<string, number>
+  showdownUndo: ShowdownPlaySnapshot | null // pre-play snapshot, enables reroll
 
   // Actions
   startShowdown: (playerIds: string[]) => void
   playShowdownSong: (song: Song) => ShowdownPlayResult | null
+  rerollShowdownSong: () => ShowdownPlayResult | null
   finishShowdownPerformance: () => ShowdownAdvance
   resetShowdown: () => void
 }
@@ -72,6 +111,7 @@ const initialShowdownState = {
   showdownFandom: {} as Record<string, number>,
   showdownBestHit: {} as Record<string, { damage: number; songName: string }>,
   showdownCrits: {} as Record<string, number>,
+  showdownUndo: null as ShowdownPlaySnapshot | null,
 }
 
 export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
@@ -96,46 +136,50 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
     const performerId = state.showdownOrder[state.showdownPerformerIdx]
     if (!performerId) return null
 
-    // The boss carries its adaptation as ordinary monster weakness/resistance,
-    // so the standard damage pipeline applies the 2x / 0x element multipliers.
-    const boss = createShowdownBoss({
-      resistGenre: state.showdownResistGenre,
-      weakGenre: state.showdownWeakGenre,
-    })
-    const { rolls } = rollSong(song)
-    const calc = calculateDamage(song, rolls, boss)
-    const fandom = Math.max(0, calc.totalDamage)
-    const genre = getDominantGenre(song, rolls)
-    const critCount = rolls.filter((r) => r.isCrit).length
+    // Snapshot the performer's accumulators before this play, so it can be rerolled.
+    const base: ShowdownPlaySnapshot = {
+      song,
+      performerId,
+      currentFandom: state.showdownCurrentFandom,
+      fandomTotal: state.showdownFandom[performerId] || 0,
+      bestHit: state.showdownBestHit[performerId],
+      crits: state.showdownCrits[performerId] || 0,
+      songsUsed: state.showdownSongsUsed,
+    }
 
-    const songGenres = song.slots
-      .map((slot) => slot.dice?.genre)
-      .filter((g): g is Genre => g !== undefined)
-    const hitWeakness = state.showdownWeakGenre !== null && songGenres.includes(state.showdownWeakGenre)
-    const wasResisted = state.showdownResistGenre !== null && songGenres.includes(state.showdownResistGenre)
-
-    const prevBest = state.showdownBestHit[performerId]
-    const bestHit =
-      !prevBest || fandom > prevBest.damage
-        ? { damage: fandom, songName: song.name || 'Untitled' }
-        : prevBest
+    const c = rollShowdownPlay(base, state.showdownResistGenre, state.showdownWeakGenre)
 
     set({
-      showdownSongsUsed: [...state.showdownSongsUsed, song.id],
-      showdownCurrentFandom: state.showdownCurrentFandom + fandom,
-      showdownCurrentGenre: genre,
-      showdownFandom: {
-        ...state.showdownFandom,
-        [performerId]: (state.showdownFandom[performerId] || 0) + fandom,
-      },
-      showdownBestHit: { ...state.showdownBestHit, [performerId]: bestHit },
-      showdownCrits: {
-        ...state.showdownCrits,
-        [performerId]: (state.showdownCrits[performerId] || 0) + critCount,
-      },
+      showdownSongsUsed: [...base.songsUsed, song.id],
+      showdownCurrentFandom: base.currentFandom + c.fandom,
+      showdownCurrentGenre: c.genre,
+      showdownFandom: { ...state.showdownFandom, [performerId]: base.fandomTotal + c.fandom },
+      showdownBestHit: { ...state.showdownBestHit, [performerId]: c.bestHit },
+      showdownCrits: { ...state.showdownCrits, [performerId]: base.crits + c.critCount },
+      showdownUndo: base,
     })
 
-    return { rolls, fandom, hadCrit: critCount > 0, genre, hitWeakness, wasResisted }
+    return { rolls: c.rolls, fandom: c.fandom, hadCrit: c.critCount > 0, genre: c.genre, hitWeakness: c.hitWeakness, wasResisted: c.wasResisted }
+  },
+
+  rerollShowdownSong: () => {
+    const state = get()
+    const base = state.showdownUndo
+    if (!base) return null
+
+    // Replay the same song from the pre-play snapshot, replacing the last result.
+    // The snapshot stays put so the performance can be rerolled again.
+    const c = rollShowdownPlay(base, state.showdownResistGenre, state.showdownWeakGenre)
+
+    set({
+      showdownCurrentFandom: base.currentFandom + c.fandom,
+      showdownCurrentGenre: c.genre,
+      showdownFandom: { ...state.showdownFandom, [base.performerId]: base.fandomTotal + c.fandom },
+      showdownBestHit: { ...state.showdownBestHit, [base.performerId]: c.bestHit },
+      showdownCrits: { ...state.showdownCrits, [base.performerId]: base.crits + c.critCount },
+    })
+
+    return { rolls: c.rolls, fandom: c.fandom, hadCrit: c.critCount > 0, genre: c.genre, hitWeakness: c.hitWeakness, wasResisted: c.wasResisted }
   },
 
   finishShowdownPerformance: () => {
@@ -157,6 +201,7 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
         showdownSongsUsed: [],
         showdownCurrentFandom: 0,
         showdownCurrentGenre: null,
+        showdownUndo: null,
       })
       return { kind: 'nextPerformer' }
     }
@@ -176,6 +221,7 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
         showdownCurrentGenre: null,
         showdownResistGenre: adaptation.resistGenre,
         showdownWeakGenre: adaptation.weakGenre,
+        showdownUndo: null,
       })
       return { kind: 'bossAdapts', turnEnded: state.showdownTurn }
     }
@@ -201,6 +247,7 @@ export const createShowdownSlice: StateCreator<ShowdownSlice> = (set, get) => ({
       showdownCurrentFandom: 0,
       showdownCurrentGenre: null,
       showdownComplete: true,
+      showdownUndo: null,
     })
     return { kind: 'showdownComplete' }
   },
