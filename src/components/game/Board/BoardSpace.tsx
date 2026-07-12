@@ -63,8 +63,6 @@ export function BoardSpace({
           ? '3px solid rgba(240, 200, 110, 0.95)'
           : isLinkedToHovered
           ? '1px dashed rgba(212, 168, 83, 0.5)'
-          : hasMonsters
-          ? '1px solid rgba(232, 32, 64, 0.25)'
           : '1px solid rgba(212, 168, 83, 0.1)',
         boxShadow: isCurrentPlayer
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px rgba(100, 220, 100, 0.22), 0 4px 8px rgba(0,0,0,0.3)'
