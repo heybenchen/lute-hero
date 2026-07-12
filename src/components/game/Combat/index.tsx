@@ -3,7 +3,6 @@ import { useGameStore, selectPlayerById, selectPlayersAtSpace } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
-import { DiceDisplay } from '@/components/ui/DiceDisplay'
 import { DamageBreakdown } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateFameEarned, calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
@@ -25,6 +24,7 @@ export function CombatModal() {
   const songsUsed = useGameStore((state) => state.songsUsed)
   const killCredits = useGameStore((state) => state.killCredits)
   const rolls = useGameStore((state) => state.rolls)
+  const currentSongId = useGameStore((state) => state.currentSongId)
   const lastDamageCalculations = useGameStore((state) => state.lastDamageCalculations)
   const lastPlayedSong = useGameStore((state) => state.lastPlayedSong)
   const playSong = useGameStore((state) => state.playSong)
@@ -58,14 +58,6 @@ export function CombatModal() {
   const handlePopupComplete = useCallback((id: string) => {
     setPopups((prev) => prev.filter((p) => p.id !== id))
   }, [])
-
-  // All hooks must be called before any early return (Rules of Hooks)
-  const allAvailableSongs = useMemo(() => {
-    if (!player) return []
-    const songs = [...player.songs]
-    colocatedPlayers.forEach((p) => songs.push(...p.songs))
-    return songs
-  }, [player, colocatedPlayers])
 
   const monstersDefeatedCount = monsters.filter((m: Monster) => m.currentHP <= 0).length
   const totalFameEarned = player && monstersDefeatedCount > 0
@@ -273,6 +265,7 @@ export function CombatModal() {
                   onPlay={() => handlePlaySong(song.id, player.id)}
                   disabled={isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
                   index={idx}
+                  rolls={currentSongId === song.id ? rolls : undefined}
                 />
               ))}
             </div>
@@ -309,6 +302,7 @@ export function CombatModal() {
                         index={idx}
                         isCover
                         ownerName={coverPlayer.name}
+                        rolls={currentSongId === song.id ? rolls : undefined}
                       />
                     ))}
                   </div>
@@ -317,59 +311,25 @@ export function CombatModal() {
             </div>
           )}
 
-          {/* Last Roll + Damage — side by side when both present */}
-          {(rolls.length > 0 || lastDamageCalculations.length > 0) && (
-            <div className={`mb-6 sm:mb-8 ${rolls.length > 0 && lastDamageCalculations.length > 0 ? 'grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-4 lg:gap-5' : ''}`}>
-              {/* Last roll result */}
-              {rolls.length > 0 && (
-                <div
-                  className="rounded-xl p-4 sm:p-5 animate-fade-in self-start max-w-full overflow-x-auto"
-                  style={{
-                    background: 'rgba(42, 33, 24, 0.5)',
-                    border: '1px solid rgba(212, 168, 83, 0.12)',
-                  }}
-                >
-                  <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-3">
-                    Last Roll
-                  </div>
-                  <div className="flex gap-3 items-center flex-wrap">
-                    {rolls.map((roll, idx) => {
-                      const dice = allAvailableSongs
-                        .flatMap((s) => s.slots)
-                        .find((slot) => slot.dice?.id === roll.diceId)?.dice
-
-                      if (!dice) return null
-
-                      return (
-                        <DiceDisplay
-                          key={idx}
-                          dice={dice}
-                          value={roll.value}
-                          isCrit={roll.isCrit}
-                          cascadeRolls={roll.cascadeRolls}
-                          compact
-                          animateRoll
-                        />
-                      )
-                    })}
-                  </div>
-
-                  {/* Reroll the last song with Inspiration */}
-                  {lastPlayedSong && !allMonstersDefeated && (
-                    <button
-                      onClick={handleReroll}
-                      disabled={player.inspiration <= 0}
-                      className="mt-3 text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
-                      style={{
-                        background: 'rgba(176, 124, 255, 0.12)',
-                        border: '1px solid rgba(176, 124, 255, 0.4)',
-                        color: '#d9c2ff',
-                      }}
-                      title={player.inspiration > 0 ? 'Reroll this song for 1 Inspiration' : 'Requires Inspiration'}
-                    >
-                      &#x2728; Reroll &mdash; {player.inspiration} Inspiration
-                    </button>
-                  )}
+          {/* Reroll + Damage — the roll itself now animates inside the song card */}
+          {(lastPlayedSong || lastDamageCalculations.length > 0) && (
+            <div className="mb-6 sm:mb-8 space-y-4">
+              {/* Reroll the last song with Inspiration */}
+              {lastPlayedSong && !allMonstersDefeated && (
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleReroll}
+                    disabled={player.inspiration <= 0}
+                    className="text-sm font-medieval font-bold rounded-lg px-4 py-2 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
+                    style={{
+                      background: 'rgba(176, 124, 255, 0.12)',
+                      border: '1px solid rgba(176, 124, 255, 0.4)',
+                      color: '#d9c2ff',
+                    }}
+                    title={player.inspiration > 0 ? 'Reroll the last song for 1 Inspiration' : 'Requires Inspiration'}
+                  >
+                    &#x2728; Reroll &mdash; {player.inspiration} Inspiration
+                  </button>
                 </div>
               )}
 

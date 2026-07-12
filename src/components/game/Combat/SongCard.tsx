@@ -1,6 +1,8 @@
-import { Song } from '@/types'
+import { Song, SongSlot, DiceRoll } from '@/types'
 import { DiceShape } from '@/components/ui/DiceShape'
+import { useRollAnimation } from '@/components/ui/useRollAnimation'
 import { describeTrackEffect } from '@/data/trackEffects'
+import { getMaxValue } from '@/game-logic/dice/roller'
 import { GENRE_THEME } from '@/data/genreTheme'
 
 interface SongCardProps {
@@ -10,9 +12,57 @@ interface SongCardProps {
   index?: number
   isCover?: boolean
   ownerName?: string
+  /** Dice results from this song's most recent performance, shown in-card */
+  rolls?: DiceRoll[]
 }
 
-export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName }: SongCardProps) {
+/**
+ * A single dice slot. When a roll is present it tumbles, then settles on the
+ * rolled value (with a crit glow); otherwise it shows the die's genre label.
+ */
+function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
+  const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
+  const maxValue = slot.dice ? getMaxValue(slot.dice.type) : 0
+  const { displayValue, rolling } = useRollAnimation(roll?.value, maxValue, true)
+  const isCrit = roll?.isCrit ?? false
+  const cascadeSum = roll?.cascadeRolls?.reduce((s, v) => s + v, 0) ?? 0
+
+  return (
+    <div
+      className="w-[60px] h-[60px] aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs"
+      style={{
+        background: genreColor ? `${genreColor}1f` : 'rgba(255, 255, 255, 0.02)',
+        border: genreColor ? `1px solid ${genreColor}80` : '1px dashed rgba(212, 168, 83, 0.12)',
+        boxShadow: isCrit && !rolling ? `0 0 10px ${genreColor}80` : undefined,
+      }}
+    >
+      {slot.dice ? (
+        <div className={`text-center ${rolling ? 'animate-dice-roll' : ''}`}>
+          <div className="text-xl leading-none mb-0.5" style={{ color: genreColor }}>
+            <DiceShape type={slot.dice.type} />
+          </div>
+          {displayValue !== undefined ? (
+            <div
+              className="font-bold text-base leading-none tabular-nums"
+              style={{ color: rolling ? `${genreColor}cc` : isCrit ? '#f0d78c' : '#e8dcc0' }}
+            >
+              {displayValue}
+              {!rolling && cascadeSum > 0 && (
+                <span className="text-[8px] align-top text-gold-400">+{cascadeSum}</span>
+              )}
+            </div>
+          ) : (
+            <div className="font-bold text-[9px]" style={{ color: genreColor }}>{slot.dice.genre}</div>
+          )}
+        </div>
+      ) : (
+        <div className="text-parchment-500/40 text-[10px]">-</div>
+      )}
+    </div>
+  )
+}
+
+export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName, rolls }: SongCardProps) {
   const hasDice = song.slots.some((s) => s.dice)
 
   return (
@@ -85,28 +135,13 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
             )}
 
             <div className="flex gap-2 justify-center">
-              {song.slots.map((slot, idx) => {
-                const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
-                return (
-                  <div
-                    key={idx}
-                    className="w-[60px] h-[60px] aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs"
-                    style={{
-                      background: genreColor ? `${genreColor}1f` : 'rgba(255, 255, 255, 0.02)',
-                      border: genreColor ? `1px solid ${genreColor}80` : '1px dashed rgba(212, 168, 83, 0.12)',
-                    }}
-                  >
-                    {slot.dice ? (
-                      <div className="text-center">
-                        <div className="text-2xl mb-0.5" style={{ color: genreColor }}><DiceShape type={slot.dice.type} /></div>
-                        <div className="font-bold text-[9px]" style={{ color: genreColor }}>{slot.dice.genre}</div>
-                      </div>
-                    ) : (
-                      <div className="text-parchment-500/40 text-[10px]">-</div>
-                    )}
-                  </div>
-                )
-              })}
+              {song.slots.map((slot, idx) => (
+                <SlotDie
+                  key={idx}
+                  slot={slot}
+                  roll={slot.dice ? rolls?.find((r) => r.diceId === slot.dice!.id) : undefined}
+                />
+              ))}
             </div>
           </div>
 
