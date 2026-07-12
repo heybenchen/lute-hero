@@ -1,5 +1,6 @@
-// Hand-drawn map illustration for each board space, keyed by space name.
-// Rendered as the tile background in the board grid.
+// Hand-drawn map illustration for each board space, keyed by the space's
+// row-major grid id (0–15). Keying by id — not name — keeps the art stable
+// across space renames and persisted saves.
 import forgottenStage from '@/assets/board/forgotten-stage.png'
 import echoChamber from '@/assets/board/echo-chamber.png'
 import melodyJunction from '@/assets/board/melody-junction.png'
@@ -17,21 +18,21 @@ import crescendoHeights from '@/assets/board/crescendo-heights.png'
 import fadingRefrain from '@/assets/board/fading-refrain.png'
 import rhythmsEnd from '@/assets/board/rhythms-end.png'
 
-export const SPACE_ILLUSTRATIONS: Record<string, string> = {
-  'The Forgotten Stage': forgottenStage,
-  'The Echo Chamber': echoChamber,
-  'Melody Junction': melodyJunction,
-  'The Last Venue': lastVenue,
-  'Harmony Crossroads': harmonyCrossroads,
-  'The Soundwave Nexus': soundwaveNexus,
-  'Resonance Plaza': resonancePlaza,
-  'Silent Amphitheater': silentAmphitheater,
-  'Symphony Ruins': symphonyRuins,
-  'Dissonance Square': dissonanceSquare,
-  'The Muted Hall': mutedHall,
-  'The Broken Chord': brokenChord,
-  'The Quiet Quarter': quietQuarter,
-  'Crescendo Heights': crescendoHeights,
-  'The Fading Refrain': fadingRefrain,
-  "Rhythm's End": rhythmsEnd,
+export const SPACE_ILLUSTRATIONS: Record<number, string> = {
+  0: forgottenStage,
+  1: echoChamber,
+  2: melodyJunction,
+  3: lastVenue,
+  4: harmonyCrossroads,
+  5: soundwaveNexus,
+  6: resonancePlaza,
+  7: silentAmphitheater,
+  8: symphonyRuins,
+  9: dissonanceSquare,
+  10: mutedHall,
+  11: brokenChord,
+  12: quietQuarter,
+  13: crescendoHeights,
+  14: fadingRefrain,
+  15: rhythmsEnd,
 }

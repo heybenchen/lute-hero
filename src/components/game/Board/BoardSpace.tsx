@@ -31,7 +31,7 @@ export function BoardSpace({
     return acc
   }, {})
   const genreEntries = Object.entries(genreTagCounts) as [Genre, number][]
-  const illustration = SPACE_ILLUSTRATIONS[space.name]
+  const illustration = SPACE_ILLUSTRATIONS[space.id]
 
   return (
     <button
@@ -98,54 +98,54 @@ export function BoardSpace({
         {space.name}
       </div>
 
-      {playersHere.length > 0 && (
-        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex -space-x-1.5 z-20 pointer-events-none">
-          {playersHere.map((player) => (
-            <div
-              key={player.id}
-              className={`player-avatar w-5 h-5 sm:w-6 sm:h-6 text-[9px] sm:text-[10px] ${isCurrentPlayer ? 'animate-token-bob' : ''}`}
-              style={{
-                backgroundColor: player.color,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              }}
-              title={player.name}
-            >
-              {player.name.charAt(0)}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Content area */}
-      <div className="relative z-10 flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 lg:gap-1.5 overflow-hidden">
-        {/* Genre tags — compact color-coded beads with counts */}
-        {genreEntries.length > 0 && (
-          <div className="flex flex-wrap gap-x-1 gap-y-0.5 lg:gap-x-1.5 lg:gap-y-1 justify-center max-w-full mt-0.5">
-            {genreEntries.map(([genre, count]) => {
-              const { color } = GENRE_THEME[genre]
-              return (
-                <div
-                  key={genre}
-                  className="flex items-center justify-center rounded-md px-1.5 py-0.5 lg:px-2 lg:py-1 leading-none"
-                  style={{
-                    background: color,
-                    border: '1px solid rgba(0, 0, 0, 0.35)',
-                    boxShadow: `0 0 6px ${color}80, 0 1px 2px rgba(0,0,0,0.4)`,
-                  }}
-                  title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
-                >
-                  <span
-                    className="text-[9px] lg:text-xs font-bold tabular-nums"
-                    style={{ color: readableTextColor(color) }}
-                  >
-                    {count}
-                  </span>
-                </div>
-              )
-            })}
+      {/* Player tokens — centered on the tile */}
+      <div className="relative z-20 flex-1 min-h-0 flex items-center justify-center pointer-events-none">
+        {playersHere.length > 0 && (
+          <div className="flex -space-x-1.5">
+            {playersHere.map((player) => (
+              <div
+                key={player.id}
+                className={`player-avatar w-5 h-5 sm:w-6 sm:h-6 text-[9px] sm:text-[10px] ${isCurrentPlayer ? 'animate-token-bob' : ''}`}
+                style={{
+                  backgroundColor: player.color,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                }}
+                title={player.name}
+              >
+                {player.name.charAt(0)}
+              </div>
+            ))}
           </div>
         )}
       </div>
+
+      {/* Genre tags — pinned to the bottom of the tile */}
+      {genreEntries.length > 0 && (
+        <div className="relative z-10 flex flex-wrap gap-x-1 gap-y-0.5 lg:gap-x-1.5 lg:gap-y-1 justify-center max-w-full">
+          {genreEntries.map(([genre, count]) => {
+            const { color } = GENRE_THEME[genre]
+            return (
+              <div
+                key={genre}
+                className="flex items-center justify-center rounded-md px-1.5 py-0.5 lg:px-2 lg:py-1 leading-none"
+                style={{
+                  background: color,
+                  border: '1px solid rgba(0, 0, 0, 0.35)',
+                  boxShadow: `0 0 6px ${color}80, 0 1px 2px rgba(0,0,0,0.4)`,
+                }}
+                title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
+              >
+                <span
+                  className="text-[9px] lg:text-xs font-bold tabular-nums"
+                  style={{ color: readableTextColor(color) }}
+                >
+                  {count}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Move indicator glow */}
       {(canMoveTo || isTravelTarget) && (
