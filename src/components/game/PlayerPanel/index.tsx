@@ -83,7 +83,6 @@ export function PlayerPanel() {
               </div>
               <div className="text-[10px] text-parchment-300 flex flex-nowrap whitespace-nowrap overflow-hidden gap-1.5 px-2 py-1" style={{ background: 'rgba(20, 16, 10, 0.85)' }}>
                 <span title="Fame" className="flex-1 text-center">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
-                <span title="EXP" className="flex-1 text-center">&#x1F4D6;<span className="text-parchment-100 font-bold ml-0.5">{player.exp}</span></span>
               </div>
             </div>
           )
