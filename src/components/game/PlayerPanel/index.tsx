@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer } from '@/store'
 import { DraftShop } from '../DraftShop'
-import { DiceShape } from '@/components/ui/DiceShape'
-import { describeTrackEffect } from '@/data/trackEffects'
+import { SongCard } from '../SongCard'
 import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
 
 export function PlayerPanel() {
@@ -116,57 +115,9 @@ export function PlayerPanel() {
 
         {/* Songs — right above the Moves/Fights trackers */}
         <div className="mb-3">
-          <div className="flex flex-wrap justify-between gap-2 lg:flex-col lg:flex-nowrap lg:justify-start">
+          <div className="flex flex-col gap-2">
             {currentPlayer.songs.map((song) => (
-              <div
-                key={song.id}
-                className="rounded-md p-1 flex-1 min-w-0 lg:w-full lg:flex-none"
-                style={{
-                  background: 'rgba(61, 48, 32, 0.5)',
-                  border: '1px solid rgba(212, 168, 83, 0.12)',
-                }}
-              >
-                <div className="text-[9px] font-bold text-parchment-300 mb-0.5 truncate">
-                  {song.name || <span className="italic text-parchment-500">Untitled</span>}
-                </div>
-                <div className="flex gap-1">
-                  {song.slots.map((slot, idx) => (
-                    <div
-                      key={idx}
-                      className="w-7 h-7 rounded flex flex-col items-center justify-center leading-none"
-                      style={{
-                        background: slot.dice
-                          ? 'rgba(212, 168, 83, 0.15)'
-                          : 'rgba(255, 255, 255, 0.03)',
-                        border: slot.dice
-                          ? '1px solid rgba(212, 168, 83, 0.25)'
-                          : '1px dashed rgba(212, 168, 83, 0.1)',
-                      }}
-                    >
-                      {slot.dice ? (
-                        <>
-                          <div className="text-gold-400 text-sm leading-none">
-                            <DiceShape type={slot.dice.type} />
-                          </div>
-                          <div className="font-bold text-[6px] text-parchment-300">
-                            {slot.dice.genre}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-parchment-500/30 text-[8px]">-</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {/* Effect description — compact single line */}
-                <div className="hidden lg:block mt-0.5 text-[9px] leading-tight text-classical truncate">
-                  {song.effect ? (
-                    <>&#x2728; {describeTrackEffect(song.effect)}</>
-                  ) : (
-                    <span className="italic text-parchment-600">No effect</span>
-                  )}
-                </div>
-              </div>
+              <SongCard key={song.id} song={song} />
             ))}
           </div>
         </div>
