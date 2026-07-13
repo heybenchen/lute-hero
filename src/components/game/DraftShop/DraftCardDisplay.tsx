@@ -32,7 +32,7 @@ export function DraftCardDisplay({
         }
       }}
       title={readOnly ? 'Watching the active player' : canAfford ? 'Select, then Buy above' : 'Not enough EXP'}
-      className={`card relative transition-all duration-200 ${
+      className={`card relative w-full max-w-[280px] mx-auto transition-all duration-200 ${
         readOnly
           ? 'cursor-default'
           : !selectable
