@@ -490,7 +490,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           key={idx}
                           onClick={() => handleSlotDice(song.id, idx, !!slot.dice)}
                           disabled={!canInteract || !activeDie}
-                          className="w-20 h-20 aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
+                          className="flex-1 h-20 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
                           style={{
                             background: slot.dice
                               ? activeDie
