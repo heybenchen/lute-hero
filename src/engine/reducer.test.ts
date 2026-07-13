@@ -156,6 +156,7 @@ describe('combat flow', () => {
     const endResult = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' })
     state = endResult.state
     expect(state.combat.isActive).toBe(false)
+    expect(state.studio.playerId).toBe('player-1')
     expect(state.players[0].fame).toBe(fameBefore + rewards.fighterFame)
     expect(state.players[0].monstersDefeated).toBe(rewards.monstersDefeatedCount)
     // Victory clears the space and radiates Folk to neighbors
@@ -176,7 +177,9 @@ describe('combat flow', () => {
       combat: { ...state.combat, monsters: state.combat.monsters.map((m) => ({ ...m, currentHP: 0 })) },
     }
     expect(applyAction(state, { type: 'END_COMBAT' }, ctx()).ok).toBe(false)
-    expect(applyAction(state, { type: 'END_COMBAT', spreadGenre: 'Hymn' }, ctx()).ok).toBe(true)
+    state = apply(state, { type: 'SELECT_COMBAT_SPREAD', genre: 'Hymn' }).state
+    expect(state.combat.selectedSpreadGenre).toBe('Hymn')
+    expect(applyAction(state, { type: 'END_COMBAT' }, ctx()).ok).toBe(true)
   })
 
   it('retreat adjusts tags for defeated and surviving monsters', () => {
@@ -258,8 +261,31 @@ describe('END_TURN', () => {
 })
 
 describe('shop actions', () => {
+  function openStudio(state: EngineState): EngineState {
+    return apply(state, { type: 'OPEN_STUDIO', playerId: 'player-1' }).state
+  }
+
+  it('synchronizes the open Studio and the active player\'s selections', () => {
+    let state = openStudio(startTwoPlayerGame())
+    expect(state.studio.playerId).toBe('player-1')
+
+    state = apply(state, { type: 'SELECT_STUDIO_OFFER', offerIndex: 0 }).state
+    state = apply(state, { type: 'SELECT_STUDIO_NAME', cardId: state.namePool[0].id }).state
+    expect(state.studio.selectedOfferIdx).toBe(0)
+    expect(state.studio.selectedNameId).toBe(state.namePool[0].id)
+
+    expect(applyAction(
+      state,
+      { type: 'SELECT_STUDIO_OFFER', offerIndex: 1 },
+      seatCtx('player-2')
+    ).ok).toBe(false)
+
+    state = apply(state, { type: 'CLOSE_STUDIO' }).state
+    expect(state.studio.playerId).toBeNull()
+  })
+
   it('BUY_DIE deducts EXP, consumes the chip, and queues a die reward', () => {
-    let state = startTwoPlayerGame()
+    let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
     const genre = state.elementOffers[0]
     state = apply(state, { type: 'BUY_DIE', offerIndex: 0 }).state
@@ -269,6 +295,7 @@ describe('shop actions', () => {
     const rewards = state.pendingRewards['player-1']
     expect(rewards).toHaveLength(1)
     expect(rewards[0].kind).toBe('die')
+    expect(state.studio.activeRewardId).toBe(rewards[0].id)
     if (rewards[0].kind === 'die') {
       expect(rewards[0].dice.genre).toBe(genre)
       expect(rewards[0].dice.type).toBe('d4')
@@ -276,7 +303,7 @@ describe('shop actions', () => {
   })
 
   it('SLOT_DIE_REWARD places the die and removes the reward', () => {
-    let state = startTwoPlayerGame()
+    let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
     state = apply(state, { type: 'BUY_DIE', offerIndex: 0 }).state
     const reward = state.pendingRewards['player-1'][0]
@@ -288,7 +315,7 @@ describe('shop actions', () => {
   })
 
   it('BUY_NAME + SLOT_NAME_REWARD name a song and grant its effect', () => {
-    let state = startTwoPlayerGame()
+    let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
     const card = state.namePool[0]
     state = apply(state, { type: 'BUY_NAME', cardId: card.id }).state
@@ -303,7 +330,7 @@ describe('shop actions', () => {
   })
 
   it('BUY_INSPIRATION escalates within a turn and END_TURN resets it', () => {
-    let state = startTwoPlayerGame()
+    let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 100 } : p)) }
     state = apply(state, { type: 'BUY_INSPIRATION' }).state // 5
     state = apply(state, { type: 'BUY_INSPIRATION' }).state // 10
@@ -314,7 +341,7 @@ describe('shop actions', () => {
   })
 
   it('UPGRADE_DIE requires a matching element chip', () => {
-    let state = startTwoPlayerGame()
+    let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 50 } : p)) }
     const p1 = state.players[0]
     const die = p1.songs[0].slots[0].dice! // Ballad d4

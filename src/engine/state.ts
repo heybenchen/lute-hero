@@ -37,6 +37,20 @@ export interface EngineCombatState {
   } | null
   lastPlayedSongId: string | null
   lastPlayedOwnerId: string | null
+  /** Shared victory choice so spectators see the element being considered. */
+  selectedSpreadGenre: Genre | null
+}
+
+/**
+ * Live Studio interaction state. Keeping this in the engine makes the shop a
+ * shared tabletop surface: every client sees it open, follows selections, and
+ * watches rewards get placed while only the active player can interact.
+ */
+export interface EngineStudioState {
+  playerId: string | null
+  selectedOfferIdx: number | null
+  selectedNameId: string | null
+  activeRewardId: string | null
 }
 
 /**
@@ -63,6 +77,7 @@ export interface EngineState {
   elementDiscard: Genre[]
   elementOffers: Genre[]
   pendingRewards: Record<string, PendingReward[]>
+  studio: EngineStudioState
 
   // Combat (synced, unlike the old client-only slice)
   combat: EngineCombatState
@@ -116,6 +131,25 @@ export function createInitialCombatState(): EngineCombatState {
     undoSnapshot: null,
     lastPlayedSongId: null,
     lastPlayedOwnerId: null,
+    selectedSpreadGenre: null,
+  }
+}
+
+export function createInitialStudioState(): EngineStudioState {
+  return {
+    playerId: null,
+    selectedOfferIdx: null,
+    selectedNameId: null,
+    activeRewardId: null,
+  }
+}
+
+/** Add newly introduced synchronized fields when loading older saved games. */
+export function normalizeEngineState(state: EngineState): EngineState {
+  return {
+    ...state,
+    combat: { ...createInitialCombatState(), ...state.combat },
+    studio: { ...createInitialStudioState(), ...state.studio },
   }
 }
 
@@ -135,6 +169,7 @@ export function createInitialEngineState(): EngineState {
     elementDiscard: [],
     elementOffers: [],
     pendingRewards: {},
+    studio: createInitialStudioState(),
 
     combat: createInitialCombatState(),
 

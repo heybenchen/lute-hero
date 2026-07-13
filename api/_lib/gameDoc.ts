@@ -7,6 +7,7 @@ import {
 import { GameAction, ActorSeat } from '../../src/engine/actions.js'
 import { applyAction } from '../../src/engine/reducer.js'
 import { mulberry32, randomSeed } from '../../src/engine/rng.js'
+import { normalizeEngineState } from '../../src/engine/state.js'
 import {
   RedisLike,
   gameKey,
@@ -21,7 +22,8 @@ export async function loadGameDoc(redis: RedisLike, gameId: string): Promise<Gam
   const raw = await redis.get(gameKey(gameId))
   if (!raw) return null
   try {
-    return JSON.parse(raw) as GameDoc
+    const doc = JSON.parse(raw) as GameDoc
+    return { ...doc, engineState: normalizeEngineState(doc.engineState) }
   } catch {
     return null
   }

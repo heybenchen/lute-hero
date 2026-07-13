@@ -8,7 +8,7 @@ import {
   Rng,
   NewId,
 } from '../types/index.js'
-import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState } from './state.js'
+import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState } from './state.js'
 import { GameAction, ActorSeat, PlayerConfig } from './actions.js'
 import { EngineEvent } from './events.js'
 import { validateAction } from './validate.js'
@@ -121,7 +121,7 @@ function reduce(
         spaceId: space.id,
         monsters: space.monsters,
       }
-      return { ...state, players, combat }
+      return { ...state, players, combat, studio: createInitialStudioState() }
     }
 
     case 'PLAY_SONG': {
@@ -152,11 +152,45 @@ function reduce(
       return { ...state, players, combat }
     }
 
+    case 'SELECT_COMBAT_SPREAD':
+      return { ...state, combat: { ...state.combat, selectedSpreadGenre: action.genre } }
+
     case 'END_COMBAT':
-      return endCombat(state, action.spreadGenre ?? null, events)
+      return endCombat(
+        state,
+        action.spreadGenre ?? state.combat.selectedSpreadGenre,
+        events
+      )
 
     case 'END_TURN':
       return endTurn(state, rng, newId)
+
+    case 'OPEN_STUDIO':
+      return {
+        ...state,
+        studio: { ...createInitialStudioState(), playerId: action.playerId },
+      }
+
+    case 'CLOSE_STUDIO':
+      return { ...state, studio: createInitialStudioState() }
+
+    case 'SELECT_STUDIO_OFFER':
+      return {
+        ...state,
+        studio: { ...state.studio, selectedOfferIdx: action.offerIndex },
+      }
+
+    case 'SELECT_STUDIO_NAME':
+      return {
+        ...state,
+        studio: { ...state.studio, selectedNameId: action.cardId },
+      }
+
+    case 'SELECT_STUDIO_REWARD':
+      return {
+        ...state,
+        studio: { ...state.studio, activeRewardId: action.rewardId },
+      }
 
     case 'BUY_DIE': {
       const player = state.players[state.currentTurnPlayerIndex]
@@ -170,6 +204,11 @@ function reduce(
         pendingRewards: {
           ...state.pendingRewards,
           [player.id]: [...(state.pendingRewards[player.id] ?? []), reward],
+        },
+        studio: {
+          ...state.studio,
+          selectedOfferIdx: null,
+          activeRewardId: reward.id,
         },
       }
     }
@@ -202,6 +241,7 @@ function reduce(
         players,
         elementOffers: state.elementOffers.filter((_, i) => i !== action.offerIndex),
         elementDiscard: [...state.elementDiscard, genre],
+        studio: { ...state.studio, selectedOfferIdx: null },
       }
     }
 
@@ -225,6 +265,11 @@ function reduce(
           ...state.pendingRewards,
           [player.id]: [...(state.pendingRewards[player.id] ?? []), reward],
         },
+        studio: {
+          ...state.studio,
+          selectedNameId: null,
+          activeRewardId: reward.id,
+        },
       }
     }
 
@@ -238,6 +283,7 @@ function reduce(
         elementBag: bag,
         elementDiscard: remaining,
         elementOffers: drawn,
+        studio: { ...state.studio, selectedOfferIdx: null },
       }
     }
 
@@ -247,6 +293,7 @@ function reduce(
         ...state,
         players: adjustInspiration(state.players, player.id, -INSPIRATION_SPEND),
         namePool: freshNamePool(rng, newId, usedSongNames(state.players)),
+        studio: { ...state.studio, selectedNameId: null },
       }
     }
 
@@ -263,7 +310,12 @@ function reduce(
           ),
         }
       })
-      return { ...state, players, pendingRewards: removeReward(state.pendingRewards, player.id, reward.id) }
+      return {
+        ...state,
+        players,
+        pendingRewards: removeReward(state.pendingRewards, player.id, reward.id),
+        studio: { ...state.studio, activeRewardId: null },
+      }
     }
 
     case 'SLOT_DIE_REWARD': {
@@ -282,7 +334,12 @@ function reduce(
           }),
         }
       })
-      return { ...state, players, pendingRewards: removeReward(state.pendingRewards, player.id, reward.id) }
+      return {
+        ...state,
+        players,
+        pendingRewards: removeReward(state.pendingRewards, player.id, reward.id),
+        studio: { ...state.studio, activeRewardId: null },
+      }
     }
 
     case 'BUY_INSPIRATION': {
@@ -399,6 +456,7 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
     elementOffers: drawn,
     pendingRewards: {},
     combat: createInitialCombatState(),
+    studio: createInitialStudioState(),
   }
 }
 
@@ -567,7 +625,14 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
     monstersDefeated: rewards.monstersDefeatedCount,
   })
 
-  return { ...state, players, spaces, pendingPhase, combat: createInitialCombatState() }
+  return {
+    ...state,
+    players,
+    spaces,
+    pendingPhase,
+    combat: createInitialCombatState(),
+    studio: { ...createInitialStudioState(), playerId: fighterId },
+  }
 }
 
 // ============================================================
@@ -663,6 +728,7 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
     elementDiscard,
     elementOffers,
     namePool,
+    studio: createInitialStudioState(),
     ...showdownFields,
   }
 }

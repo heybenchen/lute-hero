@@ -18,8 +18,14 @@ export type GameAction =
   | { type: 'START_COMBAT'; playerId: string }
   | { type: 'PLAY_SONG'; songId: string; ownerId: string }
   | { type: 'REROLL_SONG' }
+  | { type: 'SELECT_COMBAT_SPREAD'; genre: Genre | null }
   | { type: 'END_COMBAT'; spreadGenre?: Genre }
   | { type: 'END_TURN' }
+  | { type: 'OPEN_STUDIO'; playerId: string }
+  | { type: 'CLOSE_STUDIO' }
+  | { type: 'SELECT_STUDIO_OFFER'; offerIndex: number | null }
+  | { type: 'SELECT_STUDIO_NAME'; cardId: string | null }
+  | { type: 'SELECT_STUDIO_REWARD'; rewardId: string | null }
   | { type: 'BUY_DIE'; offerIndex: number }
   | { type: 'UPGRADE_DIE'; offerIndex: number; diceId: string }
   | { type: 'BUY_NAME'; cardId: string }

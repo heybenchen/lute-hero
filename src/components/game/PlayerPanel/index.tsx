@@ -1,11 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
 import { useGameStore, selectCurrentPlayer, selectCanAct, selectIsHost } from '@/store'
-import { DraftShop } from '../DraftShop'
 import { SongCard } from '../SongCard'
 import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
 
 export function PlayerPanel() {
-  const [showDraftShop, setShowDraftShop] = useState(false)
   const players = useGameStore((state) => state.players)
   const spaces = useGameStore((state) => state.spaces)
   const currentPlayer = useGameStore(selectCurrentPlayer)
@@ -14,16 +11,6 @@ export function PlayerPanel() {
   const isHost = useGameStore(selectIsHost)
   const mode = useGameStore((state) => state.mode)
   const lobby = useGameStore((state) => state.lobby)
-
-  // When a fight ends, drop the acting player straight into the Studio
-  const combatActive = useGameStore((state) => state.isActive)
-  const prevCombatActive = useRef(combatActive)
-  useEffect(() => {
-    if (prevCombatActive.current && !combatActive && canAct) {
-      setShowDraftShop(true)
-    }
-    prevCombatActive.current = combatActive
-  }, [combatActive, canAct])
 
   if (!currentPlayer) return null
 
@@ -167,7 +154,7 @@ export function PlayerPanel() {
         {canAct && (
           <>
             <button
-              onClick={() => setShowDraftShop(true)}
+              onClick={() => dispatch({ type: 'OPEN_STUDIO', playerId: currentPlayer.id })}
               className="btn-secondary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5"
             >
               Studio ({currentPlayer.exp} EXP)
@@ -184,13 +171,6 @@ export function PlayerPanel() {
         )}
       </div>
 
-      {/* Studio modal */}
-      {showDraftShop && (
-        <DraftShop
-          playerId={currentPlayer.id}
-          onClose={() => setShowDraftShop(false)}
-        />
-      )}
     </div>
   )
 }
