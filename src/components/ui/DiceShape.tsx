@@ -1,51 +1,16 @@
 import { DiceType } from '@/types'
+import d4Icon from '@/assets/dice/d4.svg'
+import d6Icon from '@/assets/dice/d6.svg'
+import d12Icon from '@/assets/dice/d12.svg'
+import d20Icon from '@/assets/dice/d20.svg'
 
-/**
- * Visual side-count used for each die's icon. Not the die's actual face
- * count (a d20 icosahedron isn't a hexagon) — this is a simplified 2D
- * glyph, matched to explicit design direction (d12 -> octagon, d20 -> hexagon).
- */
-const ICON_SIDES: Record<DiceType, number> = {
-  d4: 3,
-  d6: 4,
-  d12: 8,
-  d20: 6,
+/** Illustrated icon per die type (white-faced, black-outlined SVGs). */
+const DICE_ICONS: Record<DiceType, string> = {
+  d4: d4Icon,
+  d6: d6Icon,
+  d12: d12Icon,
+  d20: d20Icon,
 }
-
-function polygonClipPath(sides: number): string {
-  const points: string[] = []
-  const startAngle = -Math.PI / 2 // first point at the top
-  for (let i = 0; i < sides; i++) {
-    const angle = startAngle + (i * 2 * Math.PI) / sides
-    const x = 50 + 50 * Math.cos(angle)
-    const y = 50 + 50 * Math.sin(angle)
-    points.push(`${x.toFixed(2)}% ${y.toFixed(2)}%`)
-  }
-  return `polygon(${points.join(', ')})`
-}
-
-const CLIP_PATHS: Record<DiceType, string> = {
-  d4: polygonClipPath(ICON_SIDES.d4),
-  // Axis-aligned square (not a diamond) for d6
-  d6: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
-  d12: polygonClipPath(ICON_SIDES.d12),
-  d20: polygonClipPath(ICON_SIDES.d20),
-}
-
-/**
- * Per-shape size multiplier so every die reads as the same visual size as the
- * d4 triangle. The triangle only fills ~75% of its box height, while the
- * square / octagon / hexagon fill their full box — so those are scaled down to
- * match the triangle's footprint.
- */
-const SHAPE_SCALE: Record<DiceType, number> = {
-  d4: 1,
-  d6: 0.75,
-  d12: 0.75,
-  d20: 0.75,
-}
-
-const BASE_EM = 0.85
 
 interface DiceShapeProps {
   type: DiceType
@@ -53,23 +18,17 @@ interface DiceShapeProps {
 }
 
 /**
- * Renders each die as a flat-colored polygon (CSS clip-path) sized to the
- * current font-size, so it drops into text the same way an icon glyph would.
- * Used instead of Unicode geometric-shape characters for d12/d20 so the
- * exact side count (octagon / hexagon) is guaranteed rather than relying on
- * font glyph coverage.
+ * Renders each die as its illustrated icon, scaled to the current font-size so
+ * it drops into text like a glyph. Width follows each icon's aspect ratio.
  */
 export function DiceShape({ type, className = '' }: DiceShapeProps) {
-  const size = `${(BASE_EM * SHAPE_SCALE[type]).toFixed(3)}em`
   return (
-    <span
+    <img
+      src={DICE_ICONS[type]}
+      alt={type}
+      draggable={false}
       className={`inline-block align-middle ${className}`}
-      style={{
-        width: size,
-        height: size,
-        background: 'currentColor',
-        clipPath: CLIP_PATHS[type],
-      }}
+      style={{ height: '1em', width: 'auto' }}
     />
   )
 }
