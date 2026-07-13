@@ -74,7 +74,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
 
   return (
     <div
-      className="animate-slide-up"
+      className="animate-slide-up snap-center shrink-0"
       style={{ animationDelay: `${index * 100 + 150}ms`, animationFillMode: 'both' }}
     >
       <div
@@ -134,7 +134,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
                 <span className="text-classical break-words">{describeTrackEffect(song.effect)}</span>
               </div>
             ) : (
-              <div className="w-full p-1.5 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
+              <div className="w-full px-1.5 py-0 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
                 style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
               >
                 No effects

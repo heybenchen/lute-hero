@@ -3,6 +3,7 @@ import { useGameStore, selectCurrentPlayer, selectCanAct } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
 import realmMap from '@/imports/Map_Background_2.png'
+import realmMapMobile from '@/imports/Map_Background_2-mobile.jpg'
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)
@@ -55,14 +56,17 @@ export function Board() {
         `,
       }}
     >
-      {/* Parchment realm map background */}
-      <img
-        src={realmMap}
-        alt=""
-        aria-hidden="true"
-        draggable={false}
-        className="absolute inset-0 h-full w-full object-cover pointer-events-none"
-      />
+      {/* Parchment realm map background — a lighter 1x image loads on mobile */}
+      <picture>
+        <source media="(max-width: 640px)" srcSet={realmMapMobile} />
+        <img
+          src={realmMap}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+        />
+      </picture>
 
       {/* Subtle dot-grid map texture */}
       <div

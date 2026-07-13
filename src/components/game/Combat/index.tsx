@@ -3,7 +3,7 @@ import { useGameStore, selectPlayerById, selectPlayersAtSpace, selectCanAct } fr
 import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
-import { DamageBreakdown } from './DamageBreakdown'
+import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
 import { computeCombatRewards } from '@/engine/reducer'
@@ -166,6 +166,11 @@ export function CombatModal() {
               </p>
               <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
             </div>
+            <div className="mt-2 text-sm text-parchment-400">
+              <span title="Inspiration — spend to reroll a song">
+                &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
+              </span>
+            </div>
           </div>
 
           {/* Monsters Section */}
@@ -175,27 +180,22 @@ export function CombatModal() {
               detail={monstersAliveCount > 0 ? `${monstersAliveCount} remaining` : 'All converted!'}
               detailColor={monstersAliveCount > 0 ? 'text-red-400' : 'text-green-400'}
             />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="flex overflow-x-auto sm:overflow-x-visible sm:grid sm:grid-cols-4 gap-3 sm:gap-4 pb-2 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
               {monsters.map((monster: Monster, idx: number) => (
-                <MonsterCard
-                  key={monster.id}
-                  monster={monster}
-                  index={idx}
-                  fameValue={calculateMonsterFameValue(monster.level)}
-                />
+                // One column per monster: the card, with its damage lined up right below
+                <div key={monster.id} className="w-[320px] shrink-0 sm:w-full flex flex-col gap-3">
+                  <MonsterCard
+                    monster={monster}
+                    index={idx}
+                    fameValue={calculateMonsterFameValue(monster.level)}
+                  />
+                  {lastDamageCalculations[idx] && (
+                    <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
+                  )}
+                </div>
               ))}
             </div>
           </div>
-
-          {/* Damage report — sits right under the monsters it applies to */}
-          {lastDamageCalculations.length > 0 && (
-            <div className="mb-6 sm:mb-8">
-              <DamageBreakdown
-                calculations={lastDamageCalculations}
-                monsters={monsters}
-              />
-            </div>
-          )}
 
           {/* Songs Section */}
           <div className="mb-6 sm:mb-8">
@@ -204,7 +204,7 @@ export function CombatModal() {
               detail={`${ownSongsRemaining} remaining · ${songsUsed.length}/${MAX_SONGS_PER_COMBAT} played`}
               detailColor="text-gold-400"
             />
-            <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
+            <div className="flex gap-3 sm:gap-5 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
               {player.songs.map((song, idx) => (
                 <SongCard
                   key={song.id}
@@ -241,7 +241,7 @@ export function CombatModal() {
                       {coverPlayer.name}'s Songs
                     </span>
                   </div>
-                  <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
+                  <div className="flex gap-3 sm:gap-5 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
                     {songs.map((song, idx) => (
                       <SongCard
                         key={song.id}

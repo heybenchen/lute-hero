@@ -1,5 +1,6 @@
 import { Monster, Genre } from '@/types'
 import { GenreBadge } from '@/components/ui/GenreBadge'
+import { calculateMonsterExp } from '@/game-logic/fame/calculator'
 
 interface MonsterCardProps {
   monster: Monster
@@ -25,7 +26,7 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
 
   return (
     <div
-      className="animate-slide-up"
+      className="animate-slide-up w-full"
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
     >
       <div
@@ -73,6 +74,12 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
                     &#x2B50; {fameValue}
                   </span>
                 )}
+                <span
+                  className="text-xs font-bold text-parchment-400"
+                  title="EXP earned from this monster"
+                >
+                  {calculateMonsterExp(monster.level)} EXP
+                </span>
               </div>
 
               {/* HP number */}

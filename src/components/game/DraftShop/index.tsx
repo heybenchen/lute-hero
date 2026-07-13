@@ -44,6 +44,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
 
   const [selectedOfferIdx, setSelectedOfferIdx] = useState<number | null>(null)
   const [activeRewardId, setActiveRewardId] = useState<string | null>(null)
+  const [selectedNameId, setSelectedNameId] = useState<string | null>(null)
 
   const selectedElement: Genre | null =
     selectedOfferIdx !== null ? elementOffers[selectedOfferIdx] ?? null : null
@@ -51,9 +52,11 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const activeReward = pendingRewards.find((r) => r.id === activeRewardId) ?? null
   const activeDie = activeReward?.kind === 'die' ? activeReward.dice : null
   const activeName = activeReward?.kind === 'name' ? activeReward : null
+  const selectedName = namePool.find((c) => c.id === selectedNameId) ?? null
 
   const handleRefreshNames = () => {
     if (!player || player.inspiration < INSPIRATION_SPEND) return
+    setSelectedNameId(null)
     dispatch({ type: 'REFRESH_NAME_POOL' })
   }
 
@@ -106,7 +109,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const handlePurchaseName = async (card: DraftCard) => {
     if (!player || player.exp < card.cost) return
     const result = await dispatch({ type: 'BUY_NAME', cardId: card.id })
-    if (result.ok) selectNewestReward()
+    if (result.ok) {
+      setSelectedNameId(null)
+      selectNewestReward()
+    }
   }
 
   const handleApplyName = (songId: string) => {
@@ -315,21 +321,33 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   ({namePool.length} available) &mdash; Names grant effects to your songs
                 </div>
               </div>
-              <button
-                onClick={handleRefreshNames}
-                disabled={player.inspiration < INSPIRATION_SPEND}
-                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                title={player.inspiration >= INSPIRATION_SPEND ? 'Draw a fresh set of song names' : 'Requires Inspiration'}
-              >
-                Refresh (&#x2728; {INSPIRATION_SPEND})
-              </button>
+              <div className="flex items-center gap-2">
+                {selectedName && (
+                  <button
+                    onClick={() => handlePurchaseName(selectedName)}
+                    disabled={player.exp < selectedName.cost}
+                    className="btn-primary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed animate-fade-in"
+                  >
+                    Buy ({selectedName.cost} EXP)
+                  </button>
+                )}
+                <button
+                  onClick={handleRefreshNames}
+                  disabled={player.inspiration < INSPIRATION_SPEND}
+                  className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title={player.inspiration >= INSPIRATION_SPEND ? 'Draw a fresh set of song names' : 'Requires Inspiration'}
+                >
+                  Refresh (&#x2728; {INSPIRATION_SPEND})
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {namePool.map((card) => (
                 <DraftCardDisplay
                   key={card.id}
                   card={card}
-                  onPurchase={() => handlePurchaseName(card)}
+                  selected={selectedNameId === card.id}
+                  onSelect={() => setSelectedNameId((id) => (id === card.id ? null : card.id))}
                   canAfford={player.exp >= card.cost}
                 />
               ))}
