@@ -183,7 +183,8 @@ export interface DamageCalculation {
 export interface DieContribution {
   genre: Genre | null; // null for extra dice (e.g. wildDice) with no slotted genre
   value: number; // rolled face value
-  critBonus: number; // extra damage from cascading crits
+  critBonus: number; // extra damage from cascading crits (sum of cascadeRolls)
+  cascadeRolls: number[]; // each cascading-crit roll, shown separately in the report
   multiplier: number; // genre × offbeat multiplier applied to this die
   damage: number; // (value + critBonus) × multiplier — this die's contribution
 }

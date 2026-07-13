@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { PlayerPanel } from './PlayerPanel'
-import { useGameStore, selectIsHost } from '@/store'
+import { useGameStore, selectIsHost, clearSavedGame } from '@/store'
 
 export function GameView() {
   const dispatch = useGameStore((state) => state.dispatch)
@@ -28,7 +28,15 @@ export function GameView() {
 
   const handleNewGame = () => {
     setShowMenu(false)
-    dispatch({ type: 'RESET_GAME' })
+    if (mode === 'online') {
+      // Online: reset the shared game back to its lobby, staying online
+      dispatch({ type: 'RESET_GAME' })
+    } else {
+      // Local: abandon the saved game and return to mode select so the
+      // player can pick local or online for the new game
+      clearSavedGame()
+      goToModeSelect()
+    }
   }
 
   return (

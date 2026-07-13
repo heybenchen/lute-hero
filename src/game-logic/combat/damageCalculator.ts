@@ -138,12 +138,12 @@ export function calculateDamage(
       const damage = (roll.value + roll.critBonus) * multiplier;
 
       genreAdjustedDamage += damage;
-      perDie.push({ genre: dice.genre, value: roll.value, critBonus: roll.critBonus, multiplier, damage });
+      perDie.push({ genre: dice.genre, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier, damage });
     } else {
       // Extra dice (e.g. from wildDice) — no genre multiplier lookup
       const damage = roll.value + roll.critBonus;
       genreAdjustedDamage += damage;
-      perDie.push({ genre: null, value: roll.value, critBonus: roll.critBonus, multiplier: 1, damage });
+      perDie.push({ genre: null, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier: 1, damage });
     }
   });
 

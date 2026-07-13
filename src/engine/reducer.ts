@@ -12,7 +12,7 @@ import { EngineState, EngineCombatState, createInitialEngineState, createInitial
 import { GameAction, ActorSeat, PlayerConfig } from './actions'
 import { EngineEvent } from './events'
 import { validateAction } from './validate'
-import { createBoardGraph, addGenreTagsToBoard, addGenreTagToNeighbors } from '../game-logic/board/graphBuilder'
+import { createBoardGraph, addGenreTagsToBoard, addGenreTagToNeighbors, MAX_GENRE_TAGS } from '../game-logic/board/graphBuilder'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner'
 import { rollSong, calculateAOEDamage, calculateDamage } from '../game-logic/combat/damageCalculator'
 import {
@@ -214,13 +214,13 @@ function reduce(
         name: card.songName || 'New Song',
         effect: card.songEffect ?? null,
       }
-      const exclude = usedSongNames(state.players, state.namePool)
       return {
         ...state,
         players: adjustExp(state.players, player.id, -card.cost),
-        namePool: state.namePool.map((c) =>
-          c.id === card.id ? generateNameCard(exclude, rng, newId) : c
-        ),
+        // Bought names are removed, not replaced — the pool only refills at the
+        // start of the next player's turn (END_TURN), so a player can't keep
+        // buying an endless stream of names in a single turn.
+        namePool: state.namePool.filter((c) => c.id !== card.id),
         pendingRewards: {
           ...state.pendingRewards,
           [player.id]: [...(state.pendingRewards[player.id] ?? []), reward],
@@ -553,7 +553,9 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
       .map((m) => m.vulnerability!)
     if (survivingGenres.length > 0) {
       spaces = spaces.map((s) =>
-        s.id === spaceId ? { ...s, genreTags: [...s.genreTags, ...survivingGenres] } : s
+        s.id === spaceId
+          ? { ...s, genreTags: [...s.genreTags, ...survivingGenres].slice(0, MAX_GENRE_TAGS) }
+          : s
       )
     }
   }
@@ -600,6 +602,15 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
     }
     currentRound = currentRound + 1
     currentTurnPlayerIndex = 0
+
+    // Re-derive every space's monsters from its now-grown tags. Previously
+    // monsters were only spawned when a space was entered (MOVE), so a player
+    // who started a turn already standing on a space fought a stale roster that
+    // no longer matched the tags shown on the board.
+    spaces = spaces.map((s) => ({
+      ...s,
+      monsters: spawnMonstersFromTags(s.genreTags, s.id, currentRound, rng, newId),
+    }))
 
     // Entering the showdown: start it right here so there is no client-side
     // auto-start race — every client just renders the started showdown.

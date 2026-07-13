@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useGameStore, selectCurrentPlayer, selectCanAct, selectIsHost } from '@/store'
 import { DraftShop } from '../DraftShop'
 import { SongCard } from '../SongCard'
@@ -14,6 +14,16 @@ export function PlayerPanel() {
   const isHost = useGameStore(selectIsHost)
   const mode = useGameStore((state) => state.mode)
   const lobby = useGameStore((state) => state.lobby)
+
+  // When a fight ends, drop the acting player straight into the Studio
+  const combatActive = useGameStore((state) => state.isActive)
+  const prevCombatActive = useRef(combatActive)
+  useEffect(() => {
+    if (prevCombatActive.current && !combatActive && canAct) {
+      setShowDraftShop(true)
+    }
+    prevCombatActive.current = combatActive
+  }, [combatActive, canAct])
 
   if (!currentPlayer) return null
 

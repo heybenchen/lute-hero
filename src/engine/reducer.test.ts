@@ -293,9 +293,9 @@ describe('shop actions', () => {
     const card = state.namePool[0]
     state = apply(state, { type: 'BUY_NAME', cardId: card.id }).state
     expect(state.players[0].exp).toBe(20 - card.cost)
-    // Pool card replaced with a fresh one
+    // Bought name is removed and NOT replaced until the next player's turn
     expect(state.namePool.find((c) => c.id === card.id)).toBeUndefined()
-    expect(state.namePool).toHaveLength(3)
+    expect(state.namePool).toHaveLength(2)
     const reward = state.pendingRewards['player-1'][0]
     const song = state.players[0].songs[0]
     state = apply(state, { type: 'SLOT_NAME_REWARD', rewardId: reward.id, songId: song.id }).state
