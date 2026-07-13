@@ -1,8 +1,8 @@
-import { EventLogEntry, StreamMessage, toPublicSeat } from '../../../src/net/protocol'
-import { getRedis, versionKey, eventsKey, presenceKey, PRESENCE_TTL_SECONDS } from '../../_lib/redis'
-import { findSeatByToken } from '../../_lib/auth'
-import { buildSnapshot, loadGameDoc } from '../../_lib/gameDoc'
-import { ApiRequest, ApiResponse, sendError, methodNotAllowed, getPlayerToken, getGameId, getQueryParam } from '../../_lib/http'
+import { EventLogEntry, StreamMessage, toPublicSeat } from '../../../src/net/protocol.js'
+import { getRedis, versionKey, eventsKey, presenceKey, PRESENCE_TTL_SECONDS } from '../../_lib/redis.js'
+import { findSeatByToken } from '../../_lib/auth.js'
+import { buildSnapshot, loadGameDoc } from '../../_lib/gameDoc.js'
+import { ApiRequest, ApiResponse, sendError, methodNotAllowed, getPlayerToken, getGameId, getQueryParam } from '../../_lib/http.js'
 
 const POLL_MS = 500
 const PRESENCE_SCAN_EVERY = 4 // ticks (2s)

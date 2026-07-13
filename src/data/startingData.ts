@@ -1,4 +1,4 @@
-import { Genre, DiceType, Dice, Song } from '../types';
+import { Genre, DiceType, Dice, Song } from '../types/index.js';
 
 // Starter dice for each genre: 1 d4 + 1 d6
 export const STARTER_DICE: { [key in Genre]: Dice[] } = {

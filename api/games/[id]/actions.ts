@@ -1,7 +1,7 @@
-import { ActionRequest, ActionResponse, GameDoc, EventLogEntry } from '../../../src/net/protocol'
-import { getRedis } from '../../_lib/redis'
-import { findSeatByToken } from '../../_lib/auth'
-import { applyActionToDoc, casWriteDoc, loadGameDoc } from '../../_lib/gameDoc'
+import { ActionRequest, ActionResponse, GameDoc, EventLogEntry } from '../../../src/net/protocol.js'
+import { getRedis } from '../../_lib/redis.js'
+import { findSeatByToken } from '../../_lib/auth.js'
+import { applyActionToDoc, casWriteDoc, loadGameDoc } from '../../_lib/gameDoc.js'
 import {
   ApiRequest,
   ApiResponse,
@@ -11,7 +11,7 @@ import {
   methodNotAllowed,
   getPlayerToken,
   getGameId,
-} from '../../_lib/http'
+} from '../../_lib/http.js'
 
 const MAX_RECENT_ACTION_IDS = 20
 const MAX_CAS_RETRIES = 3

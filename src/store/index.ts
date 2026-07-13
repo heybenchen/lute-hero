@@ -1,7 +1,12 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { Genre } from '@/types'
-import { EngineState, EngineCombatState, createInitialEngineState } from '@/engine/state'
+import {
+  EngineState,
+  EngineCombatState,
+  createInitialEngineState,
+  normalizeEngineState,
+} from '@/engine/state'
 import { GameAction } from '@/engine/actions'
 import { Driver, DispatchResult } from '@/drivers/types'
 import { LocalDriver, loadSavedGame } from '@/drivers/localDriver'
@@ -80,7 +85,7 @@ export type GameStore = GameMirror &
 // ============================================================
 
 function flatten(engineState: EngineState): GameMirror {
-  const { combat, ...rest } = engineState
+  const { combat, ...rest } = normalizeEngineState(engineState)
   return { ...rest, ...combat }
 }
 

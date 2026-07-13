@@ -1,6 +1,6 @@
-import { DraftCard, Dice, Genre, DiceType, Rng, NewId } from '../types';
-import { TRACK_EFFECTS } from "./trackEffects";
-import { DICE_UPGRADE_PATH } from "./startingData";
+import { DraftCard, Dice, Genre, DiceType, Rng, NewId } from '../types/index.js';
+import { TRACK_EFFECTS } from "./trackEffects.js";
+import { DICE_UPGRADE_PATH } from "./startingData.js";
 
 let cardIdCounter = 0;
 

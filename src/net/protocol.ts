@@ -1,7 +1,7 @@
-import { Genre } from '../types'
-import { EngineState } from '../engine/state'
-import { EngineEvent } from '../engine/events'
-import { GameAction } from '../engine/actions'
+import { Genre } from '../types/index.js'
+import { EngineState } from '../engine/state.js'
+import { EngineEvent } from '../engine/events.js'
+import { GameAction } from '../engine/actions.js'
 
 // NOTE: this file is imported by both the browser client and the Vercel
 // serverless functions — keep imports relative and side-effect free.

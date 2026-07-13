@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
+import { DraftShop } from './DraftShop'
 import { PlayerPanel } from './PlayerPanel'
-import { useGameStore, selectIsHost, clearSavedGame } from '@/store'
+import { useGameStore, selectCanAct, selectIsHost, clearSavedGame } from '@/store'
 
 export function GameView() {
   const dispatch = useGameStore((state) => state.dispatch)
@@ -16,6 +17,8 @@ export function GameView() {
   const currentRound = useGameStore((state) => state.currentRound)
   const pendingPhase = useGameStore((state) => state.pendingPhase)
   const finalTurnGranted = useGameStore((state) => state.finalTurnGranted)
+  const studioPlayerId = useGameStore((state) => state.studio.playerId)
+  const canAct = useGameStore(selectCanAct)
   const [showMenu, setShowMenu] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
 
@@ -179,6 +182,15 @@ export function GameView() {
 
       {/* Combat modal overlay */}
       <CombatModal />
+
+      {/* Shared Studio surface: spectators watch the active player's choices live. */}
+      {studioPlayerId && (
+        <DraftShop
+          playerId={studioPlayerId}
+          canInteract={canAct}
+          onClose={() => dispatch({ type: 'CLOSE_STUDIO' })}
+        />
+      )}
 
       {/* Error toast */}
       {lastError && (

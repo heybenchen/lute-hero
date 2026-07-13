@@ -3,10 +3,11 @@ import {
   EventLogEntry,
   Snapshot,
   toPublicSeat,
-} from '../../src/net/protocol'
-import { GameAction, ActorSeat } from '../../src/engine/actions'
-import { applyAction } from '../../src/engine/reducer'
-import { mulberry32, randomSeed } from '../../src/engine/rng'
+} from '../../src/net/protocol.js'
+import { GameAction, ActorSeat } from '../../src/engine/actions.js'
+import { applyAction } from '../../src/engine/reducer.js'
+import { mulberry32, randomSeed } from '../../src/engine/rng.js'
+import { normalizeEngineState } from '../../src/engine/state.js'
 import {
   RedisLike,
   gameKey,
@@ -15,13 +16,14 @@ import {
   presenceKey,
   GAME_TTL_SECONDS,
   MAX_EVENT_LOG,
-} from './redis'
+} from './redis.js'
 
 export async function loadGameDoc(redis: RedisLike, gameId: string): Promise<GameDoc | null> {
   const raw = await redis.get(gameKey(gameId))
   if (!raw) return null
   try {
-    return JSON.parse(raw) as GameDoc
+    const doc = JSON.parse(raw) as GameDoc
+    return { ...doc, engineState: normalizeEngineState(doc.engineState) }
   } catch {
     return null
   }
@@ -99,7 +101,7 @@ export function applyActionToDoc(
     idSeed: String(doc.version + 1),
   })
 
-  if (!result.ok) {
+  if (result.ok === false) {
     return {
       ok: false,
       status: result.code === 'forbidden' ? 403 : 422,

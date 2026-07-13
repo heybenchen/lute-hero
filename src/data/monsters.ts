@@ -1,4 +1,4 @@
-import { MonsterTemplate, Genre, Rng } from '../types'
+import { MonsterTemplate, Genre, Rng } from '../types/index.js'
 
 export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   // Fire monsters — vulnerable to Ballad (Fire), resistant to Shanty (Water)

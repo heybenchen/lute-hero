@@ -1,5 +1,5 @@
-import { Genre, Monster, Song, DiceRoll } from '../../types'
-import { getFinalBoss } from '../../data/monsters'
+import { Genre, Monster, Song, DiceRoll } from '../../types/index.js'
+import { getFinalBoss } from '../../data/monsters.js'
 
 /** The Final Showdown always lasts exactly this many turns. */
 export const SHOWDOWN_TURNS = 3

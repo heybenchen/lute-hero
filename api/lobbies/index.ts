@@ -1,9 +1,9 @@
-import { GameDoc, CreateLobbyRequest, CreateLobbyResponse, Seat } from '../../src/net/protocol'
-import { createInitialEngineState } from '../../src/engine/state'
-import { getRedis, gameKey, versionKey, joinCodeKey, GAME_TTL_SECONDS } from '../_lib/redis'
-import { hashToken, newGameId, newSeatId, newJoinCode } from '../_lib/auth'
-import { buildSnapshot } from '../_lib/gameDoc'
-import { ApiRequest, ApiResponse, readJsonBody, sendJson, sendError, methodNotAllowed, getPlayerToken } from '../_lib/http'
+import { GameDoc, CreateLobbyRequest, CreateLobbyResponse, Seat } from '../../src/net/protocol.js'
+import { createInitialEngineState } from '../../src/engine/state.js'
+import { getRedis, gameKey, versionKey, joinCodeKey, GAME_TTL_SECONDS } from '../_lib/redis.js'
+import { hashToken, newGameId, newSeatId, newJoinCode } from '../_lib/auth.js'
+import { buildSnapshot } from '../_lib/gameDoc.js'
+import { ApiRequest, ApiResponse, readJsonBody, sendJson, sendError, methodNotAllowed, getPlayerToken } from '../_lib/http.js'
 
 const SEAT_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
 const SEAT_GENRES = ['Ballad', 'Folk', 'Hymn', 'Shanty'] as const

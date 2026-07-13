@@ -8,7 +8,7 @@ import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopu
 import { calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
 import { computeCombatRewards } from '@/engine/reducer'
 import { MAX_SONGS_PER_COMBAT } from '@/engine/validate'
-import { Genre, Monster, Song, SongUsage } from '@/types'
+import { Monster, Song, SongUsage } from '@/types'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 
 /** Check if a song ID has been used in this combat */
@@ -27,11 +27,10 @@ export function CombatModal() {
   const currentSongId = useGameStore((state) => state.currentSongId)
   const lastDamageCalculations = useGameStore((state) => state.lastDamageCalculations)
   const lastPlayedSongId = useGameStore((state) => state.lastPlayedSongId)
+  const selectedSpreadGenre = useGameStore((state) => state.selectedSpreadGenre)
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
-
-  const [chosenElement, setChosenElement] = useState<Genre | null>(null)
 
   const player = useGameStore(
     selectPlayerById(playerId || '')
@@ -138,10 +137,9 @@ export function CombatModal() {
   }
 
   const handleEndCombat = () => {
-    setChosenElement(null)
     // The engine awards EXP/fame, clears or re-tags the space, and checks
     // the phase transition — all in one atomic action
-    dispatch({ type: 'END_COMBAT', spreadGenre: chosenElement ?? undefined })
+    dispatch({ type: 'END_COMBAT' })
   }
 
   return (
@@ -330,12 +328,16 @@ export function CombatModal() {
                   <div className="grid grid-cols-4 gap-2">
                     {ALL_GENRES.map((genre) => {
                       const { emoji, rgb } = GENRE_THEME[genre]
-                      const isChosen = chosenElement === genre
+                      const isChosen = selectedSpreadGenre === genre
                       return (
                         <button
                           key={genre}
-                          onClick={() => setChosenElement(isChosen ? null : genre)}
-                          className="relative rounded-lg py-2.5 flex flex-col items-center gap-1 transition-all duration-200 ease-out hover:-translate-y-0.5"
+                          disabled={!canAct}
+                          onClick={() => dispatch({
+                            type: 'SELECT_COMBAT_SPREAD',
+                            genre: isChosen ? null : genre,
+                          })}
+                          className={`relative rounded-lg py-2.5 flex flex-col items-center gap-1 transition-all duration-200 ease-out ${canAct ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
                           style={{
                             background: isChosen
                               ? `linear-gradient(160deg, rgba(${rgb},0.28), rgba(${rgb},0.08))`
@@ -366,7 +368,7 @@ export function CombatModal() {
 
                 <button
                   onClick={handleEndCombat}
-                  disabled={!canAct || !chosenElement}
+                  disabled={!canAct || !selectedSpreadGenre}
                   className="w-full max-w-md px-6 sm:px-10 py-3.5 font-medieval font-bold rounded-lg text-base sm:text-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
                   style={{
                     background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
@@ -375,9 +377,9 @@ export function CombatModal() {
                     textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
                     boxShadow: '0 0 25px rgba(100, 220, 100, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
                   }}
-                  title={chosenElement ? undefined : 'Choose an element to radiate first'}
+                  title={selectedSpreadGenre ? undefined : 'Choose an element to radiate first'}
                 >
-                  {chosenElement ? 'Claim Fame & Glory' : 'Choose an Element Above'}
+                  {selectedSpreadGenre ? 'Claim Fame & Glory' : 'Choose an Element Above'}
                 </button>
               </div>
             ) : canContinue ? (

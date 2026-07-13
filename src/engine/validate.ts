@@ -1,8 +1,8 @@
-import { EngineState } from './state'
-import { GameAction, ActorSeat } from './actions'
-import { getPlayableSongs } from '../game-logic/showdown/showdown'
-import { areSpacesConnected } from '../game-logic/board/graphBuilder'
-import { NEW_D4_COST, getUpgradeCost, getInspirationCost, INSPIRATION_SPEND } from '../data/draftCards'
+import { EngineState } from './state.js'
+import { GameAction, ActorSeat } from './actions.js'
+import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
+import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
+import { NEW_D4_COST, getUpgradeCost, getInspirationCost, INSPIRATION_SPEND } from '../data/draftCards.js'
 
 export const MAX_SONGS_PER_COMBAT = 3
 export const MAX_MOVES_PER_TURN = 2
@@ -45,6 +45,13 @@ export function validateAction(
     return ok
   }
 
+  const requireOpenStudio = (): ValidationResult => {
+    if (state.studio.playerId !== currentPlayerId(state)) {
+      return illegal('Studio is not open for the current player')
+    }
+    return ok
+  }
+
   switch (action.type) {
     case 'START_GAME': {
       if (!isHost) return forbidden('Only the host can start the game')
@@ -60,6 +67,7 @@ export function validateAction(
       if (!gate.ok) return gate
       if (state.phase !== 'main') return illegal('Movement only during the main phase')
       if (state.combat.isActive) return illegal('Cannot move during combat')
+      if (state.studio.playerId) return illegal('Close the Studio before moving')
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player) return illegal('Unknown player')
       if (player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
@@ -79,6 +87,7 @@ export function validateAction(
       if (!gate.ok) return gate
       if (state.phase !== 'main') return illegal('Combat only during the main phase')
       if (state.combat.isActive) return illegal('Combat already active')
+      if (state.studio.playerId) return illegal('Close the Studio before combat')
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player || player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
       if (player.fightsThisTurn >= MAX_FIGHTS_PER_TURN) return illegal('No fights left this turn')
@@ -122,12 +131,22 @@ export function validateAction(
       return ok
     }
 
+    case 'SELECT_COMBAT_SPREAD': {
+      const gate = requireCurrentTurn()
+      if (gate.ok === false) return gate
+      if (!state.combat.isActive) return illegal('No active combat')
+      if (!state.combat.monsters.every((m) => m.currentHP <= 0)) {
+        return illegal('Defeat every monster before choosing an element')
+      }
+      return ok
+    }
+
     case 'END_COMBAT': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (!state.combat.isActive) return illegal('No active combat')
       const allDefeated = state.combat.monsters.every((m) => m.currentHP <= 0)
-      if (allDefeated && !action.spreadGenre) {
+      if (allDefeated && !action.spreadGenre && !state.combat.selectedSpreadGenre) {
         return illegal('Choose an element to radiate before claiming victory')
       }
       return ok
@@ -138,12 +157,70 @@ export function validateAction(
       if (!gate.ok) return gate
       if (state.phase !== 'main') return illegal('Turns only advance during the main phase')
       if (state.combat.isActive) return illegal('Finish combat before ending the turn')
+      if (state.studio.playerId) return illegal('Close the Studio before ending the turn')
+      return ok
+    }
+
+    case 'OPEN_STUDIO': {
+      const gate = requireCurrentTurn()
+      if (gate.ok === false) return gate
+      if (state.phase !== 'main') return illegal('Studio only opens during the main phase')
+      if (state.combat.isActive) return illegal('Finish combat before opening the Studio')
+      if (action.playerId !== currentPlayerId(state)) return illegal('Not this player\'s turn')
+      return ok
+    }
+
+    case 'CLOSE_STUDIO': {
+      const gate = requireCurrentTurn()
+      if (gate.ok === false) return gate
+      return requireOpenStudio()
+    }
+
+    case 'SELECT_STUDIO_OFFER': {
+      const gate = requireCurrentTurn()
+      if (gate.ok === false) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
+      if (
+        action.offerIndex !== null &&
+        (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length)
+      ) {
+        return illegal('No such element chip')
+      }
+      return ok
+    }
+
+    case 'SELECT_STUDIO_NAME': {
+      const gate = requireCurrentTurn()
+      if (gate.ok === false) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
+      if (action.cardId !== null && !state.namePool.some((card) => card.id === action.cardId)) {
+        return illegal('No such name card')
+      }
+      return ok
+    }
+
+    case 'SELECT_STUDIO_REWARD': {
+      const gate = requireCurrentTurn()
+      if (gate.ok === false) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
+      const playerId = currentPlayerId(state)
+      if (
+        action.rewardId !== null &&
+        !(state.pendingRewards[playerId ?? ''] ?? []).some((reward) => reward.id === action.rewardId)
+      ) {
+        return illegal('No such reward')
+      }
       return ok
     }
 
     case 'BUY_DIE': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       if (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length) {
@@ -156,6 +233,8 @@ export function validateAction(
     case 'UPGRADE_DIE': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       if (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length) {
@@ -178,6 +257,8 @@ export function validateAction(
     case 'BUY_NAME': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       const card = state.namePool.find((c) => c.id === action.cardId)
@@ -190,6 +271,8 @@ export function validateAction(
     case 'REFRESH_NAME_POOL': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player || player.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration')
       return ok
@@ -199,6 +282,8 @@ export function validateAction(
     case 'SLOT_DIE_REWARD': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       const rewards = state.pendingRewards[player.id] ?? []
@@ -221,6 +306,8 @@ export function validateAction(
     case 'BUY_INSPIRATION': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       const cost = getInspirationCost(player.inspirationBoughtThisTurn)

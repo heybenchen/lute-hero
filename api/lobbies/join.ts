@@ -1,8 +1,8 @@
-import { JoinLobbyRequest, JoinLobbyResponse, Seat } from '../../src/net/protocol'
-import { getRedis, joinCodeKey } from '../_lib/redis'
-import { hashToken, newSeatId, findSeatByToken } from '../_lib/auth'
-import { buildSnapshot, loadGameDoc, mutateGameDoc } from '../_lib/gameDoc'
-import { ApiRequest, ApiResponse, readJsonBody, sendJson, sendError, methodNotAllowed, getPlayerToken } from '../_lib/http'
+import { JoinLobbyRequest, JoinLobbyResponse, Seat } from '../../src/net/protocol.js'
+import { getRedis, joinCodeKey } from '../_lib/redis.js'
+import { hashToken, newSeatId, findSeatByToken } from '../_lib/auth.js'
+import { buildSnapshot, loadGameDoc, mutateGameDoc } from '../_lib/gameDoc.js'
+import { ApiRequest, ApiResponse, readJsonBody, sendJson, sendError, methodNotAllowed, getPlayerToken } from '../_lib/http.js'
 
 const SEAT_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
 const SEAT_GENRES = ['Ballad', 'Folk', 'Hymn', 'Shanty'] as const
@@ -70,7 +70,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     }
   })
 
-  if (!result.ok) return sendError(res, result.status, result.code, result.message)
+  if (result.ok === false) return sendError(res, result.status, result.code, result.message)
 
   const response: JoinLobbyResponse = {
     gameId,

@@ -1,4 +1,4 @@
-import { BoardSpace, Genre, Rng } from '../../types'
+import { BoardSpace, Genre, Rng } from '../../types/index.js'
 
 // Board is a 4x4 grid. Spaces are indexed row-major:
 //

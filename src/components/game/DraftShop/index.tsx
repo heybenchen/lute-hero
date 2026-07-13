@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
 import { DraftCard, Genre, Dice, PendingReward } from '@/types'
 import { DraftCardDisplay } from './DraftCardDisplay'
@@ -17,6 +16,7 @@ import { GENRE_THEME } from '@/data/genreTheme'
 
 interface DraftShopProps {
   playerId: string
+  canInteract: boolean
   onClose: () => void
 }
 
@@ -30,7 +30,7 @@ interface OwnedDie {
 // Stable empty reference so the selector doesn't churn when a player has no rewards
 const EMPTY_REWARDS: PendingReward[] = []
 
-export function DraftShop({ playerId, onClose }: DraftShopProps) {
+export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
   const player = useGameStore(selectPlayerById(playerId))
   const dispatch = useGameStore((state) => state.dispatch)
 
@@ -42,9 +42,9 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   // Pending-reward queue (persists so buying more never discards unresolved rewards)
   const pendingRewards = useGameStore((state) => state.pendingRewards[playerId]) ?? EMPTY_REWARDS
 
-  const [selectedOfferIdx, setSelectedOfferIdx] = useState<number | null>(null)
-  const [activeRewardId, setActiveRewardId] = useState<string | null>(null)
-  const [selectedNameId, setSelectedNameId] = useState<string | null>(null)
+  const selectedOfferIdx = useGameStore((state) => state.studio.selectedOfferIdx)
+  const activeRewardId = useGameStore((state) => state.studio.activeRewardId)
+  const selectedNameId = useGameStore((state) => state.studio.selectedNameId)
 
   const selectedElement: Genre | null =
     selectedOfferIdx !== null ? elementOffers[selectedOfferIdx] ?? null : null
@@ -55,19 +55,13 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
   const selectedName = namePool.find((c) => c.id === selectedNameId) ?? null
 
   const handleRefreshNames = () => {
-    if (!player || player.inspiration < INSPIRATION_SPEND) return
-    setSelectedNameId(null)
+    if (!canInteract || !player || player.inspiration < INSPIRATION_SPEND) return
     dispatch({ type: 'REFRESH_NAME_POOL' })
   }
 
   const handleBuyInspiration = () => {
+    if (!canInteract) return
     dispatch({ type: 'BUY_INSPIRATION' })
-  }
-
-  // The engine mints reward ids; grab the newest one to auto-select it
-  const selectNewestReward = () => {
-    const rewards = useGameStore.getState().pendingRewards[playerId] ?? []
-    setActiveRewardId(rewards[rewards.length - 1]?.id ?? null)
   }
 
   if (!player) return null
@@ -86,43 +80,34 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     : []
 
   const handleBuyNewD4 = async () => {
-    if (selectedOfferIdx === null || !selectedElement || player.exp < NEW_D4_COST) return
-    const result = await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx })
-    if (result.ok) selectNewestReward()
-    setSelectedOfferIdx(null)
+    if (!canInteract || selectedOfferIdx === null || !selectedElement || player.exp < NEW_D4_COST) return
+    await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx })
   }
 
   const handleUpgradeDie = (die: Dice) => {
-    if (selectedOfferIdx === null) return
+    if (!canInteract || selectedOfferIdx === null) return
     const cost = getUpgradeCost(die.type)
     if (cost === null || player.exp < cost) return
     dispatch({ type: 'UPGRADE_DIE', offerIndex: selectedOfferIdx, diceId: die.id })
-    setSelectedOfferIdx(null)
   }
 
   const handleRefreshElements = () => {
-    if (player.inspiration < INSPIRATION_SPEND) return
-    setSelectedOfferIdx(null)
+    if (!canInteract || player.inspiration < INSPIRATION_SPEND) return
     dispatch({ type: 'REFRESH_ELEMENT_OFFERS' })
   }
 
   const handlePurchaseName = async (card: DraftCard) => {
-    if (!player || player.exp < card.cost) return
-    const result = await dispatch({ type: 'BUY_NAME', cardId: card.id })
-    if (result.ok) {
-      setSelectedNameId(null)
-      selectNewestReward()
-    }
+    if (!canInteract || !player || player.exp < card.cost) return
+    await dispatch({ type: 'BUY_NAME', cardId: card.id })
   }
 
   const handleApplyName = (songId: string) => {
-    if (!activeName) return
+    if (!canInteract || !activeName) return
     dispatch({ type: 'SLOT_NAME_REWARD', rewardId: activeName.id, songId })
-    setActiveRewardId(null)
   }
 
   const handleSlotDice = (songId: string, slotIndex: number, isReplacement: boolean = false) => {
-    if (!activeDie || !activeReward) return
+    if (!canInteract || !activeDie || !activeReward) return
 
     const song = player.songs.find((s) => s.id === songId)
     if (!song) return
@@ -130,7 +115,6 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
     if (!isReplacement && song.slots[slotIndex].dice) return
 
     dispatch({ type: 'SLOT_DIE_REWARD', rewardId: activeReward.id, songId, slotIndex })
-    setActiveRewardId(null)
   }
 
   return (
@@ -146,10 +130,18 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               <p className="text-base text-parchment-400">
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span>
               </p>
+              {!canInteract && (
+                <div
+                  className="inline-flex mt-2 rounded-full px-3 py-1 text-xs font-medieval font-bold text-sky-200"
+                  style={{ background: 'rgba(80, 150, 220, 0.12)', border: '1px solid rgba(110, 180, 240, 0.35)' }}
+                >
+                  Watching {player.name}&rsquo;s Studio live
+                </div>
+              )}
               <div className="text-sm text-parchment-400 flex items-center gap-2 mt-1">
                 <button
                   onClick={handleBuyInspiration}
-                  disabled={player.exp < inspirationCost}
+                  disabled={!canInteract || player.exp < inspirationCost}
                   className="text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5 whitespace-nowrap"
                   style={{
                     background: 'rgba(176, 124, 255, 0.14)',
@@ -163,13 +155,15 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 <span title="Inspiration">&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-parchment-400 hover:text-parchment-200 transition-colors text-xl leading-none p-1"
-              title="Close Shop"
-            >
-              &#x2715;
-            </button>
+            {canInteract && (
+              <button
+                onClick={onClose}
+                className="text-parchment-400 hover:text-parchment-200 transition-colors text-xl leading-none p-1"
+                title="Close Studio"
+              >
+                &#x2715;
+              </button>
+            )}
           </div>
 
           {/* Element chips drawn from the bag */}
@@ -185,7 +179,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               </div>
               <button
                 onClick={handleRefreshElements}
-                disabled={player.inspiration < INSPIRATION_SPEND}
+                disabled={!canInteract || player.inspiration < INSPIRATION_SPEND}
                 className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
                 title={player.inspiration >= INSPIRATION_SPEND ? 'Discard these chips and draw 4 new ones from the bag' : 'Requires Inspiration'}
               >
@@ -207,7 +201,8 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   return (
                     <button
                       key={`${genre}-${offerIdx}`}
-                      className="group relative rounded-lg p-3 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1 animate-scale-in"
+                      disabled={!canInteract}
+                      className={`group relative rounded-lg p-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer hover:-translate-y-1' : 'cursor-default'}`}
                       style={{
                         background: isSelected
                           ? `linear-gradient(160deg, rgba(${rgb}, 0.22) 0%, rgba(${rgb}, 0.06) 100%)`
@@ -219,7 +214,10 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                           ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 18px rgba(${rgb}, 0.3), 0 4px 10px rgba(0,0,0,0.4)`
                           : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 4px rgba(0,0,0,0.3)',
                       }}
-                      onClick={() => setSelectedOfferIdx(isSelected ? null : offerIdx)}
+                      onClick={() => dispatch({
+                        type: 'SELECT_STUDIO_OFFER',
+                        offerIndex: isSelected ? null : offerIdx,
+                      })}
                     >
                       <div className="flex flex-col items-center gap-2">
                         <div
@@ -267,7 +265,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   {/* New d4 */}
                   <button
                     onClick={handleBuyNewD4}
-                    disabled={player.exp < NEW_D4_COST}
+                    disabled={!canInteract || player.exp < NEW_D4_COST}
                     className="btn-primary text-sm px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <DiceShape type="d4" /> New d4 &mdash; {NEW_D4_COST} EXP
@@ -287,7 +285,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                         <button
                           key={dice.id}
                           onClick={() => handleUpgradeDie(dice)}
-                          disabled={!nextType || !affordable}
+                          disabled={!canInteract || !nextType || !affordable}
                           className="btn-secondary text-sm px-3 py-2 disabled:opacity-40 disabled:cursor-not-allowed text-left"
                         >
                           <div className="font-bold">
@@ -325,7 +323,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 {selectedName && (
                   <button
                     onClick={() => handlePurchaseName(selectedName)}
-                    disabled={player.exp < selectedName.cost}
+                    disabled={!canInteract || player.exp < selectedName.cost}
                     className="btn-primary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed animate-fade-in"
                   >
                     Buy ({selectedName.cost} EXP)
@@ -333,7 +331,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                 )}
                 <button
                   onClick={handleRefreshNames}
-                  disabled={player.inspiration < INSPIRATION_SPEND}
+                  disabled={!canInteract || player.inspiration < INSPIRATION_SPEND}
                   className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
                   title={player.inspiration >= INSPIRATION_SPEND ? 'Draw a fresh set of song names' : 'Requires Inspiration'}
                 >
@@ -347,8 +345,12 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   key={card.id}
                   card={card}
                   selected={selectedNameId === card.id}
-                  onSelect={() => setSelectedNameId((id) => (id === card.id ? null : card.id))}
+                  onSelect={() => dispatch({
+                    type: 'SELECT_STUDIO_NAME',
+                    cardId: selectedNameId === card.id ? null : card.id,
+                  })}
                   canAfford={player.exp >= card.cost}
+                  readOnly={!canInteract}
                 />
               ))}
             </div>
@@ -376,8 +378,9 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                     return (
                       <button
                         key={reward.id}
-                        onClick={() => setActiveRewardId(isActive ? null : reward.id)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 hover:-translate-y-0.5"
+                        disabled={!canInteract}
+                        onClick={() => dispatch({ type: 'SELECT_STUDIO_REWARD', rewardId: isActive ? null : reward.id })}
+                        className={`flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 ${canInteract ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
                         style={{
                           background: isActive ? `rgba(${rgb}, 0.2)` : 'rgba(0,0,0,0.25)',
                           border: `1px solid rgba(${rgb}, ${isActive ? 0.8 : 0.35})`,
@@ -393,8 +396,9 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                   return (
                     <button
                       key={reward.id}
-                      onClick={() => setActiveRewardId(isActive ? null : reward.id)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 hover:-translate-y-0.5"
+                      disabled={!canInteract}
+                      onClick={() => dispatch({ type: 'SELECT_STUDIO_REWARD', rewardId: isActive ? null : reward.id })}
+                      className={`flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 ${canInteract ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
                       style={{
                         background: isActive ? 'rgba(176, 124, 255, 0.2)' : 'rgba(0,0,0,0.25)',
                         border: `1px solid rgba(176, 124, 255, ${isActive ? 0.8 : 0.35})`,
@@ -443,12 +447,12 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
               {player.songs.map((song) => (
                 <div
                   key={song.id}
-                  className={`card w-full max-w-[280px] mx-auto transition-all duration-150 ${activeName ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+                  className={`card w-full max-w-[280px] mx-auto transition-all duration-150 ${activeName && canInteract ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
                   style={activeName ? {
                     border: '1px solid rgba(176, 124, 255, 0.4)',
                     boxShadow: '0 0 12px rgba(176, 124, 255, 0.1)',
                   } : undefined}
-                  onClick={() => activeName && handleApplyName(song.id)}
+                  onClick={() => activeName && canInteract && handleApplyName(song.id)}
                 >
                   <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-2 text-center"
                     style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
@@ -485,7 +489,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                         <button
                           key={idx}
                           onClick={() => handleSlotDice(song.id, idx, !!slot.dice)}
-                          disabled={!activeDie}
+                          disabled={!canInteract || !activeDie}
                           className="w-20 h-20 aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
                           style={{
                             background: slot.dice
@@ -502,7 +506,7 @@ export function DraftShop({ playerId, onClose }: DraftShopProps) {
                               : activeDie
                               ? '1px solid rgba(100, 180, 255, 0.4)'
                               : '1px dashed rgba(212, 168, 83, 0.12)',
-                            cursor: activeDie ? 'pointer' : 'default',
+                            cursor: activeDie && canInteract ? 'pointer' : 'default',
                           }}
                         >
                           {slot.dice ? (

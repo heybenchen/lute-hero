@@ -8,6 +8,7 @@ interface DraftCardDisplayProps {
   onSelect: () => void
   canAfford: boolean
   disabled?: boolean
+  readOnly?: boolean
 }
 
 export function DraftCardDisplay({
@@ -16,10 +17,11 @@ export function DraftCardDisplay({
   onSelect,
   canAfford,
   disabled = false,
+  readOnly = false,
 }: DraftCardDisplayProps) {
   const [showTooltip, setShowTooltip] = useState(false)
 
-  const selectable = canAfford && !disabled
+  const selectable = canAfford && !disabled && !readOnly
 
   return (
     <div
@@ -32,9 +34,11 @@ export function DraftCardDisplay({
           onSelect()
         }
       }}
-      title={canAfford ? 'Select, then Buy above' : 'Not enough EXP'}
+      title={readOnly ? 'Watching the active player' : canAfford ? 'Select, then Buy above' : 'Not enough EXP'}
       className={`card relative transition-all duration-200 ${
-        !selectable
+        readOnly
+          ? 'cursor-default'
+          : !selectable
           ? 'opacity-40 cursor-not-allowed'
           : `cursor-pointer hover:shadow-card-hover hover:-translate-y-0.5 ${selected ? 'shadow-card-hover -translate-y-0.5' : ''}`
       }`}

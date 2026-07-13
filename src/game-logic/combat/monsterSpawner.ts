@@ -1,5 +1,5 @@
-import { BoardSpace, Monster, Genre, MonsterTemplate, Rng, NewId } from '../../types'
-import { getMonsterByGenre, getRoundLevelBonus } from '../../data/monsters'
+import { BoardSpace, Monster, Genre, MonsterTemplate, Rng, NewId } from '../../types/index.js'
+import { getMonsterByGenre, getRoundLevelBonus } from '../../data/monsters.js'
 
 /**
  * Count tags by genre and find the dominant genre

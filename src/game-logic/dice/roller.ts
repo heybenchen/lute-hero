@@ -1,4 +1,4 @@
-import { DiceType, DiceRoll, Dice, Rng } from '../../types'
+import { DiceType, DiceRoll, Dice, Rng } from '../../types/index.js'
 
 /**
  * Get the maximum value for a given dice type

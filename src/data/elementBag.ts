@@ -1,5 +1,5 @@
-import { Genre, Rng } from '../types';
-import { ALL_GENRES } from "./genreTheme";
+import { Genre, Rng } from '../types/index.js';
+import { ALL_GENRES } from "./genreTheme.js";
 
 // 6 chips of each element per player go into the bag at game start
 export const CHIPS_PER_ELEMENT_PER_PLAYER = 6;

@@ -1,4 +1,4 @@
-import { EngineState, createInitialEngineState } from '../engine/state'
+import { EngineState, createInitialEngineState, normalizeEngineState } from '../engine/state'
 import { GameAction } from '../engine/actions'
 import { applyAction } from '../engine/reducer'
 import { mulberry32, randomSeed } from '../engine/rng'
@@ -21,7 +21,7 @@ export function loadSavedGame(): EngineState | null {
     if (doc.version !== STORAGE_VERSION) return null
     if (!doc.engineState || doc.engineState.phase === 'setup') return null
     if (!doc.engineState.players?.length) return null
-    return doc.engineState
+    return normalizeEngineState(doc.engineState)
   } catch {
     return null
   }
@@ -58,7 +58,7 @@ export class LocalDriver implements Driver {
   private onState: (state: EngineState) => void
 
   constructor(initial: EngineState | null, onState: (state: EngineState) => void) {
-    this.state = initial ?? createInitialEngineState()
+    this.state = initial ? normalizeEngineState(initial) : createInitialEngineState()
     this.onState = onState
     this.onState(this.state)
   }
