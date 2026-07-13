@@ -1,6 +1,6 @@
-import { getRedis } from '../../_lib/redis'
-import { findSeatByToken } from '../../_lib/auth'
-import { buildSnapshot, loadGameDoc } from '../../_lib/gameDoc'
+import { getRedis } from '../../_lib/redis.js'
+import { findSeatByToken } from '../../_lib/auth.js'
+import { buildSnapshot, loadGameDoc } from '../../_lib/gameDoc.js'
 import {
   ApiRequest,
   ApiResponse,
@@ -9,7 +9,7 @@ import {
   methodNotAllowed,
   getPlayerToken,
   getGameId,
-} from '../../_lib/http'
+} from '../../_lib/http.js'
 
 /** GET /api/games/[id]/state — full snapshot (reconnect fallback). */
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {

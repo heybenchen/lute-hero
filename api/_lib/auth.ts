@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { GameDoc, Seat } from '../../src/net/protocol'
+import { GameDoc, Seat } from '../../src/net/protocol.js'
 
 export function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex')

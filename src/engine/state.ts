@@ -10,8 +10,8 @@ import {
   KillCredit,
   DiceRoll,
   DamageCalculation,
-} from '../types'
-import { ShowdownPerformance } from '../game-logic/showdown/showdown'
+} from '../types/index.js'
+import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
 
 /**
  * Live combat state — part of the synced engine state so spectators watch

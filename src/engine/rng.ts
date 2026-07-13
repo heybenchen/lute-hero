@@ -1,4 +1,4 @@
-import { Rng } from '../types'
+import { Rng } from '../types/index.js'
 
 /**
  * mulberry32 — small, fast, deterministic PRNG. Given the same 32-bit seed

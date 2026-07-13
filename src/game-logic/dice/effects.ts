@@ -1,6 +1,6 @@
-import { TrackEffect, DiceRoll, Dice, Rng } from '../../types';
-import { getMaxValue, flipDiceValue, rollDiceWithCrit, rollCascadeDice } from "./roller";
-import { DICE_UPGRADE_PATH } from '../../data/startingData';
+import { TrackEffect, DiceRoll, Dice, Rng } from '../../types/index.js';
+import { getMaxValue, flipDiceValue, rollDiceWithCrit, rollCascadeDice } from "./roller.js";
+import { DICE_UPGRADE_PATH } from '../../data/startingData.js';
 
 /**
  * Apply track effects to a dice roll

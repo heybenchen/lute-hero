@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { ApiError } from '../../src/net/protocol'
+import { ApiError } from '../../src/net/protocol.js'
 
 /**
  * Handlers are written against plain Node req/res so the same code runs under

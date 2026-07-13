@@ -7,34 +7,34 @@ import {
   KillCredit,
   Rng,
   NewId,
-} from '../types'
-import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState } from './state'
-import { GameAction, ActorSeat, PlayerConfig } from './actions'
-import { EngineEvent } from './events'
-import { validateAction } from './validate'
-import { createBoardGraph, addGenreTagsToBoard, addGenreTagToNeighbors, MAX_GENRE_TAGS } from '../game-logic/board/graphBuilder'
-import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner'
-import { rollSong, calculateAOEDamage, calculateDamage } from '../game-logic/combat/damageCalculator'
+} from '../types/index.js'
+import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState } from './state.js'
+import { GameAction, ActorSeat, PlayerConfig } from './actions.js'
+import { EngineEvent } from './events.js'
+import { validateAction } from './validate.js'
+import { createBoardGraph, addGenreTagsToBoard, addGenreTagToNeighbors, MAX_GENRE_TAGS } from '../game-logic/board/graphBuilder.js'
+import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
+import { rollSong, calculateAOEDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
 import {
   calculateFameEarned,
   calculateMonsterFameValue,
   calculateTotalMonsterExp,
   getNextPhase,
-} from '../game-logic/fame/calculator'
-import { calculateCoverFameSplit } from '../game-logic/fame/coverSongFame'
-import { createStarterSongs } from '../data/startingData'
-import { generateNameCard, createElementalDie, getInspirationCost, getUpgradeCost, NEW_D4_COST, INSPIRATION_SPEND } from '../data/draftCards'
-import { createElementBag, drawFromBag, ELEMENT_OFFER_COUNT } from '../data/elementBag'
+} from '../game-logic/fame/calculator.js'
+import { calculateCoverFameSplit } from '../game-logic/fame/coverSongFame.js'
+import { createStarterSongs } from '../data/startingData.js'
+import { generateNameCard, createElementalDie, getInspirationCost, getUpgradeCost, NEW_D4_COST, INSPIRATION_SPEND } from '../data/draftCards.js'
+import { createElementBag, drawFromBag, ELEMENT_OFFER_COUNT } from '../data/elementBag.js'
 import {
   SHOWDOWN_TURNS,
   ShowdownPerformance,
   createShowdownBoss,
   getDominantGenre,
   computeBossAdaptation,
-} from '../game-logic/showdown/showdown'
-import { DICE_UPGRADE_PATH } from '../data/startingData'
+} from '../game-logic/showdown/showdown.js'
+import { DICE_UPGRADE_PATH } from '../data/startingData.js'
 
-export { MAX_SONGS_PER_COMBAT } from './validate'
+export { MAX_SONGS_PER_COMBAT } from './validate.js'
 export const MAX_SONGS = 3
 export const NAME_POOL_SIZE = 3
 
@@ -58,7 +58,7 @@ export type ApplyResult =
  */
 export function applyAction(state: EngineState, action: GameAction, ctx: ActionCtx): ApplyResult {
   const validation = validateAction(state, action, ctx.actor)
-  if (!validation.ok) return validation
+  if (validation.ok === false) return validation
 
   const idScope = ctx.idSeed ?? String(state.nextIdSeq)
   let idCounter = 0

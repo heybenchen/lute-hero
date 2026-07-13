@@ -1,5 +1,5 @@
-import { DiceRoll, DamageCalculation, Monster, Genre } from '../types'
-import { ShowdownPerformance } from '../game-logic/showdown/showdown'
+import { DiceRoll, DamageCalculation, Monster, Genre } from '../types/index.js'
+import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
 
 /**
  * Side-channel facts about what happened during an action, for UI animation

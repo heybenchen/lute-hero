@@ -1,5 +1,5 @@
-import { Song, Monster, DiceRoll, Genre, DamageCalculation, DieContribution, TrackEffect, Rng } from '../../types';
-import { rollDiceWithCrit } from "../dice/roller";
+import { Song, Monster, DiceRoll, Genre, DamageCalculation, DieContribution, TrackEffect, Rng } from '../../types/index.js';
+import { rollDiceWithCrit } from "../dice/roller.js";
 import {
   applyTrackEffect,
   calculateEffectBonuses,
@@ -10,7 +10,7 @@ import {
   calculateDynamicRangeBonus,
   calculateDropTheBassBonus,
   calculateLucky7Bonus,
-} from "../dice/effects";
+} from "../dice/effects.js";
 
 /**
  * Calculate damage multiplier for a genre against a monster

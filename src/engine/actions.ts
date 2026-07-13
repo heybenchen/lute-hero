@@ -1,4 +1,4 @@
-import { Genre } from '../types'
+import { Genre } from '../types/index.js'
 
 /** One player's setup choices, supplied when the game starts. */
 export interface PlayerConfig {

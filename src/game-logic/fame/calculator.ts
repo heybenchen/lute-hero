@@ -1,5 +1,5 @@
-import { Player, Monster, GamePhase } from '../../types'
-import { FAME_THRESHOLDS } from '../../data/startingData'
+import { Player, Monster, GamePhase } from '../../types/index.js'
+import { FAME_THRESHOLDS } from '../../data/startingData.js'
 
 /**
  * Fame per monster level. Since songs hit all monsters at once (AOE),

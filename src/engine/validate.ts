@@ -1,8 +1,8 @@
-import { EngineState } from './state'
-import { GameAction, ActorSeat } from './actions'
-import { getPlayableSongs } from '../game-logic/showdown/showdown'
-import { areSpacesConnected } from '../game-logic/board/graphBuilder'
-import { NEW_D4_COST, getUpgradeCost, getInspirationCost, INSPIRATION_SPEND } from '../data/draftCards'
+import { EngineState } from './state.js'
+import { GameAction, ActorSeat } from './actions.js'
+import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
+import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
+import { NEW_D4_COST, getUpgradeCost, getInspirationCost, INSPIRATION_SPEND } from '../data/draftCards.js'
 
 export const MAX_SONGS_PER_COMBAT = 3
 export const MAX_MOVES_PER_TURN = 2

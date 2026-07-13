@@ -1,8 +1,8 @@
-import { LobbyOpRequest } from '../../../src/net/protocol'
-import { PlayerConfig } from '../../../src/engine/actions'
-import { getRedis } from '../../_lib/redis'
-import { findSeatByToken } from '../../_lib/auth'
-import { applyActionToDoc, buildSnapshot, mutateGameDoc } from '../../_lib/gameDoc'
+import { LobbyOpRequest } from '../../../src/net/protocol.js'
+import { PlayerConfig } from '../../../src/engine/actions.js'
+import { getRedis } from '../../_lib/redis.js'
+import { findSeatByToken } from '../../_lib/auth.js'
+import { applyActionToDoc, buildSnapshot, mutateGameDoc } from '../../_lib/gameDoc.js'
 import {
   ApiRequest,
   ApiResponse,
@@ -12,7 +12,7 @@ import {
   methodNotAllowed,
   getPlayerToken,
   getGameId,
-} from '../../_lib/http'
+} from '../../_lib/http.js'
 
 const VALID_GENRES = ['Ballad', 'Folk', 'Hymn', 'Shanty']
 
@@ -118,6 +118,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     }
   })
 
-  if (!result.ok) return sendError(res, result.status, result.code, result.message)
+  if (result.ok === false) return sendError(res, result.status, result.code, result.message)
   sendJson(res, 200, { snapshot: await buildSnapshot(redis, result.doc) })
 }
