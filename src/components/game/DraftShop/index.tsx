@@ -432,15 +432,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
                 Your Songs
               </div>
-              <div className="text-sm text-parchment-500">
-                ({player.songs.length})
-                {activeName
-                  ? ' — click a song to apply name'
-                  : activeDie
-                  ? ' — click any slot to place die (replace existing = remix)'
-                  : ' — buy an element or name above to improve your songs'
-                }
-              </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
