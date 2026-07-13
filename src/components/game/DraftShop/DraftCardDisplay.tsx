@@ -4,28 +4,47 @@ import { TRACK_EFFECT_NAMES, describeTrackEffect } from '@/data/trackEffects'
 
 interface DraftCardDisplayProps {
   card: DraftCard
-  onPurchase: () => void
+  selected: boolean
+  onSelect: () => void
   canAfford: boolean
   disabled?: boolean
 }
 
 export function DraftCardDisplay({
   card,
-  onPurchase,
+  selected,
+  onSelect,
   canAfford,
   disabled = false,
 }: DraftCardDisplayProps) {
   const [showTooltip, setShowTooltip] = useState(false)
 
+  const selectable = canAfford && !disabled
+
   return (
     <div
-      className={`card relative transition-all duration-200 ${!canAfford ? 'opacity-40' : 'hover:shadow-card-hover'}`}
+      role="button"
+      tabIndex={selectable ? 0 : -1}
+      onClick={() => selectable && onSelect()}
+      onKeyDown={(e) => {
+        if (selectable && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          onSelect()
+        }
+      }}
+      title={canAfford ? 'Select, then Buy above' : 'Not enough EXP'}
+      className={`card relative transition-all duration-200 ${
+        !selectable
+          ? 'opacity-40 cursor-not-allowed'
+          : `cursor-pointer hover:shadow-card-hover hover:-translate-y-0.5 ${selected ? 'shadow-card-hover -translate-y-0.5' : ''}`
+      }`}
+      style={selected ? { border: '1px solid rgba(212, 168, 83, 0.55)' } : undefined}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
       {/* Song preview */}
-      <div className="mb-3">
-        <div className="text-base font-bold text-center mb-3 text-parchment-200 truncate">
+      <div>
+        <div className="text-base font-bold text-center mb-2 text-parchment-200 truncate">
           {card.songName}
         </div>
         <div className="space-y-1 text-xs">
@@ -72,14 +91,10 @@ export function DraftCardDisplay({
         </div>
       )}
 
-      {/* Purchase button */}
-      <button
-        onClick={onPurchase}
-        disabled={!canAfford || disabled}
-        className="btn-primary w-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        {canAfford ? `Purchase (${card.cost} EXP)` : 'Not Available'}
-      </button>
+      {/* Cost — the Buy button lives in the section header */}
+      <div className="mt-2 text-center text-xs font-bold text-gold-400">
+        {card.cost} EXP
+      </div>
     </div>
   )
 }

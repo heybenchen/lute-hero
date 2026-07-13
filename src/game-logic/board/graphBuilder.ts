@@ -68,18 +68,21 @@ export function createBoardGraph(): BoardSpace[] {
   return spaces
 }
 
+/** A space holds at most this many genre tags (monster chips). */
+export const MAX_GENRE_TAGS = 5
+
 /**
- * Add a random genre tag to each space (legacy — no longer called during gameplay)
+ * Add a random genre tag to each space, up to MAX_GENRE_TAGS.
  */
 export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random): BoardSpace[] {
   const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
 
   return spaces.map((space) => ({
     ...space,
-    genreTags: [
-      ...space.genreTags,
-      genres[Math.floor(rng() * genres.length)],
-    ],
+    genreTags:
+      space.genreTags.length >= MAX_GENRE_TAGS
+        ? space.genreTags
+        : [...space.genreTags, genres[Math.floor(rng() * genres.length)]],
   }))
 }
 
@@ -127,6 +130,7 @@ export function addGenreTagToNeighbors(
 
   return spaces.map((space) => {
     if (!neighborIds.has(space.id)) return space
+    if (space.genreTags.length >= MAX_GENRE_TAGS) return space
     return {
       ...space,
       genreTags: [...space.genreTags, genre],

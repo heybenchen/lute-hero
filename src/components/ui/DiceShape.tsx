@@ -32,6 +32,21 @@ const CLIP_PATHS: Record<DiceType, string> = {
   d20: polygonClipPath(ICON_SIDES.d20),
 }
 
+/**
+ * Per-shape size multiplier so every die reads as the same visual size as the
+ * d4 triangle. The triangle only fills ~75% of its box height, while the
+ * square / octagon / hexagon fill their full box — so those are scaled down to
+ * match the triangle's footprint.
+ */
+const SHAPE_SCALE: Record<DiceType, number> = {
+  d4: 1,
+  d6: 0.75,
+  d12: 0.75,
+  d20: 0.75,
+}
+
+const BASE_EM = 0.85
+
 interface DiceShapeProps {
   type: DiceType
   className?: string
@@ -45,12 +60,13 @@ interface DiceShapeProps {
  * font glyph coverage.
  */
 export function DiceShape({ type, className = '' }: DiceShapeProps) {
+  const size = `${(BASE_EM * SHAPE_SCALE[type]).toFixed(3)}em`
   return (
     <span
       className={`inline-block align-middle ${className}`}
       style={{
-        width: '0.85em',
-        height: '0.85em',
+        width: size,
+        height: size,
         background: 'currentColor',
         clipPath: CLIP_PATHS[type],
       }}
