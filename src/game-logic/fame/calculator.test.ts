@@ -34,34 +34,34 @@ describe('Fame Calculator', () => {
   })
 
   describe('calculateMonsterFameValue', () => {
-    it('ramps steeply by level since songs hit all monsters at once', () => {
-      expect(calculateMonsterFameValue(1)).toBe(0)
+    it('ramps by level since songs hit all monsters at once', () => {
+      expect(calculateMonsterFameValue(1)).toBe(5)
       expect(calculateMonsterFameValue(2)).toBe(10)
-      expect(calculateMonsterFameValue(3)).toBe(30)
-      expect(calculateMonsterFameValue(4)).toBe(60)
-      expect(calculateMonsterFameValue(5)).toBe(100)
+      expect(calculateMonsterFameValue(3)).toBe(25)
+      expect(calculateMonsterFameValue(4)).toBe(50)
+      expect(calculateMonsterFameValue(5)).toBe(75)
     })
 
     it('clamps levels past 5 to the top value (like the HP cap)', () => {
-      expect(calculateMonsterFameValue(6)).toBe(100)
-      expect(calculateMonsterFameValue(9)).toBe(100)
+      expect(calculateMonsterFameValue(6)).toBe(75)
+      expect(calculateMonsterFameValue(9)).toBe(75)
     })
 
     it('treats out-of-range low levels as level 1', () => {
-      expect(calculateMonsterFameValue(0)).toBe(0)
+      expect(calculateMonsterFameValue(0)).toBe(5)
     })
   })
 
   describe('calculateFameEarned', () => {
     it('awards each monster its level-based fame value', () => {
-      expect(calculateFameEarned([1])).toBe(0)
+      expect(calculateFameEarned([1])).toBe(5)
       expect(calculateFameEarned([2])).toBe(10)
-      expect(calculateFameEarned([4])).toBe(60)
+      expect(calculateFameEarned([4])).toBe(50)
     })
 
     it('sums fame across all defeated monsters', () => {
-      expect(calculateFameEarned([1, 2, 3])).toBe(40) // 0 + 10 + 30
-      expect(calculateFameEarned([2, 4])).toBe(70) // 10 + 60
+      expect(calculateFameEarned([1, 2, 3])).toBe(40) // 5 + 10 + 25
+      expect(calculateFameEarned([2, 4])).toBe(60) // 10 + 50
     })
 
     it('returns 0 when nothing was defeated', () => {
@@ -148,11 +148,12 @@ describe('Fame Calculator', () => {
   })
 
   describe('calculateMonsterExp', () => {
-    it('should return 5 + level * 5', () => {
-      expect(calculateMonsterExp(1)).toBe(10)
-      expect(calculateMonsterExp(2)).toBe(15)
-      expect(calculateMonsterExp(3)).toBe(20)
-      expect(calculateMonsterExp(4)).toBe(25)
+    it('should return 10 + level * 5', () => {
+      expect(calculateMonsterExp(1)).toBe(15)
+      expect(calculateMonsterExp(2)).toBe(20)
+      expect(calculateMonsterExp(3)).toBe(25)
+      expect(calculateMonsterExp(4)).toBe(30)
+      expect(calculateMonsterExp(5)).toBe(35)
     })
   })
 
@@ -171,8 +172,8 @@ describe('Fame Calculator', () => {
 
     it('should sum EXP across all monsters', () => {
       const monsters = [createTestMonster(1), createTestMonster(2), createTestMonster(3)]
-      // 10 + 15 + 20 = 45
-      expect(calculateTotalMonsterExp(monsters)).toBe(45)
+      // 15 + 20 + 25 = 60
+      expect(calculateTotalMonsterExp(monsters)).toBe(60)
     })
 
     it('should return 0 for empty array', () => {

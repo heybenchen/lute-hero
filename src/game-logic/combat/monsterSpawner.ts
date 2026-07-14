@@ -1,5 +1,5 @@
 import { BoardSpace, Monster, Genre, MonsterTemplate, Rng, NewId } from '../../types/index.js'
-import { getMonsterByGenre, getRoundLevelBonus } from '../../data/monsters.js'
+import { getMonsterByGenre } from '../../data/monsters.js'
 
 /**
  * Count tags by genre and find the dominant genre
@@ -62,9 +62,10 @@ export function getMonsterNameWithLevel(baseName: string, level: number): string
 }
 
 /**
- * Spawn one monster per unique genre present in tags.
- * Duplicate tags of the same genre increase that monster's level.
- * The round parameter selects tougher templates and adds a level bonus in later rounds.
+ * Spawn one monster per unique genre present in tags. A monster's level is
+ * simply the count of its genre's tags — the same number the board shows on
+ * that genre's chip — so what you see on a space matches what you fight.
+ * The round parameter only selects tougher templates in later rounds.
  * e.g. [Pop, Pop, Rock] -> 1 Lv2 Pop monster + 1 Lv1 Rock monster
  */
 export function spawnMonstersFromTags(
@@ -76,12 +77,11 @@ export function spawnMonstersFromTags(
 ): Monster[] {
   const counts = countTagsByGenre(genreTags)
   const monsters: Monster[] = []
-  const levelBonus = getRoundLevelBonus(round)
   let index = 0
 
   counts.forEach((count, genre) => {
     const template = getMonsterByGenre(genre, round, rng)
-    const monster = createMonsterFromTemplate(template, spaceId, index, count + levelBonus, newId)
+    const monster = createMonsterFromTemplate(template, spaceId, index, count, newId)
     monsters.push(monster)
     index++
   })
@@ -90,28 +90,9 @@ export function spawnMonstersFromTags(
 }
 
 /**
- * Spawn a single monster based on the dominant genre tag
- * Level is determined by the count of that genre's tags
- */
-export function spawnMonsterFromDominantTag(
-  genreTags: Genre[],
-  spaceId: number,
-  index: number = 0,
-  round: number = 1,
-  rng: Rng = Math.random,
-  newId?: NewId
-): Monster | null {
-  const dominant = getDominantGenre(genreTags)
-  if (!dominant) return null
-
-  const levelBonus = getRoundLevelBonus(round)
-  const template = getMonsterByGenre(dominant.genre, round, rng)
-  return createMonsterFromTemplate(template, spaceId, index, dominant.count + levelBonus, newId)
-}
-
-/**
- * Spawn monsters for initial board setup
- * Each space gets one monster based on dominant genre, with level based on tag count
+ * Spawn monsters for initial board setup — one per unique genre chip, exactly
+ * like entering the space later, so the starting board's monsters match its
+ * chips.
  */
 export function spawnInitialMonsters(
   genreTags: Genre[],
@@ -120,10 +101,7 @@ export function spawnInitialMonsters(
   rng: Rng = Math.random,
   newId?: NewId
 ): Monster[] {
-  if (genreTags.length === 0) return []
-
-  const monster = spawnMonsterFromDominantTag(genreTags, spaceId, 0, round, rng, newId)
-  return monster ? [monster] : []
+  return spawnMonstersFromTags(genreTags, spaceId, round, rng, newId)
 }
 
 /**

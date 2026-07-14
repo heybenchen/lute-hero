@@ -186,15 +186,6 @@ export function getMonsterByGenre(genre: Genre, round: number = 1, rng: Rng = Ma
   return pool[Math.floor(rng() * pool.length)]
 }
 
-/**
- * Get a bonus level boost based on the current round.
- * Monsters get +1 level every 3 rounds past round 1.
- */
-export function getRoundLevelBonus(round: number): number {
-  if (round <= 1) return 0
-  return Math.floor((round - 1) / 3)
-}
-
 // Helper to get final boss
 export function getFinalBoss(): MonsterTemplate {
   return MONSTER_TEMPLATES.find((m) => m.isBoss)!

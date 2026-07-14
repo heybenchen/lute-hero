@@ -427,11 +427,13 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
     )
   }
 
-  // 4. One random tag everywhere, capped at 1 tag per space
+  // 4. Two monster chips per space to start (random tags on top of any
+  //    starter-element seeding), capped at 2 tags per space.
   spaces = addGenreTagsToBoard(spaces, rng)
-  spaces = spaces.map((s) => ({ ...s, genreTags: s.genreTags.slice(0, 1) }))
+  spaces = addGenreTagsToBoard(spaces, rng)
+  spaces = spaces.map((s) => ({ ...s, genreTags: s.genreTags.slice(0, 2) }))
 
-  // 5. Initial monsters
+  // 5. Initial monsters — one per unique genre chip, matching the board
   spaces = spaces.map((space) => {
     if (space.genreTags.length === 0) return space
     return { ...space, monsters: spawnInitialMonsters(space.genreTags, space.id, 1, rng, newId) }
