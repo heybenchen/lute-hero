@@ -27,10 +27,10 @@ export function calculateFameEarned(defeatedMonsterLevels: number[]): number {
 
 /**
  * Calculate EXP reward for a single monster based on level
- * Formula: 10 + level * 5 (Lv1=15, Lv2=20, Lv3=25, Lv4=30, Lv5=35)
+ * Formula: level * 5 (Lv1=5, Lv2=10, Lv3=15, Lv4=20, Lv5=25)
  */
 export function calculateMonsterExp(level: number): number {
-  return 10 + level * 5
+  return level * 5
 }
 
 /**
