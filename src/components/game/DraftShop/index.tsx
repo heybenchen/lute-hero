@@ -432,15 +432,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
                 Your Songs
               </div>
-              <div className="text-sm text-parchment-500">
-                ({player.songs.length})
-                {activeName
-                  ? ' — click a song to apply name'
-                  : activeDie
-                  ? ' — click any slot to place die (replace existing = remix)'
-                  : ' — buy an element or name above to improve your songs'
-                }
-              </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -490,7 +481,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           key={idx}
                           onClick={() => handleSlotDice(song.id, idx, !!slot.dice)}
                           disabled={!canInteract || !activeDie}
-                          className="w-20 h-20 aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
+                          className="flex-1 h-20 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
                           style={{
                             background: slot.dice
                               ? activeDie
@@ -510,7 +501,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           }}
                         >
                           {slot.dice ? (
-                            <div className="text-center relative">
+                            <div className="text-center relative flex flex-col">
                               <div className="text-2xl mb-0.5 text-gold-400"><DiceShape type={slot.dice.type} /></div>
                               <div className="absolute -top-1 -right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                                 style={{
