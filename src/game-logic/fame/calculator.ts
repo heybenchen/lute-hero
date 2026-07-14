@@ -3,11 +3,10 @@ import { FAME_THRESHOLDS } from '../../data/startingData.js'
 
 /**
  * Fame per monster level. Since songs hit all monsters at once (AOE),
- * high-level monsters ramp up steeply to make the tough fights the real
- * fame payoffs. Level 1 monsters award no fame. Levels past 5 clamp to the
- * top value, matching the HP multiplier cap.
+ * higher-level monsters are the bigger fame payoffs. Levels past 5 clamp to
+ * the top value, matching the HP multiplier cap.
  */
-export const MONSTER_FAME_BY_LEVEL = [0, 10, 30, 60, 100]
+export const MONSTER_FAME_BY_LEVEL = [5, 10, 25, 50, 75]
 
 /** Fame a monster is worth by level. */
 export function calculateMonsterFameValue(level: number): number {
@@ -28,10 +27,10 @@ export function calculateFameEarned(defeatedMonsterLevels: number[]): number {
 
 /**
  * Calculate EXP reward for a single monster based on level
- * Formula: 5 + level * 5 (Lv1=10, Lv2=15, Lv3=20, Lv4=25)
+ * Formula: level * 5 (Lv1=5, Lv2=10, Lv3=15, Lv4=20, Lv5=25)
  */
 export function calculateMonsterExp(level: number): number {
-  return 5 + level * 5
+  return level * 5
 }
 
 /**

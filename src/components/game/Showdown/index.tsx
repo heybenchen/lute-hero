@@ -209,7 +209,7 @@ export function FinalShowdown() {
               <div className="text-green-300 font-medieval font-bold text-xs tracking-widest uppercase">Weakness ×2!</div>
             )}
             {p.wasResisted && (
-              <div className="text-red-300 font-medieval font-bold text-xs tracking-widest uppercase">Resisted...</div>
+              <div className="text-red-300 font-medieval font-bold text-xs tracking-widest uppercase">Immune 0×</div>
             )}
             {p.hadCrit && (
               <div className="text-gold-400 font-medieval font-bold text-xs tracking-widest uppercase animate-pulse">Encore!</div>

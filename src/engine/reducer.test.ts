@@ -69,10 +69,10 @@ describe('START_GAME', () => {
     expect(state.players[0].position).toBe(0)
     expect(state.players[1].position).toBe(3)
     expect(state.spaces).toHaveLength(16)
-    // Every space capped at 1 tag
-    expect(state.spaces.every((s) => s.genreTags.length <= 1)).toBe(true)
-    // Spaces with tags have monsters
-    expect(state.spaces.filter((s) => s.genreTags.length > 0).every((s) => s.monsters.length === 1)).toBe(true)
+    // Every space starts with 2 monster chips
+    expect(state.spaces.every((s) => s.genreTags.length === 2)).toBe(true)
+    // Each space spawns one monster per unique genre chip, matching the board
+    expect(state.spaces.every((s) => s.monsters.length === new Set(s.genreTags).size)).toBe(true)
     expect(state.elementOffers).toHaveLength(4)
     expect(state.namePool).toHaveLength(3)
   })

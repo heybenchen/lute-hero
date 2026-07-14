@@ -1,5 +1,5 @@
 import { BoardSpace, Monster, Genre, MonsterTemplate, Rng, NewId } from '../../types/index.js'
-import { getMonsterByGenre, getRoundLevelBonus } from '../../data/monsters.js'
+import { getMonsterByGenre } from '../../data/monsters.js'
 
 /**
  * Count tags by genre and find the dominant genre
@@ -32,6 +32,14 @@ export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: num
   return maxGenre ? { genre: maxGenre, count: maxCount } : null
 }
 
+/** Monster levels never exceed this; HP, fame, EXP, and naming all top out here. */
+export const MAX_MONSTER_LEVEL = 5
+
+/** Clamp any raw level into the valid 1..MAX_MONSTER_LEVEL range. */
+export function clampMonsterLevel(level: number): number {
+  return Math.min(Math.max(Math.floor(level), 1), MAX_MONSTER_LEVEL)
+}
+
 /**
  * Calculate HP multiplier based on monster level (capped at level 5)
  * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 3x, Level 4 = 5x, Level 5 = 7.5x
@@ -39,8 +47,7 @@ export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: num
 const HP_MULTIPLIERS = [1, 1.75, 3, 5, 7.5]
 
 export function getHPMultiplier(level: number): number {
-  const capped = Math.min(level, 5)
-  return HP_MULTIPLIERS[capped - 1]
+  return HP_MULTIPLIERS[clampMonsterLevel(level) - 1]
 }
 
 /**
@@ -55,9 +62,10 @@ export function getMonsterNameWithLevel(baseName: string, level: number): string
 }
 
 /**
- * Spawn one monster per unique genre present in tags.
- * Duplicate tags of the same genre increase that monster's level.
- * The round parameter selects tougher templates and adds a level bonus in later rounds.
+ * Spawn one monster per unique genre present in tags. A monster's level is
+ * simply the count of its genre's tags — the same number the board shows on
+ * that genre's chip — so what you see on a space matches what you fight.
+ * The round parameter only selects tougher templates in later rounds.
  * e.g. [Pop, Pop, Rock] -> 1 Lv2 Pop monster + 1 Lv1 Rock monster
  */
 export function spawnMonstersFromTags(
@@ -69,12 +77,11 @@ export function spawnMonstersFromTags(
 ): Monster[] {
   const counts = countTagsByGenre(genreTags)
   const monsters: Monster[] = []
-  const levelBonus = getRoundLevelBonus(round)
   let index = 0
 
   counts.forEach((count, genre) => {
     const template = getMonsterByGenre(genre, round, rng)
-    const monster = createMonsterFromTemplate(template, spaceId, index, count + levelBonus, newId)
+    const monster = createMonsterFromTemplate(template, spaceId, index, count, newId)
     monsters.push(monster)
     index++
   })
@@ -83,28 +90,9 @@ export function spawnMonstersFromTags(
 }
 
 /**
- * Spawn a single monster based on the dominant genre tag
- * Level is determined by the count of that genre's tags
- */
-export function spawnMonsterFromDominantTag(
-  genreTags: Genre[],
-  spaceId: number,
-  index: number = 0,
-  round: number = 1,
-  rng: Rng = Math.random,
-  newId?: NewId
-): Monster | null {
-  const dominant = getDominantGenre(genreTags)
-  if (!dominant) return null
-
-  const levelBonus = getRoundLevelBonus(round)
-  const template = getMonsterByGenre(dominant.genre, round, rng)
-  return createMonsterFromTemplate(template, spaceId, index, dominant.count + levelBonus, newId)
-}
-
-/**
- * Spawn monsters for initial board setup
- * Each space gets one monster based on dominant genre, with level based on tag count
+ * Spawn monsters for initial board setup — one per unique genre chip, exactly
+ * like entering the space later, so the starting board's monsters match its
+ * chips.
  */
 export function spawnInitialMonsters(
   genreTags: Genre[],
@@ -113,10 +101,7 @@ export function spawnInitialMonsters(
   rng: Rng = Math.random,
   newId?: NewId
 ): Monster[] {
-  if (genreTags.length === 0) return []
-
-  const monster = spawnMonsterFromDominantTag(genreTags, spaceId, 0, round, rng, newId)
-  return monster ? [monster] : []
+  return spawnMonstersFromTags(genreTags, spaceId, round, rng, newId)
 }
 
 /**
@@ -129,20 +114,21 @@ export function createMonsterFromTemplate(
   level: number = 1,
   newId?: NewId
 ): Monster {
-  const hpMultiplier = getHPMultiplier(level)
+  const cappedLevel = clampMonsterLevel(level)
+  const hpMultiplier = getHPMultiplier(cappedLevel)
   // Only spawnable monsters reach this path, so baseHP is always defined.
   const scaledHP = Math.floor((template.baseHP ?? 0) * hpMultiplier)
 
   return {
     id: newId ? newId('monster') : `monster-${spaceId}-${index}-${Date.now()}`,
     templateId: template.id,
-    name: getMonsterNameWithLevel(template.name, level),
+    name: getMonsterNameWithLevel(template.name, cappedLevel),
     currentHP: scaledHP,
     maxHP: scaledHP,
     vulnerability: template.vulnerability,
     resistance: template.resistance,
     isBoss: template.isBoss || false,
-    level,
+    level: cappedLevel,
   }
 }
 

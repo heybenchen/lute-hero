@@ -155,7 +155,7 @@ export function Setup() {
             <li>Genre tags spawn monsters when you enter</li>
             <li>Play songs to deal damage (AOE to all monsters)</li>
             <li>Defeat monsters to gain Fame and EXP</li>
-            <li>Vulnerable genres deal 2x damage, resistant 0x (immune)</li>
+            <li>A monster's matching genre deals 2x damage; its immune genre deals 0 (no damage)</li>
             <li>Rolling max value = Critical Hit (double damage!)</li>
           </ul>
         </div>
