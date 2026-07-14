@@ -137,11 +137,11 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
     description: 'An ancient terror from the ocean floor',
   },
 
-  // Final Boss - No weakness or resistance
+  // Final Boss - No weakness or resistance. It has no HP: the Final Showdown
+  // is decided by total fandom over three verses, never by depleting the boss.
   {
     id: 'boss_silence',
     name: 'The Eternal Silence',
-    baseHP: 90,
     vulnerability: null,
     resistance: null,
     description: 'The antithesis of all music, the end of sound itself',
@@ -168,8 +168,8 @@ export function getMonsterByGenre(genre: Genre, round: number = 1, rng: Rng = Ma
     return allNonBoss[Math.floor(rng() * allNonBoss.length)]
   }
 
-  // Sort by ascending baseHP
-  const sorted = [...candidates].sort((a, b) => a.baseHP - b.baseHP)
+  // Sort by ascending baseHP (candidates are always spawnable monsters, so baseHP is set)
+  const sorted = [...candidates].sort((a, b) => (a.baseHP ?? 0) - (b.baseHP ?? 0))
 
   // In early rounds (1-3), favor lighter monsters; later rounds favor heavier ones
   if (round <= 2) {
