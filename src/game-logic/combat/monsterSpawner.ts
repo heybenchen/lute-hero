@@ -130,7 +130,8 @@ export function createMonsterFromTemplate(
   newId?: NewId
 ): Monster {
   const hpMultiplier = getHPMultiplier(level)
-  const scaledHP = Math.floor(template.baseHP * hpMultiplier)
+  // Only spawnable monsters reach this path, so baseHP is always defined.
+  const scaledHP = Math.floor((template.baseHP ?? 0) * hpMultiplier)
 
   return {
     id: newId ? newId('monster') : `monster-${spaceId}-${index}-${Date.now()}`,
