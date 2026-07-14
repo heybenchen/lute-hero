@@ -35,8 +35,10 @@ export function createShowdownBoss(adaptation: BossAdaptation = NO_ADAPTATION): 
     id: 'showdown-boss',
     templateId: template.id,
     name: template.name,
-    currentHP: template.baseHP,
-    maxHP: template.baseHP,
+    // HP is unused in the Final Showdown — the outcome is decided by total
+    // fandom, never by depleting the boss — so it carries no meaningful value.
+    currentHP: 0,
+    maxHP: 0,
     vulnerability: adaptation.weakGenre,
     resistance: adaptation.resistGenre,
     isBoss: true,

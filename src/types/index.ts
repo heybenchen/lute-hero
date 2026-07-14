@@ -74,7 +74,7 @@ export interface Song {
 export interface MonsterTemplate {
   id: string;
   name: string;
-  baseHP: number;
+  baseHP?: number; // Spawn HP for regular monsters; omitted for the final boss (no HP mechanic)
   vulnerability: Genre | null; // Single weakness - 2x damage
   resistance: Genre | null; // Single resistance - 0x damage (immune)
   description: string;

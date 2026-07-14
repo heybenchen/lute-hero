@@ -10,7 +10,7 @@ import { calculateMonsterFameValue, calculateMonsterExp } from '@/game-logic/fam
 
 // Base-HP range across the (non-boss) monster templates, so the Health column
 // can show a real range instead of an abstract multiplier.
-const baseHPs = MONSTER_TEMPLATES.filter((t) => !t.isBoss).map((t) => t.baseHP)
+const baseHPs = MONSTER_TEMPLATES.filter((t) => !t.isBoss).map((t) => t.baseHP ?? 0)
 const MIN_BASE_HP = Math.min(...baseHPs)
 const MAX_BASE_HP = Math.max(...baseHPs)
 
