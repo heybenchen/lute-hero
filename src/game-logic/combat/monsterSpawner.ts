@@ -32,6 +32,14 @@ export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: num
   return maxGenre ? { genre: maxGenre, count: maxCount } : null
 }
 
+/** Monster levels never exceed this; HP, fame, EXP, and naming all top out here. */
+export const MAX_MONSTER_LEVEL = 5
+
+/** Clamp any raw level into the valid 1..MAX_MONSTER_LEVEL range. */
+export function clampMonsterLevel(level: number): number {
+  return Math.min(Math.max(Math.floor(level), 1), MAX_MONSTER_LEVEL)
+}
+
 /**
  * Calculate HP multiplier based on monster level (capped at level 5)
  * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 3x, Level 4 = 5x, Level 5 = 7.5x
@@ -39,8 +47,7 @@ export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: num
 const HP_MULTIPLIERS = [1, 1.75, 3, 5, 7.5]
 
 export function getHPMultiplier(level: number): number {
-  const capped = Math.min(level, 5)
-  return HP_MULTIPLIERS[capped - 1]
+  return HP_MULTIPLIERS[clampMonsterLevel(level) - 1]
 }
 
 /**
@@ -129,19 +136,20 @@ export function createMonsterFromTemplate(
   level: number = 1,
   newId?: NewId
 ): Monster {
-  const hpMultiplier = getHPMultiplier(level)
+  const cappedLevel = clampMonsterLevel(level)
+  const hpMultiplier = getHPMultiplier(cappedLevel)
   const scaledHP = Math.floor(template.baseHP * hpMultiplier)
 
   return {
     id: newId ? newId('monster') : `monster-${spaceId}-${index}-${Date.now()}`,
     templateId: template.id,
-    name: getMonsterNameWithLevel(template.name, level),
+    name: getMonsterNameWithLevel(template.name, cappedLevel),
     currentHP: scaledHP,
     maxHP: scaledHP,
     vulnerability: template.vulnerability,
     resistance: template.resistance,
     isBoss: template.isBoss || false,
-    level,
+    level: cappedLevel,
   }
 }
 

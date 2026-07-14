@@ -4,6 +4,7 @@ import { CombatModal } from './Combat'
 import { DraftShop } from './DraftShop'
 import { PlayerPanel } from './PlayerPanel'
 import { useGameStore, selectCanAct, selectIsHost, clearSavedGame } from '@/store'
+import { TypeChart } from './TypeChart'
 
 export function GameView() {
   const dispatch = useGameStore((state) => state.dispatch)
@@ -253,12 +254,8 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           </Section>
 
           <Section title="🎵 Genres & Elements">
-            <p className="mb-2">Each die belongs to an element. Monsters are weak or immune to certain elements:</p>
-            <List items={[
-              <><Hl>2× damage</Hl> from the element a monster is <Hl>weak</Hl> to.</>,
-              <><Hl>0× damage</Hl> (immune) from the element a monster <Hl>resists</Hl>.</>,
-              <>Elements: <span className="text-red-300">Ballad (Fire)</span>, <span className="text-green-300">Folk (Earth)</span>, <span className="text-yellow-200">Hymn (Wind)</span>, <span className="text-blue-300">Shanty (Water)</span>.</>,
-            ]} />
+            <p className="mb-3">Each die belongs to an element. Opposing elements are immune to each other, and every monster takes double damage from its own element:</p>
+            <TypeChart className="mb-1" />
           </Section>
 
           <Section title="🛠 The Studio (Shop)">

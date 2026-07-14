@@ -103,6 +103,38 @@ describe('Monster Spawner', () => {
       expect(createMonsterFromTemplate(template, 1, 0, 4).name).toBe('Legendary Goblin')
       expect(createMonsterFromTemplate(template, 1, 0, 5).name).toBe('Mythic Goblin')
     })
+
+    it('should cap the stored level at 5', () => {
+      const template: MonsterTemplate = {
+        id: 'test',
+        name: 'Goblin',
+        baseHP: 10,
+        vulnerability: null,
+        resistance: null,
+        description: 'test',
+      }
+
+      const lv6 = createMonsterFromTemplate(template, 1, 0, 6)
+      const lv12 = createMonsterFromTemplate(template, 1, 0, 12)
+
+      expect(lv6.level).toBe(5)
+      expect(lv6.name).toBe('Mythic Goblin')
+      expect(lv12.level).toBe(5)
+      expect(lv12.maxHP).toBe(lv6.maxHP)
+    })
+
+    it('should floor the level at 1', () => {
+      const template: MonsterTemplate = {
+        id: 'test',
+        name: 'Goblin',
+        baseHP: 10,
+        vulnerability: null,
+        resistance: null,
+        description: 'test',
+      }
+
+      expect(createMonsterFromTemplate(template, 1, 0, 0).level).toBe(1)
+    })
   })
 
   describe('getHPMultiplier', () => {
