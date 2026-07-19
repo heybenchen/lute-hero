@@ -16,7 +16,7 @@ export type GameAction =
   | { type: 'START_GAME'; playerConfigs: PlayerConfig[] }
   | { type: 'MOVE'; playerId: string; toSpaceId: number; inspirationTravel: boolean }
   | { type: 'START_COMBAT'; playerId: string }
-  | { type: 'PLAY_SONG'; songId: string; ownerId: string }
+  | { type: 'PLAY_SONG'; songId: string; ownerId: string; targetMonsterId: string }
   | { type: 'REROLL_SONG' }
   | { type: 'SELECT_COMBAT_SPREAD'; genre: Genre | null }
   | { type: 'END_COMBAT'; spreadGenre?: Genre }
@@ -40,6 +40,11 @@ export type GameAction =
   | { type: 'ADVANCE_TO_SUMMARY' }
   | { type: 'RESET_GAME' }
   | { type: 'HOST_SKIP_TURN'; targetPlayerId: string }
+  // Round-end redistribution: the giver picks 4 chips, the receiver places them
+  | { type: 'ADD_REDISTRIBUTION_CHIP'; genre: Genre }
+  | { type: 'REMOVE_REDISTRIBUTION_CHIP'; index: number }
+  | { type: 'CONFIRM_REDISTRIBUTION_GIFT' }
+  | { type: 'PLACE_REDISTRIBUTION_CHIP'; spaceId: number }
 
 export type GameActionType = GameAction['type']
 

@@ -5,7 +5,7 @@ import { mulberry32, randomSeed } from '../engine/rng'
 import { Driver, DispatchResult } from './types'
 
 const STORAGE_KEY = 'lute-hero-save'
-const STORAGE_VERSION = 9
+const STORAGE_VERSION = 10
 
 interface SaveDoc {
   version: number

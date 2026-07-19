@@ -36,6 +36,26 @@ function apply(state: EngineState, action: GameAction, c: ActionCtx = ctx()) {
   return result
 }
 
+/** Drive round-end redistribution to completion (each giver picks 4 Ballad
+ *  chips, each receiver places them on the first free tiles). */
+function completeRedistribution(state: EngineState): EngineState {
+  let s = state
+  let guard = 0
+  while (s.redistribution.active && guard++ < 500) {
+    const r = s.redistribution
+    if (r.stage === 'selecting') {
+      s = r.selectedChips.length < 4
+        ? apply(s, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Ballad' }).state
+        : apply(s, { type: 'CONFIRM_REDISTRIBUTION_GIFT' }).state
+    } else {
+      const used = new Set(r.placedSpaceIds)
+      const target = s.spaces.find((sp) => !used.has(sp.id) && sp.genreTags.length < 5)!
+      s = apply(s, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: target.id }).state
+    }
+  }
+  return s
+}
+
 describe('engine determinism', () => {
   it('produces identical state for the same seed and action sequence', () => {
     const run = (seed: number) => {
@@ -69,8 +89,8 @@ describe('START_GAME', () => {
     expect(state.players[0].position).toBe(0)
     expect(state.players[1].position).toBe(3)
     expect(state.spaces).toHaveLength(16)
-    // Every space starts with 2 monster chips
-    expect(state.spaces.every((s) => s.genreTags.length === 2)).toBe(true)
+    // Every space starts with exactly 1 monster chip
+    expect(state.spaces.every((s) => s.genreTags.length === 1)).toBe(true)
     // Each space spawns one monster per unique genre chip, matching the board
     expect(state.spaces.every((s) => s.monsters.length === new Set(s.genreTags).size)).toBe(true)
     expect(state.elementOffers).toHaveLength(4)
@@ -145,7 +165,8 @@ describe('combat flow', () => {
         monsters: state.combat.monsters.map((m) => ({ ...m, currentHP: 1 })),
       },
     }
-    const playResult = apply(state, { type: 'PLAY_SONG', songId: state.players[0].songs[0].id, ownerId: 'player-1' })
+    const targetId = state.combat.monsters[0].id
+    const playResult = apply(state, { type: 'PLAY_SONG', songId: state.players[0].songs[0].id, ownerId: 'player-1', targetMonsterId: targetId })
     state = playResult.state
     expect(playResult.events.some((e) => e.type === 'diceRolled')).toBe(true)
     expect(playResult.events.some((e) => e.type === 'damageDealt')).toBe(true)
@@ -199,25 +220,46 @@ describe('combat flow', () => {
     let state = stateWithMonsterAtPlayer()
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 1 } : p)) }
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    // Beef up the monster so the song wounds without killing (reroll needs a live target)
+    state = {
+      ...state,
+      combat: { ...state.combat, monsters: state.combat.monsters.map((m) => ({ ...m, currentHP: 9999, maxHP: 9999 })) },
+    }
     const songId = state.players[0].songs[0].id
-    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1' }).state
+    const targetId = state.combat.monsters[0].id
+    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: targetId }).state
     const songsUsedAfterPlay = state.combat.songsUsed.length
     state = apply(state, { type: 'REROLL_SONG' }, ctx(99)).state
     expect(state.combat.songsUsed.length).toBe(songsUsedAfterPlay) // replaced, not stacked
     expect(state.players[0].inspiration).toBe(0)
   })
 
-  it('enforces the 3-song combat limit and no-repeat rule', () => {
+  it('spends a song that only wounds, and returns its dice when it defeats the target', () => {
     let state = stateWithMonsterAtPlayer()
-    // Beef up the monster so it survives
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    // A tanky monster survives the song → the song is spent (no replay)
     state = {
       ...state,
       combat: { ...state.combat, monsters: state.combat.monsters.map((m) => ({ ...m, currentHP: 9999, maxHP: 9999 })) },
     }
     const songId = state.players[0].songs[0].id
-    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1' }).state
-    expect(applyAction(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1' }, ctx()).ok).toBe(false)
+    const targetId = state.combat.monsters[0].id
+    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: targetId }).state
+    expect(state.combat.spentSongIds).toContain(songId)
+    expect(applyAction(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: targetId }, ctx()).ok).toBe(false)
+
+    // Now the same song defeats a fresh 1-HP target → dice return, no longer spent
+    state = {
+      ...state,
+      combat: {
+        ...state.combat,
+        spentSongIds: [],
+        monsters: state.combat.monsters.map((m) => ({ ...m, currentHP: 1 })),
+      },
+    }
+    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: targetId }).state
+    expect(state.combat.monsters[0].currentHP).toBe(0)
+    expect(state.combat.spentSongIds).not.toContain(songId)
   })
 })
 
@@ -231,32 +273,68 @@ describe('END_TURN', () => {
     expect(state.namePool).toHaveLength(3)
   })
 
-  it('closes the round after the last player: tags grow, round increments', () => {
+  it('runs round-end redistribution, then increments the round and respawns monsters', () => {
     let state = startTwoPlayerGame()
-    const tagCounts = state.spaces.map((s) => s.genreTags.length)
-    state = apply(state, { type: 'END_TURN' }).state
-    state = apply(state, { type: 'END_TURN' }).state
+    state = apply(state, { type: 'END_TURN' }).state // player-1 → player-2
+    state = apply(state, { type: 'END_TURN' }).state // player-2 → round end → redistribution
+    expect(state.redistribution.active).toBe(true)
+    expect(state.currentRound).toBe(1)
+    const tagsBefore = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
+
+    state = completeRedistribution(state)
+    expect(state.redistribution.active).toBe(false)
     expect(state.currentRound).toBe(2)
     expect(state.currentTurnPlayerIndex).toBe(0)
-    state.spaces.forEach((s, i) => expect(s.genreTags.length).toBe(tagCounts[i] + 1))
+    // 2 players each hand off 4 chips → 8 new tags placed on the board
+    const tagsAfter = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
+    expect(tagsAfter).toBe(tagsBefore + 2 * 4)
+    // Monsters respawn to match the (redistributed) tags
+    state.spaces.forEach((s) => expect(s.monsters.length).toBe(new Set(s.genreTags).size))
   })
 
   it('grants one final turn, then transitions and auto-starts the showdown', () => {
     let state = startTwoPlayerGame()
     state = { ...state, pendingPhase: 'finalBoss' as const, currentTurnPlayerIndex: 1 }
-    // First round-end: the threshold was hit, so everyone gets one more round
+    // First round-end runs redistribution, then grants the final turn
     state = apply(state, { type: 'END_TURN' }).state
+    expect(state.redistribution.active).toBe(true)
+    state = completeRedistribution(state)
     expect(state.phase).toBe('main')
     expect(state.finalTurnGranted).toBe(true)
     expect(state.showdownActive).toBe(false)
-    // Play out the granted round; the next round-end flips to the showdown
+    // Play out the granted round; its round-end flips straight to the showdown
+    // (no redistribution when entering the boss)
     state = apply(state, { type: 'END_TURN' }).state // player-1 → player-2
     state = apply(state, { type: 'END_TURN' }).state // round end → transition
+    expect(state.redistribution.active).toBe(false)
     expect(state.phase).toBe('finalBoss')
     expect(state.finalTurnGranted).toBe(false)
     expect(state.showdownActive).toBe(true)
     expect(state.showdownOrder).toEqual(['player-1', 'player-2'])
     expect(state.showdownFandom).toEqual({ 'player-1': 0, 'player-2': 0 })
+  })
+
+  it('gates redistribution to the giver and receiver, one chip per tile', () => {
+    let state = startTwoPlayerGame()
+    state = apply(state, { type: 'END_TURN' }).state
+    state = apply(state, { type: 'END_TURN' }).state
+    expect(state.redistribution.active).toBe(true)
+    expect(state.redistribution.stage).toBe('selecting')
+    // giverIdx 0 → giver player-1, receiver player-2
+    // The receiver can't add chips; the giver can
+    expect(applyAction(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }, seatCtx('player-2')).ok).toBe(false)
+    expect(applyAction(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }, seatCtx('player-1')).ok).toBe(true)
+    // Confirm requires exactly 4 chips
+    state = apply(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }).state
+    expect(applyAction(state, { type: 'CONFIRM_REDISTRIBUTION_GIFT' }, ctx()).ok).toBe(false)
+    for (let i = 0; i < 3; i++) state = apply(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }).state
+    state = apply(state, { type: 'CONFIRM_REDISTRIBUTION_GIFT' }).state
+    expect(state.redistribution.stage).toBe('placing')
+    // Now the receiver (player-2) places; the giver can't
+    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-1')).ok).toBe(false)
+    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-2')).state
+    // No two chips on the same tile
+    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-2')).ok).toBe(false)
   })
 })
 

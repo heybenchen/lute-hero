@@ -23,8 +23,16 @@ export interface EngineCombatState {
   spaceId: number | null
   monsters: Monster[]
   songsUsed: SongUsage[]
+  /**
+   * Songs whose dice are spent this combat. A song is spent when it damages a
+   * monster without defeating it; defeating the target returns its dice, so the
+   * song stays playable. Spent songs can't be played again this combat.
+   */
+  spentSongIds: string[]
   killCredits: KillCredit[]
   currentSongId: string | null
+  /** Monster the last song targeted (single-target combat). */
+  lastTargetMonsterId: string | null
   rolls: DiceRoll[]
   totalDamage: number
   lastDamageCalculations: DamageCalculation[]
@@ -32,6 +40,7 @@ export interface EngineCombatState {
   undoSnapshot: {
     monsters: Monster[]
     songsUsed: SongUsage[]
+    spentSongIds: string[]
     killCredits: KillCredit[]
     totalDamage: number
   } | null
@@ -39,6 +48,26 @@ export interface EngineCombatState {
   lastPlayedOwnerId: string | null
   /** Shared victory choice so spectators see the element being considered. */
   selectedSpreadGenre: Genre | null
+}
+
+/**
+ * Round-end redistribution: after everyone has taken a turn, each player hands
+ * 4 monster chips of their choice to the player behind them in turn order, and
+ * that player places the chips on distinct board tiles. Kept in the synced
+ * engine state so both the giver and the placer (and any spectators) see it.
+ */
+export interface RedistributionState {
+  active: boolean
+  /** Index (into players) of the current giver; the receiver is the next player. */
+  giverIdx: number
+  /** 'selecting' — the giver is choosing chips; 'placing' — the receiver places them. */
+  stage: 'selecting' | 'placing'
+  /** Chips the giver has picked so far (up to CHIPS_PER_HANDOFF). */
+  selectedChips: Genre[]
+  /** Chips handed to the receiver, being placed one at a time. */
+  chipsToPlace: Genre[]
+  /** Spaces already used in this placement — no two chips on the same tile. */
+  placedSpaceIds: number[]
 }
 
 /**
@@ -82,6 +111,9 @@ export interface EngineState {
   // Combat (synced, unlike the old client-only slice)
   combat: EngineCombatState
 
+  // Round-end chip redistribution (inactive most of the time)
+  redistribution: RedistributionState
+
   // Final showdown
   showdownActive: boolean
   showdownComplete: boolean
@@ -123,8 +155,10 @@ export function createInitialCombatState(): EngineCombatState {
     spaceId: null,
     monsters: [],
     songsUsed: [],
+    spentSongIds: [],
     killCredits: [],
     currentSongId: null,
+    lastTargetMonsterId: null,
     rolls: [],
     totalDamage: 0,
     lastDamageCalculations: [],
@@ -132,6 +166,17 @@ export function createInitialCombatState(): EngineCombatState {
     lastPlayedSongId: null,
     lastPlayedOwnerId: null,
     selectedSpreadGenre: null,
+  }
+}
+
+export function createInitialRedistributionState(): RedistributionState {
+  return {
+    active: false,
+    giverIdx: 0,
+    stage: 'selecting',
+    selectedChips: [],
+    chipsToPlace: [],
+    placedSpaceIds: [],
   }
 }
 
@@ -150,6 +195,7 @@ export function normalizeEngineState(state: EngineState): EngineState {
     ...state,
     combat: { ...createInitialCombatState(), ...state.combat },
     studio: { ...createInitialStudioState(), ...state.studio },
+    redistribution: { ...createInitialRedistributionState(), ...state.redistribution },
   }
 }
 
@@ -172,6 +218,7 @@ export function createInitialEngineState(): EngineState {
     studio: createInitialStudioState(),
 
     combat: createInitialCombatState(),
+    redistribution: createInitialRedistributionState(),
 
     showdownActive: false,
     showdownComplete: false,

@@ -186,7 +186,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
                 boxShadow: song.used ? 'none' : '0 2px 8px rgba(0,0,0,0.3)',
               }}
             >
-              {song.used ? '✓ Played' : !hasDice ? 'No Dice' : '♫ Perform'}
+              {song.used ? '✓ Spent' : !hasDice ? 'No Dice' : '♫ Perform'}
             </button>
           )}
         </div>
