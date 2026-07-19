@@ -13,11 +13,10 @@ interface PlayerSummary {
   player: Player
   rank: number
   fandom: number
-  bestHit: { damage: number; songName: string } | null
+  bestHit: { damage: number } | null
   crits: number
   diceCount: number
   strongestDie: string | null
-  namedSongs: number
   award: Award
 }
 
@@ -48,10 +47,6 @@ function assignAwards(summaries: Omit<PlayerSummary, 'award'>[]): Map<string, Aw
     {
       award: { title: 'Gear Head', emoji: '🎲', blurb: 'Toured with the biggest dice bag' },
       rankBy: (s) => s.diceCount,
-    },
-    {
-      award: { title: 'Wordsmith', emoji: '📜', blurb: 'Gave the most songs a proper name' },
-      rankBy: (s) => s.namedSongs,
     },
     {
       award: { title: 'Deep Pockets', emoji: '💰', blurb: 'Retired with the most unspent EXP' },
@@ -103,7 +98,6 @@ export function FinalSummary() {
         crits: showdownCrits[player.id] || 0,
         diceCount: dice.length,
         strongestDie,
-        namedSongs: player.songs.filter((s) => s.name).length,
       }
     })
     const awards = assignAwards(base)
@@ -189,10 +183,9 @@ export function FinalSummary() {
               {/* Fun stats grid */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <StatRow icon="🗡️" label="Monsters bested" value={`${s.player.monstersDefeated}`} />
-                <StatRow icon="💥" label="Biggest hit" value={s.bestHit ? `${s.bestHit.damage}` : '—'} detail={s.bestHit ? `with ${s.bestHit.songName}` : undefined} />
+                <StatRow icon="💥" label="Biggest hit" value={s.bestHit ? `${s.bestHit.damage}` : '—'} />
                 <StatRow icon="🎲" label="Dice collected" value={`${s.diceCount}`} detail={s.strongestDie ? `best: ${s.strongestDie}` : undefined} />
                 <StatRow icon="⚡" label="Showdown crits" value={`${s.crits}`} />
-                <StatRow icon="📜" label="Songs named" value={`${s.namedSongs}/${s.player.songs.length}`} />
                 <StatRow icon="💰" label="EXP unspent" value={`${s.player.exp}`} />
               </div>
             </div>

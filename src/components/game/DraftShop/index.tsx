@@ -1,7 +1,5 @@
 import { useGameStore, selectPlayerById } from '@/store'
-import { DraftCard, Genre, Dice, PendingReward } from '@/types'
-import { DraftCardDisplay } from './DraftCardDisplay'
-import { describeTrackEffect } from '@/data/trackEffects'
+import { Genre, Dice, PendingReward } from '@/types'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
@@ -22,7 +20,6 @@ interface DraftShopProps {
 
 interface OwnedDie {
   dice: Dice
-  songName: string
   songIndex: number
   slotIndex: number
 }
@@ -35,7 +32,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
   const dispatch = useGameStore((state) => state.dispatch)
 
   // Shop state
-  const namePool = useGameStore((state) => state.namePool)
   const elementOffers = useGameStore((state) => state.elementOffers)
   const elementBag = useGameStore((state) => state.elementBag)
 
@@ -44,20 +40,12 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
 
   const selectedOfferIdx = useGameStore((state) => state.studio.selectedOfferIdx)
   const activeRewardId = useGameStore((state) => state.studio.activeRewardId)
-  const selectedNameId = useGameStore((state) => state.studio.selectedNameId)
 
   const selectedElement: Genre | null =
     selectedOfferIdx !== null ? elementOffers[selectedOfferIdx] ?? null : null
 
   const activeReward = pendingRewards.find((r) => r.id === activeRewardId) ?? null
   const activeDie = activeReward?.kind === 'die' ? activeReward.dice : null
-  const activeName = activeReward?.kind === 'name' ? activeReward : null
-  const selectedName = namePool.find((c) => c.id === selectedNameId) ?? null
-
-  const handleRefreshNames = () => {
-    if (!canInteract || !player || player.inspiration < INSPIRATION_SPEND) return
-    dispatch({ type: 'REFRESH_NAME_POOL' })
-  }
 
   const handleBuyInspiration = () => {
     if (!canInteract) return
@@ -73,7 +61,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     ? player.songs.flatMap((song, songIndex) =>
         song.slots.flatMap((slot, slotIndex) =>
           slot.dice && slot.dice.genre === selectedElement
-            ? [{ dice: slot.dice, songName: song.name, songIndex, slotIndex }]
+            ? [{ dice: slot.dice, songIndex, slotIndex }]
             : []
         )
       )
@@ -94,16 +82,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
   const handleRefreshElements = () => {
     if (!canInteract || player.inspiration < INSPIRATION_SPEND) return
     dispatch({ type: 'REFRESH_ELEMENT_OFFERS' })
-  }
-
-  const handlePurchaseName = async (card: DraftCard) => {
-    if (!canInteract || !player || player.exp < card.cost) return
-    await dispatch({ type: 'BUY_NAME', cardId: card.id })
-  }
-
-  const handleApplyName = (songId: string) => {
-    if (!canInteract || !activeName) return
-    dispatch({ type: 'SLOT_NAME_REWARD', rewardId: activeName.id, songId })
   }
 
   const handleSlotDice = (songId: string, slotIndex: number, isReplacement: boolean = false) => {
@@ -277,7 +255,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                       No {selectedElement} dice slotted in your songs yet
                     </div>
                   ) : (
-                    ownedDiceOfElement.map(({ dice, songName, songIndex, slotIndex }) => {
+                    ownedDiceOfElement.map(({ dice, songIndex, slotIndex }) => {
                       const nextType = getNextDiceType(dice.type)
                       const cost = getUpgradeCost(dice.type)
                       const affordable = cost !== null && player.exp >= cost
@@ -297,7 +275,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             )}
                           </div>
                           <div className="text-[10px] text-parchment-500 font-normal">
-                            {songName || `Song ${songIndex + 1}`} &middot; slot {slotIndex + 1}
+                            Song {songIndex + 1} &middot; slot {slotIndex + 1}
                           </div>
                         </button>
                       )
@@ -306,54 +284,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Song name cards */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
-                  Song Names
-                </div>
-                <div className="text-sm text-parchment-500 hidden sm:block">
-                  ({namePool.length} available) &mdash; Names grant effects to your songs
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {selectedName && (
-                  <button
-                    onClick={() => handlePurchaseName(selectedName)}
-                    disabled={!canInteract || player.exp < selectedName.cost}
-                    className="btn-primary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed animate-fade-in"
-                  >
-                    Buy ({selectedName.cost} EXP)
-                  </button>
-                )}
-                <button
-                  onClick={handleRefreshNames}
-                  disabled={!canInteract || player.inspiration < INSPIRATION_SPEND}
-                  className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                  title={player.inspiration >= INSPIRATION_SPEND ? 'Draw a fresh set of song names' : 'Requires Inspiration'}
-                >
-                  Refresh (&#x2728; {INSPIRATION_SPEND})
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {namePool.map((card) => (
-                <DraftCardDisplay
-                  key={card.id}
-                  card={card}
-                  selected={selectedNameId === card.id}
-                  onSelect={() => dispatch({
-                    type: 'SELECT_STUDIO_NAME',
-                    cardId: selectedNameId === card.id ? null : card.id,
-                  })}
-                  canAfford={player.exp >= card.cost}
-                  readOnly={!canInteract}
-                />
-              ))}
-            </div>
           </div>
 
           {/* Pending rewards tray — queued purchases waiting to be placed */}
@@ -373,26 +303,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               <div className="flex flex-wrap gap-2">
                 {pendingRewards.map((reward) => {
                   const isActive = reward.id === activeRewardId
-                  if (reward.kind === 'die') {
-                    const { rgb } = GENRE_THEME[reward.dice.genre]
-                    return (
-                      <button
-                        key={reward.id}
-                        disabled={!canInteract}
-                        onClick={() => dispatch({ type: 'SELECT_STUDIO_REWARD', rewardId: isActive ? null : reward.id })}
-                        className={`flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 ${canInteract ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
-                        style={{
-                          background: isActive ? `rgba(${rgb}, 0.2)` : 'rgba(0,0,0,0.25)',
-                          border: `1px solid rgba(${rgb}, ${isActive ? 0.8 : 0.35})`,
-                          boxShadow: isActive ? `0 0 12px rgba(${rgb}, 0.3)` : undefined,
-                        }}
-                      >
-                        <span className="text-lg text-gold-400"><DiceShape type={reward.dice.type} /></span>
-                        <span className="text-sm font-bold text-parchment-200">{reward.dice.type}</span>
-                        <GenreBadge genre={reward.dice.genre} className="text-[10px] px-1.5 py-0" />
-                      </button>
-                    )
-                  }
+                  const { rgb } = GENRE_THEME[reward.dice.genre]
                   return (
                     <button
                       key={reward.id}
@@ -400,27 +311,21 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                       onClick={() => dispatch({ type: 'SELECT_STUDIO_REWARD', rewardId: isActive ? null : reward.id })}
                       className={`flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 ${canInteract ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
                       style={{
-                        background: isActive ? 'rgba(176, 124, 255, 0.2)' : 'rgba(0,0,0,0.25)',
-                        border: `1px solid rgba(176, 124, 255, ${isActive ? 0.8 : 0.35})`,
-                        boxShadow: isActive ? '0 0 12px rgba(176, 124, 255, 0.3)' : undefined,
+                        background: isActive ? `rgba(${rgb}, 0.2)` : 'rgba(0,0,0,0.25)',
+                        border: `1px solid rgba(${rgb}, ${isActive ? 0.8 : 0.35})`,
+                        boxShadow: isActive ? `0 0 12px rgba(${rgb}, 0.3)` : undefined,
                       }}
                     >
-                      <span className="text-sm">🎵</span>
-                      <span className="text-sm font-bold text-classical">"{reward.name}"</span>
-                      {reward.effect && (
-                        <span className="text-[10px] text-classical/70 hidden sm:inline">
-                          {describeTrackEffect(reward.effect)}
-                        </span>
-                      )}
+                      <span className="text-lg text-gold-400"><DiceShape type={reward.dice.type} /></span>
+                      <span className="text-sm font-bold text-parchment-200">{reward.dice.type}</span>
+                      <GenreBadge genre={reward.dice.genre} className="text-[10px] px-1.5 py-0" />
                     </button>
                   )
                 })}
               </div>
               {activeReward && (
                 <div className="mt-2.5 text-xs text-parchment-400">
-                  {activeDie
-                    ? 'Click a song slot below to place this die (replacing an existing die = remix).'
-                    : 'Click a song below to name it and grant its effect.'}
+                  Click a song slot below to place this die (replacing an existing die = remix).
                 </div>
               )}
             </div>
@@ -435,44 +340,16 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {player.songs.map((song) => (
+              {player.songs.map((song, songIndex) => (
                 <div
                   key={song.id}
-                  className={`card w-full max-w-[280px] mx-auto transition-all duration-150 ${activeName && canInteract ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
-                  style={activeName ? {
-                    border: '1px solid rgba(176, 124, 255, 0.4)',
-                    boxShadow: '0 0 12px rgba(176, 124, 255, 0.1)',
-                  } : undefined}
-                  onClick={() => activeName && canInteract && handleApplyName(song.id)}
+                  className="card w-full max-w-[280px] mx-auto transition-all duration-150"
                 >
                   <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-2 text-center"
                     style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
                   >
-                    {song.name || <span className="text-parchment-500 italic">Untitled</span>}
-                    {activeName && song.name && (
-                      <span className="text-xs text-classical/60 font-normal ml-1">(rename)</span>
-                    )}
+                    Song {songIndex + 1}
                   </div>
-
-                  {/* Show song effect */}
-                  {song.effect ? (
-                    <div className="mb-2">
-                      <div className="p-1.5 rounded text-xs flex items-center gap-1.5"
-                        style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
-                      >
-                        <span className="font-bold text-classical shrink-0">FX:</span>
-                        <span className="text-classical/80 truncate">
-                          {describeTrackEffect(song.effect)}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mb-2 p-1.5 rounded text-xs text-parchment-500 italic text-center"
-                      style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
-                    >
-                      No effects
-                    </div>
-                  )}
 
                   <div className="flex justify-center gap-3">
                     {song.slots.map((slot, idx) => {

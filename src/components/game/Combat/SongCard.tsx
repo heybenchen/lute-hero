@@ -1,7 +1,6 @@
 import { Song, SongSlot, DiceRoll } from '@/types'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { useRollAnimation } from '@/components/ui/useRollAnimation'
-import { describeTrackEffect } from '@/data/trackEffects'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GENRE_THEME } from '@/data/genreTheme'
 
@@ -117,30 +116,8 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
             </div>
           )}
 
-          {/* Song title — matches the main-page song card */}
-          <div
-            className="font-medieval text-base font-bold text-gold-400 mb-3 pb-2 text-center"
-            style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
-          >
-            {song.name || <span className="text-parchment-500 italic">Untitled</span>}
-          </div>
-
-          {/* Effect above the dice */}
+          {/* Dice */}
           <div className="mb-4 space-y-3">
-            {song.effect ? (
-              <div className="w-full p-1.5 rounded text-xs flex items-center justify-center text-center"
-                style={{ background: 'rgba(176, 124, 255, 0.08)', border: '1px solid rgba(176, 124, 255, 0.15)' }}
-              >
-                <span className="text-classical break-words">{describeTrackEffect(song.effect)}</span>
-              </div>
-            ) : (
-              <div className="w-full px-1.5 py-0 rounded text-xs text-parchment-500 italic flex items-center justify-center text-center"
-                style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.1)' }}
-              >
-                No effects
-              </div>
-            )}
-
             <div className="flex gap-2 justify-center">
               {song.slots.map((slot, idx) => (
                 <SlotDie
