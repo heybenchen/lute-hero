@@ -7,30 +7,33 @@ import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
 import { computeCombatRewards } from '@/engine/reducer'
-import { MAX_SONGS_PER_COMBAT } from '@/engine/validate'
-import { Monster, Song, SongUsage } from '@/types'
+import { Monster, Song } from '@/types'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
-
-/** Check if a song ID has been used in this combat */
-function isSongUsed(songsUsed: SongUsage[], songId: string): boolean {
-  return songsUsed.some((su) => su.songId === songId)
-}
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
   const playerId = useGameStore((state) => state.playerId)
   const spaceId = useGameStore((state) => state.spaceId)
   const monsters = useGameStore((state) => state.monsters)
-  const songsUsed = useGameStore((state) => state.songsUsed)
+  const spentSongIds = useGameStore((state) => state.spentSongIds)
   const killCredits = useGameStore((state) => state.killCredits)
   const rolls = useGameStore((state) => state.rolls)
   const currentSongId = useGameStore((state) => state.currentSongId)
   const lastDamageCalculations = useGameStore((state) => state.lastDamageCalculations)
   const lastPlayedSongId = useGameStore((state) => state.lastPlayedSongId)
+  const lastTargetMonsterId = useGameStore((state) => state.lastTargetMonsterId)
   const selectedSpreadGenre = useGameStore((state) => state.selectedSpreadGenre)
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
+
+  // The chosen single-target monster for the next song
+  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
+
+  const isSongSpent = useCallback(
+    (songId: string) => spentSongIds.includes(songId),
+    [spentSongIds]
+  )
 
   const player = useGameStore(
     selectPlayerById(playerId || '')
@@ -72,6 +75,20 @@ export function CombatModal() {
     return { playerFame: rewards.fighterFame, coverFameByPlayer }
   }, [rewards, colocatedPlayers])
 
+  // Keep a live monster targeted: default to the first, and re-pick when the
+  // current target is defeated.
+  useEffect(() => {
+    if (!isActive) return
+    const alive = monsters.filter((m) => m.currentHP > 0)
+    if (alive.length === 0) {
+      if (selectedTargetId !== null) setSelectedTargetId(null)
+      return
+    }
+    if (!selectedTargetId || !alive.some((m) => m.id === selectedTargetId)) {
+      setSelectedTargetId(alive[0].id)
+    }
+  }, [isActive, monsters, selectedTargetId])
+
   // Spectators animate other players' songs from the SSE event stream
   useEffect(() => {
     if (!remoteEntry || !isActive) return
@@ -91,21 +108,23 @@ export function CombatModal() {
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
   const playableSongs = player.songs.filter((s) => s.slots.some((slot) => slot.dice))
-  const ownSongsRemaining = playableSongs.filter((s) => !isSongUsed(songsUsed, s.id)).length
+  const ownSongsRemaining = playableSongs.filter((s) => !isSongSpent(s.id)).length
 
   // Cover songs available from co-located players
   const coverPlayersWithSongs = colocatedPlayers
     .map((p) => ({
       player: p,
-      songs: p.songs.filter((s) => s.slots.some((slot) => slot.dice) && !isSongUsed(songsUsed, s.id)),
+      songs: p.songs.filter((s) => s.slots.some((slot) => slot.dice) && !isSongSpent(s.id)),
     }))
     .filter((entry) => entry.songs.length > 0)
 
   const hasCoverSongsLeft = coverPlayersWithSongs.length > 0
-  const hasReachedSongLimit = songsUsed.length >= MAX_SONGS_PER_COMBAT
-  const canContinue = !hasReachedSongLimit && (ownSongsRemaining > 0 || hasCoverSongsLeft)
+  // No fixed song cap now: fight on while you have unspent songs (defeating a
+  // monster returns that song's dice; a song that only wounds is spent).
+  const canContinue = ownSongsRemaining > 0 || hasCoverSongsLeft
 
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
+  const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
   const totalExp = calculateTotalMonsterExp(monsters)
   const isCombatOver = allMonstersDefeated || !canContinue
 
@@ -125,8 +144,8 @@ export function CombatModal() {
   }
 
   const handlePlaySong = async (songId: string, ownerId: string) => {
-    if (!canAct || isSongUsed(songsUsed, songId)) return
-    const result = await dispatch({ type: 'PLAY_SONG', songId, ownerId })
+    if (!canAct || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
+    const result = await dispatch({ type: 'PLAY_SONG', songId, ownerId, targetMonsterId: selectedTargetId })
     if (result.ok) showDamageEvents(result.events)
   }
 
@@ -175,7 +194,7 @@ export function CombatModal() {
           <div className="mb-6 sm:mb-8">
             <SectionHeader
               label="Monsters"
-              detail={monstersAliveCount > 0 ? `${monstersAliveCount} remaining` : 'All converted!'}
+              detail={monstersAliveCount > 0 ? `${monstersAliveCount} remaining · pick a target` : 'All converted!'}
               detailColor={monstersAliveCount > 0 ? 'text-red-400' : 'text-green-400'}
             />
             <div className="flex overflow-x-auto sm:overflow-x-visible sm:grid sm:grid-cols-4 gap-3 sm:gap-4 pb-2 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
@@ -186,8 +205,10 @@ export function CombatModal() {
                     monster={monster}
                     index={idx}
                     fameValue={calculateMonsterFameValue(monster.level)}
+                    isSelected={selectedTargetId === monster.id}
+                    onSelect={canAct && monster.currentHP > 0 ? () => setSelectedTargetId(monster.id) : undefined}
                   />
-                  {lastDamageCalculations[idx] && (
+                  {monster.id === lastTargetMonsterId && lastDamageCalculations[idx] && (
                     <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
                   )}
                 </div>
@@ -199,16 +220,16 @@ export function CombatModal() {
           <div className="mb-6 sm:mb-8">
             <SectionHeader
               label="Your Songs"
-              detail={`${ownSongsRemaining} remaining · ${songsUsed.length}/${MAX_SONGS_PER_COMBAT} played`}
+              detail={`${ownSongsRemaining} unspent`}
               detailColor="text-gold-400"
             />
             <div className="flex gap-3 sm:gap-5 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
               {player.songs.map((song, idx) => (
                 <SongCard
                   key={song.id}
-                  song={{ ...song, used: isSongUsed(songsUsed, song.id) }}
+                  song={{ ...song, used: isSongSpent(song.id) }}
                   onPlay={() => handlePlaySong(song.id, player.id)}
-                  disabled={!canAct || isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
+                  disabled={!canAct || isSongSpent(song.id) || !hasLiveTarget}
                   index={idx}
                   rolls={currentSongId === song.id ? rolls : undefined}
                   onReroll={canAct && currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
@@ -243,9 +264,9 @@ export function CombatModal() {
                     {songs.map((song, idx) => (
                       <SongCard
                         key={song.id}
-                        song={{ ...song, used: isSongUsed(songsUsed, song.id) }}
+                        song={{ ...song, used: isSongSpent(song.id) }}
                         onPlay={() => handlePlaySong(song.id, coverPlayer.id)}
-                        disabled={!canAct || isSongUsed(songsUsed, song.id) || hasReachedSongLimit}
+                        disabled={!canAct || isSongSpent(song.id) || !hasLiveTarget}
                         index={idx}
                         isCover
                         ownerName={coverPlayer.name}
@@ -386,7 +407,7 @@ export function CombatModal() {
               <div className="flex items-center gap-4 animate-fade-in">
                 <div className="hidden sm:block h-px w-12" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.2))' }} />
                 <p className="text-base sm:text-lg text-parchment-500 italic font-game animate-pulse-slow text-center">
-                  Choose a song to perform...
+                  Pick a target monster, then a song to perform...
                 </p>
                 <div className="hidden sm:block h-px w-12" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.2))' }} />
               </div>

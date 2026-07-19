@@ -1,12 +1,16 @@
 import { EngineState } from './state.js'
 import { GameAction, ActorSeat } from './actions.js'
 import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
-import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
+import { areSpacesConnected, MAX_GENRE_TAGS } from '../game-logic/board/graphBuilder.js'
 import { NEW_D4_COST, getUpgradeCost, getInspirationCost, INSPIRATION_SPEND } from '../data/draftCards.js'
 
-export const MAX_SONGS_PER_COMBAT = 3
 export const MAX_MOVES_PER_TURN = 2
 export const MAX_FIGHTS_PER_TURN = 1
+
+/** Chips each player hands to the player behind them during round-end redistribution. */
+export const CHIPS_PER_HANDOFF = 4
+
+const ALL_GENRES_SET = new Set(['Ballad', 'Folk', 'Hymn', 'Shanty'])
 
 export type ValidationResult =
   | { ok: true }
@@ -52,6 +56,16 @@ export function validateAction(
     return ok
   }
 
+  // Normal turn actions are blocked while round-end redistribution is running.
+  const redistributionParticipant = (): { giverId: string; receiverId: string } | null => {
+    if (!state.redistribution.active || state.players.length === 0) return null
+    const giver = state.players[state.redistribution.giverIdx]
+    const receiver = state.players[(state.redistribution.giverIdx + 1) % state.players.length]
+    return { giverId: giver.id, receiverId: receiver.id }
+  }
+  const blockedByRedistribution = (): ValidationResult =>
+    state.redistribution.active ? illegal('Round-end redistribution in progress') : ok
+
   switch (action.type) {
     case 'START_GAME': {
       if (!isHost) return forbidden('Only the host can start the game')
@@ -65,6 +79,8 @@ export function validateAction(
     case 'MOVE': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
+      const notRedist = blockedByRedistribution()
+      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Movement only during the main phase')
       if (state.combat.isActive) return illegal('Cannot move during combat')
       if (state.studio.playerId) return illegal('Close the Studio before moving')
@@ -85,6 +101,8 @@ export function validateAction(
     case 'START_COMBAT': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
+      const notRedist = blockedByRedistribution()
+      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Combat only during the main phase')
       if (state.combat.isActive) return illegal('Combat already active')
       if (state.studio.playerId) return illegal('Close the Studio before combat')
@@ -100,9 +118,9 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (!state.combat.isActive) return illegal('No active combat')
-      if (state.combat.songsUsed.length >= MAX_SONGS_PER_COMBAT) return illegal('Song limit reached')
-      if (state.combat.songsUsed.some((su) => su.songId === action.songId)) {
-        return illegal('Song already played this combat')
+      // A song whose dice are spent (it damaged without defeating) can't replay.
+      if (state.combat.spentSongIds.includes(action.songId)) {
+        return illegal('That song\'s dice are spent this combat')
       }
       const owner = state.players.find((p) => p.id === action.ownerId)
       if (!owner) return illegal('Unknown song owner')
@@ -115,6 +133,10 @@ export function validateAction(
       const song = owner.songs.find((s) => s.id === action.songId)
       if (!song) return illegal('Unknown song')
       if (!song.slots.some((slot) => slot.dice)) return illegal('Song has no dice')
+      // Single-target: a live monster must be chosen
+      const target = state.combat.monsters.find((m) => m.id === action.targetMonsterId)
+      if (!target) return illegal('Choose a monster to target')
+      if (target.currentHP <= 0) return illegal('That monster is already defeated')
       return ok
     }
 
@@ -155,6 +177,8 @@ export function validateAction(
     case 'END_TURN': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
+      const notRedist = blockedByRedistribution()
+      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Turns only advance during the main phase')
       if (state.combat.isActive) return illegal('Finish combat before ending the turn')
       if (state.studio.playerId) return illegal('Close the Studio before ending the turn')
@@ -164,6 +188,8 @@ export function validateAction(
     case 'OPEN_STUDIO': {
       const gate = requireCurrentTurn()
       if (gate.ok === false) return gate
+      const notRedist = blockedByRedistribution()
+      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Studio only opens during the main phase')
       if (state.combat.isActive) return illegal('Finish combat before opening the Studio')
       if (action.playerId !== currentPlayerId(state)) return illegal('Not this player\'s turn')
@@ -335,10 +361,55 @@ export function validateAction(
 
     case 'HOST_SKIP_TURN': {
       if (!isHost) return forbidden('Only the host can skip a turn')
+      const notRedist = blockedByRedistribution()
+      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Turns only advance during the main phase')
       if (action.targetPlayerId !== currentPlayerId(state)) {
         return illegal('Can only skip the current player')
       }
+      return ok
+    }
+
+    case 'ADD_REDISTRIBUTION_CHIP':
+    case 'REMOVE_REDISTRIBUTION_CHIP':
+    case 'CONFIRM_REDISTRIBUTION_GIFT': {
+      const parts = redistributionParticipant()
+      if (!parts || state.redistribution.stage !== 'selecting') {
+        return illegal('Not choosing chips right now')
+      }
+      if (isSeat && seatPlayerId !== parts.giverId) return forbidden('Not your chips to give')
+      if (action.type === 'ADD_REDISTRIBUTION_CHIP') {
+        if (!ALL_GENRES_SET.has(action.genre)) return illegal('Unknown element')
+        if (state.redistribution.selectedChips.length >= CHIPS_PER_HANDOFF) {
+          return illegal(`Only ${CHIPS_PER_HANDOFF} chips`)
+        }
+      }
+      if (action.type === 'REMOVE_REDISTRIBUTION_CHIP') {
+        if (action.index < 0 || action.index >= state.redistribution.selectedChips.length) {
+          return illegal('No such chip')
+        }
+      }
+      if (action.type === 'CONFIRM_REDISTRIBUTION_GIFT') {
+        if (state.redistribution.selectedChips.length !== CHIPS_PER_HANDOFF) {
+          return illegal(`Choose exactly ${CHIPS_PER_HANDOFF} chips`)
+        }
+      }
+      return ok
+    }
+
+    case 'PLACE_REDISTRIBUTION_CHIP': {
+      const parts = redistributionParticipant()
+      if (!parts || state.redistribution.stage !== 'placing') {
+        return illegal('Not placing chips right now')
+      }
+      if (isSeat && seatPlayerId !== parts.receiverId) return forbidden('Not your chips to place')
+      if (state.redistribution.chipsToPlace.length === 0) return illegal('No chips left to place')
+      const space = state.spaces.find((s) => s.id === action.spaceId)
+      if (!space) return illegal('Unknown space')
+      if (state.redistribution.placedSpaceIds.includes(action.spaceId)) {
+        return illegal('A chip is already on that tile')
+      }
+      if (space.genreTags.length >= MAX_GENRE_TAGS) return illegal('That tile is full')
       return ok
     }
   }

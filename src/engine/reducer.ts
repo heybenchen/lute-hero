@@ -7,13 +7,13 @@ import {
   Rng,
   NewId,
 } from '../types/index.js'
-import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState } from './state.js'
+import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState, createInitialRedistributionState } from './state.js'
 import { GameAction, ActorSeat, PlayerConfig } from './actions.js'
 import { EngineEvent } from './events.js'
-import { validateAction } from './validate.js'
+import { validateAction, CHIPS_PER_HANDOFF } from './validate.js'
 import { createBoardGraph, addGenreTagsToBoard, addGenreTagToNeighbors, MAX_GENRE_TAGS } from '../game-logic/board/graphBuilder.js'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
-import { rollSong, calculateAOEDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
+import { rollSong, calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
 import {
   calculateFameEarned,
   calculateMonsterFameValue,
@@ -33,8 +33,7 @@ import {
 } from '../game-logic/showdown/showdown.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
 
-export { MAX_SONGS_PER_COMBAT } from './validate.js'
-export const MAX_SONGS = 3
+export { CHIPS_PER_HANDOFF } from './validate.js'
 
 export const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
 export const STARTING_POSITIONS = [0, 3, 12, 15] // 4x4 grid corners
@@ -128,10 +127,11 @@ function reduce(
       const snapshot = {
         monsters: state.combat.monsters,
         songsUsed: state.combat.songsUsed,
+        spentSongIds: state.combat.spentSongIds,
         killCredits: state.combat.killCredits,
         totalDamage: state.combat.totalDamage,
       }
-      const combat = performCombatPlay(state.combat, snapshot, song, owner.id, rng, events)
+      const combat = performCombatPlay(state.combat, snapshot, song, owner.id, action.targetMonsterId, rng, events)
       return { ...state, combat: { ...combat, undoSnapshot: snapshot, lastPlayedSongId: song.id, lastPlayedOwnerId: owner.id } }
     }
 
@@ -143,10 +143,11 @@ function reduce(
       const players = state.players.map((p) =>
         p.id === fighterId ? { ...p, inspiration: p.inspiration - INSPIRATION_SPEND } : p
       )
-      // Replay from the pre-play snapshot — a true reroll. The snapshot stays
-      // put so the song can be rerolled again.
+      // Replay from the pre-play snapshot — a true reroll against the same
+      // target. The snapshot stays put so the song can be rerolled again.
       const snapshot = state.combat.undoSnapshot!
-      const combat = performCombatPlay(state.combat, snapshot, song, ownerId, rng, events)
+      const targetId = state.combat.lastTargetMonsterId!
+      const combat = performCombatPlay(state.combat, snapshot, song, ownerId, targetId, rng, events)
       return { ...state, players, combat }
     }
 
@@ -314,6 +315,18 @@ function reduce(
       }
       return endTurn(working, rng, newId)
     }
+
+    case 'ADD_REDISTRIBUTION_CHIP':
+      return addRedistributionChip(state, action.genre)
+
+    case 'REMOVE_REDISTRIBUTION_CHIP':
+      return removeRedistributionChip(state, action.index)
+
+    case 'CONFIRM_REDISTRIBUTION_GIFT':
+      return confirmRedistributionGift(state)
+
+    case 'PLACE_REDISTRIBUTION_CHIP':
+      return placeRedistributionChip(state, action.spaceId, rng, newId)
   }
 }
 
@@ -360,11 +373,11 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
     )
   }
 
-  // 4. Two monster chips per space to start (random tags on top of any
-  //    starter-element seeding), capped at 2 tags per space.
+  // 4. Exactly one monster chip per space to start. addGenreTagsToBoard tops
+  //    every space up to at least one tag (starter-seeded spaces keep their
+  //    starter element first); slicing to 1 leaves each space with a single tag.
   spaces = addGenreTagsToBoard(spaces, rng)
-  spaces = addGenreTagsToBoard(spaces, rng)
-  spaces = spaces.map((s) => ({ ...s, genreTags: s.genreTags.slice(0, 2) }))
+  spaces = spaces.map((s) => ({ ...s, genreTags: s.genreTags.slice(0, 1) }))
 
   // 5. Initial monsters — one per unique genre chip, matching the board
   spaces = spaces.map((space) => {
@@ -401,30 +414,52 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
 interface CombatSnapshot {
   monsters: Monster[]
   songsUsed: EngineCombatState['songsUsed']
+  spentSongIds: string[]
   killCredits: KillCredit[]
   totalDamage: number
 }
 
-/** Perform a song against the combat monsters, starting from a snapshot. */
+/**
+ * Perform a song against ONE chosen monster, starting from a snapshot. Songs are
+ * single-target now, not AOE. Defeating the target returns the song's dice (the
+ * song stays playable); damaging without defeating spends it for the combat.
+ */
 function performCombatPlay(
   combat: EngineCombatState,
   base: CombatSnapshot,
   song: Song,
   ownerId: string,
+  targetMonsterId: string,
   rng: Rng,
   events: EngineEvent[]
 ): EngineCombatState {
   const isCover = ownerId !== combat.playerId
   const monstersBefore = base.monsters
+  const targetBefore = monstersBefore.find((m) => m.id === targetMonsterId)
 
   const rolls = rollSong(song, rng)
-  const { damageCalculations, updatedMonsters } = calculateAOEDamage(song, rolls, monstersBefore)
+  const { damageCalculations, updatedMonsters } = calculateSingleTargetDamage(
+    song,
+    rolls,
+    monstersBefore,
+    targetMonsterId
+  )
 
-  const newKillCredits: KillCredit[] = updatedMonsters
-    .filter((m, i) => monstersBefore[i].currentHP > 0 && m.currentHP <= 0)
-    .map((m) => ({ monsterId: m.id, songOwnerId: ownerId, isCover }))
+  const targetAfter = updatedMonsters.find((m) => m.id === targetMonsterId)
+  const defeatedTarget = !!targetBefore && targetBefore.currentHP > 0 && !!targetAfter && targetAfter.currentHP <= 0
+
+  const newKillCredits: KillCredit[] = defeatedTarget
+    ? [{ monsterId: targetMonsterId, songOwnerId: ownerId, isCover }]
+    : []
 
   const totalDamageDealt = damageCalculations.reduce((sum, calc) => sum + calc.totalDamage, 0)
+
+  // Defeat → dice return (song stays playable); no kill → dice are spent.
+  const spentSongIds = defeatedTarget
+    ? base.spentSongIds.filter((id) => id !== song.id)
+    : base.spentSongIds.includes(song.id)
+      ? base.spentSongIds
+      : [...base.spentSongIds, song.id]
 
   events.push({ type: 'diceRolled', playerId: ownerId, songId: song.id, context: 'combat', rolls })
   events.push({
@@ -438,8 +473,10 @@ function performCombatPlay(
     ...combat,
     monsters: updatedMonsters,
     songsUsed: [...base.songsUsed, { songId: song.id, ownerId, isCover }],
+    spentSongIds,
     killCredits: [...base.killCredits, ...newKillCredits],
     currentSongId: song.id,
+    lastTargetMonsterId: targetMonsterId,
     rolls,
     totalDamage: base.totalDamage + totalDamageDealt,
     lastDamageCalculations: damageCalculations,
@@ -497,6 +534,10 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
 
   // EXP always awarded for the full encounter; fame per kill credit
   let players = adjustExp(state.players, fighterId, rewards.totalExp)
+  // Clearing every monster on a space earns the victor 1 Inspiration.
+  if (success) {
+    players = players.map((p) => (p.id === fighterId ? { ...p, inspiration: p.inspiration + 1 } : p))
+  }
   if (rewards.monstersDefeatedCount > 0) {
     if (rewards.fighterFame > 0) {
       players = players.map((p) => (p.id === fighterId ? { ...p, fame: p.fame + rewards.fighterFame } : p))
@@ -581,64 +622,100 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
       : p
   )
 
-  let { phase, pendingPhase, finalTurnGranted, currentRound, currentTurnPlayerIndex, spaces } = state
-  let showdownFields: Partial<EngineState> = {}
-
-  if (state.currentTurnPlayerIndex >= state.players.length - 1) {
-    // Round over: everyone resets, the board grows, pending phase applies.
-    players = players.map((p) => ({ ...p, movesThisTurn: 0, fightsThisTurn: 0 }))
-    spaces = addGenreTagsToBoard(spaces, rng)
-    // Reaching the threshold grants one more full round ("Final Turn!") before
-    // the phase actually flips — so the leaders can't be caught off guard.
-    if (pendingPhase) {
-      if (!finalTurnGranted) {
-        finalTurnGranted = true
-      } else {
-        phase = pendingPhase
-        pendingPhase = null
-        finalTurnGranted = false
-      }
+  // Mid-round: just pass play to the next bard and refill their shop.
+  if (state.currentTurnPlayerIndex < state.players.length - 1) {
+    let { elementBag, elementDiscard, elementOffers } = state
+    const needed = ELEMENT_OFFER_COUNT - elementOffers.length
+    if (needed > 0) {
+      const { drawn, bag, discard } = drawFromBag(elementBag, elementDiscard, needed, rng)
+      elementOffers = [...elementOffers, ...drawn]
+      elementBag = bag
+      elementDiscard = discard
     }
-    currentRound = currentRound + 1
-    currentTurnPlayerIndex = 0
-
-    // Re-derive every space's monsters from its now-grown tags. Previously
-    // monsters were only spawned when a space was entered (MOVE), so a player
-    // who started a turn already standing on a space fought a stale roster that
-    // no longer matched the tags shown on the board.
-    spaces = spaces.map((s) => ({
-      ...s,
-      monsters: spawnMonstersFromTags(s.genreTags, s.id, currentRound, rng, newId),
-    }))
-
-    // Entering the showdown: start it right here so there is no client-side
-    // auto-start race — every client just renders the started showdown.
-    if (phase === 'finalBoss' && !state.showdownActive) {
-      const playerIds = players.map((p) => p.id)
-      showdownFields = {
-        showdownActive: true,
-        showdownComplete: false,
-        showdownTurn: 1,
-        showdownOrder: playerIds,
-        showdownPerformerIdx: 0,
-        showdownResistGenre: null,
-        showdownWeakGenre: null,
-        showdownSongsUsed: [],
-        showdownCurrentFandom: 0,
-        showdownCurrentGenre: null,
-        showdownTurnPerformances: [],
-        showdownHistory: [],
-        showdownFandom: Object.fromEntries(playerIds.map((id) => [id, 0])),
-        showdownBestHit: {},
-        showdownCrits: Object.fromEntries(playerIds.map((id) => [id, 0])),
-        showdownUndo: null,
-      }
+    return {
+      ...state,
+      players,
+      currentTurnPlayerIndex: state.currentTurnPlayerIndex + 1,
+      elementBag,
+      elementDiscard,
+      elementOffers,
+      studio: createInitialStudioState(),
     }
-  } else {
-    currentTurnPlayerIndex = currentTurnPlayerIndex + 1
   }
 
-  // Refill the shop for the next player: top up element chips
+  // Round over: everyone's per-turn counters reset.
+  players = players.map((p) => ({ ...p, movesThisTurn: 0, fightsThisTurn: 0 }))
+  const working = { ...state, players }
+
+  // If this round-end flips straight to the Final Showdown, skip redistribution
+  // (the board is about to become irrelevant) and finish the round now.
+  const flippingToBoss = !!state.pendingPhase && state.finalTurnGranted
+  if (flippingToBoss || state.players.length === 0) {
+    return finishRound(working, rng, newId)
+  }
+
+  // Otherwise begin round-end redistribution: the first giver chooses chips for
+  // the player behind them. finishRound runs once the last chip is placed.
+  return {
+    ...working,
+    redistribution: { ...createInitialRedistributionState(), active: true, giverIdx: 0, stage: 'selecting' },
+  }
+}
+
+/**
+ * Round-over bookkeeping: latch the phase transition, grow the round counter,
+ * respawn every space's monsters from its (redistributed) tags, refill the shop,
+ * and — when entering the Final Showdown — start it. Clears redistribution.
+ */
+function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
+  let { phase, pendingPhase, finalTurnGranted, currentRound } = state
+  let showdownFields: Partial<EngineState> = {}
+
+  // Reaching the threshold grants one more full round ("Final Turn!") before the
+  // phase actually flips — so the leaders can't be caught off guard.
+  if (pendingPhase) {
+    if (!finalTurnGranted) {
+      finalTurnGranted = true
+    } else {
+      phase = pendingPhase
+      pendingPhase = null
+      finalTurnGranted = false
+    }
+  }
+  currentRound = currentRound + 1
+
+  // Re-derive every space's monsters from its current tags so the roster on a
+  // space a player is already standing on matches the board.
+  const spaces = state.spaces.map((s) => ({
+    ...s,
+    monsters: spawnMonstersFromTags(s.genreTags, s.id, currentRound, rng, newId),
+  }))
+
+  // Entering the showdown: start it right here so there is no client-side
+  // auto-start race — every client just renders the started showdown.
+  if (phase === 'finalBoss' && !state.showdownActive) {
+    const playerIds = state.players.map((p) => p.id)
+    showdownFields = {
+      showdownActive: true,
+      showdownComplete: false,
+      showdownTurn: 1,
+      showdownOrder: playerIds,
+      showdownPerformerIdx: 0,
+      showdownResistGenre: null,
+      showdownWeakGenre: null,
+      showdownSongsUsed: [],
+      showdownCurrentFandom: 0,
+      showdownCurrentGenre: null,
+      showdownTurnPerformances: [],
+      showdownHistory: [],
+      showdownFandom: Object.fromEntries(playerIds.map((id) => [id, 0])),
+      showdownBestHit: {},
+      showdownCrits: Object.fromEntries(playerIds.map((id) => [id, 0])),
+      showdownUndo: null,
+    }
+  }
+
+  // Refill the shop for the first player of the new round.
   let { elementBag, elementDiscard, elementOffers } = state
   const needed = ELEMENT_OFFER_COUNT - elementOffers.length
   if (needed > 0) {
@@ -650,19 +727,71 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
 
   return {
     ...state,
-    players,
     spaces,
     phase,
     pendingPhase,
     finalTurnGranted,
     currentRound,
-    currentTurnPlayerIndex,
+    currentTurnPlayerIndex: 0,
     elementBag,
     elementDiscard,
     elementOffers,
     studio: createInitialStudioState(),
+    redistribution: createInitialRedistributionState(),
     ...showdownFields,
   }
+}
+
+// ============================================================
+// Round-end redistribution
+// ============================================================
+
+function addRedistributionChip(state: EngineState, genre: Genre): EngineState {
+  const r = state.redistribution
+  if (r.selectedChips.length >= CHIPS_PER_HANDOFF) return state
+  return { ...state, redistribution: { ...r, selectedChips: [...r.selectedChips, genre] } }
+}
+
+function removeRedistributionChip(state: EngineState, index: number): EngineState {
+  const r = state.redistribution
+  return { ...state, redistribution: { ...r, selectedChips: r.selectedChips.filter((_, i) => i !== index) } }
+}
+
+function confirmRedistributionGift(state: EngineState): EngineState {
+  const r = state.redistribution
+  return {
+    ...state,
+    redistribution: { ...r, stage: 'placing', chipsToPlace: r.selectedChips, selectedChips: [], placedSpaceIds: [] },
+  }
+}
+
+function placeRedistributionChip(state: EngineState, spaceId: number, rng: Rng, newId: NewId): EngineState {
+  const r = state.redistribution
+  const [chip, ...rest] = r.chipsToPlace
+  const spaces = state.spaces.map((s) =>
+    s.id === spaceId ? { ...s, genreTags: [...s.genreTags, chip] } : s
+  )
+  const placedSpaceIds = [...r.placedSpaceIds, spaceId]
+
+  // More chips for this receiver to place
+  if (rest.length > 0) {
+    return { ...state, spaces, redistribution: { ...r, chipsToPlace: rest, placedSpaceIds } }
+  }
+
+  // This giver's handoff is done. Advance to the next giver, or finish the round.
+  const next = { ...state, spaces }
+  if (r.giverIdx < state.players.length - 1) {
+    return {
+      ...next,
+      redistribution: {
+        ...createInitialRedistributionState(),
+        active: true,
+        giverIdx: r.giverIdx + 1,
+        stage: 'selecting',
+      },
+    }
+  }
+  return finishRound(next, rng, newId)
 }
 
 // ============================================================

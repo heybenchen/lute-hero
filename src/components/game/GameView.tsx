@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
+import { RoundEndModal } from './RoundEnd'
 import { DraftShop } from './DraftShop'
 import { PlayerPanel } from './PlayerPanel'
 import { useGameStore, selectCanAct, selectIsHost, clearSavedGame } from '@/store'
@@ -185,6 +186,9 @@ export function GameView() {
       {/* Combat modal overlay */}
       <CombatModal />
 
+      {/* Round-end chip redistribution overlay */}
+      <RoundEndModal />
+
       {/* Shared Studio surface: spectators watch the active player's choices live. */}
       {studioPlayerId && (
         <DraftShop
@@ -247,10 +251,19 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
           <Section title="🎲 Combat">
             <List items={[
-              <>Play up to <Hl>3 songs</Hl> per fight. Each song rolls the dice slotted into it.</>,
-              <>Every song is <Hl>AOE</Hl> — its damage hits <Hl>all</Hl> monsters at once.</>,
+              <>Pick <Hl>one monster</Hl> to target, then a song — songs hit a <Hl>single</Hl> target, not all.</>,
+              <>Defeat the target and you get that song's <Hl>dice back</Hl> to play it again; only wounding it <Hl>spends</Hl> the song for the fight.</>,
               <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for bonus damage.</>,
+              <>Clear <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> and radiate an element.</>,
               <>Spend <Hl>Inspiration</Hl> to reroll the song you just performed.</>,
+            ]} />
+          </Section>
+
+          <Section title="🔁 Round End">
+            <List items={[
+              <>After every bard has taken a turn, the round ends with a <Hl>redistribution</Hl>.</>,
+              <>Each bard hands <Hl>4 monster chips</Hl> of their choice to the bard behind them in turn order.</>,
+              <>That bard <Hl>places</Hl> the chips on the board — one per tile — spawning new threats for next round.</>,
             ]} />
           </Section>
 
