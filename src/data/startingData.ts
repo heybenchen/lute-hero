@@ -20,30 +20,24 @@ export const STARTER_DICE: { [key in Genre]: Dice[] } = {
   ],
 };
 
-// Create 3 starter songs: first has 2 dice, others are empty. All untitled with no effects.
+// Create 3 starter songs: first has 2 dice, the others are empty.
 export function createStarterSongs(genre: Genre, playerId: string): Song[] {
   const starterDice = STARTER_DICE[genre];
 
   return [
     {
       id: `${playerId}-song-1`,
-      name: '',
       slots: [{ dice: starterDice[0] }, { dice: starterDice[1] }],
-      effect: null,
       used: false,
     },
     {
       id: `${playerId}-song-2`,
-      name: '',
       slots: [{ dice: null }, { dice: null }],
-      effect: null,
       used: false,
     },
     {
       id: `${playerId}-song-3`,
-      name: '',
       slots: [{ dice: null }, { dice: null }],
-      effect: null,
       used: false,
     },
   ];
