@@ -36,34 +36,13 @@ export interface DiceRoll {
   cascadeRolls: number[]; // Each additional die value from cascading crits
 }
 
-// Track effects that modify dice behavior
-export type TrackEffect =
-  | { type: "freeReroll"; used: boolean }
-  | { type: "upgrade"; used: boolean } // d4 -> d6 -> d12 -> d20
-  | { type: "flip" } // Only flips if it nets a higher value
-  | { type: "addFlat"; amount: number }
-  | { type: "addDice"; diceType: DiceType; used: boolean }
-  | { type: "rollTwiceKeepHigher" }
-  | { type: "harmonize"; bonusDamage: number } // Bonus if 2+ dice roll same value
-  | { type: "offbeat" } // Odd rolls 2x damage, even rolls 0.5x damage
-  | { type: "wildDice"; used: boolean } // Once per song: add one extra d4 roll
-  | { type: "tempo" } // Add the lowest die's result as bonus damage
-  | { type: "dynamicRange" } // |die1 - die2| >= 6: +4 damage
-  | { type: "dropTheBass" } // Both primary dice roll 1: +9 damage
-  | { type: "lucky7" } // Any die shows 7: +3 damage
-  | { type: "powerChord" } // Each 3 rolled deals double (6) damage
-  | { type: "crescendo" } // Total roll >= 15: +5 damage
-  | { type: "monoOut" }; // Roll once, apply to both slots (both must be filled)
-
 export interface SongSlot {
   dice: Dice | null;
 }
 
 export interface Song {
   id: string;
-  name: string;
   slots: [SongSlot, SongSlot]; // 2 dice slots
-  effect: TrackEffect | null; // A song has at most one effect (granted by its name)
   used: boolean; // Can only use each song once per combat
 }
 
@@ -137,18 +116,8 @@ export interface Player {
 // DRAFTING / SHOP
 // ============================================
 
-export interface DraftCard {
-  id: string;
-  type: "name";
-  cost: number;
-  songName?: string;
-  songEffect?: TrackEffect;
-}
-
 // A purchased-but-unresolved reward, queued so buying more never discards it.
-export type PendingReward =
-  | { kind: "die"; id: string; dice: Dice }
-  | { kind: "name"; id: string; name: string; effect: TrackEffect | null };
+export type PendingReward = { kind: "die"; id: string; dice: Dice };
 
 // ============================================
 // COMBAT STATE
@@ -173,7 +142,6 @@ export interface KillCredit {
 export interface DamageCalculation {
   baseDamage: number;
   genreMultipliers: { genre: Genre; multiplier: number }[];
-  effectBonuses: number;
   critBonuses: number;
   totalDamage: number;
   // Per-die contribution against this monster, for the damage-report breakdown
@@ -181,10 +149,10 @@ export interface DamageCalculation {
 }
 
 export interface DieContribution {
-  genre: Genre | null; // null for extra dice (e.g. wildDice) with no slotted genre
+  genre: Genre | null; // null for extra dice with no slotted genre
   value: number; // rolled face value
   critBonus: number; // extra damage from cascading crits (sum of cascadeRolls)
   cascadeRolls: number[]; // each cascading-crit roll, shown separately in the report
-  multiplier: number; // genre × offbeat multiplier applied to this die
+  multiplier: number; // genre multiplier applied to this die
   damage: number; // (value + critBonus) × multiplier — this die's contribution
 }

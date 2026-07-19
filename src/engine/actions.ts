@@ -24,14 +24,10 @@ export type GameAction =
   | { type: 'OPEN_STUDIO'; playerId: string }
   | { type: 'CLOSE_STUDIO' }
   | { type: 'SELECT_STUDIO_OFFER'; offerIndex: number | null }
-  | { type: 'SELECT_STUDIO_NAME'; cardId: string | null }
   | { type: 'SELECT_STUDIO_REWARD'; rewardId: string | null }
   | { type: 'BUY_DIE'; offerIndex: number }
   | { type: 'UPGRADE_DIE'; offerIndex: number; diceId: string }
-  | { type: 'BUY_NAME'; cardId: string }
   | { type: 'REFRESH_ELEMENT_OFFERS' }
-  | { type: 'REFRESH_NAME_POOL' }
-  | { type: 'SLOT_NAME_REWARD'; rewardId: string; songId: string }
   | { type: 'SLOT_DIE_REWARD'; rewardId: string; songId: string; slotIndex: number }
   | { type: 'BUY_INSPIRATION' }
   | { type: 'PLAY_SHOWDOWN_SONG'; songId: string }

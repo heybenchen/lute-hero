@@ -13,7 +13,7 @@ In a post-catastrophe fantasy world, only Bards remain. Players navigate a conne
 - **Turn-Based Movement**: Move one space per turn to connected locations
 - **Genre System**: 5 music genres (Pop, Rock, Electronic, Classical, Hip-Hop)
 - **Dice-Based Combat**: Roll dice pairs with critical hit mechanics
-- **Song System**: Compose songs with 4 dice slots and track effects
+- **Song System**: Compose songs with dice slots
 - **Monster Spawning**: Dynamic monster generation based on genre tags
 - **Fame & EXP Economy**: Earn fame to progress, spend EXP to draft new cards
 
@@ -21,11 +21,10 @@ In a post-catastrophe fantasy world, only Bards remain. Players navigate a conne
 - **The Mashup**: AOE combat system where songs damage all monsters
 - **Critical Hits**: Rolling max value grants +5 bonus damage
 - **Genre Multipliers**: Vulnerable genres take 2x damage, resistant take 0.5x
-- **Track Effects**: 12+ unique effects (rerolls, upgrades, multipliers, etc.)
 - **Catchup Mechanic**: Failed combats grant bonus EXP
 
 ### Progression
-- **Draft Shop**: Spend EXP to acquire new dice pairs (5-15 EXP) and songs (5 EXP)
+- **Draft Shop**: Spend EXP to acquire and upgrade dice
 - **Fame Tiers**: Gain multiplied fame as you defeat more monsters
 - **Phase System**: Main → Final Boss
 - **Final Boss**: The Showdown — a fandom contest where the boss adapts each verse
@@ -73,8 +72,7 @@ pnpm build
    - Damage all monsters simultaneously
    - Defeat all monsters or retreat for bonus EXP
 3. **Draft**: Spend EXP at the Draft Shop
-   - Buy dice pairs to strengthen songs
-   - Purchase new songs with special effects
+   - Buy dice to strengthen songs
    - Slot dice into song positions
 4. **End Turn**: Pass to next player
 

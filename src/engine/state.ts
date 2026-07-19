@@ -2,7 +2,6 @@ import {
   GamePhase,
   BoardSpace,
   Player,
-  DraftCard,
   Genre,
   PendingReward,
   Monster,
@@ -78,7 +77,6 @@ export interface RedistributionState {
 export interface EngineStudioState {
   playerId: string | null
   selectedOfferIdx: number | null
-  selectedNameId: string | null
   activeRewardId: string | null
 }
 
@@ -101,7 +99,6 @@ export interface EngineState {
   players: Player[]
 
   // Shop
-  namePool: DraftCard[]
   elementBag: Genre[]
   elementDiscard: Genre[]
   elementOffers: Genre[]
@@ -128,7 +125,7 @@ export interface EngineState {
   showdownTurnPerformances: ShowdownPerformance[]
   showdownHistory: ShowdownPerformance[][]
   showdownFandom: Record<string, number>
-  showdownBestHit: Record<string, { damage: number; songName: string }>
+  showdownBestHit: Record<string, { damage: number }>
   showdownCrits: Record<string, number>
   /** Pre-play accumulators so the current performance can be rerolled. */
   showdownUndo: ShowdownUndo | null
@@ -143,7 +140,7 @@ export interface ShowdownUndo {
   performerId: string
   currentFandom: number
   fandomTotal: number
-  bestHit: { damage: number; songName: string } | undefined
+  bestHit: { damage: number } | undefined
   crits: number
   songsUsed: string[]
 }
@@ -184,7 +181,6 @@ export function createInitialStudioState(): EngineStudioState {
   return {
     playerId: null,
     selectedOfferIdx: null,
-    selectedNameId: null,
     activeRewardId: null,
   }
 }
@@ -210,7 +206,6 @@ export function createInitialEngineState(): EngineState {
     spaces: [],
     players: [],
 
-    namePool: [],
     elementBag: [],
     elementDiscard: [],
     elementOffers: [],

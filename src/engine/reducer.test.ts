@@ -67,15 +67,17 @@ describe('engine determinism', () => {
       return state
     }
     expect(run(7)).toEqual(run(7))
-    // Different seeds diverge (bag order, monster picks, name cards)
+    // Different seeds diverge (bag order, monster picks)
     expect(JSON.stringify(run(7))).not.toEqual(JSON.stringify(run(8)))
   })
 
   it('generates deterministic, unique ids', () => {
     const a = startTwoPlayerGame(9)
     const b = startTwoPlayerGame(9)
-    expect(a.namePool.map((c) => c.id)).toEqual(b.namePool.map((c) => c.id))
-    const allIds = a.spaces.flatMap((s) => s.monsters.map((m) => m.id))
+    const monsterIds = (s: typeof a) => s.spaces.flatMap((sp) => sp.monsters.map((m) => m.id))
+    // Same seed produces identical ids
+    expect(monsterIds(a)).toEqual(monsterIds(b))
+    const allIds = monsterIds(a)
     expect(new Set(allIds).size).toBe(allIds.length)
   })
 })
@@ -94,7 +96,6 @@ describe('START_GAME', () => {
     // Each space spawns one monster per unique genre chip, matching the board
     expect(state.spaces.every((s) => s.monsters.length === new Set(s.genreTags).size)).toBe(true)
     expect(state.elementOffers).toHaveLength(4)
-    expect(state.namePool).toHaveLength(3)
   })
 
   it('rejects starting twice', () => {
@@ -266,11 +267,11 @@ describe('combat flow', () => {
 describe('END_TURN', () => {
   it('advances to the next player and refills the shop', () => {
     let state = startTwoPlayerGame()
-    state = { ...state, namePool: [] }
+    state = { ...state, elementOffers: [] }
     state = apply(state, { type: 'END_TURN' }).state
     expect(state.currentTurnPlayerIndex).toBe(1)
     expect(state.currentRound).toBe(1)
-    expect(state.namePool).toHaveLength(3)
+    expect(state.elementOffers).toHaveLength(4)
   })
 
   it('runs round-end redistribution, then increments the round and respawns monsters', () => {
@@ -348,9 +349,7 @@ describe('shop actions', () => {
     expect(state.studio.playerId).toBe('player-1')
 
     state = apply(state, { type: 'SELECT_STUDIO_OFFER', offerIndex: 0 }).state
-    state = apply(state, { type: 'SELECT_STUDIO_NAME', cardId: state.namePool[0].id }).state
     expect(state.studio.selectedOfferIdx).toBe(0)
-    expect(state.studio.selectedNameId).toBe(state.namePool[0].id)
 
     expect(applyAction(
       state,
@@ -390,21 +389,6 @@ describe('shop actions', () => {
     expect(state.pendingRewards['player-1']).toHaveLength(0)
     const slot = state.players[0].songs[1].slots[0]
     expect(slot.dice).not.toBeNull()
-  })
-
-  it('BUY_NAME + SLOT_NAME_REWARD name a song and grant its effect', () => {
-    let state = openStudio(startTwoPlayerGame())
-    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
-    const card = state.namePool[0]
-    state = apply(state, { type: 'BUY_NAME', cardId: card.id }).state
-    expect(state.players[0].exp).toBe(20 - card.cost)
-    // Bought name is removed and NOT replaced until the next player's turn
-    expect(state.namePool.find((c) => c.id === card.id)).toBeUndefined()
-    expect(state.namePool).toHaveLength(2)
-    const reward = state.pendingRewards['player-1'][0]
-    const song = state.players[0].songs[0]
-    state = apply(state, { type: 'SLOT_NAME_REWARD', rewardId: reward.id, songId: song.id }).state
-    expect(state.players[0].songs[0].name).toBe(card.songName)
   })
 
   it('BUY_INSPIRATION escalates within a turn and END_TURN resets it', () => {

@@ -1,12 +1,5 @@
-import { DraftCard, Dice, Genre, DiceType, Rng, NewId } from '../types/index.js';
-import { TRACK_EFFECTS } from "./trackEffects.js";
+import { Dice, Genre, DiceType, NewId } from '../types/index.js';
 import { DICE_UPGRADE_PATH } from "./startingData.js";
-
-let cardIdCounter = 0;
-
-function generateCardId(): string {
-  return `card-${Date.now()}-${cardIdCounter++}`;
-}
 
 let dieIdCounter = 0;
 
@@ -53,38 +46,5 @@ export function createElementalDie(genre: Genre, newId?: NewId): Dice {
     id: newId ? newId("die") : `die-${Date.now()}-${dieIdCounter++}`,
     type: "d4",
     genre,
-  };
-}
-
-const SONG_NAMES = [
-  "Acoustic Serenade",
-  "Bass Drop Anthem",
-  "Melody of Hope",
-  "Rhythm Revolution",
-  "Harmony Unleashed",
-  "Symphony of Chaos",
-  "Beat Machine",
-  "Lyrical Storm",
-  "Crescendo Rising",
-  "Digital Dreams",
-];
-
-export function generateNameCard(
-  excludeNames: Set<string> = new Set(),
-  rng: Rng = Math.random,
-  newId?: NewId
-): DraftCard {
-  const effects = Object.keys(TRACK_EFFECTS);
-  const randomEffect = effects[Math.floor(rng() * effects.length)];
-
-  const available = SONG_NAMES.filter((n) => !excludeNames.has(n));
-  const pool = available.length > 0 ? available : SONG_NAMES;
-
-  return {
-    id: newId ? newId("card") : generateCardId(),
-    type: "name",
-    cost: 10,
-    songName: pool[Math.floor(rng() * pool.length)],
-    songEffect: TRACK_EFFECTS[randomEffect],
   };
 }

@@ -244,7 +244,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
             <List items={[
               <>Move up to <Hl>2 spaces</Hl> across the board (or spend 1 Inspiration to travel to any space).</>,
               <>If monsters are on your space, <Hl>Fight</Hl> once — one combat per turn.</>,
-              <>Visit the <Hl>Studio</Hl> to spend EXP on dice and song names (unlimited buys).</>,
+              <>Visit the <Hl>Studio</Hl> to spend EXP on dice (unlimited buys).</>,
               <>Press <Hl>End Turn</Hl> to pass to the next bard.</>,
             ]} />
           </Section>
@@ -280,7 +280,6 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           <Section title="🛠 The Studio (Shop)">
             <List items={[
               <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d6 → d12 → d20</Hl>.</>,
-              <>Buy <Hl>song names</Hl> that grant powerful effects to a song.</>,
               <>Spend EXP to buy <Hl>Inspiration</Hl> — used for rerolls, travel, and refreshing offers.</>,
             ]} />
           </Section>

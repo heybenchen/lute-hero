@@ -5,7 +5,6 @@ import {
   getNextDiceType,
   getUpgradeCost,
   createElementalDie,
-  generateNameCard,
   getInspirationCost,
 } from './draftCards'
 
@@ -64,28 +63,6 @@ describe('Elemental Dice Shop', () => {
       const a = createElementalDie('Ballad')
       const b = createElementalDie('Ballad')
       expect(a.id).not.toBe(b.id)
-    })
-  })
-
-  describe('generateNameCard', () => {
-    it('should generate a name card with correct type', () => {
-      const card = generateNameCard()
-      expect(card.type).toBe('name')
-    })
-
-    it('should cost 10 EXP', () => {
-      const card = generateNameCard()
-      expect(card.cost).toBe(10)
-    })
-
-    it('should have a song name', () => {
-      const card = generateNameCard()
-      expect(card.songName).toBeTruthy()
-    })
-
-    it('should have one effect', () => {
-      const card = generateNameCard()
-      expect(card.songEffect).toBeDefined()
     })
   })
 })

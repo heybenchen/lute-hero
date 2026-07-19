@@ -3,7 +3,6 @@ import {
   Genre,
   Song,
   Monster,
-  DraftCard,
   KillCredit,
   Rng,
   NewId,
@@ -23,7 +22,7 @@ import {
 } from '../game-logic/fame/calculator.js'
 import { calculateCoverFameSplit } from '../game-logic/fame/coverSongFame.js'
 import { createStarterSongs } from '../data/startingData.js'
-import { generateNameCard, createElementalDie, getInspirationCost, getUpgradeCost, NEW_D4_COST, INSPIRATION_SPEND } from '../data/draftCards.js'
+import { createElementalDie, getInspirationCost, getUpgradeCost, NEW_D4_COST, INSPIRATION_SPEND } from '../data/draftCards.js'
 import { createElementBag, drawFromBag, ELEMENT_OFFER_COUNT } from '../data/elementBag.js'
 import {
   SHOWDOWN_TURNS,
@@ -33,8 +32,6 @@ import {
   computeBossAdaptation,
 } from '../game-logic/showdown/showdown.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
-
-export const NAME_POOL_SIZE = 3
 
 export { CHIPS_PER_HANDOFF } from './validate.js'
 
@@ -182,12 +179,6 @@ function reduce(
         studio: { ...state.studio, selectedOfferIdx: action.offerIndex },
       }
 
-    case 'SELECT_STUDIO_NAME':
-      return {
-        ...state,
-        studio: { ...state.studio, selectedNameId: action.cardId },
-      }
-
     case 'SELECT_STUDIO_REWARD':
       return {
         ...state,
@@ -247,34 +238,6 @@ function reduce(
       }
     }
 
-    case 'BUY_NAME': {
-      const player = state.players[state.currentTurnPlayerIndex]
-      const card = state.namePool.find((c) => c.id === action.cardId)!
-      const reward = {
-        kind: 'name' as const,
-        id: newId('reward'),
-        name: card.songName || 'New Song',
-        effect: card.songEffect ?? null,
-      }
-      return {
-        ...state,
-        players: adjustExp(state.players, player.id, -card.cost),
-        // Bought names are removed, not replaced — the pool only refills at the
-        // start of the next player's turn (END_TURN), so a player can't keep
-        // buying an endless stream of names in a single turn.
-        namePool: state.namePool.filter((c) => c.id !== card.id),
-        pendingRewards: {
-          ...state.pendingRewards,
-          [player.id]: [...(state.pendingRewards[player.id] ?? []), reward],
-        },
-        studio: {
-          ...state.studio,
-          selectedNameId: null,
-          activeRewardId: reward.id,
-        },
-      }
-    }
-
     case 'REFRESH_ELEMENT_OFFERS': {
       const player = state.players[state.currentTurnPlayerIndex]
       const discard = [...state.elementDiscard, ...state.elementOffers]
@@ -286,37 +249,6 @@ function reduce(
         elementDiscard: remaining,
         elementOffers: drawn,
         studio: { ...state.studio, selectedOfferIdx: null },
-      }
-    }
-
-    case 'REFRESH_NAME_POOL': {
-      const player = state.players[state.currentTurnPlayerIndex]
-      return {
-        ...state,
-        players: adjustInspiration(state.players, player.id, -INSPIRATION_SPEND),
-        namePool: freshNamePool(rng, newId, usedSongNames(state.players)),
-        studio: { ...state.studio, selectedNameId: null },
-      }
-    }
-
-    case 'SLOT_NAME_REWARD': {
-      const player = state.players[state.currentTurnPlayerIndex]
-      const reward = (state.pendingRewards[player.id] ?? []).find((r) => r.id === action.rewardId)!
-      if (reward.kind !== 'name') return state
-      const players = state.players.map((p) => {
-        if (p.id !== player.id) return p
-        return {
-          ...p,
-          songs: p.songs.map((s) =>
-            s.id === action.songId ? { ...s, name: reward.name, effect: reward.effect } : s
-          ),
-        }
-      })
-      return {
-        ...state,
-        players,
-        pendingRewards: removeReward(state.pendingRewards, player.id, reward.id),
-        studio: { ...state.studio, activeRewardId: null },
       }
     }
 
@@ -466,7 +398,6 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
     finalTurnGranted: false,
     spaces,
     players,
-    namePool: freshNamePool(rng, newId, usedSongNames(players)),
     elementBag: bag,
     elementDiscard: discard,
     elementOffers: drawn,
@@ -506,7 +437,7 @@ function performCombatPlay(
   const monstersBefore = base.monsters
   const targetBefore = monstersBefore.find((m) => m.id === targetMonsterId)
 
-  const { rolls } = rollSong(song, rng)
+  const rolls = rollSong(song, rng)
   const { damageCalculations, updatedMonsters } = calculateSingleTargetDamage(
     song,
     rolls,
@@ -708,7 +639,6 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
       elementBag,
       elementDiscard,
       elementOffers,
-      namePool: freshNamePool(rng, newId, usedSongNames(players)),
       studio: createInitialStudioState(),
     }
   }
@@ -806,7 +736,6 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
     elementBag,
     elementDiscard,
     elementOffers,
-    namePool: freshNamePool(rng, newId, usedSongNames(state.players)),
     studio: createInitialStudioState(),
     redistribution: createInitialRedistributionState(),
     ...showdownFields,
@@ -874,7 +803,7 @@ function rollShowdownPlay(
   state: EngineState,
   song: Song,
   performerId: string,
-  base: { currentFandom: number; fandomTotal: number; bestHit: { damage: number; songName: string } | undefined; crits: number },
+  base: { currentFandom: number; fandomTotal: number; bestHit: { damage: number } | undefined; crits: number },
   rng: Rng,
   events: EngineEvent[]
 ) {
@@ -882,7 +811,7 @@ function rollShowdownPlay(
     resistGenre: state.showdownResistGenre,
     weakGenre: state.showdownWeakGenre,
   })
-  const { rolls } = rollSong(song, rng)
+  const rolls = rollSong(song, rng)
   const calc = calculateDamage(song, rolls, boss)
   const fandom = Math.max(0, calc.totalDamage)
   const genre = getDominantGenre(song, rolls)
@@ -896,7 +825,7 @@ function rollShowdownPlay(
 
   const bestHit =
     !base.bestHit || fandom > base.bestHit.damage
-      ? { damage: fandom, songName: song.name || 'Untitled' }
+      ? { damage: fandom }
       : base.bestHit
 
   events.push({ type: 'diceRolled', playerId: performerId, songId: song.id, context: 'showdown', rolls })
@@ -1043,28 +972,6 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
 // ============================================================
 // Small shared helpers
 // ============================================================
-
-/** Song names already in play (on songs) plus a running exclude set, so the
- * shop never offers a duplicate name. */
-function usedSongNames(players: Player[], extra: DraftCard[] = []): Set<string> {
-  const used = new Set<string>()
-  for (const p of players) {
-    for (const s of p.songs) if (s.name) used.add(s.name)
-  }
-  for (const card of extra) if (card.songName) used.add(card.songName)
-  return used
-}
-
-function freshNamePool(rng: Rng, newId: NewId, exclude: Set<string> = new Set()): DraftCard[] {
-  const used = new Set(exclude)
-  const pool: DraftCard[] = []
-  for (let i = 0; i < NAME_POOL_SIZE; i++) {
-    const card = generateNameCard(used, rng, newId)
-    if (card.songName) used.add(card.songName)
-    pool.push(card)
-  }
-  return pool
-}
 
 function adjustExp(players: Player[], playerId: string, delta: number): Player[] {
   return players.map((p) => (p.id === playerId ? { ...p, exp: p.exp + delta } : p))

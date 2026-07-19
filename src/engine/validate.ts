@@ -216,17 +216,6 @@ export function validateAction(
       return ok
     }
 
-    case 'SELECT_STUDIO_NAME': {
-      const gate = requireCurrentTurn()
-      if (gate.ok === false) return gate
-      const studioGate = requireOpenStudio()
-      if (studioGate.ok === false) return studioGate
-      if (action.cardId !== null && !state.namePool.some((card) => card.id === action.cardId)) {
-        return illegal('No such name card')
-      }
-      return ok
-    }
-
     case 'SELECT_STUDIO_REWARD': {
       const gate = requireCurrentTurn()
       if (gate.ok === false) return gate
@@ -280,21 +269,7 @@ export function validateAction(
       return ok
     }
 
-    case 'BUY_NAME': {
-      const gate = requireCurrentTurn()
-      if (!gate.ok) return gate
-      const studioGate = requireOpenStudio()
-      if (studioGate.ok === false) return studioGate
-      const player = state.players[state.currentTurnPlayerIndex]
-      if (!player) return illegal('No current player')
-      const card = state.namePool.find((c) => c.id === action.cardId)
-      if (!card) return illegal('No such name card')
-      if (player.exp < card.cost) return illegal('Not enough EXP')
-      return ok
-    }
-
-    case 'REFRESH_ELEMENT_OFFERS':
-    case 'REFRESH_NAME_POOL': {
+    case 'REFRESH_ELEMENT_OFFERS': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       const studioGate = requireOpenStudio()
@@ -304,7 +279,6 @@ export function validateAction(
       return ok
     }
 
-    case 'SLOT_NAME_REWARD':
     case 'SLOT_DIE_REWARD': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
@@ -317,14 +291,9 @@ export function validateAction(
       if (!reward) return illegal('No such reward')
       const song = player.songs.find((s) => s.id === action.songId)
       if (!song) return illegal('No such song')
-      if (action.type === 'SLOT_NAME_REWARD' && reward.kind !== 'name') {
-        return illegal('Reward is not a song name')
-      }
-      if (action.type === 'SLOT_DIE_REWARD') {
-        if (reward.kind !== 'die') return illegal('Reward is not a die')
-        if (action.slotIndex < 0 || action.slotIndex >= song.slots.length) {
-          return illegal('No such slot')
-        }
+      if (reward.kind !== 'die') return illegal('Reward is not a die')
+      if (action.slotIndex < 0 || action.slotIndex >= song.slots.length) {
+        return illegal('No such slot')
       }
       return ok
     }

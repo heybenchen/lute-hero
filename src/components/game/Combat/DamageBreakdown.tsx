@@ -47,9 +47,6 @@ export function DamageCell({ calc }: DamageCellProps) {
             <span className="font-bold text-parchment-100">{Math.round(die.damage)}</span>
           </div>
         ))}
-        {calc.effectBonuses > 0 && (
-          <span className="text-[10px] font-bold text-classical">+{calc.effectBonuses} fx</span>
-        )}
       </div>
     </div>
   )
