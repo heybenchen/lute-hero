@@ -4,5 +4,8 @@
     "api/games/[id]/stream.ts": {
       "maxDuration": 300
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
 }
