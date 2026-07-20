@@ -40,6 +40,8 @@ React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel N
 
 **Components** in `src/components/game/` map to game systems: `Board/` (4x4 tile grid), `Combat/` (battle modal with spectator mode), `PlayerPanel/` (turn actions + presence dots + host skip-turn), `DraftShop/` (Studio purchases), `Showdown/` (final boss), `FinalSummary/`. `src/components/lobby/` holds `ModeSelect` and `LobbyRoom`. All write through `dispatch`; never mutate state directly.
 
+**The Bestiary** (`/bestiary`) is a standalone Monster Manual on the same deployment, independent of the game engine. `main.tsx` does path routing (`/bestiary` → `src/bestiary/Bestiary.tsx`, everything else → the game `App`), each side lazy-loaded so their bundles stay separate. Shared roster/effects/level-builder live in `src/bestiary/data.ts` and feed both the UI and the CRUD API (`api/monsters/index.ts` for GET/POST, `api/monsters/[id].ts` for PUT/DELETE), which persists to the same Upstash Redis via `getRedis()` under `bestiary:monsters` (seeded on first read, in-memory fallback in dev/tests). `vercel.json` adds a SPA rewrite (excluding `/api`) so the route deep-links in production.
+
 **Types** are centralized in `src/types/index.ts`; wire types (GameDoc, Snapshot, SSE messages) in `src/net/protocol.ts`.
 
 ## Key Game Mechanics
