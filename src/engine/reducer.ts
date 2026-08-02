@@ -7,11 +7,11 @@ import {
   Rng,
   NewId,
 } from '../types/index.js'
-import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState, createInitialRedistributionState } from './state.js'
-import { GameAction, ActorSeat, PlayerConfig } from './actions.js'
+import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState, createInitialRedistributionState, normalizeEngineState } from './state.js'
+import { GameAction, ActorSeat, PlayerConfig, DebugPatch } from './actions.js'
 import { EngineEvent } from './events.js'
-import { validateAction, CHIPS_PER_HANDOFF } from './validate.js'
-import { createBoardGraph, addGenreTagsToBoard, addGenreTagToNeighbors, MAX_GENRE_TAGS } from '../game-logic/board/graphBuilder.js'
+import { validateAction, chipsPerHandoff } from './validate.js'
+import { createBoardGraph, addGenreTagsToBoard, addGenreTagToNeighbors, maxGenreTags } from '../game-logic/board/graphBuilder.js'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
 import { rollSong, calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
 import {
@@ -22,18 +22,19 @@ import {
 } from '../game-logic/fame/calculator.js'
 import { calculateCoverFameSplit } from '../game-logic/fame/coverSongFame.js'
 import { createStarterSongs } from '../data/startingData.js'
-import { createElementalDie, getInspirationCost, getUpgradeCost, NEW_D4_COST, INSPIRATION_SPEND } from '../data/draftCards.js'
-import { createElementBag, drawFromBag, ELEMENT_OFFER_COUNT } from '../data/elementBag.js'
+import { createElementalDie, getInspirationCost, getUpgradeCost, newD4Cost, inspirationSpend } from '../data/draftCards.js'
+import { createElementBag, drawFromBag, elementOfferCount } from '../data/elementBag.js'
 import {
-  SHOWDOWN_TURNS,
+  showdownTurns,
   ShowdownPerformance,
   createShowdownBoss,
   getDominantGenre,
   computeBossAdaptation,
 } from '../game-logic/showdown/showdown.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
+import { getTunables, withTunables, normalizeTunables } from '../data/tunables.js'
 
-export { CHIPS_PER_HANDOFF } from './validate.js'
+export { chipsPerHandoff } from './validate.js'
 
 export const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
 export const STARTING_POSITIONS = [0, 3, 12, 15] // 4x4 grid corners
@@ -52,18 +53,26 @@ export type ApplyResult =
 /**
  * Validate and apply one atomic action. Pure: same state + action + rng
  * sequence always produces the same result on server and client.
+ *
+ * Balance numbers come from `state.tunables` (the playtest debug panel edits
+ * them). They are published to the module-level active set for the duration of
+ * this call rather than threaded through every helper — `withTunables` restores
+ * the previous set afterwards, and the reduce is synchronous, so nothing else
+ * can observe the swap.
  */
 export function applyAction(state: EngineState, action: GameAction, ctx: ActionCtx): ApplyResult {
-  const validation = validateAction(state, action, ctx.actor)
-  if (validation.ok === false) return validation
+  return withTunables(state.tunables, () => {
+    const validation = validateAction(state, action, ctx.actor)
+    if (validation.ok === false) return validation
 
-  const idScope = ctx.idSeed ?? String(state.nextIdSeq)
-  let idCounter = 0
-  const newId: NewId = (prefix) => `${prefix}-${idScope}-${idCounter++}`
+    const idScope = ctx.idSeed ?? String(state.nextIdSeq)
+    let idCounter = 0
+    const newId: NewId = (prefix) => `${prefix}-${idScope}-${idCounter++}`
 
-  const events: EngineEvent[] = []
-  const next = reduce({ ...state, nextIdSeq: state.nextIdSeq + 1 }, action, ctx.rng, newId, events)
-  return { ok: true, state: next, events }
+    const events: EngineEvent[] = []
+    const next = reduce({ ...state, nextIdSeq: state.nextIdSeq + 1 }, action, ctx.rng, newId, events)
+    return { ok: true, state: next, events }
+  })
 }
 
 // ============================================================
@@ -88,7 +97,7 @@ function reduce(
               ...p,
               position: action.toSpaceId,
               movesThisTurn: p.movesThisTurn + 1,
-              inspiration: action.inspirationTravel ? p.inspiration - INSPIRATION_SPEND : p.inspiration,
+              inspiration: action.inspirationTravel ? p.inspiration - inspirationSpend() : p.inspiration,
             }
           : p
       )
@@ -141,7 +150,7 @@ function reduce(
       const owner = state.players.find((p) => p.id === ownerId)!
       const song = owner.songs.find((s) => s.id === state.combat.lastPlayedSongId)!
       const players = state.players.map((p) =>
-        p.id === fighterId ? { ...p, inspiration: p.inspiration - INSPIRATION_SPEND } : p
+        p.id === fighterId ? { ...p, inspiration: p.inspiration - inspirationSpend() } : p
       )
       // Replay from the pre-play snapshot — a true reroll against the same
       // target. The snapshot stays put so the song can be rerolled again.
@@ -191,7 +200,7 @@ function reduce(
       const reward = { kind: 'die' as const, id: newId('reward'), dice: createElementalDie(genre, newId) }
       return {
         ...state,
-        players: adjustExp(state.players, player.id, -NEW_D4_COST),
+        players: adjustExp(state.players, player.id, -newD4Cost()),
         elementOffers: state.elementOffers.filter((_, i) => i !== action.offerIndex),
         elementDiscard: [...state.elementDiscard, genre],
         pendingRewards: {
@@ -241,10 +250,10 @@ function reduce(
     case 'REFRESH_ELEMENT_OFFERS': {
       const player = state.players[state.currentTurnPlayerIndex]
       const discard = [...state.elementDiscard, ...state.elementOffers]
-      const { drawn, bag, discard: remaining } = drawFromBag(state.elementBag, discard, ELEMENT_OFFER_COUNT, rng)
+      const { drawn, bag, discard: remaining } = drawFromBag(state.elementBag, discard, elementOfferCount(), rng)
       return {
         ...state,
-        players: adjustInspiration(state.players, player.id, -INSPIRATION_SPEND),
+        players: adjustInspiration(state.players, player.id, -inspirationSpend()),
         elementBag: bag,
         elementDiscard: remaining,
         elementOffers: drawn,
@@ -327,7 +336,127 @@ function reduce(
 
     case 'PLACE_REDISTRIBUTION_CHIP':
       return placeRedistributionChip(state, action.spaceId, rng, newId)
+
+    case 'DEBUG_PATCH':
+      return applyDebugPatch(state, action.patch, rng, newId)
+
+    case 'DEBUG_LOAD_STATE':
+      return loadDebugState(state, action.engineState)
   }
+}
+
+// ============================================================
+// Playtest debug mode
+// ============================================================
+
+/**
+ * Apply a playtest patch. Only the fields present are touched, every number is
+ * clamped to something the engine can keep running with, and unknown ids are
+ * ignored rather than throwing — the panel is a blunt instrument by design.
+ */
+function applyDebugPatch(state: EngineState, patch: DebugPatch, rng: Rng, newId: NewId): EngineState {
+  let next: EngineState = state
+
+  if (patch.tunables) {
+    next = { ...next, tunables: normalizeTunables({ ...next.tunables, ...patch.tunables }) }
+  }
+
+  if (patch.players) {
+    const edits = patch.players
+    next = {
+      ...next,
+      players: next.players.map((p) => {
+        const edit = edits[p.id]
+        if (!edit) return p
+        return {
+          ...p,
+          fame: clampInt(edit.fame, p.fame, 0),
+          exp: clampInt(edit.exp, p.exp, 0),
+          inspiration: clampInt(edit.inspiration, p.inspiration, 0),
+          position: clampPosition(edit.position, p.position, next.spaces),
+          movesThisTurn: clampInt(edit.movesThisTurn, p.movesThisTurn, 0),
+          fightsThisTurn: clampInt(edit.fightsThisTurn, p.fightsThisTurn, 0),
+          monstersDefeated: clampInt(edit.monstersDefeated, p.monstersDefeated, 0),
+        }
+      }),
+    }
+  }
+
+  if (patch.flow) {
+    const { phase, currentRound, currentTurnPlayerIndex, pendingPhase, finalTurnGranted } = patch.flow
+    next = {
+      ...next,
+      phase: phase ?? next.phase,
+      currentRound: clampInt(currentRound, next.currentRound, 1),
+      currentTurnPlayerIndex:
+        currentTurnPlayerIndex === undefined
+          ? next.currentTurnPlayerIndex
+          : Math.min(Math.max(Math.floor(currentTurnPlayerIndex), 0), Math.max(next.players.length - 1, 0)),
+      pendingPhase: pendingPhase === undefined ? next.pendingPhase : pendingPhase,
+      finalTurnGranted: finalTurnGranted ?? next.finalTurnGranted,
+    }
+  }
+
+  if (patch.spaceTags) {
+    const tagEdits = patch.spaceTags
+    const cap = maxGenreTags()
+    next = {
+      ...next,
+      spaces: next.spaces.map((s) => {
+        const tags = tagEdits[s.id]
+        if (!tags) return s
+        return { ...s, genreTags: tags.slice(0, cap) }
+      }),
+    }
+  }
+
+  if (patch.combatMonsterHp && next.combat.isActive) {
+    const hpEdits = patch.combatMonsterHp
+    next = {
+      ...next,
+      combat: {
+        ...next.combat,
+        monsters: next.combat.monsters.map((m) => {
+          const hp = hpEdits[m.id]
+          if (hp === undefined) return m
+          return { ...m, currentHP: Math.min(Math.max(Math.floor(hp), 0), m.maxHP) }
+        }),
+      },
+    }
+  }
+
+  // Re-derive rosters last, so it reflects any chip edits in this same patch.
+  if (patch.respawnMonsters) {
+    next = {
+      ...next,
+      spaces: next.spaces.map((s) => ({
+        ...s,
+        monsters: spawnMonstersFromTags(s.genreTags, s.id, next.currentRound || 1, rng, newId),
+      })),
+    }
+  }
+
+  return next
+}
+
+/**
+ * Replace the whole engine state (restoring a saved playtest preset). Ids keep
+ * advancing from whichever counter is further along, so freshly spawned
+ * monsters can never collide with ids already present in the restored board.
+ */
+function loadDebugState(state: EngineState, incoming: EngineState): EngineState {
+  const restored = normalizeEngineState(incoming)
+  return { ...restored, nextIdSeq: Math.max(restored.nextIdSeq ?? 1, state.nextIdSeq) }
+}
+
+function clampInt(value: number | undefined, fallback: number, min: number): number {
+  if (value === undefined || !Number.isFinite(value)) return fallback
+  return Math.max(Math.floor(value), min)
+}
+
+function clampPosition(value: number | undefined, fallback: number, spaces: EngineState['spaces']): number {
+  if (value === undefined || !spaces.some((s) => s.id === value)) return fallback
+  return value
 }
 
 // ============================================================
@@ -356,7 +485,7 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
       movesThisTurn: 0,
       fightsThisTurn: 0,
       hasShoppedThisTurn: false,
-      inspiration: 1,
+      inspiration: getTunables().startingInspiration,
       inspirationBoughtThisTurn: 0,
     }
   })
@@ -373,11 +502,14 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
     )
   }
 
-  // 4. Exactly one monster chip per space to start. addGenreTagsToBoard tops
-  //    every space up to at least one tag (starter-seeded spaces keep their
-  //    starter element first); slicing to 1 leaves each space with a single tag.
-  spaces = addGenreTagsToBoard(spaces, rng)
-  spaces = spaces.map((s) => ({ ...s, genreTags: s.genreTags.slice(0, 1) }))
+  // 4. Seed each space with `startingTagsPerSpace` monster chips (1 by default).
+  //    addGenreTagsToBoard tops every space up by one tag per pass (starter-seeded
+  //    spaces keep their starter element first); the slice trims to the target.
+  const startingTags = getTunables().startingTagsPerSpace
+  for (let i = 0; i < startingTags; i++) {
+    spaces = addGenreTagsToBoard(spaces, rng)
+  }
+  spaces = spaces.map((s) => ({ ...s, genreTags: s.genreTags.slice(0, startingTags) }))
 
   // 5. Initial monsters — one per unique genre chip, matching the board
   spaces = spaces.map((space) => {
@@ -387,7 +519,7 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
 
   // 6. Shop
   const fullBag = createElementBag(configs.length, rng)
-  const { drawn, bag, discard } = drawFromBag(fullBag, [], ELEMENT_OFFER_COUNT, rng)
+  const { drawn, bag, discard } = drawFromBag(fullBag, [], elementOfferCount(), rng)
 
   return {
     ...state,
@@ -587,7 +719,7 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
     if (survivingGenres.length > 0) {
       spaces = spaces.map((s) =>
         s.id === spaceId
-          ? { ...s, genreTags: [...s.genreTags, ...survivingGenres].slice(0, MAX_GENRE_TAGS) }
+          ? { ...s, genreTags: [...s.genreTags, ...survivingGenres].slice(0, maxGenreTags()) }
           : s
       )
     }
@@ -625,7 +757,7 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
   // Mid-round: just pass play to the next bard and refill their shop.
   if (state.currentTurnPlayerIndex < state.players.length - 1) {
     let { elementBag, elementDiscard, elementOffers } = state
-    const needed = ELEMENT_OFFER_COUNT - elementOffers.length
+    const needed = elementOfferCount() - elementOffers.length
     if (needed > 0) {
       const { drawn, bag, discard } = drawFromBag(elementBag, elementDiscard, needed, rng)
       elementOffers = [...elementOffers, ...drawn]
@@ -717,7 +849,7 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
 
   // Refill the shop for the first player of the new round.
   let { elementBag, elementDiscard, elementOffers } = state
-  const needed = ELEMENT_OFFER_COUNT - elementOffers.length
+  const needed = elementOfferCount() - elementOffers.length
   if (needed > 0) {
     const { drawn, bag, discard } = drawFromBag(elementBag, elementDiscard, needed, rng)
     elementOffers = [...elementOffers, ...drawn]
@@ -748,7 +880,7 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
 
 function addRedistributionChip(state: EngineState, genre: Genre): EngineState {
   const r = state.redistribution
-  if (r.selectedChips.length >= CHIPS_PER_HANDOFF) return state
+  if (r.selectedChips.length >= chipsPerHandoff()) return state
   return { ...state, redistribution: { ...r, selectedChips: [...r.selectedChips, genre] } }
 }
 
@@ -886,7 +1018,7 @@ function rerollShowdownSong(state: EngineState, rng: Rng, events: EngineEvent[])
 
   // Spend 1 Inspiration, then replay from the snapshot — the snapshot stays put
   // so the performance can be rerolled again.
-  const players = adjustInspiration(state.players, undo.performerId, -INSPIRATION_SPEND)
+  const players = adjustInspiration(state.players, undo.performerId, -inspirationSpend())
   const fields = rollShowdownPlay(
     state,
     song,
@@ -925,7 +1057,7 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
   const history = [...state.showdownHistory, turnPerformances]
 
   // Turn over — the boss adapts and the next verse begins
-  if (state.showdownTurn < SHOWDOWN_TURNS) {
+  if (state.showdownTurn < showdownTurns()) {
     const adaptation = computeBossAdaptation(turnPerformances)
     events.push({
       type: 'showdownAdvance',

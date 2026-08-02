@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  SHOWDOWN_TURNS,
+  showdownTurns,
   createShowdownBoss,
   getDominantGenre,
   computeBossAdaptation,
@@ -30,7 +30,7 @@ function song(genres: (Genre | null)[], ids: string[] = ['d1', 'd2']): Song {
 
 describe('showdown constants', () => {
   it('lasts exactly 3 turns', () => {
-    expect(SHOWDOWN_TURNS).toBe(3)
+    expect(showdownTurns()).toBe(3)
   })
 })
 

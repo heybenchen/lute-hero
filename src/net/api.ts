@@ -6,6 +6,10 @@ import {
   ActionResponse,
   Snapshot,
   ApiError,
+  ListPresetsResponse,
+  GetPresetResponse,
+  SavePresetRequest,
+  SavePresetResponse,
 } from './protocol'
 import { GameAction } from '../engine/actions'
 
@@ -70,4 +74,27 @@ export function fetchState(token: string, gameId: string): Promise<{ snapshot: S
 
 export function streamUrl(token: string, gameId: string): string {
   return `${BASE}/games/${gameId}/stream?token=${encodeURIComponent(token)}`
+}
+
+// ============================================================
+// Playtest presets
+// ============================================================
+
+export function listPresets(token: string): Promise<ListPresetsResponse> {
+  return request('/debug/presets', token, { method: 'GET' })
+}
+
+export function fetchPreset(token: string, id: string): Promise<GetPresetResponse> {
+  return request(`/debug/presets?id=${encodeURIComponent(id)}`, token, { method: 'GET' })
+}
+
+export function savePreset(
+  token: string,
+  body: SavePresetRequest
+): Promise<SavePresetResponse> {
+  return request('/debug/presets', token, { method: 'POST', body: JSON.stringify(body) })
+}
+
+export function deletePreset(token: string, id: string): Promise<{ ok: boolean }> {
+  return request(`/debug/presets?id=${encodeURIComponent(id)}`, token, { method: 'DELETE' })
 }

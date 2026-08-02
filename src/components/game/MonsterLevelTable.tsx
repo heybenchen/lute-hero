@@ -1,5 +1,5 @@
 import { MONSTER_TEMPLATES } from '@/data/monsters'
-import { getHPMultiplier, MAX_MONSTER_LEVEL, getMonsterNameWithLevel } from '@/game-logic/combat/monsterSpawner'
+import { getHPMultiplier, maxMonsterLevel, getMonsterNameWithLevel } from '@/game-logic/combat/monsterSpawner'
 import { calculateMonsterFameValue, calculateMonsterExp } from '@/game-logic/fame/calculator'
 
 /**
@@ -14,7 +14,7 @@ const baseHPs = MONSTER_TEMPLATES.filter((t) => !t.isBoss).map((t) => t.baseHP ?
 const MIN_BASE_HP = Math.min(...baseHPs)
 const MAX_BASE_HP = Math.max(...baseHPs)
 
-const LEVELS = Array.from({ length: MAX_MONSTER_LEVEL }, (_, i) => i + 1)
+const LEVELS = Array.from({ length: maxMonsterLevel() }, (_, i) => i + 1)
 
 function healthRange(level: number): string {
   const mult = getHPMultiplier(level)

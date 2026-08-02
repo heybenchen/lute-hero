@@ -1,14 +1,21 @@
 import { EngineState } from './state.js'
 import { GameAction, ActorSeat } from './actions.js'
 import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
-import { areSpacesConnected, MAX_GENRE_TAGS } from '../game-logic/board/graphBuilder.js'
-import { NEW_D4_COST, getUpgradeCost, getInspirationCost, INSPIRATION_SPEND } from '../data/draftCards.js'
+import { areSpacesConnected, maxGenreTags } from '../game-logic/board/graphBuilder.js'
+import { newD4Cost, getUpgradeCost, getInspirationCost, inspirationSpend } from '../data/draftCards.js'
+import { getTunables } from '../data/tunables.js'
 
-export const MAX_MOVES_PER_TURN = 2
-export const MAX_FIGHTS_PER_TURN = 1
+export function maxMovesPerTurn(): number {
+  return getTunables().maxMovesPerTurn
+}
+export function maxFightsPerTurn(): number {
+  return getTunables().maxFightsPerTurn
+}
 
 /** Chips each player hands to the player behind them during round-end redistribution. */
-export const CHIPS_PER_HANDOFF = 4
+export function chipsPerHandoff(): number {
+  return getTunables().chipsPerHandoff
+}
 
 const ALL_GENRES_SET = new Set(['Ballad', 'Folk', 'Hymn', 'Shanty'])
 
@@ -87,11 +94,11 @@ export function validateAction(
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player) return illegal('Unknown player')
       if (player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
-      if (player.movesThisTurn >= MAX_MOVES_PER_TURN) return illegal('No moves left this turn')
+      if (player.movesThisTurn >= maxMovesPerTurn()) return illegal('No moves left this turn')
       if (action.toSpaceId === player.position) return illegal('Already on that space')
       if (!state.spaces.some((s) => s.id === action.toSpaceId)) return illegal('Unknown space')
       if (action.inspirationTravel) {
-        if (player.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration to travel')
+        if (player.inspiration < inspirationSpend()) return illegal('Not enough Inspiration to travel')
       } else if (!areSpacesConnected(player.position, action.toSpaceId, state.spaces)) {
         return illegal('Spaces are not connected')
       }
@@ -108,7 +115,7 @@ export function validateAction(
       if (state.studio.playerId) return illegal('Close the Studio before combat')
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player || player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
-      if (player.fightsThisTurn >= MAX_FIGHTS_PER_TURN) return illegal('No fights left this turn')
+      if (player.fightsThisTurn >= maxFightsPerTurn()) return illegal('No fights left this turn')
       const space = state.spaces.find((s) => s.id === player.position)
       if (!space || space.monsters.length === 0) return illegal('No monsters here')
       return ok
@@ -148,7 +155,7 @@ export function validateAction(
         return illegal('Nothing to reroll')
       }
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
-      if (!fighter || fighter.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration')
+      if (!fighter || fighter.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
       if (state.combat.monsters.every((m) => m.currentHP <= 0)) return illegal('All monsters defeated')
       return ok
     }
@@ -241,7 +248,7 @@ export function validateAction(
       if (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length) {
         return illegal('No such element chip')
       }
-      if (player.exp < NEW_D4_COST) return illegal('Not enough EXP')
+      if (player.exp < newD4Cost()) return illegal('Not enough EXP')
       return ok
     }
 
@@ -275,7 +282,7 @@ export function validateAction(
       const studioGate = requireOpenStudio()
       if (studioGate.ok === false) return studioGate
       const player = state.players[state.currentTurnPlayerIndex]
-      if (!player || player.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration')
+      if (!player || player.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
       return ok
     }
 
@@ -330,7 +337,7 @@ export function validateAction(
       if (isSeat && seatPlayerId !== performerId) return forbidden('Not your performance')
       if (!state.showdownUndo) return illegal('Nothing to reroll')
       const performer = state.players.find((p) => p.id === performerId)
-      if (!performer || performer.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration')
+      if (!performer || performer.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
       return ok
     }
 
@@ -380,8 +387,8 @@ export function validateAction(
       if (isSeat && seatPlayerId !== parts.giverId) return forbidden('Not your chips to give')
       if (action.type === 'ADD_REDISTRIBUTION_CHIP') {
         if (!ALL_GENRES_SET.has(action.genre)) return illegal('Unknown element')
-        if (state.redistribution.selectedChips.length >= CHIPS_PER_HANDOFF) {
-          return illegal(`Only ${CHIPS_PER_HANDOFF} chips`)
+        if (state.redistribution.selectedChips.length >= chipsPerHandoff()) {
+          return illegal(`Only ${chipsPerHandoff()} chips`)
         }
       }
       if (action.type === 'REMOVE_REDISTRIBUTION_CHIP') {
@@ -390,8 +397,8 @@ export function validateAction(
         }
       }
       if (action.type === 'CONFIRM_REDISTRIBUTION_GIFT') {
-        if (state.redistribution.selectedChips.length !== CHIPS_PER_HANDOFF) {
-          return illegal(`Choose exactly ${CHIPS_PER_HANDOFF} chips`)
+        if (state.redistribution.selectedChips.length !== chipsPerHandoff()) {
+          return illegal(`Choose exactly ${chipsPerHandoff()} chips`)
         }
       }
       return ok
@@ -409,7 +416,26 @@ export function validateAction(
       if (state.redistribution.placedSpaceIds.includes(action.spaceId)) {
         return illegal('A chip is already on that tile')
       }
-      if (space.genreTags.length >= MAX_GENRE_TAGS) return illegal('That tile is full')
+      if (space.genreTags.length >= maxGenreTags()) return illegal('That tile is full')
+      return ok
+    }
+
+    // Playtest tooling. Restricted to the host seat: it can rewrite any value,
+    // so a non-host seat must never be able to reach it in an online game.
+    case 'DEBUG_PATCH': {
+      if (!isHost) return forbidden('Only the host can use debug mode')
+      if (!action.patch || typeof action.patch !== 'object') return illegal('Missing debug patch')
+      return ok
+    }
+
+    case 'DEBUG_LOAD_STATE': {
+      if (!isHost) return forbidden('Only the host can load a playtest preset')
+      const incoming = action.engineState
+      if (!incoming || typeof incoming !== 'object') return illegal('Missing engine state')
+      if (!Array.isArray(incoming.players) || !Array.isArray(incoming.spaces)) {
+        return illegal('Preset is not a valid game state')
+      }
+      if (incoming.players.length === 0) return illegal('Preset has no players')
       return ok
     }
   }

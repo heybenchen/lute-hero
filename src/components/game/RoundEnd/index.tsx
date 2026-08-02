@@ -1,12 +1,12 @@
 import { useGameStore, selectCanRedistribute } from '@/store'
 import { GENRE_THEME, ALL_GENRES, readableTextColor } from '@/data/genreTheme'
-import { MAX_GENRE_TAGS } from '@/game-logic/board/graphBuilder'
-import { CHIPS_PER_HANDOFF } from '@/engine/reducer'
+import { maxGenreTags } from '@/game-logic/board/graphBuilder'
+import { chipsPerHandoff } from '@/engine/reducer'
 import { Genre } from '@/types'
 
 /**
  * Round-end redistribution overlay. In turn order, each bard hands
- * CHIPS_PER_HANDOFF monster chips (of their choosing) to the bard behind them,
+ * chipsPerHandoff() monster chips (of their choosing) to the bard behind them,
  * who places each chip on a distinct board tile. Runs before the next round.
  */
 export function RoundEndModal() {
@@ -41,7 +41,7 @@ export function RoundEndModal() {
             </p>
             <div className="mt-3 flex items-center justify-center gap-3 text-sm">
               <PlayerPill player={giver} />
-              <span className="text-parchment-500">hands {CHIPS_PER_HANDOFF} chips to</span>
+              <span className="text-parchment-500">hands {chipsPerHandoff()} chips to</span>
               <PlayerPill player={receiver} />
             </div>
           </div>
@@ -124,11 +124,11 @@ function SelectStage({
   onConfirm: () => void
   waitingLabel?: string
 }) {
-  const full = selectedChips.length >= CHIPS_PER_HANDOFF
+  const full = selectedChips.length >= chipsPerHandoff()
   return (
     <div className="flex flex-col items-center gap-5">
       <p className="text-sm text-parchment-300 text-center max-w-md">
-        <span className="font-bold text-gold-300">{giverName}</span>, choose {CHIPS_PER_HANDOFF} monster
+        <span className="font-bold text-gold-300">{giverName}</span>, choose {chipsPerHandoff()} monster
         chips to hand to <span className="font-bold text-gold-300">{receiverName}</span>. Repeats are allowed.
       </p>
 
@@ -161,7 +161,7 @@ function SelectStage({
       {/* Selected tray */}
       <div className="w-full max-w-md">
         <div className="text-xs font-medieval text-parchment-500 uppercase tracking-wider mb-2 text-center">
-          Chosen chips ({selectedChips.length}/{CHIPS_PER_HANDOFF}) {canAct && selectedChips.length > 0 && '— tap to remove'}
+          Chosen chips ({selectedChips.length}/{chipsPerHandoff()}) {canAct && selectedChips.length > 0 && '— tap to remove'}
         </div>
         <div className="min-h-[44px] flex flex-wrap gap-2 justify-center items-center rounded-lg p-2"
           style={{ background: 'rgba(0,0,0,0.25)', border: '1px dashed rgba(212, 168, 83, 0.2)' }}>
@@ -185,7 +185,7 @@ function SelectStage({
         disabled={!canAct || !full}
         className="btn-primary w-full max-w-md py-3 disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {full ? `Hand chips to ${receiverName}` : `Choose ${CHIPS_PER_HANDOFF - selectedChips.length} more`}
+        {full ? `Hand chips to ${receiverName}` : `Choose ${chipsPerHandoff() - selectedChips.length} more`}
       </button>
     </div>
   )
@@ -234,7 +234,7 @@ function PlaceStage({
       <div className="grid grid-cols-4 gap-1.5 sm:gap-2 w-full max-w-lg">
         {spaces.map((space) => {
           const used = placedSpaceIds.includes(space.id)
-          const full = space.genreTags.length >= MAX_GENRE_TAGS
+          const full = space.genreTags.length >= maxGenreTags()
           const disabled = !canAct || used || full
           const playersHere = players.filter((p) => p.position === space.id)
           const counts = space.genreTags.reduce<Partial<Record<Genre, number>>>((acc, g) => {

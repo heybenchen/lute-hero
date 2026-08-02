@@ -4,11 +4,11 @@ import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
 import {
-  NEW_D4_COST,
+  newD4Cost,
   getNextDiceType,
   getUpgradeCost,
   getInspirationCost,
-  INSPIRATION_SPEND,
+  inspirationSpend,
 } from '@/data/draftCards'
 import { GENRE_THEME } from '@/data/genreTheme'
 
@@ -68,7 +68,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     : []
 
   const handleBuyNewD4 = async () => {
-    if (!canInteract || selectedOfferIdx === null || !selectedElement || player.exp < NEW_D4_COST) return
+    if (!canInteract || selectedOfferIdx === null || !selectedElement || player.exp < newD4Cost()) return
     await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx })
   }
 
@@ -80,7 +80,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
   }
 
   const handleRefreshElements = () => {
-    if (!canInteract || player.inspiration < INSPIRATION_SPEND) return
+    if (!canInteract || player.inspiration < inspirationSpend()) return
     dispatch({ type: 'REFRESH_ELEMENT_OFFERS' })
   }
 
@@ -157,11 +157,11 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </div>
               <button
                 onClick={handleRefreshElements}
-                disabled={!canInteract || player.inspiration < INSPIRATION_SPEND}
+                disabled={!canInteract || player.inspiration < inspirationSpend()}
                 className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                title={player.inspiration >= INSPIRATION_SPEND ? 'Discard these chips and draw 4 new ones from the bag' : 'Requires Inspiration'}
+                title={player.inspiration >= inspirationSpend() ? 'Discard these chips and draw 4 new ones from the bag' : 'Requires Inspiration'}
               >
-                Draw New (&#x2728; {INSPIRATION_SPEND})
+                Draw New (&#x2728; {inspirationSpend()})
               </button>
             </div>
 
@@ -243,10 +243,10 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   {/* New d4 */}
                   <button
                     onClick={handleBuyNewD4}
-                    disabled={!canInteract || player.exp < NEW_D4_COST}
+                    disabled={!canInteract || player.exp < newD4Cost()}
                     className="btn-primary text-sm px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <DiceShape type="d4" /> New d4 &mdash; {NEW_D4_COST} EXP
+                    <DiceShape type="d4" /> New d4 &mdash; {newD4Cost()} EXP
                   </button>
 
                   {/* Upgrades for owned dice of this element */}

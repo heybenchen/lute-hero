@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { applyAction, ActionCtx, computeCombatRewards } from './reducer'
-import { createInitialEngineState, EngineState } from './state'
+import { createInitialEngineState, normalizeEngineState, EngineState } from './state'
 import { GameAction } from './actions'
 import { mulberry32 } from './rng'
+import { DEFAULT_TUNABLES } from '../data/tunables'
 
 const HOTSEAT: Pick<ActionCtx, 'actor'> = { actor: { kind: 'hotseat' } }
 
@@ -467,6 +468,174 @@ describe('showdown actions', () => {
     }
     state = apply(state, { type: 'ADVANCE_TO_SUMMARY' }).state
     expect(state.phase).toBe('gameOver')
+  })
+})
+
+describe('tunables', () => {
+  it('a new game carries the default tunables', () => {
+    const state = startTwoPlayerGame()
+    expect(state.tunables).toEqual(DEFAULT_TUNABLES)
+  })
+
+  it('startingTagsPerSpace controls the opening board', () => {
+    let state = createInitialEngineState()
+    state = { ...state, tunables: { ...DEFAULT_TUNABLES, startingTagsPerSpace: 3 } }
+    const started = apply(state, {
+      type: 'START_GAME',
+      playerConfigs: [
+        { name: 'Alba', starterGenre: 'Ballad', color: '#3b82f6' },
+        { name: 'Bryn', starterGenre: 'Folk', color: '#ef4444' },
+      ],
+    }).state
+    expect(started.spaces.every((s) => s.genreTags.length === 3)).toBe(true)
+  })
+
+  it('the fame gate drives the showdown transition', () => {
+    let state = startTwoPlayerGame()
+    // Lower the gate so a modest fame total arms the boss
+    state = { ...state, tunables: { ...DEFAULT_TUNABLES, fameFinalBossThreshold: 1 } }
+    state = {
+      ...state,
+      spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Ballad'] } : s)),
+    }
+    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false }).state
+    state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    state = {
+      ...state,
+      combat: { ...state.combat, monsters: state.combat.monsters.map((m) => ({ ...m, currentHP: 1 })) },
+    }
+    state = apply(state, {
+      type: 'PLAY_SONG',
+      songId: state.players[0].songs[0].id,
+      ownerId: 'player-1',
+      targetMonsterId: state.combat.monsters[0].id,
+    }).state
+    state = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' }).state
+    expect(state.pendingPhase).toBe('finalBoss')
+  })
+
+  it('monsterHpScale scales spawned monster HP', () => {
+    const base = startTwoPlayerGame()
+    const scaled = applyAction(
+      { ...base, tunables: { ...DEFAULT_TUNABLES, monsterHpScale: 4 } },
+      { type: 'DEBUG_PATCH', patch: { respawnMonsters: true } },
+      ctx()
+    )
+    if (!scaled.ok) throw new Error(scaled.message)
+    const baseHp = base.spaces.flatMap((s) => s.monsters).reduce((n, m) => n + m.maxHP, 0)
+    const scaledHp = scaled.state.spaces.flatMap((s) => s.monsters).reduce((n, m) => n + m.maxHP, 0)
+    expect(scaledHp).toBeGreaterThan(baseHp * 3)
+  })
+
+  it('chipsPerHandoff controls the round-end gift size', () => {
+    let state = startTwoPlayerGame()
+    state = { ...state, tunables: { ...DEFAULT_TUNABLES, chipsPerHandoff: 2 } }
+    state = apply(state, { type: 'END_TURN' }).state
+    state = apply(state, { type: 'END_TURN' }).state
+    expect(state.redistribution.active).toBe(true)
+    state = apply(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }).state
+    state = apply(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }).state
+    // A third chip exceeds the (lowered) limit, and confirming is now legal
+    expect(applyAction(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }, ctx()).ok).toBe(false)
+    expect(applyAction(state, { type: 'CONFIRM_REDISTRIBUTION_GIFT' }, ctx()).ok).toBe(true)
+  })
+
+  it('normalizes tunables loaded from an older or hand-edited save', () => {
+    const state = normalizeEngineState({
+      ...startTwoPlayerGame(),
+      tunables: undefined as never,
+    })
+    expect(state.tunables).toEqual(DEFAULT_TUNABLES)
+  })
+})
+
+describe('debug actions', () => {
+  it('DEBUG_PATCH edits players, flow, chips and tunables', () => {
+    let state = startTwoPlayerGame()
+    state = apply(state, {
+      type: 'DEBUG_PATCH',
+      patch: {
+        players: { 'player-1': { fame: 120, exp: 60, inspiration: 7, position: 5 } },
+        flow: { currentRound: 4, pendingPhase: 'finalBoss', finalTurnGranted: true },
+        spaceTags: { 2: ['Hymn', 'Hymn', 'Shanty'] },
+        tunables: { newD4Cost: 1 },
+        respawnMonsters: true,
+      },
+    }).state
+
+    const p1 = state.players[0]
+    expect([p1.fame, p1.exp, p1.inspiration, p1.position]).toEqual([120, 60, 7, 5])
+    expect(state.currentRound).toBe(4)
+    expect(state.pendingPhase).toBe('finalBoss')
+    expect(state.tunables.newD4Cost).toBe(1)
+
+    const space2 = state.spaces.find((s) => s.id === 2)!
+    expect(space2.genreTags).toEqual(['Hymn', 'Hymn', 'Shanty'])
+    // Respawn re-derives the roster: one monster per unique chip, Hymn at Lv2
+    expect(space2.monsters).toHaveLength(2)
+    expect(space2.monsters.find((m) => m.level === 2)).toBeDefined()
+  })
+
+  it('DEBUG_PATCH clamps hostile values instead of corrupting state', () => {
+    let state = startTwoPlayerGame()
+    state = apply(state, {
+      type: 'DEBUG_PATCH',
+      patch: {
+        players: { 'player-1': { fame: -50, exp: Number.NaN, position: 999 } },
+        flow: { currentTurnPlayerIndex: 99, currentRound: -3 },
+        spaceTags: { 0: Array(50).fill('Ballad') },
+        tunables: { maxGenreTags: 99999 },
+      },
+    }).state
+
+    expect(state.players[0].fame).toBe(0)
+    expect(state.players[0].exp).toBe(0) // NaN ignored, keeps prior value
+    expect(state.players[0].position).toBe(0) // 999 is not a real space
+    expect(state.currentTurnPlayerIndex).toBe(1) // clamped to players.length - 1
+    expect(state.currentRound).toBe(1)
+    expect(state.tunables.maxGenreTags).toBe(20) // field max
+    expect(state.spaces[0].genreTags.length).toBeLessThanOrEqual(20)
+  })
+
+  it('DEBUG_PATCH ignores unknown player ids', () => {
+    const state = startTwoPlayerGame()
+    const patched = apply(state, {
+      type: 'DEBUG_PATCH',
+      patch: { players: { 'player-99': { fame: 500 } } },
+    }).state
+    expect(patched.players.map((p) => p.fame)).toEqual([0, 0])
+  })
+
+  it('DEBUG_LOAD_STATE restores a snapshot and never rewinds the id counter', () => {
+    const preset = apply(startTwoPlayerGame(7), {
+      type: 'DEBUG_PATCH',
+      patch: { players: { 'player-1': { fame: 99 } } },
+    }).state
+    const live = { ...startTwoPlayerGame(3), nextIdSeq: 500 }
+
+    const loaded = apply(live, { type: 'DEBUG_LOAD_STATE', engineState: preset }).state
+    expect(loaded.players[0].fame).toBe(99)
+    expect(loaded.nextIdSeq).toBeGreaterThanOrEqual(500)
+  })
+
+  it('restricts debug actions to the host seat', () => {
+    const state = startTwoPlayerGame()
+    const patch = { type: 'DEBUG_PATCH' as const, patch: { players: { 'player-1': { fame: 999 } } } }
+    expect(applyAction(state, patch, seatCtx('player-1', false)).ok).toBe(false)
+    expect(applyAction(state, patch, seatCtx('player-1', true)).ok).toBe(true)
+
+    const load = { type: 'DEBUG_LOAD_STATE' as const, engineState: state }
+    expect(applyAction(state, load, seatCtx('player-2', false)).ok).toBe(false)
+    expect(applyAction(state, load, seatCtx('player-2', true)).ok).toBe(true)
+  })
+
+  it('rejects a preset that is not a game state', () => {
+    const state = startTwoPlayerGame()
+    const bad = { ...state, players: [] }
+    expect(applyAction(state, { type: 'DEBUG_LOAD_STATE', engineState: bad }, ctx()).ok).toBe(false)
+    expect(
+      applyAction(state, { type: 'DEBUG_LOAD_STATE', engineState: null as never }, ctx()).ok
+    ).toBe(false)
   })
 })
 

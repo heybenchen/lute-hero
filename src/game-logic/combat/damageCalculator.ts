@@ -1,16 +1,19 @@
 import { Song, Monster, DiceRoll, Genre, DamageCalculation, DieContribution, Rng } from '../../types/index.js';
 import { rollDiceWithCrit } from "../dice/roller.js";
+import { getTunables } from "../../data/tunables.js";
 
 /**
  * Calculate damage multiplier for a genre against a monster
  */
 export function getGenreMultiplier(genre: Genre, monster: Monster): number {
+  const { vulnerabilityMultiplier, resistanceMultiplier } = getTunables();
+
   if (monster.vulnerability === genre) {
-    return 2.0; // Vulnerable: 2x damage
+    return vulnerabilityMultiplier; // Vulnerable: 2x damage by default
   }
 
   if (monster.resistance === genre) {
-    return 0; // Resistant: 0x damage (immune)
+    return resistanceMultiplier; // Immune: 0x damage by default
   }
 
   return 1.0; // Neutral

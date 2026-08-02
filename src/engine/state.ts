@@ -11,6 +11,7 @@ import {
   DamageCalculation,
 } from '../types/index.js'
 import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
+import { Tunables, DEFAULT_TUNABLES, normalizeTunables } from '../data/tunables.js'
 
 /**
  * Live combat state — part of the synced engine state so spectators watch
@@ -111,6 +112,12 @@ export interface EngineState {
   // Round-end chip redistribution (inactive most of the time)
   redistribution: RedistributionState
 
+  /**
+   * Balance numbers the engine reads. Part of the state so playtest tweaks
+   * persist in saves and sync to every online client. Edited via DEBUG_PATCH.
+   */
+  tunables: Tunables
+
   // Final showdown
   showdownActive: boolean
   showdownComplete: boolean
@@ -192,6 +199,9 @@ export function normalizeEngineState(state: EngineState): EngineState {
     combat: { ...createInitialCombatState(), ...state.combat },
     studio: { ...createInitialStudioState(), ...state.studio },
     redistribution: { ...createInitialRedistributionState(), ...state.redistribution },
+    // Fills in defaults and clamps every value, so a stale save or a
+    // hand-edited preset can never leave the engine with a broken number.
+    tunables: normalizeTunables(state.tunables),
   }
 }
 
@@ -214,6 +224,7 @@ export function createInitialEngineState(): EngineState {
 
     combat: createInitialCombatState(),
     redistribution: createInitialRedistributionState(),
+    tunables: DEFAULT_TUNABLES,
 
     showdownActive: false,
     showdownComplete: false,

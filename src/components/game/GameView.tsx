@@ -135,6 +135,13 @@ export function GameView() {
               >
                 How to Play
               </button>
+              <button
+                onClick={() => { setShowMenu(false); _setUi({ debugOpen: true }) }}
+                className="btn-secondary w-full py-3"
+                title="Tweak every game value, edit players and the board, save/restore playtest scenarios"
+              >
+                Playtest Console
+              </button>
               {isHost && (
                 <button
                   onClick={handleNewGame}
