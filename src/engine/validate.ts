@@ -1,7 +1,7 @@
 import { EngineState } from './state.js'
 import { GameAction, ActorSeat } from './actions.js'
 import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
-import { areSpacesConnected, maxGenreTags } from '../game-logic/board/graphBuilder.js'
+import { areSpacesConnected, canAddGenreTag } from '../game-logic/board/graphBuilder.js'
 import { newD4Cost, getUpgradeCost, getInspirationCost, inspirationSpend } from '../data/draftCards.js'
 import { getTunables } from '../data/tunables.js'
 
@@ -389,7 +389,11 @@ export function validateAction(
       if (state.redistribution.placedSpaceIds.includes(action.spaceId)) {
         return illegal('You already placed a chip on that tile')
       }
-      if (space.genreTags.length >= maxGenreTags()) return illegal('That tile is full')
+      // Only same-element chips are capped — a tile's total is unlimited.
+      const chip = state.redistribution.chipsToPlace[0]
+      if (!canAddGenreTag(space.genreTags, chip)) {
+        return illegal(`That tile already has the most ${chip} chips it can hold`)
+      }
       return ok
     }
 

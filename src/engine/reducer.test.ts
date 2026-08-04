@@ -44,7 +44,10 @@ function completeRedistribution(state: EngineState): EngineState {
   let guard = 0
   while (s.redistribution.active && guard++ < 500) {
     const used = new Set(s.redistribution.placedSpaceIds)
-    const target = s.spaces.find((sp) => !used.has(sp.id) && sp.genreTags.length < 5)!
+    const chip = s.redistribution.chipsToPlace[0]
+    const target = s.spaces.find(
+      (sp) => !used.has(sp.id) && sp.genreTags.filter((t) => t === chip).length < 5
+    )!
     s = apply(s, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: target.id }).state
   }
   return s
@@ -440,6 +443,35 @@ describe('END_TURN', () => {
     expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-2')).ok).toBe(true)
   })
 
+  it('caps chips per element, not per tile', () => {
+    let state = startTwoPlayerGame()
+    state = apply(state, { type: 'END_TURN' }).state
+    state = apply(state, { type: 'END_TURN' }).state
+
+    // Fill tile 0 with the cap of one element, plus other elements on top
+    const chip = state.redistribution.chipsToPlace[0]
+    state = {
+      ...state,
+      spaces: state.spaces.map((s) =>
+        s.id === 0 ? { ...s, genreTags: Array(5).fill(chip) } : s
+      ),
+    }
+    // That element is maxed out here…
+    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-1')).ok).toBe(false)
+
+    // …but a different element still fits, however many chips the tile holds
+    const other = state.redistribution.chipsToPlace.find((c) => c !== chip)!
+    state = {
+      ...state,
+      redistribution: {
+        ...state.redistribution,
+        chipsToPlace: [other, ...state.redistribution.chipsToPlace.filter((c) => c !== other)],
+      },
+    }
+    const placed = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }).state
+    expect(placed.spaces[0].genreTags).toHaveLength(6)
+  })
+
   it('respects roundEndChipsPerElement', () => {
     let state = startTwoPlayerGame()
     state = { ...state, tunables: { ...DEFAULT_TUNABLES, roundEndChipsPerElement: 2 } }
@@ -740,7 +772,7 @@ describe('debug actions', () => {
         players: { 'player-1': { fame: -50, exp: Number.NaN, position: 999 } },
         flow: { currentTurnPlayerIndex: 99, currentRound: -3 },
         spaceTags: { 0: Array(50).fill('Ballad') },
-        tunables: { maxGenreTags: 99999 },
+        tunables: { maxTagsPerGenre: 99999 },
       },
     }).state
 
@@ -749,7 +781,7 @@ describe('debug actions', () => {
     expect(state.players[0].position).toBe(0) // 999 is not a real space
     expect(state.currentTurnPlayerIndex).toBe(1) // clamped to players.length - 1
     expect(state.currentRound).toBe(1)
-    expect(state.tunables.maxGenreTags).toBe(20) // field max
+    expect(state.tunables.maxTagsPerGenre).toBe(20) // field max
     expect(state.spaces[0].genreTags.length).toBeLessThanOrEqual(20)
   })
 

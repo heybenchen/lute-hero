@@ -1,6 +1,6 @@
 import { useGameStore, selectCanRedistribute } from '@/store'
 import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
-import { maxGenreTags } from '@/game-logic/board/graphBuilder'
+import { canAddGenreTag } from '@/game-logic/board/graphBuilder'
 import { Genre } from '@/types'
 
 /**
@@ -74,7 +74,8 @@ export function RoundEndModal() {
             <div className="grid grid-cols-4 gap-1.5 sm:gap-2 w-full max-w-lg">
               {spaces.map((space) => {
                 const used = placedSpaceIds.includes(space.id)
-                const full = space.genreTags.length >= maxGenreTags()
+                // Tiles hold any number of chips — only this element can be maxed out.
+                const full = nextChip !== undefined && !canAddGenreTag(space.genreTags, nextChip)
                 const disabled = !canAct || used || full
                 const playersHere = players.filter((p) => p.position === space.id)
                 const counts = space.genreTags.reduce<Partial<Record<Genre, number>>>((acc, g) => {
@@ -86,7 +87,7 @@ export function RoundEndModal() {
                     key={space.id}
                     onClick={() => dispatch({ type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: space.id })}
                     disabled={disabled}
-                    title={full ? `${space.name} — full` : space.name}
+                    title={full ? `${space.name} — no room for another ${nextChip}` : space.name}
                     className={`relative aspect-square rounded-lg p-1 flex flex-col justify-between transition-all duration-150 ${
                       disabled ? 'opacity-60' : 'hover:-translate-y-0.5 cursor-pointer'
                     }`}
