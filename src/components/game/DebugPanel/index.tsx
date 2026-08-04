@@ -500,7 +500,7 @@ function MiniButton({ children, onClick }: { children: React.ReactNode; onClick:
 
 function BoardTab() {
   const spaces = useGameStore((state) => state.spaces)
-  const maxTags = useGameStore((state) => state.tunables.maxGenreTags)
+  const maxPerGenre = useGameStore((state) => state.tunables.maxTagsPerGenre)
   const dispatch = useGameStore((state) => state.dispatch)
 
   if (spaces.length === 0) {
@@ -528,7 +528,8 @@ function BoardTab() {
         </MiniButton>
       </div>
       <p className="text-[10px] text-parchment-500 mb-2">
-        Tap an element to add a chip; tap a chip in the row to remove it. Monsters re-derive
+        Tap an element to add a chip; tap a chip in the row to remove it. A space holds any
+        number of chips, but only {maxPerGenre} of the same element. Monsters re-derive
         immediately, so a space's roster always matches its chips.
       </p>
 
@@ -539,7 +540,7 @@ function BoardTab() {
               <span className="text-parchment-500">{space.id}</span> {space.name}
             </span>
             <span className="text-[10px] text-parchment-500 tabular-nums">
-              {space.genreTags.length}/{maxTags}
+              {space.genreTags.length} chip{space.genreTags.length === 1 ? '' : 's'}
             </span>
           </div>
           <div className="flex items-center gap-1 mt-1 flex-wrap">
@@ -548,7 +549,7 @@ function BoardTab() {
               return (
                 <button
                   key={genre}
-                  disabled={space.genreTags.length >= maxTags}
+                  disabled={space.genreTags.filter((t) => t === genre).length >= maxPerGenre}
                   onClick={() => setTags(space.id, [...space.genreTags, genre])}
                   title={`Add ${genre}`}
                   className="w-6 h-6 rounded flex items-center justify-center text-xs disabled:opacity-30 transition-transform hover:enabled:-translate-y-0.5"

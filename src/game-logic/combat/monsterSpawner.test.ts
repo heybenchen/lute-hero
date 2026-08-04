@@ -13,7 +13,6 @@ describe('Monster Spawner', () => {
       const template: MonsterTemplate = {
         id: 'test-template',
         name: 'Test Monster',
-        baseHP: 30,
         vulnerability: 'Ballad',
         resistance: 'Shanty',
         description: 'A test monster',
@@ -23,8 +22,9 @@ describe('Monster Spawner', () => {
 
       expect(monster.templateId).toBe('test-template')
       expect(monster.name).toBe('Test Monster')
-      expect(monster.currentHP).toBe(30)
-      expect(monster.maxHP).toBe(30)
+      // HP comes from the monsterBaseHp tunable (8), not the template
+      expect(monster.currentHP).toBe(8)
+      expect(monster.maxHP).toBe(8)
       expect(monster.vulnerability).toBe('Ballad')
       expect(monster.resistance).toBe('Shanty')
       expect(monster.isBoss).toBe(false)
@@ -34,7 +34,6 @@ describe('Monster Spawner', () => {
       const template: MonsterTemplate = {
         id: 'test-template',
         name: 'Test Monster',
-        baseHP: 30,
         vulnerability: null,
         resistance: null,
         description: 'A test monster',
@@ -50,7 +49,6 @@ describe('Monster Spawner', () => {
       const bossTemplate: MonsterTemplate = {
         id: 'boss-template',
         name: 'Boss Monster',
-        baseHP: 150,
         vulnerability: null,
         resistance: null,
         description: 'A boss monster',
@@ -66,7 +64,6 @@ describe('Monster Spawner', () => {
       const template: MonsterTemplate = {
         id: 'test-template',
         name: 'Test Monster',
-        baseHP: 20,
         vulnerability: null,
         resistance: null,
         description: 'A test monster',
@@ -79,19 +76,18 @@ describe('Monster Spawner', () => {
       const lv5 = createMonsterFromTemplate(template, 1, 0, 5)
       const lv6 = createMonsterFromTemplate(template, 1, 0, 6)
 
-      expect(lv1.maxHP).toBe(20)   // 20 * 1.0
-      expect(lv2.maxHP).toBe(35)   // 20 * 1.75
-      expect(lv3.maxHP).toBe(60)   // 20 * 3.0
-      expect(lv4.maxHP).toBe(100)  // 20 * 5.0
-      expect(lv5.maxHP).toBe(150)  // 20 * 7.5
-      expect(lv6.maxHP).toBe(150)  // capped at level 5
+      expect(lv1.maxHP).toBe(8)   // 8 * 1.0
+      expect(lv2.maxHP).toBe(14)  // 8 * 1.75
+      expect(lv3.maxHP).toBe(24)  // 8 * 3.0
+      expect(lv4.maxHP).toBe(40)  // 8 * 5.0
+      expect(lv5.maxHP).toBe(60)  // 8 * 7.5
+      expect(lv6.maxHP).toBe(60)  // capped at level 5
     })
 
     it('should prefix name based on level', () => {
       const template: MonsterTemplate = {
         id: 'test',
         name: 'Goblin',
-        baseHP: 10,
         vulnerability: null,
         resistance: null,
         description: 'test',
@@ -108,7 +104,6 @@ describe('Monster Spawner', () => {
       const template: MonsterTemplate = {
         id: 'test',
         name: 'Goblin',
-        baseHP: 10,
         vulnerability: null,
         resistance: null,
         description: 'test',
@@ -127,7 +122,6 @@ describe('Monster Spawner', () => {
       const template: MonsterTemplate = {
         id: 'test',
         name: 'Goblin',
-        baseHP: 10,
         vulnerability: null,
         resistance: null,
         description: 'test',

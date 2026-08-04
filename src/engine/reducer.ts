@@ -11,7 +11,7 @@ import { EngineState, EngineCombatState, RedistributionState, createInitialEngin
 import { GameAction, ActorSeat, PlayerConfig, DebugPatch, DebugDiceEdit } from './actions.js'
 import { EngineEvent } from './events.js'
 import { validateAction, roundEndChipsPerElement } from './validate.js'
-import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, maxGenreTags } from '../game-logic/board/graphBuilder.js'
+import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, addGenreTag, capGenreTags } from '../game-logic/board/graphBuilder.js'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
 import { rollSong, calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
 import {
@@ -398,13 +398,12 @@ function applyDebugPatch(state: EngineState, patch: DebugPatch, rng: Rng, newId:
 
   if (patch.spaceTags) {
     const tagEdits = patch.spaceTags
-    const cap = maxGenreTags()
     next = {
       ...next,
       spaces: next.spaces.map((s) => {
         const tags = tagEdits[s.id]
         if (!tags) return s
-        return { ...s, genreTags: tags.slice(0, cap) }
+        return { ...s, genreTags: capGenreTags(tags) }
       }),
     }
   }
@@ -745,7 +744,7 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
     if (survivingGenres.length > 0) {
       spaces = spaces.map((s) =>
         s.id === spaceId
-          ? { ...s, genreTags: [...s.genreTags, ...survivingGenres].slice(0, maxGenreTags()) }
+          ? { ...s, genreTags: survivingGenres.reduce(addGenreTag, s.genreTags) }
           : s
       )
     }

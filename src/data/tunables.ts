@@ -27,13 +27,15 @@ export interface Tunables {
   roundEndChipsPerElement: number
 
   // --- Board ---
-  /** Hard cap on monster chips a single space can hold. */
-  maxGenreTags: number
+  /** Cap on chips of ONE element per space. A space's total is uncapped. */
+  maxTagsPerGenre: number
   /** Chips every space carries when the game begins. */
   startingTagsPerSpace: number
 
   // --- Monsters ---
   maxMonsterLevel: number
+  /** HP a level-1 monster spawns with, before the level multiplier. */
+  monsterBaseHp: number
   /** HP multiplier by monster level 1..5, applied to the template's base HP. */
   hpMultipliers: number[]
   /** Global scale on every monster's spawn HP (1 = template value). */
@@ -76,10 +78,11 @@ export const DEFAULT_TUNABLES: Tunables = {
   maxFightsPerTurn: 1,
   roundEndChipsPerElement: 1,
 
-  maxGenreTags: 5,
+  maxTagsPerGenre: 5,
   startingTagsPerSpace: 1,
 
   maxMonsterLevel: 5,
+  monsterBaseHp: 8,
   hpMultipliers: [1, 1.75, 3, 5, 7.5],
   monsterHpScale: 1,
 
@@ -138,10 +141,11 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'maxFightsPerTurn', label: 'Fights per turn', group: 'Turn structure', min: 0, max: 10, step: 1 },
   { key: 'roundEndChipsPerElement', label: 'Round-end chips per element', group: 'Turn structure', min: 0, max: 5, step: 1, help: 'At round end every bard is dealt this many chips of each element to place.' },
 
-  { key: 'maxGenreTags', label: 'Max chips per space', group: 'Board', min: 1, max: 20, step: 1 },
+  { key: 'maxTagsPerGenre', label: 'Max chips per element, per space', group: 'Board', min: 1, max: 20, step: 1, help: 'A space holds any number of chips; only same-element chips are capped.' },
   { key: 'startingTagsPerSpace', label: 'Starting chips per space', group: 'Board', min: 0, max: 10, step: 1, help: 'Applied when a new game starts.' },
 
   { key: 'maxMonsterLevel', label: 'Max monster level', group: 'Monsters', min: 1, max: 10, step: 1 },
+  { key: 'monsterBaseHp', label: 'Base HP (Lv.1)', group: 'Monsters', min: 1, max: 100, step: 1, help: 'Every monster spawns from this, times its level multiplier.' },
   { key: 'monsterHpScale', label: 'Monster HP scale', group: 'Monsters', min: 0.1, max: 10, step: 0.1, help: 'Global multiplier on spawn HP. Lower = faster fights.' },
 
   { key: 'vulnerabilityMultiplier', label: 'Weakness multiplier', group: 'Combat', min: 0, max: 10, step: 0.25 },

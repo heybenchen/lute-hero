@@ -71,23 +71,48 @@ export function createBoardGraph(): BoardSpace[] {
   return spaces
 }
 
-/** A space holds at most this many genre tags (monster chips). */
-export function maxGenreTags(): number {
-  return getTunables().maxGenreTags
+/**
+ * A space holds at most this many chips *of any one element*. There is no cap
+ * on a space's total chips — a tile can stack every element up to this limit.
+ */
+export function maxTagsPerGenre(): number {
+  return getTunables().maxTagsPerGenre
+}
+
+/** How many chips of one element a space is carrying. */
+export function genreTagCount(tags: Genre[], genre: Genre): number {
+  return tags.filter((t) => t === genre).length
+}
+
+/** True when one more chip of this element still fits on the space. */
+export function canAddGenreTag(tags: Genre[], genre: Genre): boolean {
+  return genreTagCount(tags, genre) < maxTagsPerGenre()
+}
+
+/** Append a chip if its element is not already at the cap. */
+export function addGenreTag(tags: Genre[], genre: Genre): Genre[] {
+  return canAddGenreTag(tags, genre) ? [...tags, genre] : tags
+}
+
+/** Drop any chips beyond the per-element cap, keeping the earliest of each. */
+export function capGenreTags(tags: Genre[]): Genre[] {
+  const counts: Partial<Record<Genre, number>> = {}
+  return tags.filter((genre) => {
+    const n = (counts[genre] || 0) + 1
+    counts[genre] = n
+    return n <= maxTagsPerGenre()
+  })
 }
 
 /**
- * Add a random genre tag to each space, up to maxGenreTags().
+ * Add a random genre tag to each space, respecting the per-element cap.
  */
 export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random): BoardSpace[] {
   const genres: Genre[] = [...ALL_GENRES]
 
   return spaces.map((space) => ({
     ...space,
-    genreTags:
-      space.genreTags.length >= maxGenreTags()
-        ? space.genreTags
-        : [...space.genreTags, genres[Math.floor(rng() * genres.length)]],
+    genreTags: addGenreTag(space.genreTags, genres[Math.floor(rng() * genres.length)]),
   }))
 }
 
@@ -117,7 +142,7 @@ export function dealBalancedGenreTags(
 
   const shuffled = shuffle(pool, rng)
   return Array.from({ length: spaceCount }, (_, i) =>
-    shuffled.slice(i * tagsPerSpace, (i + 1) * tagsPerSpace)
+    capGenreTags(shuffled.slice(i * tagsPerSpace, (i + 1) * tagsPerSpace))
   )
 }
 
@@ -140,10 +165,7 @@ export function addGenreTagsToNeighbors(
     if (!neighborIds.has(space.id)) return space
     return {
       ...space,
-      genreTags: [
-        ...space.genreTags,
-        genres[Math.floor(rng() * genres.length)],
-      ],
+      genreTags: addGenreTag(space.genreTags, genres[Math.floor(rng() * genres.length)]),
     }
   })
 }
@@ -165,7 +187,7 @@ export function addGenreTagToNeighbors(
 
   return spaces.map((space) => {
     if (!neighborIds.has(space.id)) return space
-    if (space.genreTags.length >= maxGenreTags()) return space
+    if (!canAddGenreTag(space.genreTags, genre)) return space
     return {
       ...space,
       genreTags: [...space.genreTags, genre],
