@@ -1,4 +1,4 @@
-import { Genre, GamePhase } from '../types/index.js'
+import { Genre, GamePhase, DiceType } from '../types/index.js'
 import type { Tunables } from '../data/tunables.js'
 import type { EngineState } from './state.js'
 
@@ -10,6 +10,8 @@ export interface DebugPatch {
   tunables?: Partial<Tunables>
   /** Per player id: fame / exp / inspiration / position / per-turn counters. */
   players?: Record<string, Partial<DebugPlayerFields>>
+  /** Retype, re-element, add or clear individual dice in a player's songs. */
+  dice?: DebugDiceEdit[]
   flow?: Partial<{
     phase: GamePhase
     currentRound: number
@@ -33,6 +35,14 @@ export interface DebugPlayerFields {
   movesThisTurn: number
   fightsThisTurn: number
   monstersDefeated: number
+}
+
+/** One dice-slot edit: set the slot's die, or clear it with `dice: null`. */
+export interface DebugDiceEdit {
+  playerId: string
+  songId: string
+  slotIndex: number
+  dice: { type: DiceType; genre: Genre } | null
 }
 
 /** One player's setup choices, supplied when the game starts. */
@@ -71,10 +81,7 @@ export type GameAction =
   | { type: 'ADVANCE_TO_SUMMARY' }
   | { type: 'RESET_GAME' }
   | { type: 'HOST_SKIP_TURN'; targetPlayerId: string }
-  // Round-end redistribution: the giver picks 4 chips, the receiver places them
-  | { type: 'ADD_REDISTRIBUTION_CHIP'; genre: Genre }
-  | { type: 'REMOVE_REDISTRIBUTION_CHIP'; index: number }
-  | { type: 'CONFIRM_REDISTRIBUTION_GIFT' }
+  // Round-end reinforcements: each bard places their dealt chips on the board
   | { type: 'PLACE_REDISTRIBUTION_CHIP'; spaceId: number }
   // Playtest debug mode (host-only): tweak values, or restore a saved preset
   | { type: 'DEBUG_PATCH'; patch: DebugPatch }

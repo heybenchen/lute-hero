@@ -37,22 +37,15 @@ function apply(state: EngineState, action: GameAction, c: ActionCtx = ctx()) {
   return result
 }
 
-/** Drive round-end redistribution to completion (each giver picks 4 Ballad
- *  chips, each receiver places them on the first free tiles). */
+/** Drive round-end reinforcements to completion: every bard drops their dealt
+ *  chips onto the first tiles they have not used yet. */
 function completeRedistribution(state: EngineState): EngineState {
   let s = state
   let guard = 0
   while (s.redistribution.active && guard++ < 500) {
-    const r = s.redistribution
-    if (r.stage === 'selecting') {
-      s = r.selectedChips.length < 4
-        ? apply(s, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Ballad' }).state
-        : apply(s, { type: 'CONFIRM_REDISTRIBUTION_GIFT' }).state
-    } else {
-      const used = new Set(r.placedSpaceIds)
-      const target = s.spaces.find((sp) => !used.has(sp.id) && sp.genreTags.length < 5)!
-      s = apply(s, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: target.id }).state
-    }
+    const used = new Set(s.redistribution.placedSpaceIds)
+    const target = s.spaces.find((sp) => !used.has(sp.id) && sp.genreTags.length < 5)!
+    s = apply(s, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: target.id }).state
   }
   return s
 }
@@ -227,7 +220,8 @@ describe('combat flow', () => {
     const endResult = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' })
     state = endResult.state
     expect(state.combat.isActive).toBe(false)
-    expect(state.studio.playerId).toBe('player-1')
+    // Combat no longer opens the Studio — the button hints instead
+    expect(state.studio.playerId).toBeNull()
     expect(state.players[0].fame).toBe(fameBefore + rewards.fighterFame)
     expect(state.players[0].monstersDefeated).toBe(rewards.monstersDefeatedCount)
     // Victory clears the space and radiates Folk to neighbors
@@ -282,6 +276,36 @@ describe('combat flow', () => {
     state = apply(state, { type: 'REROLL_SONG' }, ctx(99)).state
     expect(state.combat.songsUsed.length).toBe(songsUsedAfterPlay) // replaced, not stacked
     expect(state.players[0].inspiration).toBe(0)
+  })
+
+  it('refreshes a song that lands a kill so it can be replayed on another monster', () => {
+    let state = stateWithMonsterAtPlayer()
+    state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    // Two monsters on the space; drop them to 1 HP so each song kills
+    state = {
+      ...state,
+      combat: {
+        ...state.combat,
+        monsters: [
+          { ...state.combat.monsters[0], id: 'mon-a', currentHP: 1 },
+          { ...state.combat.monsters[0], id: 'mon-b', currentHP: 1 },
+        ],
+      },
+    }
+    const songId = state.players[0].songs[0].id
+
+    // Kill the first: the song refreshes (not spent) and is legal again
+    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: 'mon-a' }).state
+    expect(state.combat.monsters.find((m) => m.id === 'mon-a')!.currentHP).toBe(0)
+    expect(state.combat.spentSongIds).not.toContain(songId)
+
+    // A refreshed song cannot be rerolled — it is meant to be replayed
+    expect(applyAction(state, { type: 'REROLL_SONG' }, ctx()).ok).toBe(false)
+
+    // …and the replay lands on the second monster
+    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: 'mon-b' }).state
+    expect(state.combat.monsters.find((m) => m.id === 'mon-b')!.currentHP).toBe(0)
+    expect(state.combat.killCredits).toHaveLength(2)
   })
 
   it('spends a song that only wounds, and returns its dice when it defeats the target', () => {
@@ -364,27 +388,43 @@ describe('END_TURN', () => {
     expect(state.showdownFandom).toEqual({ 'player-1': 0, 'player-2': 0 })
   })
 
-  it('gates redistribution to the giver and receiver, one chip per tile', () => {
+  it('deals every bard one chip of each element and gates placement to them', () => {
     let state = startTwoPlayerGame()
     state = apply(state, { type: 'END_TURN' }).state
     state = apply(state, { type: 'END_TURN' }).state
+
     expect(state.redistribution.active).toBe(true)
-    expect(state.redistribution.stage).toBe('selecting')
-    // giverIdx 0 → giver player-1, receiver player-2
-    // The receiver can't add chips; the giver can
-    expect(applyAction(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }, seatCtx('player-2')).ok).toBe(false)
-    expect(applyAction(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }, seatCtx('player-1')).ok).toBe(true)
-    // Confirm requires exactly 4 chips
-    state = apply(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }).state
-    expect(applyAction(state, { type: 'CONFIRM_REDISTRIBUTION_GIFT' }, ctx()).ok).toBe(false)
-    for (let i = 0; i < 3; i++) state = apply(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }).state
-    state = apply(state, { type: 'CONFIRM_REDISTRIBUTION_GIFT' }).state
-    expect(state.redistribution.stage).toBe('placing')
-    // Now the receiver (player-2) places; the giver can't
-    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-1')).ok).toBe(false)
-    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-2')).state
-    // No two chips on the same tile
+    expect(state.redistribution.placerIdx).toBe(0)
+    // One of every element, dealt automatically — nothing to choose
+    expect([...state.redistribution.chipsToPlace].sort()).toEqual(['Ballad', 'Folk', 'Hymn', 'Shanty'])
+
+    // Only the bard whose hand it is may place
     expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-2')).ok).toBe(false)
+    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-1')).state
+    // …and not twice on the same tile
+    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-1')).ok).toBe(false)
+    expect(state.redistribution.chipsToPlace).toHaveLength(3)
+
+    // Finishing the hand passes to the next bard, with a fresh set of chips
+    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 1 }).state
+    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 2 }).state
+    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 3 }).state
+    expect(state.redistribution.placerIdx).toBe(1)
+    expect([...state.redistribution.chipsToPlace].sort()).toEqual(['Ballad', 'Folk', 'Hymn', 'Shanty'])
+    expect(state.redistribution.placedSpaceIds).toEqual([])
+    // The second bard may reuse tiles the first one used — the limit is per-hand
+    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-2')).ok).toBe(true)
+  })
+
+  it('respects roundEndChipsPerElement', () => {
+    let state = startTwoPlayerGame()
+    state = { ...state, tunables: { ...DEFAULT_TUNABLES, roundEndChipsPerElement: 2 } }
+    state = apply(state, { type: 'END_TURN' }).state
+    state = apply(state, { type: 'END_TURN' }).state
+    expect(state.redistribution.chipsToPlace).toHaveLength(8)
+    expect([...state.redistribution.chipsToPlace].sort()).toEqual(
+      ['Ballad', 'Ballad', 'Folk', 'Folk', 'Hymn', 'Hymn', 'Shanty', 'Shanty']
+    )
   })
 })
 
@@ -415,7 +455,7 @@ describe('shop actions', () => {
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
     const genre = state.elementOffers[0]
     state = apply(state, { type: 'BUY_DIE', offerIndex: 0 }).state
-    expect(state.players[0].exp).toBe(15)
+    expect(state.players[0].exp).toBe(19)
     expect(state.elementOffers).toHaveLength(3)
     expect(state.elementDiscard).toContain(genre)
     const rewards = state.pendingRewards['player-1']
@@ -440,12 +480,29 @@ describe('shop actions', () => {
     expect(slot.dice).not.toBeNull()
   })
 
+  it('tracks the Studio visit so the UI can hint it after a fight', () => {
+    let state = startTwoPlayerGame()
+    expect(state.players[0].hasShoppedThisTurn).toBe(false)
+
+    state = apply(state, { type: 'OPEN_STUDIO', playerId: 'player-1' }).state
+    expect(state.players[0].hasShoppedThisTurn).toBe(true)
+    expect(state.players[1].hasShoppedThisTurn).toBe(false)
+
+    // Closing keeps the flag — you have already seen the shop this turn
+    state = apply(state, { type: 'CLOSE_STUDIO' }).state
+    expect(state.players[0].hasShoppedThisTurn).toBe(true)
+
+    // …and it resets when the turn passes
+    state = apply(state, { type: 'END_TURN' }).state
+    expect(state.players[0].hasShoppedThisTurn).toBe(false)
+  })
+
   it('BUY_INSPIRATION escalates within a turn and END_TURN resets it', () => {
     let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 100 } : p)) }
-    state = apply(state, { type: 'BUY_INSPIRATION' }).state // 5
-    state = apply(state, { type: 'BUY_INSPIRATION' }).state // 10
-    expect(state.players[0].exp).toBe(85)
+    state = apply(state, { type: 'BUY_INSPIRATION' }).state // 1
+    state = apply(state, { type: 'BUY_INSPIRATION' }).state // 2
+    expect(state.players[0].exp).toBe(97)
     // Players start with 1 Inspiration, so two purchases bring it to 3
     expect(state.players[0].inspiration).toBe(3)
     expect(applyAction({ ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 0 } : p)) }, { type: 'BUY_INSPIRATION' }, ctx()).ok).toBe(false)
@@ -464,7 +521,7 @@ describe('shop actions', () => {
     if (matchingIdx !== -1) {
       const result = apply(state, { type: 'UPGRADE_DIE', offerIndex: matchingIdx, diceId: die.id })
       expect(result.state.players[0].songs[0].slots[0].dice!.type).toBe('d8')
-      expect(result.state.players[0].exp).toBe(45)
+      expect(result.state.players[0].exp).toBe(48)
     }
   })
 })
@@ -575,19 +632,6 @@ describe('tunables', () => {
     expect(scaledHp).toBeGreaterThan(baseHp * 3)
   })
 
-  it('chipsPerHandoff controls the round-end gift size', () => {
-    let state = startTwoPlayerGame()
-    state = { ...state, tunables: { ...DEFAULT_TUNABLES, chipsPerHandoff: 2 } }
-    state = apply(state, { type: 'END_TURN' }).state
-    state = apply(state, { type: 'END_TURN' }).state
-    expect(state.redistribution.active).toBe(true)
-    state = apply(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }).state
-    state = apply(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }).state
-    // A third chip exceeds the (lowered) limit, and confirming is now legal
-    expect(applyAction(state, { type: 'ADD_REDISTRIBUTION_CHIP', genre: 'Folk' }, ctx()).ok).toBe(false)
-    expect(applyAction(state, { type: 'CONFIRM_REDISTRIBUTION_GIFT' }, ctx()).ok).toBe(true)
-  })
-
   it('normalizes tunables loaded from an older or hand-edited save', () => {
     const state = normalizeEngineState({
       ...startTwoPlayerGame(),
@@ -683,6 +727,66 @@ describe('debug actions', () => {
     expect(state.currentRound).toBe(1)
     expect(state.tunables.maxGenreTags).toBe(20) // field max
     expect(state.spaces[0].genreTags.length).toBeLessThanOrEqual(20)
+  })
+
+  it('DEBUG_PATCH edits dice: retype, re-element, add and clear', () => {
+    let state = startTwoPlayerGame()
+    const song1 = state.players[0].songs[0]
+    const song2 = state.players[0].songs[1]
+    const starterDieId = song1.slots[0].dice!.id
+
+    state = apply(state, {
+      type: 'DEBUG_PATCH',
+      patch: {
+        dice: [
+          // retype + re-element the starter die
+          { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd20', genre: 'Shanty' } },
+          // fill the open slot next to it
+          { playerId: 'player-1', songId: song1.id, slotIndex: 1, dice: { type: 'd12', genre: 'Hymn' } },
+          // and stock an empty song
+          { playerId: 'player-1', songId: song2.id, slotIndex: 0, dice: { type: 'd4', genre: 'Folk' } },
+        ],
+      },
+    }).state
+
+    const edited = state.players[0]
+    expect(edited.songs[0].slots[0].dice).toMatchObject({ type: 'd20', genre: 'Shanty' })
+    // Editing in place keeps the die id, so in-flight combat rolls still match
+    expect(edited.songs[0].slots[0].dice!.id).toBe(starterDieId)
+    expect(edited.songs[0].slots[1].dice).toMatchObject({ type: 'd12', genre: 'Hymn' })
+    expect(edited.songs[1].slots[0].dice).toMatchObject({ type: 'd4', genre: 'Folk' })
+    // A newly added die gets its own id
+    expect(edited.songs[0].slots[1].dice!.id).not.toBe(starterDieId)
+    // The other player is untouched
+    expect(state.players[1].songs[0].slots[0].dice).toMatchObject({ type: 'd8', genre: 'Folk' })
+
+    // Clearing a slot empties it
+    state = apply(state, {
+      type: 'DEBUG_PATCH',
+      patch: { dice: [{ playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: null }] },
+    }).state
+    expect(state.players[0].songs[0].slots[0].dice).toBeNull()
+  })
+
+  it('DEBUG_PATCH skips dice edits with unknown ids or invalid values', () => {
+    const state = startTwoPlayerGame()
+    const song1 = state.players[0].songs[0]
+    const before = state.players[0].songs[0].slots[0].dice
+
+    const patched = apply(state, {
+      type: 'DEBUG_PATCH',
+      patch: {
+        dice: [
+          { playerId: 'nobody', songId: song1.id, slotIndex: 0, dice: { type: 'd20', genre: 'Folk' } },
+          { playerId: 'player-1', songId: 'no-such-song', slotIndex: 0, dice: { type: 'd20', genre: 'Folk' } },
+          { playerId: 'player-1', songId: song1.id, slotIndex: 9, dice: { type: 'd20', genre: 'Folk' } },
+          { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd6' as never, genre: 'Folk' } },
+          { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd20', genre: 'Jazz' as never } },
+        ],
+      },
+    }).state
+
+    expect(patched.players[0].songs[0].slots[0].dice).toEqual(before)
   })
 
   it('DEBUG_PATCH ignores unknown player ids', () => {

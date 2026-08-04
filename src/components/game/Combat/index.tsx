@@ -143,6 +143,14 @@ export function CombatModal() {
     }
   }
 
+  /**
+   * Reroll is offered only for a song whose dice are SPENT — it damaged without
+   * defeating. A song that landed the kill refreshes instead, so it must show
+   * "Perform" again to be replayed against another monster.
+   */
+  const canRerollSong = (songId: string) =>
+    currentSongId === songId && isSongSpent(songId) && !allMonstersDefeated
+
   const handlePlaySong = async (songId: string, ownerId: string) => {
     if (!canAct || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
     const result = await dispatch({ type: 'PLAY_SONG', songId, ownerId, targetMonsterId: selectedTargetId })
@@ -232,7 +240,7 @@ export function CombatModal() {
                   disabled={!canAct || isSongSpent(song.id) || !hasLiveTarget}
                   index={idx}
                   rolls={currentSongId === song.id ? rolls : undefined}
-                  onReroll={canAct && currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
+                  onReroll={canAct && canRerollSong(song.id) ? handleReroll : undefined}
                   inspiration={player.inspiration}
                 />
               ))}
@@ -271,7 +279,7 @@ export function CombatModal() {
                         isCover
                         ownerName={coverPlayer.name}
                         rolls={currentSongId === song.id ? rolls : undefined}
-                        onReroll={canAct && currentSongId === song.id && !allMonstersDefeated ? handleReroll : undefined}
+                        onReroll={canAct && canRerollSong(song.id) ? handleReroll : undefined}
                         inspiration={player.inspiration}
                       />
                     ))}

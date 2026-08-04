@@ -23,8 +23,8 @@ export interface Tunables {
   // --- Turn structure ---
   maxMovesPerTurn: number
   maxFightsPerTurn: number
-  /** Monster chips each player hands to the player behind them at round end. */
-  chipsPerHandoff: number
+  /** Chips of EACH element every bard is dealt to place at round end. */
+  roundEndChipsPerElement: number
 
   // --- Board ---
   /** Hard cap on monster chips a single space can hold. */
@@ -70,11 +70,11 @@ export interface Tunables {
 export const DEFAULT_TUNABLES: Tunables = {
   fameFinalBossThreshold: 150,
   monsterFameByLevel: [5, 10, 25, 50, 75],
-  monsterExpPerLevel: 5,
+  monsterExpPerLevel: 1,
 
   maxMovesPerTurn: 2,
   maxFightsPerTurn: 1,
-  chipsPerHandoff: 4,
+  roundEndChipsPerElement: 1,
 
   maxGenreTags: 5,
   startingTagsPerSpace: 1,
@@ -88,12 +88,12 @@ export const DEFAULT_TUNABLES: Tunables = {
   maxCritCascades: 10,
 
   startingInspiration: 1,
-  newD4Cost: 5,
-  upgradeCostD8: 10,
-  upgradeCostD12: 15,
-  upgradeCostD20: 30,
-  inspirationBaseCost: 5,
-  inspirationCostStep: 5,
+  newD4Cost: 1,
+  upgradeCostD8: 2,
+  upgradeCostD12: 3,
+  upgradeCostD20: 6,
+  inspirationBaseCost: 1,
+  inspirationCostStep: 1,
   inspirationSpend: 1,
 
   elementOfferCount: 4,
@@ -132,11 +132,11 @@ type ScalarKey = Exclude<keyof Tunables, 'monsterFameByLevel' | 'hpMultipliers'>
 
 const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: number; max: number; step: number; help?: string }[] = [
   { key: 'fameFinalBossThreshold', label: 'Final Showdown fame gate', group: 'Progression', min: 1, max: 1000, step: 5, help: 'Any single player reaching this grants one final turn, then the boss.' },
-  { key: 'monsterExpPerLevel', label: 'EXP per monster level', group: 'Progression', min: 0, max: 100, step: 1 },
+  { key: 'monsterExpPerLevel', label: 'EXP per monster level', group: 'Progression', min: 0, max: 20, step: 1 },
 
   { key: 'maxMovesPerTurn', label: 'Moves per turn', group: 'Turn structure', min: 0, max: 16, step: 1 },
   { key: 'maxFightsPerTurn', label: 'Fights per turn', group: 'Turn structure', min: 0, max: 10, step: 1 },
-  { key: 'chipsPerHandoff', label: 'Chips handed off at round end', group: 'Turn structure', min: 0, max: 16, step: 1, help: 'Each player gives this many chips to the player behind them.' },
+  { key: 'roundEndChipsPerElement', label: 'Round-end chips per element', group: 'Turn structure', min: 0, max: 5, step: 1, help: 'At round end every bard is dealt this many chips of each element to place.' },
 
   { key: 'maxGenreTags', label: 'Max chips per space', group: 'Board', min: 1, max: 20, step: 1 },
   { key: 'startingTagsPerSpace', label: 'Starting chips per space', group: 'Board', min: 0, max: 10, step: 1, help: 'Applied when a new game starts.' },
@@ -149,12 +149,12 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'maxCritCascades', label: 'Max crit cascades', group: 'Combat', min: 1, max: 50, step: 1 },
 
   { key: 'startingInspiration', label: 'Starting Inspiration', group: 'Economy', min: 0, max: 20, step: 1 },
-  { key: 'newD4Cost', label: 'New d4 cost', group: 'Economy', min: 0, max: 100, step: 1 },
-  { key: 'upgradeCostD8', label: 'Upgrade → d8', group: 'Economy', min: 0, max: 100, step: 1 },
-  { key: 'upgradeCostD12', label: 'Upgrade → d12', group: 'Economy', min: 0, max: 100, step: 1 },
-  { key: 'upgradeCostD20', label: 'Upgrade → d20', group: 'Economy', min: 0, max: 200, step: 1 },
-  { key: 'inspirationBaseCost', label: 'Inspiration base cost', group: 'Economy', min: 0, max: 100, step: 1 },
-  { key: 'inspirationCostStep', label: 'Inspiration cost step', group: 'Economy', min: 0, max: 100, step: 1, help: 'Added per Inspiration already bought this turn.' },
+  { key: 'newD4Cost', label: 'New d4 cost', group: 'Economy', min: 0, max: 20, step: 1 },
+  { key: 'upgradeCostD8', label: 'Upgrade → d8', group: 'Economy', min: 0, max: 20, step: 1 },
+  { key: 'upgradeCostD12', label: 'Upgrade → d12', group: 'Economy', min: 0, max: 30, step: 1 },
+  { key: 'upgradeCostD20', label: 'Upgrade → d20', group: 'Economy', min: 0, max: 40, step: 1 },
+  { key: 'inspirationBaseCost', label: 'Inspiration base cost', group: 'Economy', min: 0, max: 20, step: 1 },
+  { key: 'inspirationCostStep', label: 'Inspiration cost step', group: 'Economy', min: 0, max: 20, step: 1, help: 'Added per Inspiration already bought this turn.' },
   { key: 'inspirationSpend', label: 'Inspiration per use', group: 'Economy', min: 0, max: 10, step: 1 },
 
   { key: 'elementOfferCount', label: 'Element chips on offer', group: 'Shop', min: 1, max: 12, step: 1 },

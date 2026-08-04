@@ -375,20 +375,11 @@ export const selectIsHost = (state: GameStore): boolean => {
   return state.lobby?.mySeatId === state.lobby?.hostSeatId
 }
 
-/** The giver and receiver for the current round-end redistribution step. */
-export const selectRedistribution = (state: GameStore) => {
+/** The bard placing their round-end reinforcement chips right now. */
+export const selectRedistributionActorId = (state: GameStore): string | null => {
   const r = state.redistribution
   if (!r.active || state.players.length === 0) return null
-  const giver = state.players[r.giverIdx]
-  const receiver = state.players[(r.giverIdx + 1) % state.players.length]
-  return { ...r, giver, receiver }
-}
-
-/** The player who should act right now in redistribution (giver or receiver). */
-export const selectRedistributionActorId = (state: GameStore): string | null => {
-  const r = selectRedistribution(state)
-  if (!r) return null
-  return r.stage === 'selecting' ? r.giver.id : r.receiver.id
+  return state.players[r.placerIdx]?.id ?? null
 }
 
 /** Hotseat: always true. Online: only when the acting seat is mine. */

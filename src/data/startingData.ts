@@ -40,6 +40,9 @@ export const DICE_UPGRADE_PATH: { [key in DiceType]: DiceType | null } = {
   d20: null, // Max level
 };
 
+/** Every die type, weakest first. */
+export const ALL_DICE_TYPES: DiceType[] = ["d4", "d8", "d12", "d20"];
+
 // Fame thresholds for phase transitions
 export const FAME_THRESHOLDS = {
   finalBoss: 150, // Any single player reaching this triggers the final boss

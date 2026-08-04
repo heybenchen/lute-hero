@@ -48,11 +48,12 @@ React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel N
 
 - **Damage flow**: Roll dice (crits cascade) → genre multipliers (2x vulnerable, 0x immune) → damage hits ONE chosen target monster (songs are single-target, not AOE)
 - **Song economy in combat**: defeating the target returns that song's dice (it stays playable); damaging without defeating spends the song for that fight (`combat.spentSongIds`). There is no fixed song cap.
-- **Monster spawning**: one monster per unique genre tag on a space; duplicate tags raise its level (a monster's level equals its genre's tag count, so the board chip matches the fight; capped at Lv5); fame per kill = 5/10/25/50/75 and EXP = 5/10/15/20/25 by level (Lv1–Lv5+)
-- **Turn structure**: Move up to 2 spaces, fight 1 combat, shop in the Studio, end turn. Clearing every monster on a space earns +1 Inspiration and radiates a chosen element to neighbors.
-- **Round end**: after every player has taken a turn, each bard hands 4 monster chips of their choice to the bard behind them in turn order, who places them on distinct tiles (`redistribution` state). This is the only way the board grows.
+- **Monster spawning**: one monster per unique genre tag on a space; duplicate tags raise its level (a monster's level equals its genre's tag count, so the board chip matches the fight; capped at Lv5); fame per kill = 5/10/25/50/75 and EXP = 1/2/3/4/5 by level (Lv1–Lv5+)
+- **Turn structure**: Move up to 2 spaces, fight 1 combat, shop in the Studio, end turn. Clearing every monster on a space earns +1 Inspiration and radiates a chosen element to neighbors. Combat does NOT open the Studio — the Studio button pulses (`hasShoppedThisTurn`) until the player visits it.
+- **Round end**: after every player has taken a turn, each bard is dealt one monster chip of *every* element (`roundEndChipsPerElement`, default 1) and places them anywhere on the board — one chip per tile, per bard — before the next round (`redistribution` state). This is the only way the board grows.
 - **Phase progression**: any single player reaching the fame gate (default 150, `tunables.fameFinalBossThreshold`) grants one "final turn," then triggers the Final Showdown (3 verses, one song each, boss adapts elementally between verses; damage = fandom; most total fans wins)
-- **Dice upgrade path**: d4 → d8 → d12 → d20 (10/15/30 EXP). Every bard starts with a single d8 of their chosen element in song 1, slot 1.
+- **Dice upgrade path**: d4 → d8 → d12 → d20 (2/3/6 EXP; a new d4 costs 1). Every bard starts with a single d8 of their chosen element in song 1, slot 1.
+- **EXP scale**: EXP is a small, tight currency — monsters pay 1 per level and everything in the Studio costs single digits. All of it is tunable (`monsterExpPerLevel`, `newD4Cost`, `upgradeCost*`, `inspirationBaseCost`/`Step`).
 - **Opening board**: monster chips are dealt from an exactly balanced pool — the same count per element — shuffled across the spaces (`dealBalancedGenreTags`), so no element is over- or under-represented at setup.
 
 ## Playtest debug mode

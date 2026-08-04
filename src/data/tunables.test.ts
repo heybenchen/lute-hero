@@ -48,7 +48,7 @@ describe('read/write', () => {
 
   it('reports which paths differ from the defaults', () => {
     expect(changedTunablePaths(DEFAULT_TUNABLES)).toEqual([])
-    const tweaked = writeTunable(writeTunable(DEFAULT_TUNABLES, 'newD4Cost', 1), 'hpMultipliers.0', 4)
+    const tweaked = writeTunable(writeTunable(DEFAULT_TUNABLES, 'newD4Cost', 7), 'hpMultipliers.0', 4)
     expect(changedTunablePaths(tweaked).sort()).toEqual(['hpMultipliers.0', 'newD4Cost'])
   })
 })
@@ -75,14 +75,14 @@ describe('normalizeTunables', () => {
 describe('withTunables', () => {
   it('scopes the active set and restores it afterwards', () => {
     const before = getTunables()
-    const inside = withTunables({ newD4Cost: 42 }, () => getTunables().newD4Cost)
-    expect(inside).toBe(42)
+    const inside = withTunables({ newD4Cost: 9 }, () => getTunables().newD4Cost)
+    expect(inside).toBe(9)
     expect(getTunables()).toBe(before)
   })
 
   it('restores even when the callback throws', () => {
     const before = getTunables()
-    expect(() => withTunables({ newD4Cost: 1 }, () => { throw new Error('boom') })).toThrow('boom')
+    expect(() => withTunables({ newD4Cost: 9 }, () => { throw new Error('boom') })).toThrow('boom')
     expect(getTunables()).toBe(before)
   })
 })
