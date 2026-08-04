@@ -14,7 +14,7 @@ export type Rng = () => number;
 /** Deterministic id factory (server: seq-based; hotseat: counter-based). */
 export type NewId = (prefix: string) => string;
 
-export type DiceType = "d4" | "d6" | "d12" | "d20";
+export type DiceType = "d4" | "d8" | "d12" | "d20";
 
 export type GamePhase = "setup" | "main" | "finalBoss" | "gameOver";
 

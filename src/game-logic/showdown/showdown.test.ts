@@ -21,8 +21,8 @@ function song(genres: (Genre | null)[], ids: string[] = ['d1', 'd2']): Song {
   return {
     id: 's1',
     slots: [
-      { dice: genres[0] ? { id: ids[0], type: 'd6', genre: genres[0] } : null },
-      { dice: genres[1] ? { id: ids[1], type: 'd6', genre: genres[1] } : null },
+      { dice: genres[0] ? { id: ids[0], type: 'd8', genre: genres[0] } : null },
+      { dice: genres[1] ? { id: ids[1], type: 'd8', genre: genres[1] } : null },
     ],
     used: false,
   }

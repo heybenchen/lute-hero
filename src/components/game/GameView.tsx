@@ -286,7 +286,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
           <Section title="🛠 The Studio (Shop)">
             <List items={[
-              <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d6 → d12 → d20</Hl>.</>,
+              <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d8 → d12 → d20</Hl>.</>,
               <>Spend EXP to buy <Hl>Inspiration</Hl> — used for rerolls, travel, and refreshing offers.</>,
             ]} />
           </Section>

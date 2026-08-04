@@ -1,33 +1,22 @@
 import { Genre, DiceType, Dice, Song } from '../types/index.js';
 
-// Starter dice for each genre: 1 d4 + 1 d6
+// Starter dice for each genre: a single d8 of the bard's chosen element.
 export const STARTER_DICE: { [key in Genre]: Dice[] } = {
-  Ballad: [
-    { id: "ballad-starter-1", type: "d4", genre: "Ballad" },
-    { id: "ballad-starter-2", type: "d6", genre: "Ballad" },
-  ],
-  Folk: [
-    { id: "folk-starter-1", type: "d4", genre: "Folk" },
-    { id: "folk-starter-2", type: "d6", genre: "Folk" },
-  ],
-  Hymn: [
-    { id: "hymn-starter-1", type: "d4", genre: "Hymn" },
-    { id: "hymn-starter-2", type: "d6", genre: "Hymn" },
-  ],
-  Shanty: [
-    { id: "shanty-starter-1", type: "d4", genre: "Shanty" },
-    { id: "shanty-starter-2", type: "d6", genre: "Shanty" },
-  ],
+  Ballad: [{ id: "ballad-starter-1", type: "d8", genre: "Ballad" }],
+  Folk: [{ id: "folk-starter-1", type: "d8", genre: "Folk" }],
+  Hymn: [{ id: "hymn-starter-1", type: "d8", genre: "Hymn" }],
+  Shanty: [{ id: "shanty-starter-1", type: "d8", genre: "Shanty" }],
 };
 
-// Create 3 starter songs: first has 2 dice, the others are empty.
+// Create 3 starter songs: the first holds the single starter d8 in its first
+// slot (its second slot is open), the others are empty.
 export function createStarterSongs(genre: Genre, playerId: string): Song[] {
   const starterDice = STARTER_DICE[genre];
 
   return [
     {
       id: `${playerId}-song-1`,
-      slots: [{ dice: starterDice[0] }, { dice: starterDice[1] }],
+      slots: [{ dice: starterDice[0] }, { dice: null }],
       used: false,
     },
     {
@@ -45,8 +34,8 @@ export function createStarterSongs(genre: Genre, playerId: string): Song[] {
 
 // Dice upgrade path
 export const DICE_UPGRADE_PATH: { [key in DiceType]: DiceType | null } = {
-  d4: "d6",
-  d6: "d12",
+  d4: "d8",
+  d8: "d12",
   d12: "d20",
   d20: null, // Max level
 };

@@ -11,7 +11,7 @@ import { EngineState, EngineCombatState, createInitialEngineState, createInitial
 import { GameAction, ActorSeat, PlayerConfig, DebugPatch } from './actions.js'
 import { EngineEvent } from './events.js'
 import { validateAction, chipsPerHandoff } from './validate.js'
-import { createBoardGraph, addGenreTagsToBoard, addGenreTagToNeighbors, maxGenreTags } from '../game-logic/board/graphBuilder.js'
+import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, maxGenreTags } from '../game-logic/board/graphBuilder.js'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
 import { rollSong, calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
 import {
@@ -490,34 +490,21 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
     }
   })
 
-  // 3. Seed each player's starter element onto their neighboring spaces
-  for (const player of players) {
-    const playerSpace = spaces.find((s) => s.id === player.position)
-    if (!playerSpace) continue
-    const starterGenre = player.songs[0].slots[0].dice?.genre || 'Ballad'
-    spaces = spaces.map((s) =>
-      playerSpace.connections.includes(s.id)
-        ? { ...s, genreTags: [...s.genreTags, starterGenre] }
-        : s
-    )
-  }
-
-  // 4. Seed each space with `startingTagsPerSpace` monster chips (1 by default).
-  //    addGenreTagsToBoard tops every space up by one tag per pass (starter-seeded
-  //    spaces keep their starter element first); the slice trims to the target.
+  // 3. Deal the opening monster chips from an exactly balanced pool: the same
+  //    number per element, shuffled, so every element shows up equally often
+  //    but its placement is random. (This replaces the old starter-element
+  //    seeding onto each bard's neighbours, which skewed the element counts.)
   const startingTags = getTunables().startingTagsPerSpace
-  for (let i = 0; i < startingTags; i++) {
-    spaces = addGenreTagsToBoard(spaces, rng)
-  }
-  spaces = spaces.map((s) => ({ ...s, genreTags: s.genreTags.slice(0, startingTags) }))
+  const dealt = dealBalancedGenreTags(spaces.length, startingTags, rng)
+  spaces = spaces.map((s, i) => ({ ...s, genreTags: dealt[i] }))
 
-  // 5. Initial monsters — one per unique genre chip, matching the board
+  // 4. Initial monsters — one per unique genre chip, matching the board
   spaces = spaces.map((space) => {
     if (space.genreTags.length === 0) return space
     return { ...space, monsters: spawnInitialMonsters(space.genreTags, space.id, 1, rng, newId) }
   })
 
-  // 6. Shop
+  // 5. Shop
   const fullBag = createElementBag(configs.length, rng)
   const { drawn, bag, discard } = drawFromBag(fullBag, [], elementOfferCount(), rng)
 

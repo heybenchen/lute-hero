@@ -52,7 +52,8 @@ React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel N
 - **Turn structure**: Move up to 2 spaces, fight 1 combat, shop in the Studio, end turn. Clearing every monster on a space earns +1 Inspiration and radiates a chosen element to neighbors.
 - **Round end**: after every player has taken a turn, each bard hands 4 monster chips of their choice to the bard behind them in turn order, who places them on distinct tiles (`redistribution` state). This is the only way the board grows.
 - **Phase progression**: any single player reaching the fame gate (default 150, `tunables.fameFinalBossThreshold`) grants one "final turn," then triggers the Final Showdown (3 verses, one song each, boss adapts elementally between verses; damage = fandom; most total fans wins)
-- **Dice upgrade path**: d4 → d6 → d12 → d20
+- **Dice upgrade path**: d4 → d8 → d12 → d20 (10/15/30 EXP). Every bard starts with a single d8 of their chosen element in song 1, slot 1.
+- **Opening board**: monster chips are dealt from an exactly balanced pool — the same count per element — shuffled across the spaces (`dealBalancedGenreTags`), so no element is over- or under-represented at setup.
 
 ## Playtest debug mode
 

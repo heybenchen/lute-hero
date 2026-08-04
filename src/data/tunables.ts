@@ -50,7 +50,7 @@ export interface Tunables {
   // --- Economy ---
   startingInspiration: number
   newD4Cost: number
-  upgradeCostD6: number
+  upgradeCostD8: number
   upgradeCostD12: number
   upgradeCostD20: number
   /** First Inspiration of a turn costs this; each further one adds the step. */
@@ -89,7 +89,7 @@ export const DEFAULT_TUNABLES: Tunables = {
 
   startingInspiration: 1,
   newD4Cost: 5,
-  upgradeCostD6: 5,
+  upgradeCostD8: 10,
   upgradeCostD12: 15,
   upgradeCostD20: 30,
   inspirationBaseCost: 5,
@@ -150,7 +150,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
 
   { key: 'startingInspiration', label: 'Starting Inspiration', group: 'Economy', min: 0, max: 20, step: 1 },
   { key: 'newD4Cost', label: 'New d4 cost', group: 'Economy', min: 0, max: 100, step: 1 },
-  { key: 'upgradeCostD6', label: 'Upgrade → d6', group: 'Economy', min: 0, max: 100, step: 1 },
+  { key: 'upgradeCostD8', label: 'Upgrade → d8', group: 'Economy', min: 0, max: 100, step: 1 },
   { key: 'upgradeCostD12', label: 'Upgrade → d12', group: 'Economy', min: 0, max: 100, step: 1 },
   { key: 'upgradeCostD20', label: 'Upgrade → d20', group: 'Economy', min: 0, max: 200, step: 1 },
   { key: 'inspirationBaseCost', label: 'Inspiration base cost', group: 'Economy', min: 0, max: 100, step: 1 },
@@ -239,13 +239,22 @@ export function writeTunable(tunables: Tunables, path: string, raw: number): Tun
  * save or a hand-edited preset can never put the engine into a broken state.
  */
 export function normalizeTunables(partial: Partial<Tunables> | null | undefined): Tunables {
-  const merged: Tunables = {
-    ...DEFAULT_TUNABLES,
-    ...(partial ?? {}),
-    monsterFameByLevel: fillArray(partial?.monsterFameByLevel, DEFAULT_TUNABLES.monsterFameByLevel),
-    hpMultipliers: fillArray(partial?.hpMultipliers, DEFAULT_TUNABLES.hpMultipliers),
+  const source = (partial ?? {}) as Record<string, unknown>
+
+  // Copy only keys the current schema knows about, so a value retired in a
+  // later version (say the old `upgradeCostD6`) is dropped rather than carried
+  // around forever inside every save and preset.
+  const merged = { ...DEFAULT_TUNABLES } as Record<string, unknown>
+  for (const key of Object.keys(DEFAULT_TUNABLES)) {
+    if (typeof source[key] === 'number') merged[key] = source[key]
   }
-  return TUNABLE_FIELDS.reduce((acc, field) => writeTunable(acc, field.path, readTunable(acc, field.path)), merged)
+  merged.monsterFameByLevel = fillArray(partial?.monsterFameByLevel, DEFAULT_TUNABLES.monsterFameByLevel)
+  merged.hpMultipliers = fillArray(partial?.hpMultipliers, DEFAULT_TUNABLES.hpMultipliers)
+
+  return TUNABLE_FIELDS.reduce(
+    (acc, field) => writeTunable(acc, field.path, readTunable(acc, field.path)),
+    merged as unknown as Tunables
+  )
 }
 
 function fillArray(value: number[] | undefined, fallback: number[]): number[] {

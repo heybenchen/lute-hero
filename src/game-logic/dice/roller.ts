@@ -8,8 +8,8 @@ export function getMaxValue(diceType: DiceType): number {
   switch (diceType) {
     case 'd4':
       return 4
-    case 'd6':
-      return 6
+    case 'd8':
+      return 8
     case 'd12':
       return 12
     case 'd20':
