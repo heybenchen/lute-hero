@@ -140,6 +140,30 @@ describe('START_GAME', () => {
     expect(started.spaces.every((s) => s.genreTags.length === 3)).toBe(true)
   })
 
+  it('spawns every level-1 monster with the same 8 HP', () => {
+    const state = startTwoPlayerGame()
+    const monsters = state.spaces.flatMap((sp) => sp.monsters)
+    expect(monsters.length).toBeGreaterThan(0)
+    // Templates differ only in flavour now — HP is uniform per level
+    expect(monsters.every((m) => m.level === 1)).toBe(true)
+    expect([...new Set(monsters.map((m) => m.maxHP))]).toEqual([8])
+    expect(monsters.every((m) => m.currentHP === m.maxHP)).toBe(true)
+    // …and distinct templates really are in play, so this is not a one-template fluke
+    expect(new Set(monsters.map((m) => m.templateId)).size).toBeGreaterThan(1)
+  })
+
+  it('scales higher-level monsters from the same base', () => {
+    let state = startTwoPlayerGame()
+    // Stack chips so one space holds a Lv3 monster
+    state = apply(state, {
+      type: 'DEBUG_PATCH',
+      patch: { spaceTags: { 5: ['Folk', 'Folk', 'Folk'] }, respawnMonsters: true },
+    }).state
+    const lv3 = state.spaces.find((sp) => sp.id === 5)!.monsters[0]
+    expect(lv3.level).toBe(3)
+    expect(lv3.maxHP).toBe(24) // 8 base x 3.0 level multiplier
+  })
+
   it('rejects starting twice', () => {
     const state = startTwoPlayerGame()
     const result = applyAction(state, { type: 'START_GAME', playerConfigs: [{ name: 'X', starterGenre: 'Hymn', color: '#fff' }] }, ctx())

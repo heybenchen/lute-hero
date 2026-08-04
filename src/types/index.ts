@@ -53,7 +53,10 @@ export interface Song {
 export interface MonsterTemplate {
   id: string;
   name: string;
-  baseHP?: number; // Spawn HP for regular monsters; omitted for the final boss (no HP mechanic)
+  // Difficulty rank used to pace which template shows up as rounds progress.
+  // It does NOT affect HP — every monster spawns from the monsterBaseHp
+  // tunable. Omitted for the final boss, which is never spawned this way.
+  tier?: number;
   vulnerability: Genre | null; // Single weakness - 2x damage
   resistance: Genre | null; // Single resistance - 0x damage (immune)
   description: string;

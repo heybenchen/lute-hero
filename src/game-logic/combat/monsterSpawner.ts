@@ -54,6 +54,17 @@ export function getHPMultiplier(level: number): number {
 }
 
 /**
+ * HP a monster of the given level spawns with. Every monster starts from the
+ * same `monsterBaseHp` regardless of template — templates differ only in
+ * flavour — scaled by the level multiplier and the global `monsterHpScale`
+ * (the debug panel's "make fights faster/slower" dial).
+ */
+export function monsterSpawnHp(level: number): number {
+  const { monsterBaseHp, monsterHpScale } = getTunables()
+  return Math.max(1, Math.floor(monsterBaseHp * getHPMultiplier(level) * monsterHpScale))
+}
+
+/**
  * Get monster name with level prefix
  */
 export function getMonsterNameWithLevel(baseName: string, level: number): string {
@@ -118,10 +129,7 @@ export function createMonsterFromTemplate(
   newId?: NewId
 ): Monster {
   const cappedLevel = clampMonsterLevel(level)
-  const hpMultiplier = getHPMultiplier(cappedLevel)
-  // Only spawnable monsters reach this path, so baseHP is always defined.
-  // monsterHpScale is the debug panel's global "make fights faster/slower" dial.
-  const scaledHP = Math.max(1, Math.floor((template.baseHP ?? 0) * hpMultiplier * getTunables().monsterHpScale))
+  const scaledHP = monsterSpawnHp(cappedLevel)
 
   return {
     id: newId ? newId('monster') : `monster-${spaceId}-${index}-${Date.now()}`,
