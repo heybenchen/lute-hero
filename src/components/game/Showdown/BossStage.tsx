@@ -1,5 +1,5 @@
 import { Genre, Player } from '@/types'
-import { SHOWDOWN_TURNS } from '@/game-logic/showdown/showdown'
+import { showdownTurns } from '@/game-logic/showdown/showdown'
 import { GENRE_THEME } from '@/data/genreTheme'
 
 interface BossStageProps {
@@ -20,7 +20,7 @@ export function BossStage({ turn, resistGenre, weakGenre, fandom, players, defea
     <div className="flex flex-col items-center">
       {/* Turn pips */}
       <div className="flex items-center gap-2 mb-3">
-        {Array.from({ length: SHOWDOWN_TURNS }, (_, i) => i + 1).map((t) => (
+        {Array.from({ length: showdownTurns() }, (_, i) => i + 1).map((t) => (
           <div key={t} className="flex items-center gap-2">
             <div
               className="rounded-full transition-all duration-500 flex items-center justify-center font-bold text-[10px]"
@@ -39,12 +39,12 @@ export function BossStage({ turn, resistGenre, weakGenre, fandom, players, defea
             >
               {(t < turn || defeated) ? '✓' : t === turn ? t : ''}
             </div>
-            {t < SHOWDOWN_TURNS && <div className="w-6 h-px" style={{ background: 'rgba(212,168,83,0.25)' }} />}
+            {t < showdownTurns() && <div className="w-6 h-px" style={{ background: 'rgba(212,168,83,0.25)' }} />}
           </div>
         ))}
       </div>
       <div className="text-xs font-medieval uppercase tracking-[0.3em] text-purple-300/70 mb-4">
-        {defeated ? 'The Silence Falls' : `Verse ${turn} of ${SHOWDOWN_TURNS}`}
+        {defeated ? 'The Silence Falls' : `Verse ${turn} of ${showdownTurns()}`}
       </div>
 
       {/* Boss orb */}

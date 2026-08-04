@@ -1,4 +1,5 @@
 import { BoardSpace, Genre, Rng } from '../../types/index.js'
+import { getTunables } from '../../data/tunables.js'
 
 // Board is a 4x4 grid. Spaces are indexed row-major:
 //
@@ -69,10 +70,12 @@ export function createBoardGraph(): BoardSpace[] {
 }
 
 /** A space holds at most this many genre tags (monster chips). */
-export const MAX_GENRE_TAGS = 5
+export function maxGenreTags(): number {
+  return getTunables().maxGenreTags
+}
 
 /**
- * Add a random genre tag to each space, up to MAX_GENRE_TAGS.
+ * Add a random genre tag to each space, up to maxGenreTags().
  */
 export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random): BoardSpace[] {
   const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
@@ -80,7 +83,7 @@ export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random
   return spaces.map((space) => ({
     ...space,
     genreTags:
-      space.genreTags.length >= MAX_GENRE_TAGS
+      space.genreTags.length >= maxGenreTags()
         ? space.genreTags
         : [...space.genreTags, genres[Math.floor(rng() * genres.length)]],
   }))
@@ -130,7 +133,7 @@ export function addGenreTagToNeighbors(
 
   return spaces.map((space) => {
     if (!neighborIds.has(space.id)) return space
-    if (space.genreTags.length >= MAX_GENRE_TAGS) return space
+    if (space.genreTags.length >= maxGenreTags()) return space
     return {
       ...space,
       genreTags: [...space.genreTags, genre],

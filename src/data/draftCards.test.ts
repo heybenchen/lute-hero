@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
-  NEW_D4_COST,
-  UPGRADE_COSTS,
+  newD4Cost,
+  upgradeCostFor,
   getNextDiceType,
   getUpgradeCost,
   createElementalDie,
@@ -11,13 +11,13 @@ import {
 describe('Elemental Dice Shop', () => {
   describe('costs', () => {
     it('should cost 5 EXP for a new d4', () => {
-      expect(NEW_D4_COST).toBe(5)
+      expect(newD4Cost()).toBe(5)
     })
 
     it('should cost 5/15/30 EXP to upgrade to d6/d12/d20', () => {
-      expect(UPGRADE_COSTS.d6).toBe(5)
-      expect(UPGRADE_COSTS.d12).toBe(15)
-      expect(UPGRADE_COSTS.d20).toBe(30)
+      expect(upgradeCostFor('d6')).toBe(5)
+      expect(upgradeCostFor('d12')).toBe(15)
+      expect(upgradeCostFor('d20')).toBe(30)
     })
 
     it('should escalate inspiration cost by 5 EXP per purchase this turn', () => {

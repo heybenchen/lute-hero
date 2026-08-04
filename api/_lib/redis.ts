@@ -209,6 +209,15 @@ export const eventsKey = (id: string) => `game:${id}:events`
 export const joinCodeKey = (code: string) => `joincode:${code.toUpperCase()}`
 export const presenceKey = (gameId: string, seatId: string) => `presence:${gameId}:${seatId}`
 
+export const presetKey = (id: string) => `preset:${id}`
+/** Single key holding the ordered preset index (newest first), as JSON. */
+export const PRESET_INDEX_KEY = 'preset:index'
+
 export const GAME_TTL_SECONDS = 60 * 60 * 24 // 24h, refreshed on every write
 export const PRESENCE_TTL_SECONDS = 15
 export const MAX_EVENT_LOG = 200
+
+// Playtest presets outlive games by design — a saved scenario is meant to be
+// reloadable from its URL days later.
+export const PRESET_TTL_SECONDS = 60 * 60 * 24 * 90 // 90 days
+export const MAX_PRESETS = 200

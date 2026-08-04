@@ -59,6 +59,50 @@ export function toPublicSeat(seat: Seat): PublicSeat {
 }
 
 // ============================================================
+// Playtest presets
+// ============================================================
+
+/**
+ * A named playtest configuration saved on the server. Holds a full engine
+ * state (tunables included), so restoring one reproduces an exact scenario —
+ * board, players, phase and all balance numbers.
+ */
+export interface DebugPreset {
+  id: string
+  name: string
+  /** Free-text note from whoever saved it. */
+  description: string
+  engineState: EngineState
+  createdAt: number
+}
+
+/** Preset metadata for the picker list (no engine state — keeps it small). */
+export type DebugPresetSummary = Omit<DebugPreset, 'engineState'> & {
+  /** Number of tunables that differ from the shipped defaults. */
+  changedTunables: number
+  players: number
+  round: number
+  phase: string
+}
+
+export interface SavePresetRequest {
+  name: string
+  description?: string
+  engineState: EngineState
+}
+export interface SavePresetResponse {
+  preset: DebugPresetSummary
+  /** Ready-to-share link that restores this preset on load. */
+  url: string
+}
+export interface ListPresetsResponse {
+  presets: DebugPresetSummary[]
+}
+export interface GetPresetResponse {
+  preset: DebugPreset
+}
+
+// ============================================================
 // HTTP payloads
 // ============================================================
 

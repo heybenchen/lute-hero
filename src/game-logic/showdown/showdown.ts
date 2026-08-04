@@ -1,8 +1,11 @@
 import { Genre, Monster, Song, DiceRoll } from '../../types/index.js'
 import { getFinalBoss } from '../../data/monsters.js'
+import { getTunables } from '../../data/tunables.js'
 
-/** The Final Showdown always lasts exactly this many turns. */
-export const SHOWDOWN_TURNS = 3
+/** The Final Showdown lasts exactly this many verses. */
+export function showdownTurns(): number {
+  return getTunables().showdownTurns
+}
 
 /** One player's performance (a single song) for a single showdown turn. */
 export interface ShowdownPerformance {

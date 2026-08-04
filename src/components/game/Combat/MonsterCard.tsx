@@ -7,6 +7,10 @@ interface MonsterCardProps {
   index?: number
   /** Fame this monster is worth if defeated, at the player's current fame tier */
   fameValue?: number
+  /** When true, the card is the chosen single-target for the next song. */
+  isSelected?: boolean
+  /** When set, the card is clickable to become the combat target. */
+  onSelect?: () => void
 }
 
 const genreAccentColors: Record<Genre, { border: string; glow: string; bg: string }> = {
@@ -16,13 +20,14 @@ const genreAccentColors: Record<Genre, { border: string; glow: string; bg: strin
   Shanty: { border: 'rgba(41, 121, 255, 0.4)', glow: 'rgba(41, 121, 255, 0.15)', bg: 'rgba(41, 121, 255, 0.16)' },
 }
 
-export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps) {
+export function MonsterCard({ monster, index = 0, fameValue, isSelected = false, onSelect }: MonsterCardProps) {
   const hpPercent = (monster.currentHP / monster.maxHP) * 100
   const isDefeated = monster.currentHP <= 0
   const isLowHP = hpPercent > 0 && hpPercent <= 25
 
   const accentGenre = monster.vulnerability || monster.resistance
   const accent = accentGenre ? genreAccentColors[accentGenre] : null
+  const selectable = !!onSelect && !isDefeated
 
   return (
     <div
@@ -30,23 +35,37 @@ export function MonsterCard({ monster, index = 0, fameValue }: MonsterCardProps)
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
     >
       <div
+        onClick={selectable ? onSelect : undefined}
+        role={selectable ? 'button' : undefined}
+        aria-pressed={selectable ? isSelected : undefined}
         className={`relative w-full rounded-xl overflow-hidden transition-all duration-500 ${
           isDefeated ? 'opacity-30 scale-[0.97] grayscale' : isLowHP ? 'animate-pulse-slow' : ''
-        }`}
+        } ${selectable ? 'cursor-pointer hover:-translate-y-0.5' : ''}`}
         style={{
           background: isDefeated
             ? 'rgba(30, 24, 18, 0.6)'
             : accent
             ? `linear-gradient(160deg, ${accent.bg}, ${accent.bg}), rgba(30, 24, 18, 0.95)`
             : 'rgba(30, 24, 18, 0.95)',
-          border: `1px solid ${isDefeated ? 'rgba(100, 200, 100, 0.2)' : accent ? accent.border : 'rgba(212, 168, 83, 0.2)'}`,
+          border: isSelected && !isDefeated
+            ? '2px solid rgba(240, 200, 110, 0.95)'
+            : `1px solid ${isDefeated ? 'rgba(100, 200, 100, 0.2)' : accent ? accent.border : 'rgba(212, 168, 83, 0.2)'}`,
           boxShadow: isDefeated
             ? 'none'
+            : isSelected
+            ? '0 4px 20px rgba(0,0,0,0.4), 0 0 22px rgba(240, 200, 110, 0.45)'
             : accent
             ? `0 4px 20px rgba(0,0,0,0.4), 0 0 25px ${accent.glow}`
             : '0 4px 20px rgba(0,0,0,0.4)',
         }}
       >
+        {/* Target badge */}
+        {isSelected && !isDefeated && (
+          <div className="absolute top-2 right-2 z-20 text-[10px] font-bold px-2 py-0.5 rounded-full"
+            style={{ background: 'rgba(240, 200, 110, 0.95)', color: '#1a1410' }}>
+            🎯 TARGET
+          </div>
+        )}
         {/* Top accent stripe */}
         {!isDefeated && accent && (
           <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${accent.border}, transparent)` }} />

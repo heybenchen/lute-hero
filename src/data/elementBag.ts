@@ -1,10 +1,16 @@
 import { Genre, Rng } from '../types/index.js';
 import { ALL_GENRES } from "./genreTheme.js";
+import { getTunables } from "./tunables.js";
 
-// 6 chips of each element per player go into the bag at game start
-export const CHIPS_PER_ELEMENT_PER_PLAYER = 6;
-// The store presents 4 chips at a time
-export const ELEMENT_OFFER_COUNT = 4;
+/** Chips of each element, per player, seeded into the bag at game start. */
+export function chipsPerElementPerPlayer(): number {
+  return getTunables().chipsPerElementPerPlayer;
+}
+
+/** How many element chips the store shows at once. */
+export function elementOfferCount(): number {
+  return getTunables().elementOfferCount;
+}
 
 /** Fisher-Yates shuffle (returns a new array). */
 export function shuffle<T>(items: T[], rng: Rng = Math.random): T[] {
@@ -18,9 +24,10 @@ export function shuffle<T>(items: T[], rng: Rng = Math.random): T[] {
 
 /** Build and shuffle the full element bag for a game. */
 export function createElementBag(numPlayers: number, rng: Rng = Math.random): Genre[] {
+  const perElement = chipsPerElementPerPlayer() * numPlayers;
   const bag: Genre[] = [];
   for (const genre of ALL_GENRES) {
-    for (let i = 0; i < CHIPS_PER_ELEMENT_PER_PLAYER * numPlayers; i++) {
+    for (let i = 0; i < perElement; i++) {
       bag.push(genre);
     }
   }

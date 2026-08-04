@@ -5,8 +5,10 @@ import {
   EngineState,
   EngineCombatState,
   createInitialEngineState,
+  createInitialCombatState,
   normalizeEngineState,
 } from '@/engine/state'
+import { setActiveTunables } from '@/data/tunables'
 import { GameAction } from '@/engine/actions'
 import { Driver, DispatchResult } from '@/drivers/types'
 import { LocalDriver, loadSavedGame } from '@/drivers/localDriver'
@@ -55,6 +57,8 @@ export interface UiState {
   lastError: string | null
   /** Animation events from OTHER players' actions (spectator dice/popups). */
   remoteEntry: EventLogEntry | null
+  /** Whether the playtest debug panel is showing. */
+  debugOpen: boolean
 }
 
 export type GameStore = GameMirror &
@@ -75,6 +79,8 @@ export type GameStore = GameMirror &
     leaveOnline: () => void
     /** Back to the mode-select screen (stops any driver). */
     goToModeSelect: () => void
+    /** Restore a saved playtest state (starts hotseat if nothing is running). */
+    loadPresetState: (engineState: EngineState) => Promise<boolean>
     /** Drivers push authoritative engine state here. */
     _applyEngineState: (engineState: EngineState) => void
     _setUi: (updates: Partial<UiState>) => void
@@ -86,7 +92,27 @@ export type GameStore = GameMirror &
 
 function flatten(engineState: EngineState): GameMirror {
   const { combat, ...rest } = normalizeEngineState(engineState)
+  // Keep the engine's tunables active for UI reads too, so displayed costs,
+  // caps and thresholds always match what the engine will actually enforce.
+  setActiveTunables(rest.tunables)
   return { ...rest, ...combat }
+}
+
+/** Inverse of `flatten` — rebuild a full EngineState from the store mirror. */
+export function unflattenEngineState(mirror: GameMirror): EngineState {
+  const combatKeys = new Set(Object.keys(createInitialCombatState()))
+  const combat: Record<string, unknown> = {}
+  const rest: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(mirror)) {
+    // Store actions live on the mirror too; they must not leak into the state.
+    if (typeof value === 'function') continue
+    if (combatKeys.has(key)) combat[key] = value
+    else rest[key] = value
+  }
+  return {
+    ...(rest as unknown as Omit<EngineState, 'combat'>),
+    combat: combat as unknown as EngineCombatState,
+  }
 }
 
 // The active driver lives outside the store: it owns dispatch and pushes
@@ -160,6 +186,7 @@ export const useGameStore = create<GameStore>()(
         lobby: null,
         lastError: null,
         remoteEntry: null,
+        debugOpen: false,
 
         dispatch: async (action) => {
           if (!activeDriver) {
@@ -269,6 +296,21 @@ export const useGameStore = create<GameStore>()(
           })
         },
 
+        loadPresetState: async (engineState) => {
+          // Online: the host pushes the restored state through the server so
+          // every seat lands on the same scenario. Hotseat: (re)start a local
+          // driver seeded with it, which also persists it as the save.
+          if (get().mode === 'online') {
+            const result = await get().dispatch({ type: 'DEBUG_LOAD_STATE', engineState })
+            return result.ok
+          }
+          swapDriver(
+            new LocalDriver(engineState, (next) => get()._applyEngineState(next))
+          )
+          set({ mode: 'hotseat', connection: 'idle', lobby: null, lastError: null, remoteEntry: null })
+          return true
+        },
+
         _applyEngineState: (engineState) => {
           set(flatten(engineState))
         },
@@ -331,4 +373,27 @@ export const selectCanPerform = (state: GameStore): boolean => {
 export const selectIsHost = (state: GameStore): boolean => {
   if (state.mode !== 'online') return true
   return state.lobby?.mySeatId === state.lobby?.hostSeatId
+}
+
+/** The giver and receiver for the current round-end redistribution step. */
+export const selectRedistribution = (state: GameStore) => {
+  const r = state.redistribution
+  if (!r.active || state.players.length === 0) return null
+  const giver = state.players[r.giverIdx]
+  const receiver = state.players[(r.giverIdx + 1) % state.players.length]
+  return { ...r, giver, receiver }
+}
+
+/** The player who should act right now in redistribution (giver or receiver). */
+export const selectRedistributionActorId = (state: GameStore): string | null => {
+  const r = selectRedistribution(state)
+  if (!r) return null
+  return r.stage === 'selecting' ? r.giver.id : r.receiver.id
+}
+
+/** Hotseat: always true. Online: only when the acting seat is mine. */
+export const selectCanRedistribute = (state: GameStore): boolean => {
+  if (state.mode !== 'online') return true
+  const myId = selectMyPlayerId(state)
+  return myId !== null && selectRedistributionActorId(state) === myId
 }

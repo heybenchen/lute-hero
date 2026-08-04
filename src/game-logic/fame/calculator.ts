@@ -1,17 +1,19 @@
 import { Player, Monster, GamePhase } from '../../types/index.js'
-import { FAME_THRESHOLDS } from '../../data/startingData.js'
+import { getTunables } from '../../data/tunables.js'
 
 /**
- * Fame per monster level. Since songs hit all monsters at once (AOE),
- * higher-level monsters are the bigger fame payoffs. Levels past 5 clamp to
- * the top value, matching the HP multiplier cap.
+ * Fame per monster level: higher-level monsters are the bigger payoffs.
+ * Levels past the table's length clamp to its top value, matching the HP cap.
  */
-export const MONSTER_FAME_BY_LEVEL = [5, 10, 25, 50, 75]
+export function monsterFameByLevel(): number[] {
+  return getTunables().monsterFameByLevel
+}
 
 /** Fame a monster is worth by level. */
 export function calculateMonsterFameValue(level: number): number {
-  const capped = Math.min(Math.max(level, 1), MONSTER_FAME_BY_LEVEL.length)
-  return MONSTER_FAME_BY_LEVEL[capped - 1]
+  const table = monsterFameByLevel()
+  const capped = Math.min(Math.max(level, 1), table.length)
+  return table[capped - 1] ?? 0
 }
 
 /**
@@ -26,11 +28,11 @@ export function calculateFameEarned(defeatedMonsterLevels: number[]): number {
 }
 
 /**
- * Calculate EXP reward for a single monster based on level
- * Formula: level * 5 (Lv1=5, Lv2=10, Lv3=15, Lv4=20, Lv5=25)
+ * Calculate EXP reward for a single monster based on level.
+ * Formula: level × monsterExpPerLevel (default 5 → Lv1=5 … Lv5=25).
  */
 export function calculateMonsterExp(level: number): number {
-  return level * 5
+  return level * getTunables().monsterExpPerLevel
 }
 
 /**
@@ -99,10 +101,11 @@ export function incrementMonstersDefeated(
 
 /**
  * Determine the next game phase based on individual player fame.
- * Triggers when ANY single player reaches FAME_THRESHOLDS.finalBoss.
+ * Triggers when ANY single player reaches the final-boss fame gate.
  */
 export function getNextPhase(currentPhase: GamePhase, playerFames: number[]): GamePhase | null {
-  if (currentPhase === 'main' && playerFames.some(f => f >= FAME_THRESHOLDS.finalBoss)) {
+  const threshold = getTunables().fameFinalBossThreshold
+  if (currentPhase === 'main' && playerFames.some((f) => f >= threshold)) {
     return 'finalBoss'
   }
   return null

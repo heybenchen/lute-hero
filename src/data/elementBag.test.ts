@@ -3,7 +3,7 @@ import {
   createElementBag,
   drawFromBag,
   shuffle,
-  CHIPS_PER_ELEMENT_PER_PLAYER,
+  chipsPerElementPerPlayer,
 } from './elementBag'
 import { Genre } from '@/types'
 
@@ -19,7 +19,7 @@ describe('Element Bag', () => {
         return acc
       }, {})
       for (const genre of ['Ballad', 'Folk', 'Hymn', 'Shanty']) {
-        expect(counts[genre]).toBe(CHIPS_PER_ELEMENT_PER_PLAYER * 2)
+        expect(counts[genre]).toBe(chipsPerElementPerPlayer() * 2)
       }
     })
 

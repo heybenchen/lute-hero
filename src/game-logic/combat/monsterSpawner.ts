@@ -1,5 +1,6 @@
 import { BoardSpace, Monster, Genre, MonsterTemplate, Rng, NewId } from '../../types/index.js'
 import { getMonsterByGenre } from '../../data/monsters.js'
+import { getTunables } from '../../data/tunables.js'
 
 /**
  * Count tags by genre and find the dominant genre
@@ -33,21 +34,23 @@ export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: num
 }
 
 /** Monster levels never exceed this; HP, fame, EXP, and naming all top out here. */
-export const MAX_MONSTER_LEVEL = 5
+export function maxMonsterLevel(): number {
+  return getTunables().maxMonsterLevel
+}
 
-/** Clamp any raw level into the valid 1..MAX_MONSTER_LEVEL range. */
+/** Clamp any raw level into the valid 1..maxMonsterLevel() range. */
 export function clampMonsterLevel(level: number): number {
-  return Math.min(Math.max(Math.floor(level), 1), MAX_MONSTER_LEVEL)
+  return Math.min(Math.max(Math.floor(level), 1), maxMonsterLevel())
 }
 
 /**
- * Calculate HP multiplier based on monster level (capped at level 5)
- * Level 1 = 1x, Level 2 = 1.75x, Level 3 = 3x, Level 4 = 5x, Level 5 = 7.5x
+ * HP multiplier for a monster level. Defaults: Lv1 1x, Lv2 1.75x, Lv3 3x,
+ * Lv4 5x, Lv5 7.5x. Levels past the multiplier table reuse its last entry.
  */
-const HP_MULTIPLIERS = [1, 1.75, 3, 5, 7.5]
-
 export function getHPMultiplier(level: number): number {
-  return HP_MULTIPLIERS[clampMonsterLevel(level) - 1]
+  const multipliers = getTunables().hpMultipliers
+  const index = Math.min(clampMonsterLevel(level), multipliers.length) - 1
+  return multipliers[index] ?? 1
 }
 
 /**
@@ -117,7 +120,8 @@ export function createMonsterFromTemplate(
   const cappedLevel = clampMonsterLevel(level)
   const hpMultiplier = getHPMultiplier(cappedLevel)
   // Only spawnable monsters reach this path, so baseHP is always defined.
-  const scaledHP = Math.floor((template.baseHP ?? 0) * hpMultiplier)
+  // monsterHpScale is the debug panel's global "make fights faster/slower" dial.
+  const scaledHP = Math.max(1, Math.floor((template.baseHP ?? 0) * hpMultiplier * getTunables().monsterHpScale))
 
   return {
     id: newId ? newId('monster') : `monster-${spaceId}-${index}-${Date.now()}`,
