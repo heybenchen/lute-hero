@@ -53,22 +53,18 @@ export interface EngineCombatState {
 }
 
 /**
- * Round-end redistribution: after everyone has taken a turn, each player hands
- * 4 monster chips of their choice to the player behind them in turn order, and
- * that player places the chips on distinct board tiles. Kept in the synced
- * engine state so both the giver and the placer (and any spectators) see it.
+ * Round-end reinforcements: after everyone has taken a turn, each bard is
+ * dealt one monster chip of every element and places them on the board
+ * wherever they like — one chip per tile — before the next round begins.
+ * Kept in the synced engine state so the placer and spectators both see it.
  */
 export interface RedistributionState {
   active: boolean
-  /** Index (into players) of the current giver; the receiver is the next player. */
-  giverIdx: number
-  /** 'selecting' — the giver is choosing chips; 'placing' — the receiver places them. */
-  stage: 'selecting' | 'placing'
-  /** Chips the giver has picked so far (up to CHIPS_PER_HANDOFF). */
-  selectedChips: Genre[]
-  /** Chips handed to the receiver, being placed one at a time. */
+  /** Index (into players) of the bard currently placing their chips. */
+  placerIdx: number
+  /** Chips this bard has left to place, one at a time. */
   chipsToPlace: Genre[]
-  /** Spaces already used in this placement — no two chips on the same tile. */
+  /** Tiles this bard already used — no two of their chips share a tile. */
   placedSpaceIds: number[]
 }
 
@@ -178,9 +174,7 @@ export function createInitialCombatState(): EngineCombatState {
 export function createInitialRedistributionState(): RedistributionState {
   return {
     active: false,
-    giverIdx: 0,
-    stage: 'selecting',
-    selectedChips: [],
+    placerIdx: 0,
     chipsToPlace: [],
     placedSpaceIds: [],
   }

@@ -81,10 +81,7 @@ export type GameAction =
   | { type: 'ADVANCE_TO_SUMMARY' }
   | { type: 'RESET_GAME' }
   | { type: 'HOST_SKIP_TURN'; targetPlayerId: string }
-  // Round-end redistribution: the giver picks 4 chips, the receiver places them
-  | { type: 'ADD_REDISTRIBUTION_CHIP'; genre: Genre }
-  | { type: 'REMOVE_REDISTRIBUTION_CHIP'; index: number }
-  | { type: 'CONFIRM_REDISTRIBUTION_GIFT' }
+  // Round-end reinforcements: each bard places their dealt chips on the board
   | { type: 'PLACE_REDISTRIBUTION_CHIP'; spaceId: number }
   // Playtest debug mode (host-only): tweak values, or restore a saved preset
   | { type: 'DEBUG_PATCH'; patch: DebugPatch }

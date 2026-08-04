@@ -23,8 +23,8 @@ export interface Tunables {
   // --- Turn structure ---
   maxMovesPerTurn: number
   maxFightsPerTurn: number
-  /** Monster chips each player hands to the player behind them at round end. */
-  chipsPerHandoff: number
+  /** Chips of EACH element every bard is dealt to place at round end. */
+  roundEndChipsPerElement: number
 
   // --- Board ---
   /** Hard cap on monster chips a single space can hold. */
@@ -74,7 +74,7 @@ export const DEFAULT_TUNABLES: Tunables = {
 
   maxMovesPerTurn: 2,
   maxFightsPerTurn: 1,
-  chipsPerHandoff: 4,
+  roundEndChipsPerElement: 1,
 
   maxGenreTags: 5,
   startingTagsPerSpace: 1,
@@ -136,7 +136,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
 
   { key: 'maxMovesPerTurn', label: 'Moves per turn', group: 'Turn structure', min: 0, max: 16, step: 1 },
   { key: 'maxFightsPerTurn', label: 'Fights per turn', group: 'Turn structure', min: 0, max: 10, step: 1 },
-  { key: 'chipsPerHandoff', label: 'Chips handed off at round end', group: 'Turn structure', min: 0, max: 16, step: 1, help: 'Each player gives this many chips to the player behind them.' },
+  { key: 'roundEndChipsPerElement', label: 'Round-end chips per element', group: 'Turn structure', min: 0, max: 5, step: 1, help: 'At round end every bard is dealt this many chips of each element to place.' },
 
   { key: 'maxGenreTags', label: 'Max chips per space', group: 'Board', min: 1, max: 20, step: 1 },
   { key: 'startingTagsPerSpace', label: 'Starting chips per space', group: 'Board', min: 0, max: 10, step: 1, help: 'Applied when a new game starts.' },

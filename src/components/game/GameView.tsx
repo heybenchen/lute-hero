@@ -303,9 +303,9 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
           <Section title="🔁 Round End">
             <List items={[
-              <>After every bard has taken a turn, the round ends with a <Hl>redistribution</Hl>.</>,
-              <>Each bard hands <Hl>4 monster chips</Hl> of their choice to the bard behind them in turn order.</>,
-              <>That bard <Hl>places</Hl> the chips on the board — one per tile — spawning new threats for next round.</>,
+              <>After every bard has taken a turn, the round ends with <Hl>reinforcements</Hl>.</>,
+              <>Each bard is dealt <Hl>one chip of every element</Hl> — Ballad, Folk, Hymn and Shanty.</>,
+              <>Place them anywhere you like — <Hl>one per tile</Hl> — spawning new threats for next round.</>,
             ]} />
           </Section>
 

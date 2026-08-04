@@ -12,12 +12,10 @@ export function maxFightsPerTurn(): number {
   return getTunables().maxFightsPerTurn
 }
 
-/** Chips each player hands to the player behind them during round-end redistribution. */
-export function chipsPerHandoff(): number {
-  return getTunables().chipsPerHandoff
+/** Chips of EACH element every bard is dealt at round end. */
+export function roundEndChipsPerElement(): number {
+  return getTunables().roundEndChipsPerElement
 }
-
-const ALL_GENRES_SET = new Set(['Ballad', 'Folk', 'Hymn', 'Shanty'])
 
 export type ValidationResult =
   | { ok: true }
@@ -63,15 +61,13 @@ export function validateAction(
     return ok
   }
 
-  // Normal turn actions are blocked while round-end redistribution is running.
-  const redistributionParticipant = (): { giverId: string; receiverId: string } | null => {
+  // Normal turn actions are blocked while round-end reinforcements are running.
+  const currentPlacerId = (): string | null => {
     if (!state.redistribution.active || state.players.length === 0) return null
-    const giver = state.players[state.redistribution.giverIdx]
-    const receiver = state.players[(state.redistribution.giverIdx + 1) % state.players.length]
-    return { giverId: giver.id, receiverId: receiver.id }
+    return state.players[state.redistribution.placerIdx]?.id ?? null
   }
   const blockedByRedistribution = (): ValidationResult =>
-    state.redistribution.active ? illegal('Round-end redistribution in progress') : ok
+    state.redistribution.active ? illegal('Round-end reinforcements in progress') : ok
 
   switch (action.type) {
     case 'START_GAME': {
@@ -153,6 +149,11 @@ export function validateAction(
       if (!state.combat.isActive) return illegal('No active combat')
       if (!state.combat.undoSnapshot || !state.combat.lastPlayedSongId) {
         return illegal('Nothing to reroll')
+      }
+      // Only a SPENT song can be rerolled. A song that landed the kill refreshed
+      // instead, and replaying it would re-resolve against a dead target.
+      if (!state.combat.spentSongIds.includes(state.combat.lastPlayedSongId)) {
+        return illegal('That song defeated its target — play it again instead')
       }
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
       if (!fighter || fighter.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
@@ -377,44 +378,16 @@ export function validateAction(
       return ok
     }
 
-    case 'ADD_REDISTRIBUTION_CHIP':
-    case 'REMOVE_REDISTRIBUTION_CHIP':
-    case 'CONFIRM_REDISTRIBUTION_GIFT': {
-      const parts = redistributionParticipant()
-      if (!parts || state.redistribution.stage !== 'selecting') {
-        return illegal('Not choosing chips right now')
-      }
-      if (isSeat && seatPlayerId !== parts.giverId) return forbidden('Not your chips to give')
-      if (action.type === 'ADD_REDISTRIBUTION_CHIP') {
-        if (!ALL_GENRES_SET.has(action.genre)) return illegal('Unknown element')
-        if (state.redistribution.selectedChips.length >= chipsPerHandoff()) {
-          return illegal(`Only ${chipsPerHandoff()} chips`)
-        }
-      }
-      if (action.type === 'REMOVE_REDISTRIBUTION_CHIP') {
-        if (action.index < 0 || action.index >= state.redistribution.selectedChips.length) {
-          return illegal('No such chip')
-        }
-      }
-      if (action.type === 'CONFIRM_REDISTRIBUTION_GIFT') {
-        if (state.redistribution.selectedChips.length !== chipsPerHandoff()) {
-          return illegal(`Choose exactly ${chipsPerHandoff()} chips`)
-        }
-      }
-      return ok
-    }
-
     case 'PLACE_REDISTRIBUTION_CHIP': {
-      const parts = redistributionParticipant()
-      if (!parts || state.redistribution.stage !== 'placing') {
-        return illegal('Not placing chips right now')
-      }
-      if (isSeat && seatPlayerId !== parts.receiverId) return forbidden('Not your chips to place')
+      const placerId = currentPlacerId()
+      if (!placerId) return illegal('Not placing chips right now')
+      if (isSeat && seatPlayerId !== placerId) return forbidden('Not your chips to place')
       if (state.redistribution.chipsToPlace.length === 0) return illegal('No chips left to place')
       const space = state.spaces.find((s) => s.id === action.spaceId)
       if (!space) return illegal('Unknown space')
+      // A bard spreads their own hand out — one chip per tile
       if (state.redistribution.placedSpaceIds.includes(action.spaceId)) {
-        return illegal('A chip is already on that tile')
+        return illegal('You already placed a chip on that tile')
       }
       if (space.genreTags.length >= maxGenreTags()) return illegal('That tile is full')
       return ok
