@@ -8,7 +8,7 @@ import {
   NewId,
 } from '../types/index.js'
 import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState, createInitialRedistributionState, normalizeEngineState } from './state.js'
-import { GameAction, ActorSeat, PlayerConfig, DebugPatch } from './actions.js'
+import { GameAction, ActorSeat, PlayerConfig, DebugPatch, DebugDiceEdit } from './actions.js'
 import { EngineEvent } from './events.js'
 import { validateAction, chipsPerHandoff } from './validate.js'
 import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, maxGenreTags } from '../game-logic/board/graphBuilder.js'
@@ -21,7 +21,7 @@ import {
   getNextPhase,
 } from '../game-logic/fame/calculator.js'
 import { calculateCoverFameSplit } from '../game-logic/fame/coverSongFame.js'
-import { createStarterSongs } from '../data/startingData.js'
+import { createStarterSongs, ALL_DICE_TYPES } from '../data/startingData.js'
 import { createElementalDie, getInspirationCost, getUpgradeCost, newD4Cost, inspirationSpend } from '../data/draftCards.js'
 import { createElementBag, drawFromBag, elementOfferCount } from '../data/elementBag.js'
 import {
@@ -33,6 +33,7 @@ import {
 } from '../game-logic/showdown/showdown.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
 import { getTunables, withTunables, normalizeTunables } from '../data/tunables.js'
+import { ALL_GENRES } from '../data/genreTheme.js'
 
 export { chipsPerHandoff } from './validate.js'
 
@@ -176,6 +177,9 @@ function reduce(
     case 'OPEN_STUDIO':
       return {
         ...state,
+        players: state.players.map((p) =>
+          p.id === action.playerId ? { ...p, hasShoppedThisTurn: true } : p
+        ),
         studio: { ...createInitialStudioState(), playerId: action.playerId },
       }
 
@@ -382,6 +386,10 @@ function applyDebugPatch(state: EngineState, patch: DebugPatch, rng: Rng, newId:
     }
   }
 
+  if (patch.dice) {
+    next = { ...next, players: applyDiceEdits(next.players, patch.dice, newId) }
+  }
+
   if (patch.flow) {
     const { phase, currentRound, currentTurnPlayerIndex, pendingPhase, finalTurnGranted } = patch.flow
     next = {
@@ -447,6 +455,46 @@ function applyDebugPatch(state: EngineState, patch: DebugPatch, rng: Rng, newId:
 function loadDebugState(state: EngineState, incoming: EngineState): EngineState {
   const restored = normalizeEngineState(incoming)
   return { ...restored, nextIdSeq: Math.max(restored.nextIdSeq ?? 1, state.nextIdSeq) }
+}
+
+/**
+ * Apply dice-slot edits from the playtest panel. An edit either sets the slot's
+ * die (retyping / re-elementing it) or clears the slot with `dice: null`.
+ * Editing an existing die keeps its id, so a song already rolled this combat
+ * stays matched up with its rolls; a brand-new die gets a fresh id.
+ * Unknown players, songs, slots and die types are skipped rather than throwing.
+ */
+function applyDiceEdits(players: Player[], edits: DebugDiceEdit[], newId: NewId): Player[] {
+  const valid = edits.filter(
+    (edit) => edit.dice === null || (ALL_DICE_TYPES.includes(edit.dice.type) && ALL_GENRES.includes(edit.dice.genre))
+  )
+  if (valid.length === 0) return players
+
+  return players.map((player) => {
+    const playerEdits = valid.filter((edit) => edit.playerId === player.id)
+    if (playerEdits.length === 0) return player
+
+    return {
+      ...player,
+      songs: player.songs.map((song) => {
+        const songEdits = playerEdits.filter((edit) => edit.songId === song.id)
+        if (songEdits.length === 0) return song
+
+        const slots = [...song.slots] as Song['slots']
+        for (const edit of songEdits) {
+          if (edit.slotIndex < 0 || edit.slotIndex >= slots.length) continue
+          const existing = slots[edit.slotIndex].dice
+          slots[edit.slotIndex] = {
+            ...slots[edit.slotIndex],
+            dice: edit.dice
+              ? { id: existing?.id ?? newId('die'), type: edit.dice.type, genre: edit.dice.genre }
+              : null,
+          }
+        }
+        return { ...song, slots }
+      }),
+    }
+  })
 }
 
 function clampInt(value: number | undefined, fallback: number, min: number): number {
@@ -725,7 +773,9 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
     spaces,
     pendingPhase,
     combat: createInitialCombatState(),
-    studio: { ...createInitialStudioState(), playerId: fighterId },
+    // Deliberately does NOT open the Studio: the player stays on the board and
+    // the Studio button hints instead (PlayerPanel flashes it until they visit).
+    studio: createInitialStudioState(),
   }
 }
 
@@ -737,7 +787,7 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
   const current = state.players[state.currentTurnPlayerIndex]
   let players = state.players.map((p) =>
     p.id === current.id
-      ? { ...p, movesThisTurn: 0, fightsThisTurn: 0, inspirationBoughtThisTurn: 0 }
+      ? { ...p, movesThisTurn: 0, fightsThisTurn: 0, inspirationBoughtThisTurn: 0, hasShoppedThisTurn: false }
       : p
   )
 
@@ -763,7 +813,7 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
   }
 
   // Round over: everyone's per-turn counters reset.
-  players = players.map((p) => ({ ...p, movesThisTurn: 0, fightsThisTurn: 0 }))
+  players = players.map((p) => ({ ...p, movesThisTurn: 0, fightsThisTurn: 0, hasShoppedThisTurn: false }))
   const working = { ...state, players }
 
   // If this round-end flips straight to the Final Showdown, skip redistribution

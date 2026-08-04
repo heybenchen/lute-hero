@@ -13,7 +13,8 @@ import { GENRE_THEME, ALL_GENRES, readableTextColor } from '@/data/genreTheme'
 import { getIdentity } from '@/net/identity'
 import * as api from '@/net/api'
 import type { DebugPresetSummary } from '@/net/protocol'
-import type { Genre, GamePhase } from '@/types'
+import { ALL_DICE_TYPES } from '@/data/startingData'
+import type { Genre, GamePhase, DiceType, Player } from '@/types'
 
 type Tab = 'values' | 'players' | 'board' | 'presets'
 
@@ -30,12 +31,19 @@ export function DebugPanel() {
   const isHost = useGameStore(selectIsHost)
   const [tab, setTab] = useState<Tab>('values')
 
-  // Ctrl/Cmd+Shift+D toggles the panel from anywhere.
+  // Ctrl/Cmd+Shift+D toggles the panel from anywhere; Escape closes it. The
+  // panel is the topmost surface (z-80), so it claims Escape first — GameView's
+  // handler stands down while it is open.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.shiftKey && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
         e.preventDefault()
         _setUi({ debugOpen: !useGameStore.getState().debugOpen })
+        return
+      }
+      if (e.key === 'Escape' && useGameStore.getState().debugOpen) {
+        e.preventDefault()
+        _setUi({ debugOpen: false })
       }
     }
     window.addEventListener('keydown', onKey)
@@ -365,6 +373,109 @@ function PlayersTab() {
               ))}
             </select>
           </div>
+
+          <DiceEditor player={player} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Per-song dice slots for one player: retype a die, change its element, add one
+ * to an empty slot, or clear it. Every change is a DEBUG_PATCH, so it syncs to
+ * online seats and persists in saves and presets like any other edit.
+ */
+function DiceEditor({ player }: { player: Player }) {
+  const dispatch = useGameStore((state) => state.dispatch)
+
+  const editSlot = (songId: string, slotIndex: number, dice: { type: DiceType; genre: Genre } | null) =>
+    dispatch({ type: 'DEBUG_PATCH', patch: { dice: [{ playerId: player.id, songId, slotIndex, dice }] } })
+
+  const fillAll = (type: DiceType) =>
+    dispatch({
+      type: 'DEBUG_PATCH',
+      patch: {
+        dice: player.songs.flatMap((song) =>
+          song.slots.map((_, slotIndex) => ({
+            playerId: player.id,
+            songId: song.id,
+            slotIndex,
+            dice: { type, genre: player.starterGenre },
+          }))
+        ),
+      },
+    })
+
+  return (
+    <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.12)' }}>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] font-medieval uppercase tracking-widest text-parchment-500">Dice</span>
+        <div className="flex gap-1">
+          <MiniButton onClick={() => fillAll('d20')}>Max all</MiniButton>
+          <MiniButton
+            onClick={() =>
+              dispatch({
+                type: 'DEBUG_PATCH',
+                patch: {
+                  dice: player.songs.flatMap((song) =>
+                    song.slots.map((_, slotIndex) => ({ playerId: player.id, songId: song.id, slotIndex, dice: null }))
+                  ),
+                },
+              })
+            }
+          >
+            Clear
+          </MiniButton>
+        </div>
+      </div>
+
+      {player.songs.map((song, songIdx) => (
+        <div key={song.id} className="flex items-center gap-1.5 py-0.5">
+          <span className="text-[10px] text-parchment-500 w-12 flex-shrink-0">Song {songIdx + 1}</span>
+          {song.slots.map((slot, slotIndex) => (
+            <div key={slotIndex} className="flex gap-1 flex-1 min-w-0">
+              <select
+                value={slot.dice?.type ?? ''}
+                onChange={(e) =>
+                  editSlot(
+                    song.id,
+                    slotIndex,
+                    e.target.value
+                      ? { type: e.target.value as DiceType, genre: slot.dice?.genre ?? player.starterGenre }
+                      : null
+                  )
+                }
+                title={`Song ${songIdx + 1}, slot ${slotIndex + 1} — die type`}
+                className="px-1 py-0.5 rounded text-[10px] text-parchment-100 min-w-0 flex-1"
+                style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(212, 168, 83, 0.25)' }}
+              >
+                <option value="">—</option>
+                {ALL_DICE_TYPES.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+              <select
+                value={slot.dice?.genre ?? ''}
+                disabled={!slot.dice}
+                onChange={(e) =>
+                  slot.dice && editSlot(song.id, slotIndex, { type: slot.dice.type, genre: e.target.value as Genre })
+                }
+                title={`Song ${songIdx + 1}, slot ${slotIndex + 1} — element`}
+                className="px-1 py-0.5 rounded text-[10px] min-w-0 flex-1 disabled:opacity-30"
+                style={{
+                  background: slot.dice ? `${GENRE_THEME[slot.dice.genre].color}33` : 'rgba(0,0,0,0.35)',
+                  border: `1px solid ${slot.dice ? `${GENRE_THEME[slot.dice.genre].color}99` : 'rgba(212, 168, 83, 0.25)'}`,
+                  color: slot.dice ? GENRE_THEME[slot.dice.genre].color : '#a89878',
+                }}
+              >
+                <option value="">—</option>
+                {ALL_GENRES.map((genre) => (
+                  <option key={genre} value={genre}>{genre}</option>
+                ))}
+              </select>
+            </div>
+          ))}
         </div>
       ))}
     </div>

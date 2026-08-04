@@ -82,7 +82,7 @@ function sampleState(): EngineState {
     spaces: [
       { id: 0, name: 'The Forgotten Stage', connections: [1], genreTags: [], monsters: [], isEdge: true },
     ],
-    tunables: { ...DEFAULT_TUNABLES, fameFinalBossThreshold: 60, newD4Cost: 1 },
+    tunables: { ...DEFAULT_TUNABLES, fameFinalBossThreshold: 60, newD4Cost: 9 },
   }
 }
 

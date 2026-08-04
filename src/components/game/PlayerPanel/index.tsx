@@ -18,6 +18,11 @@ export function PlayerPanel() {
   const hasMonsters = currentSpace && currentSpace.monsters.length > 0
   const canFight = hasMonsters && currentPlayer.fightsThisTurn < 1 && canAct
 
+  // Combat no longer opens the Studio for you — once you've fought, the button
+  // pulses until you visit it, so freshly earned EXP doesn't go unnoticed.
+  const shouldHintStudio =
+    canAct && currentPlayer.fightsThisTurn > 0 && !currentPlayer.hasShoppedThisTurn
+
   // Online presence per engine player (via their seat)
   const presenceFor = (playerId: string): boolean | null => {
     if (mode !== 'online' || !lobby) return null
@@ -157,7 +162,10 @@ export function PlayerPanel() {
           <>
             <button
               onClick={() => dispatch({ type: 'OPEN_STUDIO', playerId: currentPlayer.id })}
-              className="btn-secondary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5"
+              className={`btn-secondary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5 ${
+                shouldHintStudio ? 'animate-gentle-flash' : ''
+              }`}
+              title={shouldHintStudio ? 'You fought this turn — spend your EXP before ending the turn' : undefined}
             >
               Studio ({currentPlayer.exp} EXP)
             </button>
