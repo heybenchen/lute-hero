@@ -60,7 +60,7 @@ pnpm build
 1. Choose 2-4 players
 2. Assign names and select starting genres
 3. Each player starts with:
-   - 1 song with 2 starter dice (d6 + d6)
+   - 1 song holding a single starter d8 of their chosen element
    - Position on an edge space
    - 0 EXP, 0 Fame
 

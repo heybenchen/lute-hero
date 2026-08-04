@@ -99,6 +99,54 @@ describe('START_GAME', () => {
     expect(state.elementOffers).toHaveLength(4)
   })
 
+  it('gives every bard a single starter d8 of their element', () => {
+    const state = startTwoPlayerGame()
+    const [alba, bryn] = state.players
+
+    const dice = (p: (typeof state.players)[number]) =>
+      p.songs.flatMap((s) => s.slots.map((slot) => slot.dice)).filter((d) => d !== null)
+
+    expect(dice(alba)).toHaveLength(1)
+    expect(dice(alba)[0]).toMatchObject({ type: 'd8', genre: 'Ballad' })
+    expect(dice(bryn)).toHaveLength(1)
+    expect(dice(bryn)[0]).toMatchObject({ type: 'd8', genre: 'Folk' })
+    // It sits in the first song's first slot; the second slot stays open
+    expect(alba.songs[0].slots[0].dice?.type).toBe('d8')
+    expect(alba.songs[0].slots[1].dice).toBeNull()
+  })
+
+  it('deals the opening chips evenly across elements, in a random order', () => {
+    const counts = (state: EngineState) => {
+      const tally: Record<string, number> = { Ballad: 0, Folk: 0, Hymn: 0, Shanty: 0 }
+      for (const space of state.spaces) for (const tag of space.genreTags) tally[tag]++
+      return tally
+    }
+
+    // 16 spaces x 1 chip = 16 chips = 4 per element, for any seed
+    for (const seed of [1, 42, 99, 12345]) {
+      expect(counts(startTwoPlayerGame(seed))).toEqual({ Ballad: 4, Folk: 4, Hymn: 4, Shanty: 4 })
+    }
+
+    // Balanced, but not in a fixed arrangement — different seeds place them differently
+    const layout = (seed: number) => startTwoPlayerGame(seed).spaces.map((s) => s.genreTags.join())
+    expect(layout(1)).not.toEqual(layout(42))
+  })
+
+  it('keeps the deal balanced when more chips per space are configured', () => {
+    let state = createInitialEngineState()
+    state = { ...state, tunables: { ...DEFAULT_TUNABLES, startingTagsPerSpace: 3 } }
+    const started = apply(state, {
+      type: 'START_GAME',
+      playerConfigs: [{ name: 'Solo', starterGenre: 'Hymn', color: '#fff' }],
+    }).state
+
+    const tally: Record<string, number> = { Ballad: 0, Folk: 0, Hymn: 0, Shanty: 0 }
+    for (const space of started.spaces) for (const tag of space.genreTags) tally[tag]++
+    // 16 spaces x 3 chips = 48 = 12 per element
+    expect(tally).toEqual({ Ballad: 12, Folk: 12, Hymn: 12, Shanty: 12 })
+    expect(started.spaces.every((s) => s.genreTags.length === 3)).toBe(true)
+  })
+
   it('rejects starting twice', () => {
     const state = startTwoPlayerGame()
     const result = applyAction(state, { type: 'START_GAME', playerConfigs: [{ name: 'X', starterGenre: 'Hymn', color: '#fff' }] }, ctx())
@@ -415,7 +463,7 @@ describe('shop actions', () => {
     }
     if (matchingIdx !== -1) {
       const result = apply(state, { type: 'UPGRADE_DIE', offerIndex: matchingIdx, diceId: die.id })
-      expect(result.state.players[0].songs[0].slots[0].dice!.type).toBe('d6')
+      expect(result.state.players[0].songs[0].slots[0].dice!.type).toBe('d8')
       expect(result.state.players[0].exp).toBe(45)
     }
   })
@@ -546,6 +594,46 @@ describe('tunables', () => {
       tunables: undefined as never,
     })
     expect(state.tunables).toEqual(DEFAULT_TUNABLES)
+  })
+
+  it('drops tunable keys that no longer exist in the schema', () => {
+    const state = normalizeEngineState({
+      ...startTwoPlayerGame(),
+      tunables: { ...DEFAULT_TUNABLES, upgradeCostD6: 5 } as never,
+    })
+    expect(state.tunables).not.toHaveProperty('upgradeCostD6')
+    expect(state.tunables).toEqual(DEFAULT_TUNABLES)
+  })
+})
+
+describe('legacy save migration', () => {
+  it('rewrites retired d6 dice to d8 on load, in songs and pending rewards', () => {
+    const base = startTwoPlayerGame()
+    const stale: EngineState = {
+      ...base,
+      players: base.players.map((p, i) =>
+        i === 0
+          ? {
+              ...p,
+              songs: p.songs.map((song, si) =>
+                si === 0
+                  ? { ...song, slots: [{ dice: { id: 'old', type: 'd6' as never, genre: 'Ballad' as const } }, { dice: null }] as never }
+                  : song
+              ),
+            }
+          : p
+      ),
+      pendingRewards: {
+        'player-1': [{ kind: 'die', id: 'r1', dice: { id: 'old-reward', type: 'd6' as never, genre: 'Folk' } }],
+      },
+    }
+
+    const migrated = normalizeEngineState(stale)
+    expect(migrated.players[0].songs[0].slots[0].dice?.type).toBe('d8')
+    const reward = migrated.pendingRewards['player-1'][0]
+    expect(reward.kind === 'die' && reward.dice.type).toBe('d8')
+    // Untouched dice keep their type
+    expect(migrated.players[1].songs[0].slots[0].dice?.type).toBe('d8')
   })
 })
 

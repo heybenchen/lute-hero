@@ -26,7 +26,7 @@ export function inspirationSpend(): number {
 /** EXP cost to upgrade a die INTO the given type. */
 export function upgradeCostFor(type: Exclude<DiceType, "d4">): number {
   const t = getTunables();
-  return type === "d6" ? t.upgradeCostD6 : type === "d12" ? t.upgradeCostD12 : t.upgradeCostD20;
+  return type === "d8" ? t.upgradeCostD8 : type === "d12" ? t.upgradeCostD12 : t.upgradeCostD20;
 }
 
 /**

@@ -14,8 +14,8 @@ describe('Elemental Dice Shop', () => {
       expect(newD4Cost()).toBe(5)
     })
 
-    it('should cost 5/15/30 EXP to upgrade to d6/d12/d20', () => {
-      expect(upgradeCostFor('d6')).toBe(5)
+    it('should cost 10/15/30 EXP to upgrade to d8/d12/d20', () => {
+      expect(upgradeCostFor('d8')).toBe(10)
       expect(upgradeCostFor('d12')).toBe(15)
       expect(upgradeCostFor('d20')).toBe(30)
     })
@@ -29,9 +29,9 @@ describe('Elemental Dice Shop', () => {
   })
 
   describe('getNextDiceType', () => {
-    it('should follow the d4 -> d6 -> d12 -> d20 path', () => {
-      expect(getNextDiceType('d4')).toBe('d6')
-      expect(getNextDiceType('d6')).toBe('d12')
+    it('should follow the d4 -> d8 -> d12 -> d20 path', () => {
+      expect(getNextDiceType('d4')).toBe('d8')
+      expect(getNextDiceType('d8')).toBe('d12')
       expect(getNextDiceType('d12')).toBe('d20')
     })
 
@@ -42,8 +42,8 @@ describe('Elemental Dice Shop', () => {
 
   describe('getUpgradeCost', () => {
     it('should price upgrades by the resulting die type', () => {
-      expect(getUpgradeCost('d4')).toBe(5) // -> d6
-      expect(getUpgradeCost('d6')).toBe(15) // -> d12
+      expect(getUpgradeCost('d4')).toBe(10) // -> d8
+      expect(getUpgradeCost('d8')).toBe(15) // -> d12
       expect(getUpgradeCost('d12')).toBe(30) // -> d20
     })
 

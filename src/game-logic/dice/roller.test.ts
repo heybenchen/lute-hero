@@ -15,7 +15,7 @@ describe('Dice Roller', () => {
   describe('getMaxValue', () => {
     it('should return correct max values for each dice type', () => {
       expect(getMaxValue('d4')).toBe(4)
-      expect(getMaxValue('d6')).toBe(6)
+      expect(getMaxValue('d8')).toBe(8)
       expect(getMaxValue('d12')).toBe(12)
       expect(getMaxValue('d20')).toBe(20)
     })
@@ -29,7 +29,7 @@ describe('Dice Roller', () => {
 
   describe('rollDie', () => {
     it('should return a value between 1 and max', () => {
-      const diceTypes: DiceType[] = ['d4', 'd6', 'd12', 'd20']
+      const diceTypes: DiceType[] = ['d4', 'd8', 'd12', 'd20']
 
       diceTypes.forEach((type) => {
         const max = getMaxValue(type)
@@ -53,37 +53,37 @@ describe('Dice Roller', () => {
 
   describe('rollCascadeDice', () => {
     it('should return a single roll when not hitting max value', () => {
-      vi.spyOn(Math, 'random').mockReturnValue(0.5) // d6 → 4
-      const result = rollCascadeDice('d6')
-      expect(result).toEqual([4])
+      vi.spyOn(Math, 'random').mockReturnValue(0.5) // d8 → 5
+      const result = rollCascadeDice('d8')
+      expect(result).toEqual([5])
       vi.restoreAllMocks()
     })
 
     it('should cascade when hitting max value', () => {
       const mockRandom = vi.spyOn(Math, 'random')
-      // First cascade roll: max (6), second cascade roll: 3
-      mockRandom.mockReturnValueOnce(0.9999) // → 6
-      mockRandom.mockReturnValueOnce(0.4)    // → 3
-      const result = rollCascadeDice('d6')
-      expect(result).toEqual([6, 3])
+      // First cascade roll: max (8), second cascade roll: 4
+      mockRandom.mockReturnValueOnce(0.9999) // → 8
+      mockRandom.mockReturnValueOnce(0.4)    // → 4
+      const result = rollCascadeDice('d8')
+      expect(result).toEqual([8, 4])
       vi.restoreAllMocks()
     })
 
     it('should cascade multiple times', () => {
       const mockRandom = vi.spyOn(Math, 'random')
       // Three max rolls then a non-max
-      mockRandom.mockReturnValueOnce(0.9999) // → 6
-      mockRandom.mockReturnValueOnce(0.9999) // → 6
-      mockRandom.mockReturnValueOnce(0.9999) // → 6
-      mockRandom.mockReturnValueOnce(0.3)    // → 2
-      const result = rollCascadeDice('d6')
-      expect(result).toEqual([6, 6, 6, 2])
+      mockRandom.mockReturnValueOnce(0.9999) // → 8
+      mockRandom.mockReturnValueOnce(0.9999) // → 8
+      mockRandom.mockReturnValueOnce(0.9999) // → 8
+      mockRandom.mockReturnValueOnce(0.3)    // → 3
+      const result = rollCascadeDice('d8')
+      expect(result).toEqual([8, 8, 8, 3])
       vi.restoreAllMocks()
     })
 
     it('should respect max cascade limit', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0.9999) // always max
-      const result = rollCascadeDice('d6', 5)
+      const result = rollCascadeDice('d8', 5)
       expect(result).toHaveLength(5)
       vi.restoreAllMocks()
     })
@@ -93,7 +93,7 @@ describe('Dice Roller', () => {
     it('should return DiceRoll with correct structure', () => {
       const dice: Dice = {
         id: 'test-dice',
-        type: 'd6',
+        type: 'd8',
         genre: 'Ballad',
       }
 
@@ -105,28 +105,28 @@ describe('Dice Roller', () => {
       expect(result).toHaveProperty('critBonus')
       expect(result).toHaveProperty('cascadeRolls')
       expect(result.value).toBeGreaterThanOrEqual(1)
-      expect(result.value).toBeLessThanOrEqual(6)
+      expect(result.value).toBeLessThanOrEqual(8)
     })
 
     it('should cascade on max roll (crit) — roll additional die and add its value', () => {
       const dice: Dice = {
         id: 'test-dice',
-        type: 'd6',
+        type: 'd8',
         genre: 'Ballad',
       }
 
       const mockRandom = vi.spyOn(Math, 'random')
-      // Initial roll: 6 (max, crit)
+      // Initial roll: 8 (max, crit)
       mockRandom.mockReturnValueOnce(0.9999)
-      // Cascade roll: 3
+      // Cascade roll: 4
       mockRandom.mockReturnValueOnce(0.4)
 
       const result = rollDiceWithCrit(dice)
 
-      expect(result.value).toBe(6)
+      expect(result.value).toBe(8)
       expect(result.isCrit).toBe(true)
-      expect(result.cascadeRolls).toEqual([3])
-      expect(result.critBonus).toBe(3)
+      expect(result.cascadeRolls).toEqual([4])
+      expect(result.critBonus).toBe(4)
 
       vi.restoreAllMocks()
     })
@@ -134,24 +134,24 @@ describe('Dice Roller', () => {
     it('should cascade multiple times when cascade rolls also hit max', () => {
       const dice: Dice = {
         id: 'test-dice',
-        type: 'd6',
+        type: 'd8',
         genre: 'Ballad',
       }
 
       const mockRandom = vi.spyOn(Math, 'random')
-      // Initial roll: 6 (max)
+      // Initial roll: 8 (max)
       mockRandom.mockReturnValueOnce(0.9999)
-      // Cascade 1: 6 (max again!)
+      // Cascade 1: 8 (max again!)
       mockRandom.mockReturnValueOnce(0.9999)
-      // Cascade 2: 4 (stops)
+      // Cascade 2: 5 (stops)
       mockRandom.mockReturnValueOnce(0.5)
 
       const result = rollDiceWithCrit(dice)
 
-      expect(result.value).toBe(6)
+      expect(result.value).toBe(8)
       expect(result.isCrit).toBe(true)
-      expect(result.cascadeRolls).toEqual([6, 4])
-      expect(result.critBonus).toBe(10) // 6 + 4
+      expect(result.cascadeRolls).toEqual([8, 5])
+      expect(result.critBonus).toBe(13) // 8 + 5
 
       vi.restoreAllMocks()
     })
@@ -159,7 +159,7 @@ describe('Dice Roller', () => {
     it('should not cascade on non-max roll', () => {
       const dice: Dice = {
         id: 'test-dice',
-        type: 'd6',
+        type: 'd8',
         genre: 'Ballad',
       }
 
@@ -168,7 +168,7 @@ describe('Dice Roller', () => {
 
       const result = rollDiceWithCrit(dice)
 
-      expect(result.value).toBe(4) // Math.floor(0.5 * 6) + 1
+      expect(result.value).toBe(5) // Math.floor(0.5 * 8) + 1
       expect(result.isCrit).toBe(false)
       expect(result.critBonus).toBe(0)
       expect(result.cascadeRolls).toEqual([])
@@ -179,9 +179,9 @@ describe('Dice Roller', () => {
 
   describe('flipDiceValue', () => {
     it('should flip dice values correctly', () => {
-      expect(flipDiceValue(1, 'd6')).toBe(6)
-      expect(flipDiceValue(6, 'd6')).toBe(1)
-      expect(flipDiceValue(3, 'd6')).toBe(4)
+      expect(flipDiceValue(1, 'd8')).toBe(8)
+      expect(flipDiceValue(8, 'd8')).toBe(1)
+      expect(flipDiceValue(3, 'd8')).toBe(6)
       expect(flipDiceValue(3, 'd20')).toBe(18)
       expect(flipDiceValue(20, 'd20')).toBe(1)
     })

@@ -10,8 +10,8 @@ export default {
           "label": "D4"
         },
         {
-          "value": "d6",
-          "label": "D6"
+          "value": "d8",
+          "label": "D8"
         },
         {
           "value": "d12",

@@ -1,5 +1,7 @@
 import { BoardSpace, Genre, Rng } from '../../types/index.js'
 import { getTunables } from '../../data/tunables.js'
+import { ALL_GENRES } from '../../data/genreTheme.js'
+import { shuffle } from '../../data/elementBag.js'
 
 // Board is a 4x4 grid. Spaces are indexed row-major:
 //
@@ -78,7 +80,7 @@ export function maxGenreTags(): number {
  * Add a random genre tag to each space, up to maxGenreTags().
  */
 export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random): BoardSpace[] {
-  const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
+  const genres: Genre[] = [...ALL_GENRES]
 
   return spaces.map((space) => ({
     ...space,
@@ -87,6 +89,36 @@ export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random
         ? space.genreTags
         : [...space.genreTags, genres[Math.floor(rng() * genres.length)]],
   }))
+}
+
+/**
+ * Deal the opening board's monster chips: an exactly balanced pool — the same
+ * number of chips per element — shuffled and dealt out, so every element is
+ * equally represented but nobody can predict where it lands.
+ *
+ * When the total isn't divisible by the element count (only possible if the
+ * board size changes), the leftover chips go to a random subset of elements so
+ * no element is ever more than one chip ahead.
+ */
+export function dealBalancedGenreTags(
+  spaceCount: number,
+  tagsPerSpace: number,
+  rng: Rng = Math.random
+): Genre[][] {
+  const total = spaceCount * tagsPerSpace
+  const perGenre = Math.floor(total / ALL_GENRES.length)
+
+  const pool: Genre[] = []
+  for (const genre of ALL_GENRES) {
+    for (let i = 0; i < perGenre; i++) pool.push(genre)
+  }
+  const remainder = total - pool.length
+  if (remainder > 0) pool.push(...shuffle([...ALL_GENRES], rng).slice(0, remainder))
+
+  const shuffled = shuffle(pool, rng)
+  return Array.from({ length: spaceCount }, (_, i) =>
+    shuffled.slice(i * tagsPerSpace, (i + 1) * tagsPerSpace)
+  )
 }
 
 /**
