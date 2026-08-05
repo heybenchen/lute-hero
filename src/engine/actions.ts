@@ -82,7 +82,6 @@ export type GameAction =
   | { type: 'RESET_GAME' }
   | { type: 'HOST_SKIP_TURN'; targetPlayerId: string }
   // Round-end reinforcements: each bard places their dealt chips on the board
-  | { type: 'PLACE_REDISTRIBUTION_CHIP'; spaceId: number }
   // Playtest debug mode (host-only): tweak values, or restore a saved preset
   | { type: 'DEBUG_PATCH'; patch: DebugPatch }
   | { type: 'DEBUG_LOAD_STATE'; engineState: EngineState }

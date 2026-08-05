@@ -1,7 +1,7 @@
 import { EngineState } from './state.js'
 import { GameAction, ActorSeat } from './actions.js'
 import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
-import { areSpacesConnected, canAddGenreTag } from '../game-logic/board/graphBuilder.js'
+import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
 import { newD4Cost, getUpgradeCost, getInspirationCost, inspirationSpend } from '../data/draftCards.js'
 import { getTunables } from '../data/tunables.js'
 
@@ -10,11 +10,6 @@ export function maxMovesPerTurn(): number {
 }
 export function maxFightsPerTurn(): number {
   return getTunables().maxFightsPerTurn
-}
-
-/** Chips of EACH element every bard is dealt at round end. */
-export function roundEndChipsPerElement(): number {
-  return getTunables().roundEndChipsPerElement
 }
 
 export type ValidationResult =
@@ -61,14 +56,6 @@ export function validateAction(
     return ok
   }
 
-  // Normal turn actions are blocked while round-end reinforcements are running.
-  const currentPlacerId = (): string | null => {
-    if (!state.redistribution.active || state.players.length === 0) return null
-    return state.players[state.redistribution.placerIdx]?.id ?? null
-  }
-  const blockedByRedistribution = (): ValidationResult =>
-    state.redistribution.active ? illegal('Round-end reinforcements in progress') : ok
-
   switch (action.type) {
     case 'START_GAME': {
       if (!isHost) return forbidden('Only the host can start the game')
@@ -82,8 +69,6 @@ export function validateAction(
     case 'MOVE': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
-      const notRedist = blockedByRedistribution()
-      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Movement only during the main phase')
       if (state.combat.isActive) return illegal('Cannot move during combat')
       if (state.studio.playerId) return illegal('Close the Studio before moving')
@@ -104,8 +89,6 @@ export function validateAction(
     case 'START_COMBAT': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
-      const notRedist = blockedByRedistribution()
-      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Combat only during the main phase')
       if (state.combat.isActive) return illegal('Combat already active')
       if (state.studio.playerId) return illegal('Close the Studio before combat')
@@ -185,8 +168,6 @@ export function validateAction(
     case 'END_TURN': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
-      const notRedist = blockedByRedistribution()
-      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Turns only advance during the main phase')
       if (state.combat.isActive) return illegal('Finish combat before ending the turn')
       if (state.studio.playerId) return illegal('Close the Studio before ending the turn')
@@ -196,8 +177,6 @@ export function validateAction(
     case 'OPEN_STUDIO': {
       const gate = requireCurrentTurn()
       if (gate.ok === false) return gate
-      const notRedist = blockedByRedistribution()
-      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Studio only opens during the main phase')
       if (state.combat.isActive) return illegal('Finish combat before opening the Studio')
       if (action.playerId !== currentPlayerId(state)) return illegal('Not this player\'s turn')
@@ -369,30 +348,9 @@ export function validateAction(
 
     case 'HOST_SKIP_TURN': {
       if (!isHost) return forbidden('Only the host can skip a turn')
-      const notRedist = blockedByRedistribution()
-      if (!notRedist.ok) return notRedist
       if (state.phase !== 'main') return illegal('Turns only advance during the main phase')
       if (action.targetPlayerId !== currentPlayerId(state)) {
         return illegal('Can only skip the current player')
-      }
-      return ok
-    }
-
-    case 'PLACE_REDISTRIBUTION_CHIP': {
-      const placerId = currentPlacerId()
-      if (!placerId) return illegal('Not placing chips right now')
-      if (isSeat && seatPlayerId !== placerId) return forbidden('Not your chips to place')
-      if (state.redistribution.chipsToPlace.length === 0) return illegal('No chips left to place')
-      const space = state.spaces.find((s) => s.id === action.spaceId)
-      if (!space) return illegal('Unknown space')
-      // A bard spreads their own hand out — one chip per tile
-      if (state.redistribution.placedSpaceIds.includes(action.spaceId)) {
-        return illegal('You already placed a chip on that tile')
-      }
-      // Only same-element chips are capped — a tile's total is unlimited.
-      const chip = state.redistribution.chipsToPlace[0]
-      if (!canAddGenreTag(space.genreTags, chip)) {
-        return illegal(`That tile already has the most ${chip} chips it can hold`)
       }
       return ok
     }

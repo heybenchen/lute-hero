@@ -7,11 +7,11 @@ import {
   Rng,
   NewId,
 } from '../types/index.js'
-import { EngineState, EngineCombatState, RedistributionState, createInitialEngineState, createInitialCombatState, createInitialStudioState, createInitialRedistributionState, normalizeEngineState } from './state.js'
+import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState, normalizeEngineState } from './state.js'
 import { GameAction, ActorSeat, PlayerConfig, DebugPatch, DebugDiceEdit } from './actions.js'
 import { EngineEvent } from './events.js'
-import { validateAction, roundEndChipsPerElement } from './validate.js'
-import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, addGenreTag, capGenreTags } from '../game-logic/board/graphBuilder.js'
+import { validateAction } from './validate.js'
+import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, dealRoundEndChips, roundEndChipsPerElement, addGenreTag, capGenreTags } from '../game-logic/board/graphBuilder.js'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
 import { rollSong, calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
 import {
@@ -35,7 +35,7 @@ import { DICE_UPGRADE_PATH } from '../data/startingData.js'
 import { getTunables, withTunables, normalizeTunables } from '../data/tunables.js'
 import { ALL_GENRES } from '../data/genreTheme.js'
 
-export { roundEndChipsPerElement } from './validate.js'
+export { roundEndChipsPerElement } from '../game-logic/board/graphBuilder.js'
 
 export const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
 export const STARTING_POSITIONS = [0, 3, 12, 15] // 4x4 grid corners
@@ -329,8 +329,6 @@ function reduce(
       return endTurn(working, rng, newId)
     }
 
-    case 'PLACE_REDISTRIBUTION_CHIP':
-      return placeRedistributionChip(state, action.spaceId, rng, newId)
 
     case 'DEBUG_PATCH':
       return applyDebugPatch(state, action.patch, rng, newId)
@@ -804,24 +802,13 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
 
   // Round over: everyone's per-turn counters reset.
   players = players.map((p) => ({ ...p, movesThisTurn: 0, fightsThisTurn: 0, hasShoppedThisTurn: false }))
-  const working = { ...state, players }
-
-  // If this round-end flips straight to the Final Showdown, skip redistribution
-  // (the board is about to become irrelevant) and finish the round now.
-  const flippingToBoss = !!state.pendingPhase && state.finalTurnGranted
-  if (flippingToBoss || state.players.length === 0) {
-    return finishRound(working, rng, newId)
-  }
-
-  // Otherwise deal round-end reinforcements: the first bard places their hand,
-  // then the next, and so on. finishRound runs once the last chip is down.
-  return { ...working, redistribution: beginRedistribution(0) }
+  return finishRound({ ...state, players }, rng, newId)
 }
 
 /**
  * Round-over bookkeeping: latch the phase transition, grow the round counter,
- * respawn every space's monsters from its (redistributed) tags, refill the shop,
- * and — when entering the Final Showdown — start it. Clears redistribution.
+ * scatter the round's reinforcement chips, respawn every space's monsters from
+ * its tags, refill the shop, and — when entering the Final Showdown — start it.
  */
 function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
   let { phase, pendingPhase, finalTurnGranted, currentRound } = state
@@ -840,9 +827,17 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
   }
   currentRound = currentRound + 1
 
+  // Reinforcements: scatter this round's chips at random before respawning. The
+  // round that flips to the Final Showdown skips them — the board is about to
+  // stop mattering, so growing it would only be noise.
+  const reinforced =
+    phase === 'finalBoss'
+      ? state.spaces
+      : dealRoundEndChips(state.spaces, roundEndChipsPerElement(), rng)
+
   // Re-derive every space's monsters from its current tags so the roster on a
   // space a player is already standing on matches the board.
-  const spaces = state.spaces.map((s) => ({
+  const spaces = reinforced.map((s) => ({
     ...s,
     monsters: spawnMonstersFromTags(s.genreTags, s.id, currentRound, rng, newId),
   }))
@@ -893,50 +888,8 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
     elementDiscard,
     elementOffers,
     studio: createInitialStudioState(),
-    redistribution: createInitialRedistributionState(),
     ...showdownFields,
   }
-}
-
-// ============================================================
-// Round-end reinforcements
-// ============================================================
-
-/**
- * The chips one bard is dealt at round end: `roundEndChipsPerElement` of every
- * element, so each bard always reinforces the board with a balanced hand.
- */
-export function roundEndChipHand(): Genre[] {
-  const per = roundEndChipsPerElement()
-  return ALL_GENRES.flatMap((genre) => Array<Genre>(per).fill(genre))
-}
-
-function beginRedistribution(placerIdx: number): RedistributionState {
-  return { active: true, placerIdx, chipsToPlace: roundEndChipHand(), placedSpaceIds: [] }
-}
-
-function placeRedistributionChip(state: EngineState, spaceId: number, rng: Rng, newId: NewId): EngineState {
-  const r = state.redistribution
-  const [chip, ...rest] = r.chipsToPlace
-  const spaces = state.spaces.map((s) =>
-    s.id === spaceId ? { ...s, genreTags: [...s.genreTags, chip] } : s
-  )
-
-  // More chips in this bard's hand
-  if (rest.length > 0) {
-    return {
-      ...state,
-      spaces,
-      redistribution: { ...r, chipsToPlace: rest, placedSpaceIds: [...r.placedSpaceIds, spaceId] },
-    }
-  }
-
-  // Hand finished. Pass to the next bard, or start the new round.
-  const next = { ...state, spaces }
-  if (r.placerIdx < state.players.length - 1) {
-    return { ...next, redistribution: beginRedistribution(r.placerIdx + 1) }
-  }
-  return finishRound(next, rng, newId)
 }
 
 // ============================================================

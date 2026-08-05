@@ -23,7 +23,7 @@ export interface Tunables {
   // --- Turn structure ---
   maxMovesPerTurn: number
   maxFightsPerTurn: number
-  /** Chips of EACH element every bard is dealt to place at round end. */
+  /** Chips of EACH element scattered randomly over the board at round end. */
   roundEndChipsPerElement: number
 
   // --- Board ---
@@ -76,7 +76,7 @@ export const DEFAULT_TUNABLES: Tunables = {
 
   maxMovesPerTurn: 2,
   maxFightsPerTurn: 1,
-  roundEndChipsPerElement: 1,
+  roundEndChipsPerElement: 4,
 
   maxTagsPerGenre: 5,
   startingTagsPerSpace: 1,
@@ -139,7 +139,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
 
   { key: 'maxMovesPerTurn', label: 'Moves per turn', group: 'Turn structure', min: 0, max: 16, step: 1 },
   { key: 'maxFightsPerTurn', label: 'Fights per turn', group: 'Turn structure', min: 0, max: 10, step: 1 },
-  { key: 'roundEndChipsPerElement', label: 'Round-end chips per element', group: 'Turn structure', min: 0, max: 5, step: 1, help: 'At round end every bard is dealt this many chips of each element to place.' },
+  { key: 'roundEndChipsPerElement', label: 'Round-end chips per element', group: 'Turn structure', min: 0, max: 8, step: 1, help: 'At round end this many chips of each element are scattered randomly over the board, spread as evenly across spaces as the count allows.' },
 
   { key: 'maxTagsPerGenre', label: 'Max chips per element, per space', group: 'Board', min: 1, max: 20, step: 1, help: 'A space holds any number of chips; only same-element chips are capped.' },
   { key: 'startingTagsPerSpace', label: 'Starting chips per space', group: 'Board', min: 0, max: 10, step: 1, help: 'Applied when a new game starts.' },

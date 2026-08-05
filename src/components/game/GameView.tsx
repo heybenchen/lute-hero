@@ -1,7 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
-import { RoundEndModal } from './RoundEnd'
 import { DraftShop } from './DraftShop'
 import { PlayerPanel } from './PlayerPanel'
 import { useGameStore, selectCanAct, selectIsHost, clearSavedGame } from '@/store'
@@ -23,7 +22,6 @@ export function GameView() {
   const studioPlayerId = useGameStore((state) => state.studio.playerId)
   const debugOpen = useGameStore((state) => state.debugOpen)
   const combatActive = useGameStore((state) => state.isActive)
-  const redistributionActive = useGameStore((state) => state.redistribution.active)
   const canAct = useGameStore(selectCanAct)
   const [showMenu, setShowMenu] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
@@ -37,9 +35,9 @@ export function GameView() {
 
   /**
    * Escape opens the Menu — but first it dismisses whatever is stacked above
-   * it, topmost surface down. Combat and the round-end handoff are deliberately
-   * inescapable: they must be played out, and the Menu shares their z-index
-   * (rendered earlier), so it would open underneath them anyway.
+   * it, topmost surface down. Combat is deliberately inescapable: it must be
+   * played out, and the Menu shares its z-index (rendered earlier), so it would
+   * open underneath it anyway.
    */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -54,13 +52,13 @@ export function GameView() {
         if (canAct) dispatch({ type: 'CLOSE_STUDIO' })
         return
       }
-      if (combatActive || redistributionActive) return
+      if (combatActive) return
 
       setShowMenu(true)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [debugOpen, showHowTo, showMenu, studioPlayerId, canAct, combatActive, redistributionActive, dispatch])
+  }, [debugOpen, showHowTo, showMenu, studioPlayerId, canAct, combatActive, dispatch])
 
   const handleNewGame = () => {
     setShowMenu(false)
@@ -228,8 +226,6 @@ export function GameView() {
       {/* Combat modal overlay */}
       <CombatModal />
 
-      {/* Round-end chip redistribution overlay */}
-      <RoundEndModal />
 
       {/* Shared Studio surface: spectators watch the active player's choices live. */}
       {studioPlayerId && (
@@ -304,8 +300,8 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           <Section title="🔁 Round End">
             <List items={[
               <>After every bard has taken a turn, the round ends with <Hl>reinforcements</Hl>.</>,
-              <>Each bard is dealt <Hl>one chip of every element</Hl> — Ballad, Folk, Hymn and Shanty.</>,
-              <>Place them anywhere you like — <Hl>one per tile</Hl> — spawning new threats for next round.</>,
+              <>Fresh chips scatter across the map at random — <Hl>four of every element</Hl>, one on each tile.</>,
+              <>Nobody picks where they land, so next round's threats are a surprise to everyone.</>,
             ]} />
           </Section>
 

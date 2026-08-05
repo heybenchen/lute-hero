@@ -53,22 +53,6 @@ export interface EngineCombatState {
 }
 
 /**
- * Round-end reinforcements: after everyone has taken a turn, each bard is
- * dealt one monster chip of every element and places them on the board
- * wherever they like — one chip per tile — before the next round begins.
- * Kept in the synced engine state so the placer and spectators both see it.
- */
-export interface RedistributionState {
-  active: boolean
-  /** Index (into players) of the bard currently placing their chips. */
-  placerIdx: number
-  /** Chips this bard has left to place, one at a time. */
-  chipsToPlace: Genre[]
-  /** Tiles this bard already used — no two of their chips share a tile. */
-  placedSpaceIds: number[]
-}
-
-/**
  * Live Studio interaction state. Keeping this in the engine makes the shop a
  * shared tabletop surface: every client sees it open, follows selections, and
  * watches rewards get placed while only the active player can interact.
@@ -107,8 +91,6 @@ export interface EngineState {
   // Combat (synced, unlike the old client-only slice)
   combat: EngineCombatState
 
-  // Round-end chip redistribution (inactive most of the time)
-  redistribution: RedistributionState
 
   /**
    * Balance numbers the engine reads. Part of the state so playtest tweaks
@@ -171,15 +153,6 @@ export function createInitialCombatState(): EngineCombatState {
   }
 }
 
-export function createInitialRedistributionState(): RedistributionState {
-  return {
-    active: false,
-    placerIdx: 0,
-    chipsToPlace: [],
-    placedSpaceIds: [],
-  }
-}
-
 export function createInitialStudioState(): EngineStudioState {
   return {
     playerId: null,
@@ -232,7 +205,6 @@ export function normalizeEngineState(state: EngineState): EngineState {
     pendingRewards: migrateRewardDice(state.pendingRewards ?? {}),
     combat: { ...createInitialCombatState(), ...state.combat },
     studio: { ...createInitialStudioState(), ...state.studio },
-    redistribution: { ...createInitialRedistributionState(), ...state.redistribution },
     // Fills in defaults and clamps every value, so a stale save or a
     // hand-edited preset can never leave the engine with a broken number.
     tunables: normalizeTunables(state.tunables),
@@ -257,7 +229,6 @@ export function createInitialEngineState(): EngineState {
     studio: createInitialStudioState(),
 
     combat: createInitialCombatState(),
-    redistribution: createInitialRedistributionState(),
     tunables: DEFAULT_TUNABLES,
 
     showdownActive: false,

@@ -146,6 +146,51 @@ export function dealBalancedGenreTags(
   )
 }
 
+/** Chips of EACH element scattered over the board at round end. */
+export function roundEndChipsPerElement(): number {
+  return getTunables().roundEndChipsPerElement
+}
+
+/**
+ * Round-end reinforcements: scatter `chipsPerElement` monster chips of every
+ * element across the board at random, spread as evenly as the count allows —
+ * with the default 4 per element on the 16-space board that is exactly one new
+ * chip on every space, but nobody can predict which element lands where.
+ *
+ * Chips are dealt round-robin over a shuffled space order, so no space takes a
+ * second chip until every other space has taken one. A chip whose element is
+ * already at the per-element cap on its space is dropped rather than moved —
+ * the board is simply full of that element there.
+ */
+export function dealRoundEndChips(
+  spaces: BoardSpace[],
+  chipsPerElement: number,
+  rng: Rng = Math.random
+): BoardSpace[] {
+  if (spaces.length === 0 || chipsPerElement <= 0) return spaces
+
+  const pool = shuffle(
+    ALL_GENRES.flatMap((genre) => Array<Genre>(chipsPerElement).fill(genre)),
+    rng
+  )
+  const order = shuffle(
+    spaces.map((s) => s.id),
+    rng
+  )
+
+  const added = new Map<number, Genre[]>()
+  pool.forEach((genre, i) => {
+    const spaceId = order[i % order.length]
+    added.set(spaceId, [...(added.get(spaceId) ?? []), genre])
+  })
+
+  return spaces.map((space) => {
+    const chips = added.get(space.id)
+    if (!chips) return space
+    return { ...space, genreTags: chips.reduce(addGenreTag, space.genreTags) }
+  })
+}
+
 /**
  * Add a random genre tag to all neighboring spaces of a given space.
  * Called after each player's turn ends.
