@@ -105,6 +105,43 @@ export function capGenreTags(tags: Genre[]): Genre[] {
 }
 
 /**
+ * Scatter a pile of chips across the board at random, one chip per space per
+ * pass: the space ids are shuffled and dealt from in order, and only once every
+ * space has taken a chip does a fresh pass start and spaces begin doubling up.
+ * A space whose element is already at the cap is skipped for that chip.
+ *
+ * Used for round-end reinforcements, so the board grows evenly rather than
+ * piling everything onto one tile.
+ */
+export function scatterChipsRandomly(
+  spaces: BoardSpace[],
+  chips: Genre[],
+  rng: Rng = Math.random
+): BoardSpace[] {
+  if (chips.length === 0) return spaces
+
+  const tagsById = new Map(spaces.map((s) => [s.id, [...s.genreTags]]))
+  const hasRoom = (id: number, genre: Genre) => canAddGenreTag(tagsById.get(id) ?? [], genre)
+  const freshPass = () => shuffle(spaces.map((s) => s.id), rng)
+
+  let pass: number[] = []
+  for (const chip of chips) {
+    if (pass.length === 0) pass = freshPass()
+    let index = pass.findIndex((id) => hasRoom(id, chip))
+    if (index === -1) {
+      // Nothing left in this pass can take the chip — start a new one.
+      pass = freshPass()
+      index = pass.findIndex((id) => hasRoom(id, chip))
+      if (index === -1) continue // that element is capped board-wide
+    }
+    const [spaceId] = pass.splice(index, 1)
+    tagsById.get(spaceId)!.push(chip)
+  }
+
+  return spaces.map((s) => ({ ...s, genreTags: tagsById.get(s.id)! }))
+}
+
+/**
  * Add a random genre tag to each space, respecting the per-element cap.
  */
 export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random): BoardSpace[] {

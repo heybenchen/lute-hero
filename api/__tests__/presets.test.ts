@@ -139,14 +139,14 @@ describe('preset endpoints', () => {
   })
 
   it('normalizes a stored state so an incomplete preset still restores', async () => {
-    const partial = { ...sampleState(), tunables: undefined, redistribution: undefined } as unknown as EngineState
+    const partial = { ...sampleState(), tunables: undefined, studio: undefined } as unknown as EngineState
     const saved = (await save({ name: 'Partial', engineState: partial })).json() as SavePresetResponse
     const { preset } = (
       await call(makeReq('GET', `/api/debug/presets?id=${saved.preset.id}`, { token: TOKEN }))
     ).json() as GetPresetResponse
 
     expect(preset.engineState.tunables).toEqual(DEFAULT_TUNABLES)
-    expect(preset.engineState.redistribution.active).toBe(false)
+    expect(preset.engineState.studio.playerId).toBeNull()
   })
 
   it('deletes a preset and drops it from the index', async () => {
