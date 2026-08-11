@@ -246,6 +246,28 @@ describe('combat flow', () => {
     }
   })
 
+  it('awards bonus EXP for clearing every monster on a space', () => {
+    let state = stateWithMonsterAtPlayer()
+    state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    state = {
+      ...state,
+      combat: { ...state.combat, monsters: state.combat.monsters.map((m) => ({ ...m, currentHP: 0 })) },
+    }
+    const expBefore = state.players[0].exp
+    const rewards = computeCombatRewards(state.combat)
+    state = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' }).state
+    expect(state.players[0].exp).toBe(expBefore + rewards.totalExp + state.tunables.spaceClearExpBonus)
+  })
+
+  it('awards no space-clear EXP bonus when a monster survives', () => {
+    let state = stateWithMonsterAtPlayer()
+    state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    const expBefore = state.players[0].exp
+    const rewards = computeCombatRewards(state.combat)
+    state = apply(state, { type: 'END_COMBAT' }).state
+    expect(state.players[0].exp).toBe(expBefore + rewards.totalExp)
+  })
+
   it('requires an element choice on victory', () => {
     let state = stateWithMonsterAtPlayer()
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state

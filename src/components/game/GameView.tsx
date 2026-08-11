@@ -291,7 +291,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
               <>Pick <Hl>one monster</Hl> to target, then a song — songs hit a <Hl>single</Hl> target, not all.</>,
               <>Defeat the target and you get that song's <Hl>dice back</Hl> to play it again; only wounding it <Hl>spends</Hl> the song for the fight.</>,
               <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for bonus damage.</>,
-              <>Clear <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> and radiate an element.</>,
+              <>Clear <Hl>every</Hl> monster on a space to earn <Hl>bonus EXP</Hl> and radiate an element.</>,
               <>Spend <Hl>Inspiration</Hl> to reroll the song you just performed.</>,
             ]} />
           </Section>

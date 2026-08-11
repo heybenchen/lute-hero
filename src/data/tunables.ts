@@ -19,6 +19,8 @@ export interface Tunables {
   monsterFameByLevel: number[]
   /** EXP a monster is worth per level (Lv N = N × this). */
   monsterExpPerLevel: number
+  /** Bonus EXP for clearing every monster on a space. */
+  spaceClearExpBonus: number
 
   // --- Turn structure ---
   maxMovesPerTurn: number
@@ -73,6 +75,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   fameFinalBossThreshold: 150,
   monsterFameByLevel: [5, 10, 25, 50, 75],
   monsterExpPerLevel: 1,
+  spaceClearExpBonus: 1,
 
   maxMovesPerTurn: 2,
   maxFightsPerTurn: 1,
@@ -136,6 +139,7 @@ type ScalarKey = Exclude<keyof Tunables, 'monsterFameByLevel' | 'hpMultipliers'>
 const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: number; max: number; step: number; help?: string }[] = [
   { key: 'fameFinalBossThreshold', label: 'Final Showdown fame gate', group: 'Progression', min: 1, max: 1000, step: 5, help: 'Any single player reaching this grants one final turn, then the boss.' },
   { key: 'monsterExpPerLevel', label: 'EXP per monster level', group: 'Progression', min: 0, max: 20, step: 1 },
+  { key: 'spaceClearExpBonus', label: 'Space-clear EXP bonus', group: 'Progression', min: 0, max: 20, step: 1, help: 'Extra EXP for clearing every monster on a space.' },
 
   { key: 'maxMovesPerTurn', label: 'Moves per turn', group: 'Turn structure', min: 0, max: 16, step: 1 },
   { key: 'maxFightsPerTurn', label: 'Fights per turn', group: 'Turn structure', min: 0, max: 10, step: 1 },

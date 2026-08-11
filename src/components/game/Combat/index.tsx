@@ -26,6 +26,7 @@ export function CombatModal() {
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
+  const spaceClearExpBonus = useGameStore((state) => state.tunables.spaceClearExpBonus)
 
   // The chosen single-target monster for the next song
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
@@ -125,7 +126,9 @@ export function CombatModal() {
 
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
-  const totalExp = calculateTotalMonsterExp(monsters)
+  const monsterExp = calculateTotalMonsterExp(monsters)
+  const clearBonusExp = allMonstersDefeated ? spaceClearExpBonus : 0
+  const totalExp = monsterExp + clearBonusExp
   const isCombatOver = allMonstersDefeated || !canContinue
 
   const showDamageEvents = (events: { type: string }[]) => {
@@ -335,6 +338,7 @@ export function CombatModal() {
                     </div>
                     <div className="text-xs text-parchment-500 mt-0.5">
                       {monsters.map((m, i) => <span key={m.id}>{i > 0 && ' + '}{calculateTotalMonsterExp([m])} <span className="text-parchment-600">(Lv.{m.level})</span></span>)}
+                      {clearBonusExp > 0 && <span> + {clearBonusExp} <span className="text-parchment-600">(space cleared)</span></span>}
                     </div>
                   </div>
                 </div>
