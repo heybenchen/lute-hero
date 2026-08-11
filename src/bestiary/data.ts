@@ -1,0 +1,177 @@
+/**
+ * Shared bestiary data: the monster roster, elemental effect templates, and
+ * the level builder. Imported by both the React UI (src/bestiary/Bestiary.tsx)
+ * and the serverless API (api/monsters/*), so it uses only plain data and
+ * relative imports.
+ */
+
+export type BestiaryType = 'fire' | 'sea' | 'sky' | 'forest'
+
+export const BESTIARY_TYPES: BestiaryType[] = ['fire', 'sea', 'sky', 'forest']
+
+export interface MonsterLevel {
+  level: number
+  hp: number
+  effect: string
+}
+
+export interface Monster {
+  id: string
+  name: string
+  type: BestiaryType
+  baseHp: number
+  tagline: string
+  imageUrl: string
+  hidden: boolean
+  levels: MonsterLevel[]
+}
+
+export const TYPE_EFFECTS: Record<BestiaryType, string[]> = {
+  fire: [
+    'Ignite — target takes 1d4 fire at the start of its turn.',
+    'Melee attacks set flammable objects and clothing alight.',
+    'Heat Aura — 5 ft, creatures take 1d6 fire on entry.',
+    'Flare — blinds one creature until the end of its next turn.',
+    'Eruption — 15 ft burst, 4d6 fire, recharge 5–6.',
+  ],
+  sea: [
+    'Slick — ground within 5 ft becomes difficult terrain.',
+    'Undertow — pull the target 10 ft toward it on a hit.',
+    'Drench — extinguishes flames; fire attacks vs. it have disadvantage.',
+    'Riptide — restrains one creature (DC 13 Athletics to break free).',
+    'Tsunami — 20 ft line, 4d6 bludgeoning and prone, recharge 5–6.',
+  ],
+  sky: [
+    'Gust — push one creature 5 ft on a hit.',
+    'Hover — provokes no opportunity attacks when it moves.',
+    'Static — melee hits deal an extra 1d6 lightning.',
+    'Crosswind — ranged attacks near it are made with disadvantage.',
+    'Downdraft — 15 ft burst, 3d6 thunder and prone, recharge 5–6.',
+  ],
+  forest: [
+    "Entangle — the target's speed is halved until its next turn.",
+    'Thorns — attackers take 1d4 piercing on a melee hit.',
+    'Regrowth — heals 5 HP at the start of its turn.',
+    'Spore Cloud — DC 12 Con save or poisoned until end of next turn.',
+    'Overgrowth — restrains all in 10 ft (DC 13), recharge 5–6.',
+  ],
+}
+
+/** HP grows ~40% per level off the base value. */
+export const hpAtLevel = (base: number, lvl: number): number =>
+  Math.round(base * (1 + 0.4 * (lvl - 1)))
+
+export function buildLevels(base: number, type: BestiaryType): MonsterLevel[] {
+  const eff = TYPE_EFFECTS[type] || TYPE_EFFECTS.fire
+  return [1, 2, 3, 4, 5].map((lvl) => ({
+    level: lvl,
+    hp: hpAtLevel(base, lvl),
+    effect: eff[lvl - 1] || '',
+  }))
+}
+
+export const slug = (s: string): string =>
+  String(s)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+
+type RosterEntry = [name: string, type: BestiaryType, baseHp: number, tagline: string]
+
+const ROSTER: RosterEntry[] = [
+  ['Spice Ghouls', 'forest', 45, 'Ghoul power!'],
+  ['ABBAration', 'sky', 60, 'The winner takes your soul.'],
+  ['Terror Swift', 'fire', 55, 'Are you ready for it? No. No, you are not.'],
+  ['Tidal Swift', 'sea', 55, 'I knew you were trouble when you swam into my lair.'],
+  ['Talon Swift', 'sky', 55, 'The haters gonna hate, the slain gonna slay.'],
+  ['My Lil Cypress', 'forest', 30, 'Insane in the tree brain.'],
+  ["Joustin' Beebear", 'forest', 75, 'Bee-lieber or be stung.'],
+  ['Britney Spells', 'forest', 50, "It's Britney, witch."],
+  ['Orc Lorde', 'forest', 65, 'This is my kingdom, chum.'],
+  ['Pyrihanna', 'fire', 60, 'Shine bright like a fire elemental.'],
+  ['Justin Timberwolf', 'forest', 55, 'What goes around gets eaten.'],
+  ['Cyclone Dion', 'sky', 60, 'My heart will blow on.'],
+  ['Looney Armstrong', 'sky', 40, 'What a wonderful hoard.'],
+  ['Duke of Ellington', 'sky', 55, "It don't mean a thing if it ain't got that sting."],
+  ['Violent Davis', 'sky', 50, 'So what? So run.'],
+  ['Hype Beast', 'fire', 45, "It only attacks what's trending."],
+  ['Nicki Mirage', 'sky', 55, "You see me? You don't."],
+  ['Black Eyed Imps', 'fire', 40, 'Boom boom pow.'],
+  ['Snoop Dragon', 'fire', 65, 'Smoke breath every day.'],
+  ['Twiggy Azalea', 'forest', 45, 'So fancy, so thorny.'],
+  ['Imaginary Dragons', 'fire', 60, "Believer? You'd better be."],
+  ['Sex Pistoliers', 'fire', 50, 'Anarchy in the dungeon.'],
+  ['The Rabones', 'forest', 35, "Hey! Ho! Let's gnaw!"],
+  ['Green Dæmons', 'forest', 45, 'Boulevard of broken bones.'],
+  ['The Crash', 'sky', 50, 'Should I slay or should I go?'],
+  ['Lady Googoo', 'sea', 55, 'Born this way: viscous.'],
+  ['Undeadmaus', 'forest', 45, 'The drop never dies. Neither does he.'],
+  ['Chain Smokers', 'fire', 50, 'Closer. Too close. Run.'],
+  ['The Bachsilisk', 'forest', 60, 'Fugue around and find out.'],
+  ['The Wolf Gang', 'forest', 55, "Requiem for whoever's next."],
+  ['The MetroGnome', 'forest', 40, 'Keeps perfect time. Takes yours.'],
+  ["Harpy's Chord", 'sky', 50, 'Pluck around and find out.'],
+  ['Feyonce', 'forest', 60, 'Who run the glade? Fey.'],
+  ['Marvin Ghoul', 'forest', 50, 'Heard it through the graveyard.'],
+  ['Billie Djinn', 'fire', 55, 'Three wishes, zero refunds.'],
+  ['Husher', 'sky', 45, "Shhh. He's already behind you."],
+  ['Johnny Smash', 'forest', 50, 'A boy named Ouch.'],
+  ['Johnny Ash', 'fire', 55, 'The man in black. Charcoal black.'],
+  ['Carrie Undertaker', 'forest', 50, 'Digs the job. Literally.'],
+  ['Billy Noel', 'fire', 50, "We didn't start the fire. He did."],
+  ['Darth Brooks', 'sky', 55, 'The thunder rolls to the dark side.'],
+  ['Tank Williams', 'forest', 65, 'So lonesome he could crush.'],
+  ['Elvish Priestly', 'forest', 55, 'A little less conversation, a little more incantation.'],
+  ['Giorgio Marauder', 'fire', 50, 'The synth that launched a thousand raids.'],
+  ['Marshcelllo', 'forest', 45, 'Sinks the beat. And you.'],
+  ['Deft Punk', 'fire', 55, 'Harder, better, faster, stabbier.'],
+  ['Notorious P.I.G.', 'forest', 60, 'Big Poppa of the pigpen.'],
+  ['Wizard Khalifa', 'sky', 50, 'Young, wild, and spellcasting.'],
+  ['DJ Kobold', 'fire', 35, 'Another one bites the dirt.'],
+  ['Beasty Boys', 'forest', 45, 'You gotta fight for your right to pillage.'],
+  ['Brutal Mars', 'fire', 50, '24 karat maces.'],
+  ['Public Frenemies', 'forest', 45, 'Fight the power. Also each other. Also you.'],
+  ['DJ Snake', 'forest', 45, 'Turn down for venom.'],
+  ['Lil Baby', 'forest', 25, 'Cries once. You cry forever.'],
+  ['Young Thug', 'forest', 40, 'Ancient evil, brand new drip.'],
+  ['Three Migos', 'forest', 40, 'Walk it like they stalk it.'],
+  ['Gucci Manticore', 'sky', 65, 'Both wings luxury, tail is a lawsuit.'],
+  ['Fetty Wasp', 'sky', 40, '679 stings per minute.'],
+  ['Rolling Stone Golems', 'forest', 70, 'Start me up. Regret it immediately.'],
+  ['The What', 'sky', 45, 'Who are they? Wrong question. Too late.'],
+  ['Ungrateful Dead', 'forest', 50, "Truckin' straight out of the grave."],
+  ['Red Hot Chilli Serpents', 'fire', 55, 'Give it away — your body heat.'],
+  ['Aerosmyth', 'sky', 65, 'Walk this way. Into the talons.'],
+  ['Magmadeath', 'fire', 75, 'Countdown to eruption.'],
+  ['Iron Damsel', 'fire', 60, 'Run to the hills — she’s already there.'],
+  ['Judas Priestess', 'fire', 60, 'Hellion for leather.'],
+  ['Avenged Seventyfold', 'sky', 60, 'Kills you seventy times. Contractually.'],
+  ['Shrimp Bizkit', 'sea', 40, 'Did it all for the krill.'],
+  ['Cistern of a Down', 'sea', 55, 'Toxicity levels: municipal.'],
+  ['Mithrallica', 'fire', 70, 'Enter sandman, exit everyone.'],
+  ['Fatboy Slime', 'sea', 55, 'Right here, right ooze.'],
+  ['Infected Mushrooms', 'forest', 45, 'The spores drop harder than the bass.'],
+  ['Mind-Flayer', 'sky', 65, 'Your thoughts, remixed.'],
+  ['Dwarvish House Mafia', 'fire', 60, 'One last forge.'],
+  ['MC Hammerhead', 'sea', 55, 'Stop. Hammertime. Also feeding time.'],
+  ['Elton Djinn', 'fire', 55, "I'm still standing — after three thousand years in a lamp."],
+  ['Boar Jovi', 'forest', 55, 'Shot through the heart, and tusks to blame.'],
+  ['Seal', 'sea', 40, 'Kissed by a rose. Will not kiss you.'],
+  ['The Rolling Stoats', 'forest', 40, 'Sympathy for the weasel.'],
+  ['Harpy Styles', 'sky', 55, 'Sign of the tines.'],
+  ['Billie Eelish', 'sea', 55, 'Bad guy? Worse fish.'],
+  ['Drake', 'sea', 45, 'Call me on my shell phone.'],
+]
+
+export function seedMonsters(): Monster[] {
+  return ROSTER.map(([name, type, baseHp, tagline], i) => ({
+    id: `${slug(name)}-${i}`,
+    name,
+    type,
+    baseHp,
+    tagline,
+    imageUrl: '',
+    hidden: false,
+    levels: buildLevels(baseHp, type),
+  }))
+}

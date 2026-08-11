@@ -11,6 +11,8 @@ import lobbyOp from '../api/games/[id]/lobby'
 import actions from '../api/games/[id]/actions'
 import state from '../api/games/[id]/state'
 import stream from '../api/games/[id]/stream'
+import monsters from '../api/monsters/index'
+import monsterById from '../api/monsters/[id]'
 import debugPresets from '../api/debug/presets'
 import { ApiRequest, ApiResponse } from '../api/_lib/http'
 
@@ -21,6 +23,9 @@ type Handler = (req: ApiRequest, res: ApiResponse) => Promise<void>
 function route(method: string | undefined, path: string): Handler | null {
   if (path === '/api/lobbies' && method === 'POST') return createLobby
   if (path === '/api/lobbies/join' && method === 'POST') return joinLobby
+  if (path === '/api/monsters' && (method === 'GET' || method === 'POST')) return monsters
+  if (/^\/api\/monsters\/[^/]+$/.test(path) && (method === 'PUT' || method === 'DELETE'))
+    return monsterById
   if (path === '/api/debug/presets') return debugPresets
   const game = path.match(/^\/api\/games\/[^/]+\/(lobby|actions|state|stream)$/)
   if (game) {
