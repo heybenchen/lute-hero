@@ -688,9 +688,10 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
 
   // EXP always awarded for the full encounter; fame per kill credit
   let players = adjustExp(state.players, fighterId, rewards.totalExp)
-  // Clearing every monster on a space earns the victor 1 Inspiration.
+  // Clearing every monster on a space earns the victor 1 Inspiration and bonus EXP.
   if (success) {
     players = players.map((p) => (p.id === fighterId ? { ...p, inspiration: p.inspiration + 1 } : p))
+    players = adjustExp(players, fighterId, getTunables().spaceClearExpBonus)
   }
   if (rewards.monstersDefeatedCount > 0) {
     if (rewards.fighterFame > 0) {
