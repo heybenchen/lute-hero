@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
-  NEW_D4_COST,
-  UPGRADE_COSTS,
+  newD4Cost,
+  upgradeCostFor,
   getNextDiceType,
   getUpgradeCost,
   createElementalDie,
@@ -10,28 +10,28 @@ import {
 
 describe('Elemental Dice Shop', () => {
   describe('costs', () => {
-    it('should cost 5 EXP for a new d4', () => {
-      expect(NEW_D4_COST).toBe(5)
+    it('should cost 1 EXP for a new d4', () => {
+      expect(newD4Cost()).toBe(1)
     })
 
-    it('should cost 5/15/30 EXP to upgrade to d6/d12/d20', () => {
-      expect(UPGRADE_COSTS.d6).toBe(5)
-      expect(UPGRADE_COSTS.d12).toBe(15)
-      expect(UPGRADE_COSTS.d20).toBe(30)
+    it('should cost 2/3/6 EXP to upgrade to d8/d12/d20', () => {
+      expect(upgradeCostFor('d8')).toBe(2)
+      expect(upgradeCostFor('d12')).toBe(3)
+      expect(upgradeCostFor('d20')).toBe(6)
     })
 
-    it('should escalate inspiration cost by 5 EXP per purchase this turn', () => {
-      expect(getInspirationCost(0)).toBe(5)
-      expect(getInspirationCost(1)).toBe(10)
-      expect(getInspirationCost(2)).toBe(15)
-      expect(getInspirationCost(3)).toBe(20)
+    it('should escalate inspiration cost by 1 EXP per purchase this turn', () => {
+      expect(getInspirationCost(0)).toBe(1)
+      expect(getInspirationCost(1)).toBe(2)
+      expect(getInspirationCost(2)).toBe(3)
+      expect(getInspirationCost(3)).toBe(4)
     })
   })
 
   describe('getNextDiceType', () => {
-    it('should follow the d4 -> d6 -> d12 -> d20 path', () => {
-      expect(getNextDiceType('d4')).toBe('d6')
-      expect(getNextDiceType('d6')).toBe('d12')
+    it('should follow the d4 -> d8 -> d12 -> d20 path', () => {
+      expect(getNextDiceType('d4')).toBe('d8')
+      expect(getNextDiceType('d8')).toBe('d12')
       expect(getNextDiceType('d12')).toBe('d20')
     })
 
@@ -42,9 +42,9 @@ describe('Elemental Dice Shop', () => {
 
   describe('getUpgradeCost', () => {
     it('should price upgrades by the resulting die type', () => {
-      expect(getUpgradeCost('d4')).toBe(5) // -> d6
-      expect(getUpgradeCost('d6')).toBe(15) // -> d12
-      expect(getUpgradeCost('d12')).toBe(30) // -> d20
+      expect(getUpgradeCost('d4')).toBe(2) // -> d8
+      expect(getUpgradeCost('d8')).toBe(3) // -> d12
+      expect(getUpgradeCost('d12')).toBe(6) // -> d20
     })
 
     it('should return null for a maxed d20', () => {

@@ -1,16 +1,19 @@
 import { Song, Monster, DiceRoll, Genre, DamageCalculation, DieContribution, Rng } from '../../types/index.js';
 import { rollDiceWithCrit } from "../dice/roller.js";
+import { getTunables } from "../../data/tunables.js";
 
 /**
  * Calculate damage multiplier for a genre against a monster
  */
 export function getGenreMultiplier(genre: Genre, monster: Monster): number {
+  const { vulnerabilityMultiplier, resistanceMultiplier } = getTunables();
+
   if (monster.vulnerability === genre) {
-    return 2.0; // Vulnerable: 2x damage
+    return vulnerabilityMultiplier; // Vulnerable: 2x damage by default
   }
 
   if (monster.resistance === genre) {
-    return 0; // Resistant: 0x damage (immune)
+    return resistanceMultiplier; // Immune: 0x damage by default
   }
 
   return 1.0; // Neutral
@@ -98,13 +101,28 @@ export function isMonsterDefeated(monster: Monster): boolean {
   return monster.currentHP <= 0;
 }
 
+/** A calculation with no damage, used for monsters a single-target song misses. */
+function zeroDamageCalculation(): DamageCalculation {
+  return {
+    baseDamage: 0,
+    genreMultipliers: [],
+    critBonuses: 0,
+    totalDamage: 0,
+    perDie: [],
+  };
+}
+
 /**
- * Calculate damage against multiple monsters (AOE)
+ * Calculate damage against a single chosen monster. Songs are no longer AOE:
+ * only the targeted monster takes damage. The returned arrays stay aligned to
+ * the full monster roster (untargeted monsters get a zero calculation and are
+ * left unchanged) so the combat UI can keep indexing by monster position.
  */
-export function calculateAOEDamage(
+export function calculateSingleTargetDamage(
   song: Song,
   rolls: DiceRoll[],
   monsters: Monster[],
+  targetMonsterId: string,
 ): {
   damageCalculations: DamageCalculation[];
   updatedMonsters: Monster[];
@@ -113,11 +131,14 @@ export function calculateAOEDamage(
   const updatedMonsters: Monster[] = [];
 
   monsters.forEach((monster) => {
-    const damageCalc = calculateDamage(song, rolls, monster);
-    damageCalculations.push(damageCalc);
-
-    const updatedMonster = applyDamageToMonster(monster, damageCalc.totalDamage);
-    updatedMonsters.push(updatedMonster);
+    if (monster.id === targetMonsterId) {
+      const damageCalc = calculateDamage(song, rolls, monster);
+      damageCalculations.push(damageCalc);
+      updatedMonsters.push(applyDamageToMonster(monster, damageCalc.totalDamage));
+    } else {
+      damageCalculations.push(zeroDamageCalculation());
+      updatedMonsters.push(monster);
+    }
   });
 
   return {

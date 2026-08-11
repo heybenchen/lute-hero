@@ -1,4 +1,5 @@
 import { DiceType, DiceRoll, Dice, Rng } from '../../types/index.js'
+import { getTunables } from '../../data/tunables.js'
 
 /**
  * Get the maximum value for a given dice type
@@ -7,8 +8,8 @@ export function getMaxValue(diceType: DiceType): number {
   switch (diceType) {
     case 'd4':
       return 4
-    case 'd6':
-      return 6
+    case 'd8':
+      return 8
     case 'd12':
       return 12
     case 'd20':
@@ -37,7 +38,7 @@ export function rollDie(diceType: DiceType, rng: Rng = Math.random): number {
  */
 export function rollCascadeDice(
   diceType: DiceType,
-  maxCascades: number = 10,
+  maxCascades: number = getTunables().maxCritCascades,
   rng: Rng = Math.random
 ): number[] {
   const maxValue = getMaxValue(diceType)
@@ -63,7 +64,7 @@ export function rollDiceWithCrit(dice: Dice, rng: Rng = Math.random): DiceRoll {
 
   const cascadeRolls: number[] = []
   if (isCrit) {
-    cascadeRolls.push(...rollCascadeDice(dice.type, 10, rng))
+    cascadeRolls.push(...rollCascadeDice(dice.type, getTunables().maxCritCascades, rng))
   }
 
   const critBonus = cascadeRolls.reduce((sum, v) => sum + v, 0)

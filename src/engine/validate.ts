@@ -2,11 +2,20 @@ import { EngineState } from './state.js'
 import { GameAction, ActorSeat } from './actions.js'
 import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
 import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
-import { NEW_D4_COST, getUpgradeCost, getInspirationCost, INSPIRATION_SPEND } from '../data/draftCards.js'
+import { newD4Cost, getUpgradeCost, getInspirationCost, inspirationSpend } from '../data/draftCards.js'
+import { getTunables } from '../data/tunables.js'
 
-export const MAX_SONGS_PER_COMBAT = 3
-export const MAX_MOVES_PER_TURN = 2
-export const MAX_FIGHTS_PER_TURN = 1
+export function maxMovesPerTurn(): number {
+  return getTunables().maxMovesPerTurn
+}
+export function maxFightsPerTurn(): number {
+  return getTunables().maxFightsPerTurn
+}
+
+/** Chips of EACH element every bard is dealt at round end. */
+export function roundEndChipsPerElement(): number {
+  return getTunables().roundEndChipsPerElement
+}
 
 export type ValidationResult =
   | { ok: true }
@@ -71,11 +80,11 @@ export function validateAction(
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player) return illegal('Unknown player')
       if (player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
-      if (player.movesThisTurn >= MAX_MOVES_PER_TURN) return illegal('No moves left this turn')
+      if (player.movesThisTurn >= maxMovesPerTurn()) return illegal('No moves left this turn')
       if (action.toSpaceId === player.position) return illegal('Already on that space')
       if (!state.spaces.some((s) => s.id === action.toSpaceId)) return illegal('Unknown space')
       if (action.inspirationTravel) {
-        if (player.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration to travel')
+        if (player.inspiration < inspirationSpend()) return illegal('Not enough Inspiration to travel')
       } else if (!areSpacesConnected(player.position, action.toSpaceId, state.spaces)) {
         return illegal('Spaces are not connected')
       }
@@ -90,7 +99,7 @@ export function validateAction(
       if (state.studio.playerId) return illegal('Close the Studio before combat')
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player || player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
-      if (player.fightsThisTurn >= MAX_FIGHTS_PER_TURN) return illegal('No fights left this turn')
+      if (player.fightsThisTurn >= maxFightsPerTurn()) return illegal('No fights left this turn')
       const space = state.spaces.find((s) => s.id === player.position)
       if (!space || space.monsters.length === 0) return illegal('No monsters here')
       return ok
@@ -100,9 +109,9 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (!state.combat.isActive) return illegal('No active combat')
-      if (state.combat.songsUsed.length >= MAX_SONGS_PER_COMBAT) return illegal('Song limit reached')
-      if (state.combat.songsUsed.some((su) => su.songId === action.songId)) {
-        return illegal('Song already played this combat')
+      // A song whose dice are spent (it damaged without defeating) can't replay.
+      if (state.combat.spentSongIds.includes(action.songId)) {
+        return illegal('That song\'s dice are spent this combat')
       }
       const owner = state.players.find((p) => p.id === action.ownerId)
       if (!owner) return illegal('Unknown song owner')
@@ -115,6 +124,10 @@ export function validateAction(
       const song = owner.songs.find((s) => s.id === action.songId)
       if (!song) return illegal('Unknown song')
       if (!song.slots.some((slot) => slot.dice)) return illegal('Song has no dice')
+      // Single-target: a live monster must be chosen
+      const target = state.combat.monsters.find((m) => m.id === action.targetMonsterId)
+      if (!target) return illegal('Choose a monster to target')
+      if (target.currentHP <= 0) return illegal('That monster is already defeated')
       return ok
     }
 
@@ -125,8 +138,13 @@ export function validateAction(
       if (!state.combat.undoSnapshot || !state.combat.lastPlayedSongId) {
         return illegal('Nothing to reroll')
       }
+      // Only a SPENT song can be rerolled. A song that landed the kill refreshed
+      // instead, and replaying it would re-resolve against a dead target.
+      if (!state.combat.spentSongIds.includes(state.combat.lastPlayedSongId)) {
+        return illegal('That song defeated its target — play it again instead')
+      }
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
-      if (!fighter || fighter.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration')
+      if (!fighter || fighter.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
       if (state.combat.monsters.every((m) => m.currentHP <= 0)) return illegal('All monsters defeated')
       return ok
     }
@@ -215,7 +233,7 @@ export function validateAction(
       if (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length) {
         return illegal('No such element chip')
       }
-      if (player.exp < NEW_D4_COST) return illegal('Not enough EXP')
+      if (player.exp < newD4Cost()) return illegal('Not enough EXP')
       return ok
     }
 
@@ -249,7 +267,7 @@ export function validateAction(
       const studioGate = requireOpenStudio()
       if (studioGate.ok === false) return studioGate
       const player = state.players[state.currentTurnPlayerIndex]
-      if (!player || player.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration')
+      if (!player || player.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
       return ok
     }
 
@@ -304,7 +322,7 @@ export function validateAction(
       if (isSeat && seatPlayerId !== performerId) return forbidden('Not your performance')
       if (!state.showdownUndo) return illegal('Nothing to reroll')
       const performer = state.players.find((p) => p.id === performerId)
-      if (!performer || performer.inspiration < INSPIRATION_SPEND) return illegal('Not enough Inspiration')
+      if (!performer || performer.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
       return ok
     }
 
@@ -339,6 +357,25 @@ export function validateAction(
       if (action.targetPlayerId !== currentPlayerId(state)) {
         return illegal('Can only skip the current player')
       }
+      return ok
+    }
+
+    // Playtest tooling. Restricted to the host seat: it can rewrite any value,
+    // so a non-host seat must never be able to reach it in an online game.
+    case 'DEBUG_PATCH': {
+      if (!isHost) return forbidden('Only the host can use debug mode')
+      if (!action.patch || typeof action.patch !== 'object') return illegal('Missing debug patch')
+      return ok
+    }
+
+    case 'DEBUG_LOAD_STATE': {
+      if (!isHost) return forbidden('Only the host can load a playtest preset')
+      const incoming = action.engineState
+      if (!incoming || typeof incoming !== 'object') return illegal('Missing engine state')
+      if (!Array.isArray(incoming.players) || !Array.isArray(incoming.spaces)) {
+        return illegal('Preset is not a valid game state')
+      }
+      if (incoming.players.length === 0) return illegal('Preset has no players')
       return ok
     }
   }

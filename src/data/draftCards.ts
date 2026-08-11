@@ -1,25 +1,33 @@
 import { Dice, Genre, DiceType, NewId } from '../types/index.js';
 import { DICE_UPGRADE_PATH } from "./startingData.js";
+import { getTunables } from "./tunables.js";
 
 let dieIdCounter = 0;
 
-// Buying an element grants the right to add a new d4 of that element
-export const NEW_D4_COST = 5;
-
-// Inspiration: base cost 5 EXP, escalating by 5 for each token bought this turn.
-export const INSPIRATION_BASE_COST = 5;
-export function getInspirationCost(boughtThisTurn: number): number {
-  return INSPIRATION_BASE_COST * (boughtThisTurn + 1);
+/** EXP to add a brand-new d4 of a purchased element. */
+export function newD4Cost(): number {
+  return getTunables().newD4Cost;
 }
-// Each refresh / travel / reroll spends this many inspiration tokens.
-export const INSPIRATION_SPEND = 1;
 
-// Cost to upgrade an existing die TO the given type (via DICE_UPGRADE_PATH)
-export const UPGRADE_COSTS: Record<Exclude<DiceType, "d4">, number> = {
-  d6: 5,
-  d12: 15,
-  d20: 30,
-};
+/**
+ * Inspiration cost for the next token this turn: a base price that escalates by
+ * a fixed step for each token already bought.
+ */
+export function getInspirationCost(boughtThisTurn: number): number {
+  const { inspirationBaseCost, inspirationCostStep } = getTunables();
+  return inspirationBaseCost + inspirationCostStep * boughtThisTurn;
+}
+
+/** Inspiration tokens spent per refresh / travel / reroll. */
+export function inspirationSpend(): number {
+  return getTunables().inspirationSpend;
+}
+
+/** EXP cost to upgrade a die INTO the given type. */
+export function upgradeCostFor(type: Exclude<DiceType, "d4">): number {
+  const t = getTunables();
+  return type === "d8" ? t.upgradeCostD8 : type === "d12" ? t.upgradeCostD12 : t.upgradeCostD20;
+}
 
 /**
  * The die type an existing die upgrades into, or null if already maxed (d20).
@@ -35,7 +43,7 @@ export function getNextDiceType(type: DiceType): DiceType | null {
 export function getUpgradeCost(type: DiceType): number | null {
   const next = getNextDiceType(type);
   if (!next) return null;
-  return UPGRADE_COSTS[next as Exclude<DiceType, "d4">];
+  return upgradeCostFor(next as Exclude<DiceType, "d4">);
 }
 
 /**

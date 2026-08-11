@@ -20,7 +20,7 @@ interface PlayerSummary {
   award: Award
 }
 
-const DIE_ORDER = ['d4', 'd6', 'd12', 'd20']
+const DIE_ORDER = ['d4', 'd8', 'd12', 'd20']
 
 /**
  * Every bard leaves the tour with a superlative. Awards are assigned greedily

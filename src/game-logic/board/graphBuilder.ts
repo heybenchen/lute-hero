@@ -1,4 +1,7 @@
 import { BoardSpace, Genre, Rng } from '../../types/index.js'
+import { getTunables } from '../../data/tunables.js'
+import { ALL_GENRES } from '../../data/genreTheme.js'
+import { shuffle } from '../../data/elementBag.js'
 
 // Board is a 4x4 grid. Spaces are indexed row-major:
 //
@@ -68,22 +71,116 @@ export function createBoardGraph(): BoardSpace[] {
   return spaces
 }
 
-/** A space holds at most this many genre tags (monster chips). */
-export const MAX_GENRE_TAGS = 5
+/**
+ * A space holds at most this many chips *of any one element*. There is no cap
+ * on a space's total chips — a tile can stack every element up to this limit.
+ */
+export function maxTagsPerGenre(): number {
+  return getTunables().maxTagsPerGenre
+}
+
+/** How many chips of one element a space is carrying. */
+export function genreTagCount(tags: Genre[], genre: Genre): number {
+  return tags.filter((t) => t === genre).length
+}
+
+/** True when one more chip of this element still fits on the space. */
+export function canAddGenreTag(tags: Genre[], genre: Genre): boolean {
+  return genreTagCount(tags, genre) < maxTagsPerGenre()
+}
+
+/** Append a chip if its element is not already at the cap. */
+export function addGenreTag(tags: Genre[], genre: Genre): Genre[] {
+  return canAddGenreTag(tags, genre) ? [...tags, genre] : tags
+}
+
+/** Drop any chips beyond the per-element cap, keeping the earliest of each. */
+export function capGenreTags(tags: Genre[]): Genre[] {
+  const counts: Partial<Record<Genre, number>> = {}
+  return tags.filter((genre) => {
+    const n = (counts[genre] || 0) + 1
+    counts[genre] = n
+    return n <= maxTagsPerGenre()
+  })
+}
 
 /**
- * Add a random genre tag to each space, up to MAX_GENRE_TAGS.
+ * Scatter a pile of chips across the board at random, one chip per space per
+ * pass: the space ids are shuffled and dealt from in order, and only once every
+ * space has taken a chip does a fresh pass start and spaces begin doubling up.
+ * A space whose element is already at the cap is skipped for that chip.
+ *
+ * Used for round-end reinforcements, so the board grows evenly rather than
+ * piling everything onto one tile.
+ */
+export function scatterChipsRandomly(
+  spaces: BoardSpace[],
+  chips: Genre[],
+  rng: Rng = Math.random
+): BoardSpace[] {
+  if (chips.length === 0) return spaces
+
+  const tagsById = new Map(spaces.map((s) => [s.id, [...s.genreTags]]))
+  const hasRoom = (id: number, genre: Genre) => canAddGenreTag(tagsById.get(id) ?? [], genre)
+  const freshPass = () => shuffle(spaces.map((s) => s.id), rng)
+
+  let pass: number[] = []
+  for (const chip of chips) {
+    if (pass.length === 0) pass = freshPass()
+    let index = pass.findIndex((id) => hasRoom(id, chip))
+    if (index === -1) {
+      // Nothing left in this pass can take the chip — start a new one.
+      pass = freshPass()
+      index = pass.findIndex((id) => hasRoom(id, chip))
+      if (index === -1) continue // that element is capped board-wide
+    }
+    const [spaceId] = pass.splice(index, 1)
+    tagsById.get(spaceId)!.push(chip)
+  }
+
+  return spaces.map((s) => ({ ...s, genreTags: tagsById.get(s.id)! }))
+}
+
+/**
+ * Add a random genre tag to each space, respecting the per-element cap.
  */
 export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random): BoardSpace[] {
-  const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
+  const genres: Genre[] = [...ALL_GENRES]
 
   return spaces.map((space) => ({
     ...space,
-    genreTags:
-      space.genreTags.length >= MAX_GENRE_TAGS
-        ? space.genreTags
-        : [...space.genreTags, genres[Math.floor(rng() * genres.length)]],
+    genreTags: addGenreTag(space.genreTags, genres[Math.floor(rng() * genres.length)]),
   }))
+}
+
+/**
+ * Deal the opening board's monster chips: an exactly balanced pool — the same
+ * number of chips per element — shuffled and dealt out, so every element is
+ * equally represented but nobody can predict where it lands.
+ *
+ * When the total isn't divisible by the element count (only possible if the
+ * board size changes), the leftover chips go to a random subset of elements so
+ * no element is ever more than one chip ahead.
+ */
+export function dealBalancedGenreTags(
+  spaceCount: number,
+  tagsPerSpace: number,
+  rng: Rng = Math.random
+): Genre[][] {
+  const total = spaceCount * tagsPerSpace
+  const perGenre = Math.floor(total / ALL_GENRES.length)
+
+  const pool: Genre[] = []
+  for (const genre of ALL_GENRES) {
+    for (let i = 0; i < perGenre; i++) pool.push(genre)
+  }
+  const remainder = total - pool.length
+  if (remainder > 0) pool.push(...shuffle([...ALL_GENRES], rng).slice(0, remainder))
+
+  const shuffled = shuffle(pool, rng)
+  return Array.from({ length: spaceCount }, (_, i) =>
+    capGenreTags(shuffled.slice(i * tagsPerSpace, (i + 1) * tagsPerSpace))
+  )
 }
 
 /**
@@ -105,10 +202,7 @@ export function addGenreTagsToNeighbors(
     if (!neighborIds.has(space.id)) return space
     return {
       ...space,
-      genreTags: [
-        ...space.genreTags,
-        genres[Math.floor(rng() * genres.length)],
-      ],
+      genreTags: addGenreTag(space.genreTags, genres[Math.floor(rng() * genres.length)]),
     }
   })
 }
@@ -130,7 +224,7 @@ export function addGenreTagToNeighbors(
 
   return spaces.map((space) => {
     if (!neighborIds.has(space.id)) return space
-    if (space.genreTags.length >= MAX_GENRE_TAGS) return space
+    if (!canAddGenreTag(space.genreTags, genre)) return space
     return {
       ...space,
       genreTags: [...space.genreTags, genre],

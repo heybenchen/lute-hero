@@ -7,10 +7,13 @@ import {
   Monster,
   SongUsage,
   KillCredit,
+  Song,
   DiceRoll,
+  DiceType,
   DamageCalculation,
 } from '../types/index.js'
 import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
+import { Tunables, DEFAULT_TUNABLES, normalizeTunables } from '../data/tunables.js'
 
 /**
  * Live combat state — part of the synced engine state so spectators watch
@@ -22,8 +25,16 @@ export interface EngineCombatState {
   spaceId: number | null
   monsters: Monster[]
   songsUsed: SongUsage[]
+  /**
+   * Songs whose dice are spent this combat. A song is spent when it damages a
+   * monster without defeating it; defeating the target returns its dice, so the
+   * song stays playable. Spent songs can't be played again this combat.
+   */
+  spentSongIds: string[]
   killCredits: KillCredit[]
   currentSongId: string | null
+  /** Monster the last song targeted (single-target combat). */
+  lastTargetMonsterId: string | null
   rolls: DiceRoll[]
   totalDamage: number
   lastDamageCalculations: DamageCalculation[]
@@ -31,6 +42,7 @@ export interface EngineCombatState {
   undoSnapshot: {
     monsters: Monster[]
     songsUsed: SongUsage[]
+    spentSongIds: string[]
     killCredits: KillCredit[]
     totalDamage: number
   } | null
@@ -79,6 +91,12 @@ export interface EngineState {
   // Combat (synced, unlike the old client-only slice)
   combat: EngineCombatState
 
+  /**
+   * Balance numbers the engine reads. Part of the state so playtest tweaks
+   * persist in saves and sync to every online client. Edited via DEBUG_PATCH.
+   */
+  tunables: Tunables
+
   // Final showdown
   showdownActive: boolean
   showdownComplete: boolean
@@ -120,8 +138,10 @@ export function createInitialCombatState(): EngineCombatState {
     spaceId: null,
     monsters: [],
     songsUsed: [],
+    spentSongIds: [],
     killCredits: [],
     currentSongId: null,
+    lastTargetMonsterId: null,
     rolls: [],
     totalDamage: 0,
     lastDamageCalculations: [],
@@ -140,12 +160,53 @@ export function createInitialStudioState(): EngineStudioState {
   }
 }
 
-/** Add newly introduced synchronized fields when loading older saved games. */
+/**
+ * The d6 was replaced by the d8. A die still carrying the retired type would
+ * roll `undefined` faces and poison every damage number, so states saved before
+ * the swap (local saves, playtest presets, live Redis games) are migrated here.
+ */
+const RETIRED_DICE_TYPES: Record<string, DiceType> = { d6: 'd8' }
+
+function migrateDice<T extends { type: DiceType }>(dice: T): T {
+  const replacement = RETIRED_DICE_TYPES[dice.type]
+  return replacement ? { ...dice, type: replacement } : dice
+}
+
+function migratePlayerDice(players: Player[]): Player[] {
+  return players.map((player) => ({
+    ...player,
+    songs: player.songs.map((song) => ({
+      ...song,
+      slots: song.slots.map((slot) =>
+        slot.dice ? { ...slot, dice: migrateDice(slot.dice) } : slot
+      ) as Song['slots'],
+    })),
+  }))
+}
+
+function migrateRewardDice(rewards: Record<string, PendingReward[]>): Record<string, PendingReward[]> {
+  return Object.fromEntries(
+    Object.entries(rewards).map(([playerId, list]) => [
+      playerId,
+      list.map((reward) => (reward.kind === 'die' ? { ...reward, dice: migrateDice(reward.dice) } : reward)),
+    ])
+  )
+}
+
+/**
+ * Add newly introduced synchronized fields — and migrate retired ones — when
+ * loading a game saved by an older version.
+ */
 export function normalizeEngineState(state: EngineState): EngineState {
   return {
     ...state,
+    players: migratePlayerDice(state.players ?? []),
+    pendingRewards: migrateRewardDice(state.pendingRewards ?? {}),
     combat: { ...createInitialCombatState(), ...state.combat },
     studio: { ...createInitialStudioState(), ...state.studio },
+    // Fills in defaults and clamps every value, so a stale save or a
+    // hand-edited preset can never leave the engine with a broken number.
+    tunables: normalizeTunables(state.tunables),
   }
 }
 
@@ -167,6 +228,7 @@ export function createInitialEngineState(): EngineState {
     studio: createInitialStudioState(),
 
     combat: createInitialCombatState(),
+    tunables: DEFAULT_TUNABLES,
 
     showdownActive: false,
     showdownComplete: false,

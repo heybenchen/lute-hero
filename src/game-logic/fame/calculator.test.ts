@@ -148,12 +148,12 @@ describe('Fame Calculator', () => {
   })
 
   describe('calculateMonsterExp', () => {
-    it('should return level * 5', () => {
-      expect(calculateMonsterExp(1)).toBe(5)
-      expect(calculateMonsterExp(2)).toBe(10)
-      expect(calculateMonsterExp(3)).toBe(15)
-      expect(calculateMonsterExp(4)).toBe(20)
-      expect(calculateMonsterExp(5)).toBe(25)
+    it('should return level * 1', () => {
+      expect(calculateMonsterExp(1)).toBe(1)
+      expect(calculateMonsterExp(2)).toBe(2)
+      expect(calculateMonsterExp(3)).toBe(3)
+      expect(calculateMonsterExp(4)).toBe(4)
+      expect(calculateMonsterExp(5)).toBe(5)
     })
   })
 
@@ -172,8 +172,8 @@ describe('Fame Calculator', () => {
 
     it('should sum EXP across all monsters', () => {
       const monsters = [createTestMonster(1), createTestMonster(2), createTestMonster(3)]
-      // 5 + 10 + 15 = 30
-      expect(calculateTotalMonsterExp(monsters)).toBe(30)
+      // 1 + 2 + 3 = 6
+      expect(calculateTotalMonsterExp(monsters)).toBe(6)
     })
 
     it('should return 0 for empty array', () => {

@@ -20,6 +20,8 @@ export function GameView() {
   const pendingPhase = useGameStore((state) => state.pendingPhase)
   const finalTurnGranted = useGameStore((state) => state.finalTurnGranted)
   const studioPlayerId = useGameStore((state) => state.studio.playerId)
+  const debugOpen = useGameStore((state) => state.debugOpen)
+  const combatActive = useGameStore((state) => state.isActive)
   const canAct = useGameStore(selectCanAct)
   const [showMenu, setShowMenu] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
@@ -30,6 +32,33 @@ export function GameView() {
     const timer = setTimeout(() => _setUi({ lastError: null }), 4000)
     return () => clearTimeout(timer)
   }, [lastError, _setUi])
+
+  /**
+   * Escape opens the Menu — but first it dismisses whatever is stacked above
+   * it, topmost surface down. Combat is deliberately inescapable: it must be
+   * played out, and the Menu shares its z-index (rendered earlier), so it would
+   * open underneath it anyway.
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (debugOpen) return // the debug panel closes itself
+      e.preventDefault()
+
+      if (showHowTo) return setShowHowTo(false)
+      if (showMenu) return setShowMenu(false)
+      if (studioPlayerId) {
+        // Spectators watch the Studio but cannot close it
+        if (canAct) dispatch({ type: 'CLOSE_STUDIO' })
+        return
+      }
+      if (combatActive) return
+
+      setShowMenu(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [debugOpen, showHowTo, showMenu, studioPlayerId, canAct, combatActive, dispatch])
 
   const handleNewGame = () => {
     setShowMenu(false)
@@ -63,6 +92,7 @@ export function GameView() {
         <div className="flex items-center justify-center gap-3 sm:gap-4 w-full">
           <button
             onClick={() => setShowMenu(true)}
+            title="Menu (Esc)"
             className="absolute left-3 sm:left-6 px-3 py-1.5 rounded-lg font-medieval text-sm text-parchment-400 transition-all duration-150 hover:text-gold-400"
             style={{
               background: 'rgba(61, 48, 32, 0.4)',
@@ -114,8 +144,12 @@ export function GameView() {
 
       {/* Menu modal */}
       {showMenu && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0, 0, 0, 0.6)' }}>
-          <div className="card-ornate max-w-sm w-full p-8 animate-scale-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0, 0, 0, 0.6)' }}
+          onClick={() => setShowMenu(false)}
+        >
+          <div className="card-ornate max-w-sm w-full p-8 animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="text-center mb-6">
               <div className="font-display text-2xl text-gold-400 mb-2">Menu</div>
               <div className="h-px mx-auto w-32" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.4), transparent)' }} />
@@ -133,6 +167,13 @@ export function GameView() {
                 className="btn-secondary w-full py-3"
               >
                 How to Play
+              </button>
+              <button
+                onClick={() => { setShowMenu(false); _setUi({ debugOpen: true }) }}
+                className="btn-secondary w-full py-3"
+                title="Tweak every game value, edit players and the board, save/restore playtest scenarios"
+              >
+                Playtest Console
               </button>
               {isHost && (
                 <button
@@ -247,10 +288,19 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
           <Section title="🎲 Combat">
             <List items={[
-              <>Play up to <Hl>3 songs</Hl> per fight. Each song rolls the dice slotted into it.</>,
-              <>Every song is <Hl>AOE</Hl> — its damage hits <Hl>all</Hl> monsters at once.</>,
+              <>Pick <Hl>one monster</Hl> to target, then a song — songs hit a <Hl>single</Hl> target, not all.</>,
+              <>Defeat the target and you get that song's <Hl>dice back</Hl> to play it again; only wounding it <Hl>spends</Hl> the song for the fight.</>,
               <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for bonus damage.</>,
+              <>Clear <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> and radiate an element.</>,
               <>Spend <Hl>Inspiration</Hl> to reroll the song you just performed.</>,
+            ]} />
+          </Section>
+
+          <Section title="🔁 Round End">
+            <List items={[
+              <>After every bard has taken a turn, the round ends with <Hl>reinforcements</Hl>.</>,
+              <>Each bard adds <Hl>one chip of every element</Hl> — Ballad, Folk, Hymn and Shanty.</>,
+              <>They scatter across the board at random, <Hl>never two on the same tile</Hl>, spawning new threats for next round.</>,
             ]} />
           </Section>
 
@@ -266,7 +316,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
           <Section title="🛠 The Studio (Shop)">
             <List items={[
-              <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d6 → d12 → d20</Hl>.</>,
+              <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d8 → d12 → d20</Hl>.</>,
               <>Spend EXP to buy <Hl>Inspiration</Hl> — used for rerolls, travel, and refreshing offers.</>,
             ]} />
           </Section>

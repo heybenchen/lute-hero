@@ -1,4 +1,49 @@
-import { Genre } from '../types/index.js'
+import { Genre, GamePhase, DiceType } from '../types/index.js'
+import type { Tunables } from '../data/tunables.js'
+import type { EngineState } from './state.js'
+
+/**
+ * Playtest patch: every field is optional, and only the ones present are
+ * applied. Numeric player fields are absolute values, not deltas.
+ */
+export interface DebugPatch {
+  tunables?: Partial<Tunables>
+  /** Per player id: fame / exp / inspiration / position / per-turn counters. */
+  players?: Record<string, Partial<DebugPlayerFields>>
+  /** Retype, re-element, add or clear individual dice in a player's songs. */
+  dice?: DebugDiceEdit[]
+  flow?: Partial<{
+    phase: GamePhase
+    currentRound: number
+    currentTurnPlayerIndex: number
+    pendingPhase: GamePhase | null
+    finalTurnGranted: boolean
+  }>
+  /** Per space id: the exact chip list that space should hold. */
+  spaceTags?: Record<number, Genre[]>
+  /** Per monster id (in the active combat): current HP. */
+  combatMonsterHp?: Record<string, number>
+  /** Re-derive every space's monsters from its chips after applying the patch. */
+  respawnMonsters?: boolean
+}
+
+export interface DebugPlayerFields {
+  fame: number
+  exp: number
+  inspiration: number
+  position: number
+  movesThisTurn: number
+  fightsThisTurn: number
+  monstersDefeated: number
+}
+
+/** One dice-slot edit: set the slot's die, or clear it with `dice: null`. */
+export interface DebugDiceEdit {
+  playerId: string
+  songId: string
+  slotIndex: number
+  dice: { type: DiceType; genre: Genre } | null
+}
 
 /** One player's setup choices, supplied when the game starts. */
 export interface PlayerConfig {
@@ -16,7 +61,7 @@ export type GameAction =
   | { type: 'START_GAME'; playerConfigs: PlayerConfig[] }
   | { type: 'MOVE'; playerId: string; toSpaceId: number; inspirationTravel: boolean }
   | { type: 'START_COMBAT'; playerId: string }
-  | { type: 'PLAY_SONG'; songId: string; ownerId: string }
+  | { type: 'PLAY_SONG'; songId: string; ownerId: string; targetMonsterId: string }
   | { type: 'REROLL_SONG' }
   | { type: 'SELECT_COMBAT_SPREAD'; genre: Genre | null }
   | { type: 'END_COMBAT'; spreadGenre?: Genre }
@@ -36,6 +81,9 @@ export type GameAction =
   | { type: 'ADVANCE_TO_SUMMARY' }
   | { type: 'RESET_GAME' }
   | { type: 'HOST_SKIP_TURN'; targetPlayerId: string }
+  // Playtest debug mode (host-only): tweak values, or restore a saved preset
+  | { type: 'DEBUG_PATCH'; patch: DebugPatch }
+  | { type: 'DEBUG_LOAD_STATE'; engineState: EngineState }
 
 export type GameActionType = GameAction['type']
 
