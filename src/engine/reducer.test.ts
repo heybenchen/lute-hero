@@ -4,6 +4,7 @@ import { createInitialEngineState, normalizeEngineState, EngineState } from './s
 import { GameAction } from './actions'
 import { mulberry32 } from './rng'
 import { DEFAULT_TUNABLES } from '../data/tunables'
+import { Genre } from '../types'
 
 const HOTSEAT: Pick<ActionCtx, 'actor'> = { actor: { kind: 'hotseat' } }
 
@@ -35,22 +36,6 @@ function apply(state: EngineState, action: GameAction, c: ActionCtx = ctx()) {
   const result = applyAction(state, action, c)
   if (!result.ok) throw new Error(`${action.type} failed: ${result.message}`)
   return result
-}
-
-/** Drive round-end reinforcements to completion: every bard drops their dealt
- *  chips onto the first tiles they have not used yet. */
-function completeRedistribution(state: EngineState): EngineState {
-  let s = state
-  let guard = 0
-  while (s.redistribution.active && guard++ < 500) {
-    const used = new Set(s.redistribution.placedSpaceIds)
-    const chip = s.redistribution.chipsToPlace[0]
-    const target = s.spaces.find(
-      (sp) => !used.has(sp.id) && sp.genreTags.filter((t) => t === chip).length < 5
-    )!
-    s = apply(s, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: target.id }).state
-  }
-  return s
 }
 
 describe('engine determinism', () => {
@@ -374,40 +359,42 @@ describe('END_TURN', () => {
     expect(state.elementOffers).toHaveLength(4)
   })
 
-  it('runs round-end redistribution, then increments the round and respawns monsters', () => {
+  it('scatters round-end reinforcements, then increments the round and respawns monsters', () => {
     let state = startTwoPlayerGame()
-    state = apply(state, { type: 'END_TURN' }).state // player-1 → player-2
-    state = apply(state, { type: 'END_TURN' }).state // player-2 → round end → redistribution
-    expect(state.redistribution.active).toBe(true)
-    expect(state.currentRound).toBe(1)
+    const perSpaceBefore = new Map(state.spaces.map((s) => [s.id, s.genreTags.length]))
     const tagsBefore = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
 
-    state = completeRedistribution(state)
-    expect(state.redistribution.active).toBe(false)
+    state = apply(state, { type: 'END_TURN' }).state // player-1 → player-2
+    state = apply(state, { type: 'END_TURN' }).state // player-2 → round end
+
+    // The round just advances — no placement step to play out
     expect(state.currentRound).toBe(2)
     expect(state.currentTurnPlayerIndex).toBe(0)
-    // 2 players each hand off 4 chips → 8 new tags placed on the board
+    // 2 bards x one chip of each element → 8 new chips on the board
     const tagsAfter = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
     expect(tagsAfter).toBe(tagsBefore + 2 * 4)
-    // Monsters respawn to match the (redistributed) tags
+    // 8 chips over 16 spaces: no space took two of them
+    state.spaces.forEach((s) =>
+      expect(s.genreTags.length - perSpaceBefore.get(s.id)!).toBeLessThanOrEqual(1)
+    )
+    // Monsters respawn to match the reinforced tags
     state.spaces.forEach((s) => expect(s.monsters.length).toBe(new Set(s.genreTags).size))
   })
 
   it('grants one final turn, then transitions and auto-starts the showdown', () => {
     let state = startTwoPlayerGame()
     state = { ...state, pendingPhase: 'finalBoss' as const, currentTurnPlayerIndex: 1 }
-    // First round-end runs redistribution, then grants the final turn
+    // First round-end reinforces the board, then grants the final turn
     state = apply(state, { type: 'END_TURN' }).state
-    expect(state.redistribution.active).toBe(true)
-    state = completeRedistribution(state)
     expect(state.phase).toBe('main')
     expect(state.finalTurnGranted).toBe(true)
     expect(state.showdownActive).toBe(false)
     // Play out the granted round; its round-end flips straight to the showdown
-    // (no redistribution when entering the boss)
+    const tagsBefore = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
     state = apply(state, { type: 'END_TURN' }).state // player-1 → player-2
     state = apply(state, { type: 'END_TURN' }).state // round end → transition
-    expect(state.redistribution.active).toBe(false)
+    // No reinforcements on the way into the boss — the board stops mattering
+    expect(state.spaces.reduce((n, s) => n + s.genreTags.length, 0)).toBe(tagsBefore)
     expect(state.phase).toBe('finalBoss')
     expect(state.finalTurnGranted).toBe(false)
     expect(state.showdownActive).toBe(true)
@@ -415,72 +402,47 @@ describe('END_TURN', () => {
     expect(state.showdownFandom).toEqual({ 'player-1': 0, 'player-2': 0 })
   })
 
-  it('deals every bard one chip of each element and gates placement to them', () => {
+  it('reinforces with one chip of each element per bard, scattered at random', () => {
     let state = startTwoPlayerGame()
+    const before = new Map(state.spaces.map((s) => [s.id, [...s.genreTags]]))
+
     state = apply(state, { type: 'END_TURN' }).state
     state = apply(state, { type: 'END_TURN' }).state
 
-    expect(state.redistribution.active).toBe(true)
-    expect(state.redistribution.placerIdx).toBe(0)
-    // One of every element, dealt automatically — nothing to choose
-    expect([...state.redistribution.chipsToPlace].sort()).toEqual(['Ballad', 'Folk', 'Hymn', 'Shanty'])
-
-    // Only the bard whose hand it is may place
-    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-2')).ok).toBe(false)
-    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-1')).state
-    // …and not twice on the same tile
-    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-1')).ok).toBe(false)
-    expect(state.redistribution.chipsToPlace).toHaveLength(3)
-
-    // Finishing the hand passes to the next bard, with a fresh set of chips
-    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 1 }).state
-    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 2 }).state
-    state = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 3 }).state
-    expect(state.redistribution.placerIdx).toBe(1)
-    expect([...state.redistribution.chipsToPlace].sort()).toEqual(['Ballad', 'Folk', 'Hymn', 'Shanty'])
-    expect(state.redistribution.placedSpaceIds).toEqual([])
-    // The second bard may reuse tiles the first one used — the limit is per-hand
-    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-2')).ok).toBe(true)
+    // Collect exactly what the round added
+    const added: Genre[] = []
+    for (const space of state.spaces) {
+      const prior = [...before.get(space.id)!]
+      for (const tag of space.genreTags) {
+        const i = prior.indexOf(tag)
+        if (i === -1) added.push(tag)
+        else prior.splice(i, 1)
+      }
+    }
+    // Two bards, one of every element each — balanced, nothing to choose
+    expect([...added].sort()).toEqual(
+      ['Ballad', 'Ballad', 'Folk', 'Folk', 'Hymn', 'Hymn', 'Shanty', 'Shanty']
+    )
   })
 
-  it('caps chips per element, not per tile', () => {
-    let state = startTwoPlayerGame()
-    state = apply(state, { type: 'END_TURN' }).state
-    state = apply(state, { type: 'END_TURN' }).state
-
-    // Fill tile 0 with the cap of one element, plus other elements on top
-    const chip = state.redistribution.chipsToPlace[0]
-    state = {
-      ...state,
-      spaces: state.spaces.map((s) =>
-        s.id === 0 ? { ...s, genreTags: Array(5).fill(chip) } : s
-      ),
+  it('scatters differently from round to round', () => {
+    const layout = (seed: number) => {
+      let state = startTwoPlayerGame(seed)
+      state = apply(state, { type: 'END_TURN' }, ctx(seed + 100)).state
+      state = apply(state, { type: 'END_TURN' }, ctx(seed + 100)).state
+      return state.spaces.map((s) => s.genreTags.join()).join('|')
     }
-    // That element is maxed out here…
-    expect(applyAction(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }, seatCtx('player-1')).ok).toBe(false)
-
-    // …but a different element still fits, however many chips the tile holds
-    const other = state.redistribution.chipsToPlace.find((c) => c !== chip)!
-    state = {
-      ...state,
-      redistribution: {
-        ...state.redistribution,
-        chipsToPlace: [other, ...state.redistribution.chipsToPlace.filter((c) => c !== other)],
-      },
-    }
-    const placed = apply(state, { type: 'PLACE_REDISTRIBUTION_CHIP', spaceId: 0 }).state
-    expect(placed.spaces[0].genreTags).toHaveLength(6)
+    expect(layout(1)).not.toBe(layout(2))
   })
 
   it('respects roundEndChipsPerElement', () => {
     let state = startTwoPlayerGame()
     state = { ...state, tunables: { ...DEFAULT_TUNABLES, roundEndChipsPerElement: 2 } }
+    const tagsBefore = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
     state = apply(state, { type: 'END_TURN' }).state
     state = apply(state, { type: 'END_TURN' }).state
-    expect(state.redistribution.chipsToPlace).toHaveLength(8)
-    expect([...state.redistribution.chipsToPlace].sort()).toEqual(
-      ['Ballad', 'Ballad', 'Folk', 'Folk', 'Hymn', 'Hymn', 'Shanty', 'Shanty']
-    )
+    // 2 bards x 2 chips x 4 elements
+    expect(state.spaces.reduce((n, s) => n + s.genreTags.length, 0)).toBe(tagsBefore + 16)
   })
 })
 

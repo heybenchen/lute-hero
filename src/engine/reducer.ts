@@ -7,11 +7,11 @@ import {
   Rng,
   NewId,
 } from '../types/index.js'
-import { EngineState, EngineCombatState, RedistributionState, createInitialEngineState, createInitialCombatState, createInitialStudioState, createInitialRedistributionState, normalizeEngineState } from './state.js'
+import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState, normalizeEngineState } from './state.js'
 import { GameAction, ActorSeat, PlayerConfig, DebugPatch, DebugDiceEdit } from './actions.js'
 import { EngineEvent } from './events.js'
 import { validateAction, roundEndChipsPerElement } from './validate.js'
-import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, addGenreTag, capGenreTags } from '../game-logic/board/graphBuilder.js'
+import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, addGenreTag, capGenreTags, scatterChipsRandomly } from '../game-logic/board/graphBuilder.js'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
 import { rollSong, calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
 import {
@@ -328,9 +328,6 @@ function reduce(
       }
       return endTurn(working, rng, newId)
     }
-
-    case 'PLACE_REDISTRIBUTION_CHIP':
-      return placeRedistributionChip(state, action.spaceId, rng, newId)
 
     case 'DEBUG_PATCH':
       return applyDebugPatch(state, action.patch, rng, newId)
@@ -806,22 +803,21 @@ function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
   players = players.map((p) => ({ ...p, movesThisTurn: 0, fightsThisTurn: 0, hasShoppedThisTurn: false }))
   const working = { ...state, players }
 
-  // If this round-end flips straight to the Final Showdown, skip redistribution
-  // (the board is about to become irrelevant) and finish the round now.
+  // Reinforcements: every bard contributes a balanced hand of chips, scattered
+  // at random across distinct spaces. Skipped when this round-end flips straight
+  // to the Final Showdown — the board is about to stop mattering.
   const flippingToBoss = !!state.pendingPhase && state.finalTurnGranted
-  if (flippingToBoss || state.players.length === 0) {
-    return finishRound(working, rng, newId)
-  }
+  const reinforced = flippingToBoss
+    ? working
+    : { ...working, spaces: scatterChipsRandomly(working.spaces, roundEndChips(working), rng) }
 
-  // Otherwise deal round-end reinforcements: the first bard places their hand,
-  // then the next, and so on. finishRound runs once the last chip is down.
-  return { ...working, redistribution: beginRedistribution(0) }
+  return finishRound(reinforced, rng, newId)
 }
 
 /**
  * Round-over bookkeeping: latch the phase transition, grow the round counter,
- * respawn every space's monsters from its (redistributed) tags, refill the shop,
- * and — when entering the Final Showdown — start it. Clears redistribution.
+ * respawn every space's monsters from its (reinforced) tags, refill the shop,
+ * and — when entering the Final Showdown — start it.
  */
 function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
   let { phase, pendingPhase, finalTurnGranted, currentRound } = state
@@ -893,7 +889,6 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
     elementDiscard,
     elementOffers,
     studio: createInitialStudioState(),
-    redistribution: createInitialRedistributionState(),
     ...showdownFields,
   }
 }
@@ -903,40 +898,13 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
 // ============================================================
 
 /**
- * The chips one bard is dealt at round end: `roundEndChipsPerElement` of every
- * element, so each bard always reinforces the board with a balanced hand.
+ * The chips the board gains at round end: `roundEndChipsPerElement` of every
+ * element, per bard — so reinforcements stay elementally balanced and scale
+ * with the size of the table.
  */
-export function roundEndChipHand(): Genre[] {
+export function roundEndChips(state: EngineState): Genre[] {
   const per = roundEndChipsPerElement()
-  return ALL_GENRES.flatMap((genre) => Array<Genre>(per).fill(genre))
-}
-
-function beginRedistribution(placerIdx: number): RedistributionState {
-  return { active: true, placerIdx, chipsToPlace: roundEndChipHand(), placedSpaceIds: [] }
-}
-
-function placeRedistributionChip(state: EngineState, spaceId: number, rng: Rng, newId: NewId): EngineState {
-  const r = state.redistribution
-  const [chip, ...rest] = r.chipsToPlace
-  const spaces = state.spaces.map((s) =>
-    s.id === spaceId ? { ...s, genreTags: [...s.genreTags, chip] } : s
-  )
-
-  // More chips in this bard's hand
-  if (rest.length > 0) {
-    return {
-      ...state,
-      spaces,
-      redistribution: { ...r, chipsToPlace: rest, placedSpaceIds: [...r.placedSpaceIds, spaceId] },
-    }
-  }
-
-  // Hand finished. Pass to the next bard, or start the new round.
-  const next = { ...state, spaces }
-  if (r.placerIdx < state.players.length - 1) {
-    return { ...next, redistribution: beginRedistribution(r.placerIdx + 1) }
-  }
-  return finishRound(next, rng, newId)
+  return state.players.flatMap(() => ALL_GENRES.flatMap((genre) => Array<Genre>(per).fill(genre)))
 }
 
 // ============================================================

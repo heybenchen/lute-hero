@@ -374,17 +374,3 @@ export const selectIsHost = (state: GameStore): boolean => {
   if (state.mode !== 'online') return true
   return state.lobby?.mySeatId === state.lobby?.hostSeatId
 }
-
-/** The bard placing their round-end reinforcement chips right now. */
-export const selectRedistributionActorId = (state: GameStore): string | null => {
-  const r = state.redistribution
-  if (!r.active || state.players.length === 0) return null
-  return state.players[r.placerIdx]?.id ?? null
-}
-
-/** Hotseat: always true. Online: only when the acting seat is mine. */
-export const selectCanRedistribute = (state: GameStore): boolean => {
-  if (state.mode !== 'online') return true
-  const myId = selectMyPlayerId(state)
-  return myId !== null && selectRedistributionActorId(state) === myId
-}
