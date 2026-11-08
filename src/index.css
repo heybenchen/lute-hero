@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "Spectral:Bold";
+  src: url("https://static.figma.com/font/Spectral-Bold_2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

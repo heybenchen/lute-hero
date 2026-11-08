@@ -1,8 +1,8 @@
 import { Dice } from '@/types'
-import { GenreBadge } from './GenreBadge'
 import { DiceShape } from './DiceShape'
 import { useRollAnimation } from './useRollAnimation'
 import { getMaxValue } from '@/game-logic/dice/roller'
+import { GENRE_THEME } from '@/data/genreTheme'
 
 interface DiceDisplayProps {
   dice: Dice
@@ -26,121 +26,34 @@ export function DiceDisplay({
 }: DiceDisplayProps) {
   const maxValue = getMaxValue(dice.type)
   const { displayValue, rolling } = useRollAnimation(value, maxValue, animateRoll)
-
-  if (compact) {
-    return (
-      <div className={`flex items-center gap-1.5 ${className}`}>
-        {/* Original die */}
-        <div
-          className={`die p-1.5 ${rolling ? 'animate-dice-roll' : ''}`}
-          style={{
-            boxShadow: isCrit && !rolling
-              ? '0 0 10px rgba(230, 195, 90, 0.5), 0 0 4px rgba(230, 195, 90, 0.3)'
-              : undefined,
-            borderColor: isCrit && !rolling ? 'rgba(230, 195, 90, 0.7)' : undefined,
-            minWidth: '52px',
-            minHeight: '52px',
-          }}
-        >
-          <div className="flex flex-col items-center">
-            <div className="text-lg text-gold-400"><DiceShape type={dice.type} /></div>
-            {displayValue !== undefined && (
-              <div className={`text-base font-bold tabular-nums ${rolling ? 'text-gold-400/80' : isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
-                {displayValue}
-              </div>
-            )}
-            <GenreBadge genre={dice.genre} className="text-[10px] px-1 py-0" />
-          </div>
-        </div>
-
-        {/* Cascade dice */}
-        {cascadeRolls.map((cascadeValue, idx) => {
-          const cascadeCrit = cascadeValue === maxValue
-          return (
-            <div key={idx} className="flex items-center gap-1.5">
-              <span className="text-gold-400 font-bold text-xs">+</span>
-              <div
-                className="die p-1"
-                style={{
-                  boxShadow: cascadeCrit
-                    ? '0 0 10px rgba(230, 195, 90, 0.5), 0 0 4px rgba(230, 195, 90, 0.3)'
-                    : '0 0 6px rgba(230, 195, 90, 0.15)',
-                  borderColor: cascadeCrit
-                    ? 'rgba(230, 195, 90, 0.7)'
-                    : 'rgba(230, 195, 90, 0.3)',
-                  minWidth: '44px',
-                  minHeight: '44px',
-                }}
-              >
-                <div className="flex flex-col items-center">
-                  <div className="text-sm text-gold-400"><DiceShape type={dice.type} /></div>
-                  <div className={`text-sm font-bold ${cascadeCrit ? 'text-gold-300' : 'text-gold-400'}`}>
-                    {cascadeValue}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
+  const genreColor = GENRE_THEME[dice.genre].color
+  const isCritical = isCrit && !rolling
+  const result = displayValue === undefined
+    ? dice.genre
+    : isCritical && cascadeRolls.length > 0
+      ? [displayValue, ...cascadeRolls].join(' + ')
+      : String(displayValue)
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      {/* Original die */}
-      <div
-        className={`die ${rolling ? 'animate-dice-roll' : ''}`}
-        style={{
-          boxShadow: isCrit && !rolling
-            ? '0 0 12px rgba(230, 195, 90, 0.5), 0 0 4px rgba(230, 195, 90, 0.3)'
-            : undefined,
-          borderColor: isCrit && !rolling ? 'rgba(230, 195, 90, 0.7)' : undefined,
-        }}
-      >
-        <div className="flex flex-col items-center">
-          <div className="text-2xl text-gold-400"><DiceShape type={dice.type} /></div>
-          {displayValue !== undefined && (
-            <div className={`text-xl font-bold tabular-nums ${rolling ? 'text-gold-400/80' : isCrit ? 'text-gold-300' : 'text-parchment-200'}`}>
-              {displayValue}
-            </div>
-          )}
-          <div className="text-xs mt-0.5">
-            <GenreBadge genre={dice.genre} className="text-[10px] px-1 py-0" />
-          </div>
-        </div>
+    <div
+      className={`flex shrink-0 flex-col items-center justify-center rounded-lg bg-[#2a2118] px-3 pb-3 pt-4 ${
+        compact ? 'h-[76px] w-16 gap-2' : 'h-[90px] w-20 gap-3'
+      } ${className}`}
+      style={{ border: `1px solid ${genreColor}` }}
+    >
+      <div className={`flex shrink-0 items-center justify-center ${compact ? 'h-6 w-6' : 'h-[30px] w-[30px]'}`}>
+        <DiceShape
+          type={dice.type}
+          size={compact ? 40 : 50}
+          className={rolling ? 'animate-dice-roll' : ''}
+        />
       </div>
-
-      {/* Cascade dice */}
-      {cascadeRolls.map((cascadeValue, idx) => {
-        const cascadeCrit = cascadeValue === maxValue
-        return (
-          <div key={idx} className="flex items-center gap-2">
-            <span className="text-gold-400 font-bold text-sm">+</span>
-            <div
-              className="die"
-              style={{
-                boxShadow: cascadeCrit
-                  ? '0 0 12px rgba(230, 195, 90, 0.5), 0 0 4px rgba(230, 195, 90, 0.3)'
-                  : '0 0 8px rgba(230, 195, 90, 0.15)',
-                borderColor: cascadeCrit
-                  ? 'rgba(230, 195, 90, 0.7)'
-                  : 'rgba(230, 195, 90, 0.3)',
-              }}
-            >
-              <div className="flex flex-col items-center">
-                <div className="text-2xl text-gold-400"><DiceShape type={dice.type} /></div>
-                <div className={`text-xl font-bold ${cascadeCrit ? 'text-gold-300' : 'text-gold-400'}`}>
-                  {cascadeValue}
-                </div>
-                <div className="text-xs mt-0.5">
-                  <GenreBadge genre={dice.genre} className="text-[10px] px-1 py-0" />
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      })}
+      <div
+        className="w-full break-words text-center font-['Spectral:Bold'] text-xs font-bold leading-[1.25] tabular-nums"
+        style={{ color: isCritical ? '#f0d78c' : genreColor }}
+      >
+        {result}
+      </div>
     </div>
   )
 }

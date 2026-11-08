@@ -1,34 +1,32 @@
 import { DiceType } from '@/types'
-import d4Icon from '@/assets/dice/d4.svg'
-import d8Icon from '@/assets/dice/d8.svg'
-import d12Icon from '@/assets/dice/d12.svg'
-import d20Icon from '@/assets/dice/d20.svg'
 
-/** Illustrated icon per die type (white-faced, black-outlined SVGs). */
+/** Figma-authored white-faced, black-outlined die illustrations. */
 const DICE_ICONS: Record<DiceType, string> = {
-  d4: d4Icon,
-  d8: d8Icon,
-  d12: d12Icon,
-  d20: d20Icon,
+  d4: '/assets/2d4da.svg',
+  d8: '/assets/3c7b4.svg',
+  d12: '/assets/be4dd.svg',
+  d20: '/assets/9a175.svg',
 }
 
 interface DiceShapeProps {
   type: DiceType
   className?: string
+  /** Explicit icon height in pixels; otherwise the icon follows current font size. */
+  size?: number
 }
 
 /**
- * Renders each die as its illustrated icon, scaled to the current font-size so
- * it drops into text like a glyph. Width follows each icon's aspect ratio.
+ * Renders each die as its illustrated icon. By default it scales to the current
+ * font size so it can drop into text like a glyph.
  */
-export function DiceShape({ type, className = '' }: DiceShapeProps) {
+export function DiceShape({ type, className = '', size }: DiceShapeProps) {
   return (
     <img
       src={DICE_ICONS[type]}
       alt={type}
       draggable={false}
       className={`inline-block align-middle ${className}`}
-      style={{ height: '1em', width: 'auto' }}
+      style={{ height: size ?? '1em', width: 'auto', maxWidth: 'none' }}
     />
   )
 }
