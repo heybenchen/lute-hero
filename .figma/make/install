@@ -1,6 +1,4 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "Installing dependencies..."
-pnpm install
-echo "Dependencies installed"
+exec pnpm install --frozen-lockfile
