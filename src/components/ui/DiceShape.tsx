@@ -1,11 +1,15 @@
 import { DiceType } from '@/types'
+import d4Icon from '@/assets/dice/d4.svg'
+import d8Icon from '@/assets/dice/d8.svg'
+import d12Icon from '@/assets/dice/d12.svg'
+import d20Icon from '@/assets/dice/d20.svg'
 
-/** Figma-authored white-faced, black-outlined die illustrations. */
+/** Existing white-faced, black-outlined die illustrations. */
 const DICE_ICONS: Record<DiceType, string> = {
-  d4: '/assets/2d4da.svg',
-  d8: '/assets/3c7b4.svg',
-  d12: '/assets/be4dd.svg',
-  d20: '/assets/9a175.svg',
+  d4: d4Icon,
+  d8: d8Icon,
+  d12: d12Icon,
+  d20: d20Icon,
 }
 
 interface DiceShapeProps {

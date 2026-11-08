@@ -14,7 +14,7 @@
 
 ## Completed
 
-- Updated the shared `DiceShape` and `DiceDisplay` components from the latest Figma designs: all four die types use the exact local Figma SVG assets, while the display now supports the new genre-bordered Ready/Rolled/Critical states, combined cascading-critical notation, and the existing dynamic roll animation.
+- Updated the shared `DiceShape` and `DiceDisplay` components from the latest Figma designs: all four die types reuse the repository's existing SVG assets, while the display now supports the new genre-bordered Ready/Rolled/Critical states, combined cascading-critical notation, and the existing dynamic roll animation.
 
 - Bestiary Monster Manual at `/bestiary`: integrated the standalone musician-pun bestiary into the main app as a second route on the same Vercel deployment, rather than a separate project. Shared roster/effects/level-builder in `src/bestiary/data.ts` feed both a Tailwind + lucide-react UI (`src/bestiary/Bestiary.tsx`) and two new serverless functions — `GET/POST /api/monsters` and `PUT/DELETE /api/monsters/[id]` — that persist to the existing Upstash Redis (`getRedis()`, key `bestiary:monsters`), seeding the 82-monster roster on first read and falling back to in-memory for dev/tests. `main.tsx` does lightweight path routing (each side lazy-loaded so the bestiary's deps stay out of the game bundle), `vercel.json` adds a SPA rewrite that excludes `/api`, and the dev harness (`scripts/api-dev.ts`) serves the new routes. Verified: build green, lint/136 tests pass, full CRUD round-trips through the Vite proxy, and both `/bestiary` and the game root render correctly in-browser.
 
