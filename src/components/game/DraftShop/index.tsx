@@ -428,22 +428,14 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                 background: 'rgb(42, 33, 24)',
                               }}
                             >
-                              {offerAction === 'upgrade-locked' ? (
-                                <div className="text-base font-bold tracking-wide text-parchment-100">
-                                  {upgradeCost} EXP
-                                </div>
-                              ) : (
-                                <>
-                                  <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">
-                                    <span aria-hidden="true">&uarr;</span>
-                                    <DiceShape type={nextType} />
-                                    <span>{nextType}</span>
-                                  </div>
-                                  <div className="mt-1 text-[11px] font-bold text-gold-300">
-                                    {upgradeCost} EXP
-                                  </div>
-                                </>
-                              )}
+                              <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">
+                                <span aria-hidden="true">&uarr;</span>
+                                <DiceShape type={nextType} />
+                                <span>{nextType}</span>
+                              </div>
+                              <div className={`mt-1 text-[11px] font-bold ${offerAction === 'upgrade-locked' ? 'text-parchment-100' : 'text-gold-300'}`}>
+                                {upgradeCost} EXP
+                              </div>
                             </div>
                           )}
                         </button>

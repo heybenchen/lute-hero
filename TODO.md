@@ -14,7 +14,7 @@
 
 ## Completed
 
-- Returned unaffordable Studio upgrades to the same dark card surface and border as other disabled slots. Their 35%-opacity overlay now hides all dice/iconography and centers a larger EXP cost for clarity.
+- Returned unaffordable Studio upgrades to the same dark card surface, border, and 35% opacity as other disabled slots while retaining the up arrow, next-die shape/tier, and high-contrast EXP cost.
 
 - Removed gradients from the Studio upgrade overlays: both enabled and disabled previews use a solid dark wood surface.
 
