@@ -381,7 +381,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               offerAction === 'buy'
                                 ? `1px dashed rgba(${offerRgb}, 0.8)`
                                 : offerAction === 'upgrade-locked'
-                                ? '1px solid rgba(210, 210, 210, 0.8)'
+                                ? '1px solid rgba(212, 168, 83, 0.25)'
                                 : offerAction === 'upgrade'
                                 ? `1px solid rgba(${offerRgb}, 0.85)`
                                 : slot.dice
@@ -425,19 +425,25 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             <div
                               className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
                               style={{
-                                background: offerAction === 'upgrade-locked'
-                                  ? 'rgb(112, 112, 112)'
-                                  : 'rgb(42, 33, 24)',
+                                background: 'rgb(42, 33, 24)',
                               }}
                             >
-                              <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">
-                                <span aria-hidden="true">&uarr;</span>
-                                <DiceShape type={nextType} />
-                                <span>{nextType}</span>
-                              </div>
-                              <div className={`mt-1 text-[11px] font-bold ${offerAction === 'upgrade-locked' ? 'text-parchment-100' : 'text-gold-300'}`}>
-                                {upgradeCost} EXP
-                              </div>
+                              {offerAction === 'upgrade-locked' ? (
+                                <div className="text-base font-bold tracking-wide text-parchment-100">
+                                  {upgradeCost} EXP
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">
+                                    <span aria-hidden="true">&uarr;</span>
+                                    <DiceShape type={nextType} />
+                                    <span>{nextType}</span>
+                                  </div>
+                                  <div className="mt-1 text-[11px] font-bold text-gold-300">
+                                    {upgradeCost} EXP
+                                  </div>
+                                </>
+                              )}
                             </div>
                           )}
                         </button>

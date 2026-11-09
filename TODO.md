@@ -14,11 +14,11 @@
 
 ## Completed
 
-- Matched unaffordable Studio upgrades to the other disabled controls at 35% opacity, with a lighter solid gray base and neutral border so the overlay stays visually clear.
+- Returned unaffordable Studio upgrades to the same dark card surface and border as other disabled slots. Their 35%-opacity overlay now hides all dice/iconography and centers a larger EXP cost for clarity.
 
-- Removed gradients from the Studio upgrade overlays: enabled previews use a solid dark wood surface and disabled previews use a solid medium gray.
+- Removed gradients from the Studio upgrade overlays: both enabled and disabled previews use a solid dark wood surface.
 
-- Unified all six Studio song slots to use the same spacing, alignment, and full upgrade overlay. Unaffordable upgrades now use an opaque medium-gray surface, neutral border, no active glow, and high-contrast parchment text.
+- Unified all six Studio song slots to use the same spacing, alignment, and full upgrade overlay. Unaffordable upgrades use the normal disabled-card treatment with high-contrast parchment text.
 
 - Restyled the Studio upgrade overlay with the app's opaque dark wood surface, leaving element color to the existing border and glow.
 
