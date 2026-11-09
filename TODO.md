@@ -14,6 +14,8 @@
 
 ## Completed
 
+- Added an unaffordable empty-slot preview in the Studio: it still shows the `+ d4` action and EXP cost, but uses the same dark surface, 35% opacity, subdued border, no glow, and disabled cursor as locked upgrades.
+
 - Returned unaffordable Studio upgrades to the same dark card surface, border, and 35% opacity as other disabled slots while retaining the up arrow, next-die shape/tier, and high-contrast EXP cost.
 
 - Removed gradients from the Studio upgrade overlays: both enabled and disabled previews use a solid dark wood surface.

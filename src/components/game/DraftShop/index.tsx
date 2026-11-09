@@ -329,7 +329,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     {song.slots.map((slot, idx) => {
                       const upgradeCost = slot.dice ? getUpgradeCost(slot.dice.type) : null
                       const canAffordD4 = player.exp >= newD4Cost()
-                      let offerAction: 'buy' | 'upgrade' | 'upgrade-locked' | 'locked' | null = null
+                      let offerAction: 'buy' | 'buy-locked' | 'upgrade' | 'upgrade-locked' | 'locked' | null = null
                       if (selectedElement && !activeDie) {
                         if (slot.dice?.genre === selectedElement) {
                           offerAction = upgradeCost === null
@@ -337,15 +337,15 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             : player.exp >= upgradeCost
                             ? 'upgrade'
                             : 'upgrade-locked'
-                        } else if (!slot.dice && canAffordD4) {
-                          offerAction = 'buy'
+                        } else if (!slot.dice) {
+                          offerAction = canAffordD4 ? 'buy' : 'buy-locked'
                         } else {
                           offerAction = 'locked'
                         }
                       }
                       const isOffer = offerAction === 'buy' || offerAction === 'upgrade'
                       const slotLabel =
-                        offerAction === 'buy'
+                        (offerAction === 'buy' || offerAction === 'buy-locked')
                           ? `Buy a ${selectedElement} d4 for ${newD4Cost()} EXP into Song ${songIndex + 1}`
                           : (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && slot.dice
                           ? `Upgrade Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} to ${getNextDiceType(slot.dice.type)} for ${upgradeCost} EXP`
@@ -366,9 +366,11 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           title={slotLabel}
                           className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center gap-1.5 py-2 text-xs relative transition-all duration-150 ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
                           style={{
-                            opacity: offerAction === 'locked' || offerAction === 'upgrade-locked' || (activeDie && slot.dice) ? 0.35 : 1,
+                            opacity: offerAction === 'locked' || offerAction === 'buy-locked' || offerAction === 'upgrade-locked' || (activeDie && slot.dice) ? 0.35 : 1,
                             background:
-                              offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'upgrade-locked'
+                              offerAction === 'buy-locked'
+                                ? 'rgb(42, 33, 24)'
+                                : offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'upgrade-locked'
                                 ? `rgba(${offerRgb}, 0.14)`
                                 : slot.dice
                                 ? activeDie
@@ -380,6 +382,8 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             border:
                               offerAction === 'buy'
                                 ? `1px dashed rgba(${offerRgb}, 0.8)`
+                                : offerAction === 'buy-locked'
+                                ? '1px dashed rgba(212, 168, 83, 0.25)'
                                 : offerAction === 'upgrade-locked'
                                 ? '1px solid rgba(212, 168, 83, 0.25)'
                                 : offerAction === 'upgrade'
@@ -392,7 +396,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                 ? '1px solid rgba(100, 180, 255, 0.4)'
                                 : '1px dashed rgba(212, 168, 83, 0.12)',
                             boxShadow: offerAction === 'buy' || offerAction === 'upgrade' ? `0 0 14px rgba(${offerRgb}, 0.25)` : undefined,
-                            cursor: offerAction === 'upgrade-locked'
+                            cursor: offerAction === 'buy-locked' || offerAction === 'upgrade-locked'
                               ? 'not-allowed'
                               : (activeDie || isOffer) && canInteract
                               ? 'pointer'
@@ -413,10 +417,12 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               </div>
                               <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
                             </div>
-                          ) : offerAction === 'buy' ? (
+                          ) : offerAction === 'buy' || offerAction === 'buy-locked' ? (
                             <div className="text-center leading-tight">
                               <div className="text-sm font-bold text-parchment-100">+ <DiceShape type="d4" /> d4</div>
-                              <div className="text-[11px] font-bold text-gold-300 mt-1">{newD4Cost()} EXP</div>
+                              <div className={`mt-1 text-[11px] font-bold ${offerAction === 'buy-locked' ? 'text-parchment-100' : 'text-gold-300'}`}>
+                                {newD4Cost()} EXP
+                              </div>
                             </div>
                           ) : (
                             <div className="text-parchment-500/30 text-xs">Empty</div>
