@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
 import { Genre, Dice, PendingReward } from '@/types'
 import { getMaxValue } from '@/game-logic/dice/roller'
@@ -18,16 +19,11 @@ interface DraftShopProps {
   onClose: () => void
 }
 
-interface OwnedDie {
-  dice: Dice
-  songIndex: number
-  slotIndex: number
-}
-
 // Stable empty reference so the selector doesn't churn when a player has no rewards
 const EMPTY_REWARDS: PendingReward[] = []
 
 export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
+  const buyingIntoSlot = useRef(false)
   const player = useGameStore(selectPlayerById(playerId))
   const dispatch = useGameStore((state) => state.dispatch)
 
@@ -56,22 +52,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
 
   const inspirationCost = getInspirationCost(player.inspirationBoughtThisTurn)
 
-  // All dice the player owns of the selected element, with their location
-  const ownedDiceOfElement: OwnedDie[] = selectedElement
-    ? player.songs.flatMap((song, songIndex) =>
-        song.slots.flatMap((slot, slotIndex) =>
-          slot.dice && slot.dice.genre === selectedElement
-            ? [{ dice: slot.dice, songIndex, slotIndex }]
-            : []
-        )
-      )
-    : []
-
-  const handleBuyNewD4 = async () => {
-    if (!canInteract || selectedOfferIdx === null || !selectedElement || player.exp < newD4Cost()) return
-    await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx })
-  }
-
   const handleUpgradeDie = (die: Dice) => {
     if (!canInteract || selectedOfferIdx === null) return
     const cost = getUpgradeCost(die.type)
@@ -79,19 +59,48 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     dispatch({ type: 'UPGRADE_DIE', offerIndex: selectedOfferIdx, diceId: die.id })
   }
 
+  // Buy a d4 of the chosen element and drop it straight into the clicked slot
+  // (into an empty slot, or replacing a die of another element)
+  const handleBuyIntoSlot = async (songId: string, slotIndex: number) => {
+    if (!canInteract || selectedOfferIdx === null || !selectedElement || player.exp < newD4Cost() || buyingIntoSlot.current) return
+    buyingIntoSlot.current = true
+    const existingIds = new Set((useGameStore.getState().pendingRewards[playerId] ?? []).map((reward) => reward.id))
+    let unsubscribe = () => {}
+    let timer: ReturnType<typeof setTimeout> | undefined
+    // Online purchases arrive through SSE, which can follow the POST response.
+    // Watch for this purchase rather than slotting a previously selected reward.
+    const rewardReady = new Promise<string | null>((resolve) => {
+      unsubscribe = useGameStore.subscribe((state) => {
+        const reward = state.pendingRewards[playerId]?.find((item) =>
+          !existingIds.has(item.id) && item.kind === 'die' && item.dice.genre === selectedElement
+        )
+        if (reward) resolve(reward.id)
+      })
+      // If the stream is unavailable, the purchase remains in Unclaimed Rewards.
+      timer = setTimeout(() => resolve(null), 10000)
+    })
+    try {
+      const result = await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx })
+      if (!result.ok) return
+      const rewardId = await rewardReady
+      const state = useGameStore.getState()
+      if (rewardId && state.studio.playerId === playerId && state.players[state.currentTurnPlayerIndex]?.id === playerId) {
+        await dispatch({ type: 'SLOT_DIE_REWARD', rewardId, songId, slotIndex })
+      }
+    } finally {
+      unsubscribe()
+      clearTimeout(timer)
+      buyingIntoSlot.current = false
+    }
+  }
+
   const handleRefreshElements = () => {
     if (!canInteract || player.inspiration < inspirationSpend()) return
     dispatch({ type: 'REFRESH_ELEMENT_OFFERS' })
   }
 
-  const handleSlotDice = (songId: string, slotIndex: number, isReplacement: boolean = false) => {
-    if (!canInteract || !activeDie || !activeReward) return
-
-    const song = player.songs.find((s) => s.id === songId)
-    if (!song) return
-
-    if (!isReplacement && song.slots[slotIndex].dice) return
-
+  const handleSlotDice = (songId: string, slotIndex: number) => {
+    if (!canInteract || !activeReward || !activeDie) return
     dispatch({ type: 'SLOT_DIE_REWARD', rewardId: activeReward.id, songId, slotIndex })
   }
 
@@ -224,64 +233,32 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </div>
             )}
 
-            {/* Options for the selected element */}
-            {selectedElement && (
-              <div className="rounded-lg p-4 mt-3 animate-slide-up"
+            {/* With an element chosen, the song slots themselves become the shop */}
+            {canInteract && !activeDie && (
+              <div className="rounded-lg px-4 py-3 mt-3 animate-slide-up flex flex-wrap items-center gap-2 text-sm text-parchment-200"
                 style={{
-                  background: 'rgba(212, 168, 83, 0.05)',
-                  border: '1px solid rgba(212, 168, 83, 0.25)',
+                  background: selectedElement ? 'rgba(212, 168, 83, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                  border: selectedElement ? '1px solid rgba(212, 168, 83, 0.25)' : '1px dashed rgba(212, 168, 83, 0.15)',
                 }}
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <GenreBadge genre={selectedElement} className="text-xs" />
-                  <span className="text-sm text-parchment-400">
-                    — buy a new die or upgrade an existing one
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-3 items-stretch">
-                  {/* New d4 */}
-                  <button
-                    onClick={handleBuyNewD4}
-                    disabled={!canInteract || player.exp < newD4Cost()}
-                    className="btn-primary text-sm px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <DiceShape type="d4" /> New d4 &mdash; {newD4Cost()} EXP
-                  </button>
-
-                  {/* Upgrades for owned dice of this element */}
-                  {ownedDiceOfElement.length === 0 ? (
-                    <div className="text-sm text-parchment-500 italic self-center">
-                      No {selectedElement} dice slotted in your songs yet
-                    </div>
-                  ) : (
-                    ownedDiceOfElement.map(({ dice, songIndex, slotIndex }) => {
-                      const nextType = getNextDiceType(dice.type)
-                      const cost = getUpgradeCost(dice.type)
-                      const affordable = cost !== null && player.exp >= cost
-                      return (
-                        <button
-                          key={dice.id}
-                          onClick={() => handleUpgradeDie(dice)}
-                          disabled={!canInteract || !nextType || !affordable}
-                          className="btn-secondary text-sm px-3 py-2 disabled:opacity-40 disabled:cursor-not-allowed text-left"
-                        >
-                          <div className="font-bold">
-                            <DiceShape type={dice.type} /> {dice.type}
-                            {nextType ? (
-                              <span> &rarr; <DiceShape type={nextType} /> {nextType} &mdash; {cost} EXP</span>
-                            ) : (
-                              <span className="text-parchment-500"> (max)</span>
-                            )}
-                          </div>
-                          <div className="text-[10px] text-parchment-500 font-normal">
-                            Song {songIndex + 1} &middot; slot {slotIndex + 1}
-                          </div>
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
+                {!selectedElement ? (
+                  <span className="text-parchment-400">Choose an element, then click a slot in Your Songs to buy or upgrade a die there.</span>
+                ) : player.exp < newD4Cost() ? (
+                  <>
+                    <GenreBadge genre={selectedElement} className="text-xs" />
+                    <span className="text-parchment-400">chosen, but a new d4 costs {newD4Cost()} EXP and you have {player.exp}.</span>
+                  </>
+                ) : (
+                  <>
+                    <GenreBadge genre={selectedElement} className="text-xs" />
+                    <span>chosen. Now click a slot in Your Songs:</span>
+                    <span className="font-bold text-gold-300">an empty slot buys a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP)</span>
+                    <span className="text-parchment-500">&middot;</span>
+                    <span className="font-bold text-gold-300">a {selectedElement} die upgrades it</span>
+                    <span className="text-parchment-500">&middot;</span>
+                    <span className="text-orange-300">any other die can be swapped for the new d4</span>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -353,28 +330,70 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
 
                   <div className="flex justify-center gap-3">
                     {song.slots.map((slot, idx) => {
+                      const upgradeCost = slot.dice ? getUpgradeCost(slot.dice.type) : null
+                      const canAffordD4 = player.exp >= newD4Cost()
+                      let offerAction: 'buy' | 'upgrade' | 'replace' | 'locked' | null = null
+                      if (selectedElement && !activeDie) {
+                        if (slot.dice?.genre === selectedElement) {
+                          offerAction = upgradeCost !== null && player.exp >= upgradeCost ? 'upgrade' : 'locked'
+                        } else if (canAffordD4) {
+                          offerAction = slot.dice ? 'replace' : 'buy'
+                        } else {
+                          offerAction = 'locked'
+                        }
+                      }
+                      const isOffer = offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'replace'
+                      const slotLabel =
+                        offerAction === 'buy'
+                          ? `Buy a ${selectedElement} d4 for ${newD4Cost()} EXP into Song ${songIndex + 1}`
+                          : offerAction === 'upgrade' && slot.dice
+                          ? `Upgrade Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} to ${getNextDiceType(slot.dice.type)} for ${upgradeCost} EXP`
+                          : offerAction === 'replace' && slot.dice
+                          ? `Swap Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} for a new ${selectedElement} d4 (${newD4Cost()} EXP)`
+                          : undefined
+                      const offerRgb = selectedElement ? GENRE_THEME[selectedElement].rgb : '212, 168, 83'
+                      const nextType = slot.dice ? getNextDiceType(slot.dice.type) : null
+                      const onSlotClick = () => {
+                        if (offerAction === 'buy' || offerAction === 'replace') return handleBuyIntoSlot(song.id, idx)
+                        if (offerAction === 'upgrade' && slot.dice) return handleUpgradeDie(slot.dice)
+                        handleSlotDice(song.id, idx)
+                      }
                       return (
                         <button
                           key={idx}
-                          onClick={() => handleSlotDice(song.id, idx, !!slot.dice)}
-                          disabled={!canInteract || !activeDie}
-                          className="flex-1 h-20 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150"
+                          onClick={onSlotClick}
+                          disabled={!canInteract || (!activeDie && !isOffer)}
+                          aria-label={slotLabel}
+                          title={slotLabel}
+                          className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150 ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
                           style={{
-                            background: slot.dice
-                              ? activeDie
-                                ? 'rgba(200, 100, 0, 0.1)'
-                                : 'rgba(212, 168, 83, 0.1)'
-                              : activeDie && !slot.dice
-                              ? 'rgba(0, 100, 200, 0.1)'
-                              : 'rgba(255, 255, 255, 0.02)',
-                            border: slot.dice
-                              ? activeDie
-                                ? '1px solid rgba(255, 180, 100, 0.4)'
-                                : '1px solid rgba(212, 168, 83, 0.25)'
-                              : activeDie
-                              ? '1px solid rgba(100, 180, 255, 0.4)'
-                              : '1px dashed rgba(212, 168, 83, 0.12)',
-                            cursor: activeDie && canInteract ? 'pointer' : 'default',
+                            opacity: offerAction === 'locked' ? 0.35 : 1,
+                            background:
+                              offerAction === 'buy' || offerAction === 'upgrade'
+                                ? `rgba(${offerRgb}, 0.14)`
+                                : slot.dice
+                                ? activeDie
+                                  ? 'rgba(200, 100, 0, 0.1)'
+                                  : 'rgba(212, 168, 83, 0.1)'
+                                : activeDie
+                                ? 'rgba(0, 100, 200, 0.1)'
+                                : 'rgba(255, 255, 255, 0.02)',
+                            border:
+                              offerAction === 'buy'
+                                ? `1px dashed rgba(${offerRgb}, 0.8)`
+                                : offerAction === 'replace'
+                                ? '1px dashed rgba(255, 170, 90, 0.45)'
+                                : offerAction === 'upgrade'
+                                ? `1px solid rgba(${offerRgb}, 0.85)`
+                                : slot.dice
+                                ? activeDie
+                                  ? '1px solid rgba(255, 180, 100, 0.4)'
+                                  : '1px solid rgba(212, 168, 83, 0.25)'
+                                : activeDie
+                                ? '1px solid rgba(100, 180, 255, 0.4)'
+                                : '1px dashed rgba(212, 168, 83, 0.12)',
+                            boxShadow: offerAction === 'buy' || offerAction === 'upgrade' ? `0 0 14px rgba(${offerRgb}, 0.25)` : undefined,
+                            cursor: (activeDie || isOffer) && canInteract ? 'pointer' : 'default',
                           }}
                         >
                           {slot.dice ? (
@@ -391,8 +410,23 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               </div>
                               <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
                             </div>
+                          ) : offerAction === 'buy' ? (
+                            <div className="text-center leading-tight">
+                              <div className="text-sm font-bold text-parchment-100">+ <DiceShape type="d4" /> d4</div>
+                              <div className="text-[11px] font-bold text-gold-300 mt-1">{newD4Cost()} EXP</div>
+                            </div>
                           ) : (
                             <div className="text-parchment-500/30 text-xs">Empty</div>
+                          )}
+                          {offerAction === 'upgrade' && nextType && (
+                            <div className="absolute bottom-1 text-[10px] font-bold text-gold-300 whitespace-nowrap">
+                              &uarr; {nextType} &middot; {upgradeCost} EXP
+                            </div>
+                          )}
+                          {offerAction === 'replace' && (
+                            <div className="absolute bottom-1 text-[10px] font-bold text-orange-300/80 whitespace-nowrap">
+                              &#x21C4; swap &middot; {newD4Cost()} EXP
+                            </div>
                           )}
                           {activeDie && slot.dice && (
                             <div className="absolute bottom-1 text-[10px] text-orange-400 font-bold">
