@@ -365,7 +365,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           disabled={!canInteract || (!activeDie && !isOffer)}
                           aria-label={slotLabel}
                           title={slotLabel}
-                          className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150 ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
+                          className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150 ${songIndex === 0 && idx === 0 ? 'gap-1.5 py-2' : ''} ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
                           style={{
                             opacity: offerAction === 'locked' ? 0.35 : 1,
                             background:
@@ -397,7 +397,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           }}
                         >
                           {slot.dice ? (
-                            <div className="text-center relative flex flex-col">
+                            <div className={`text-center relative flex flex-col ${songIndex === 0 && idx === 0 ? 'items-center' : ''}`}>
                               <div className="text-2xl mb-0.5 text-gold-400"><DiceShape type={slot.dice.type} /></div>
                               <div className="absolute -top-1 -right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                                 style={{
@@ -422,7 +422,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             offerAction === 'upgrade'
                             || (songIndex === 0 && idx === 0 && !activeDie && (!selectedElement || selectedElement === slot.dice?.genre))
                           ) && (
-                            <div className="absolute bottom-1 text-[10px] font-bold text-gold-300 whitespace-nowrap">
+                            <div className={`${songIndex === 0 && idx === 0 ? 'mt-0.5 border-t border-gold-400/20 px-1.5 pt-1' : 'absolute bottom-1'} text-[10px] font-bold leading-none text-gold-300 whitespace-nowrap`}>
                               &uarr; {nextType} &middot; {upgradeCost} EXP
                             </div>
                           )}
