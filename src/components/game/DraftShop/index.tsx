@@ -181,7 +181,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 No chips on display — draw new ones from the bag
               </div>
             ) : (
-              <div className="flex gap-3">
+              <div className="flex w-full gap-3">
                 {elementOffers.map((genre, offerIdx) => {
                   const { emoji, rgb } = GENRE_THEME[genre]
                   const isSelected = selectedOfferIdx === offerIdx
@@ -418,10 +418,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           ) : (
                             <div className="text-parchment-500/30 text-xs">Empty</div>
                           )}
-                          {nextType && (
-                            offerAction === 'upgrade'
-                            || (songIndex === 0 && idx === 0 && !activeDie && (!selectedElement || selectedElement === slot.dice?.genre))
-                          ) && (
+                          {nextType && offerAction === 'upgrade' && (
                             <div className={`${songIndex === 0 && idx === 0 ? 'mt-0.5 border-t border-gold-400/20 px-1.5 pt-1' : 'absolute bottom-1'} text-[10px] font-bold leading-none text-gold-300 whitespace-nowrap`}>
                               &uarr; {nextType} &middot; {upgradeCost} EXP
                             </div>
