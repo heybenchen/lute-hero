@@ -426,8 +426,8 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
                               style={{
                                 background: offerAction === 'upgrade-locked'
-                                  ? 'linear-gradient(165deg, rgb(96, 96, 96), rgb(62, 62, 62))'
-                                  : 'linear-gradient(165deg, rgb(42, 33, 24), rgb(30, 24, 18))',
+                                  ? 'rgb(78, 78, 78)'
+                                  : 'rgb(42, 33, 24)',
                               }}
                             >
                               <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">
