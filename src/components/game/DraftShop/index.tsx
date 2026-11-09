@@ -424,7 +424,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               <div
                                 className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
                                 style={{
-                                  background: `linear-gradient(160deg, rgb(${offerRgb}), rgb(42, 33, 24) 68%)`,
+                                  background: 'linear-gradient(165deg, rgb(42, 33, 24), rgb(30, 24, 18))',
                                   filter: offerAction === 'upgrade-locked'
                                     ? 'grayscale(0.6) brightness(0.72)'
                                     : undefined,

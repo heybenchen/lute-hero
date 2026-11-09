@@ -14,6 +14,8 @@
 
 ## Completed
 
+- Restyled the Studio upgrade overlay with the same opaque dark wood gradient used by the app's song cards, leaving element color to the existing border and glow.
+
 - Made the Studio upgrade overlay fully opaque so the current die cannot show through; unaffordable previews keep the solid cover but use a muted disabled treatment and not-allowed cursor.
 
 - Fixed matching-element upgrade previews in the Studio so the overlay and its EXP cost remain visible even when the player cannot yet afford the upgrade; unaffordable upgrades stay disabled.
