@@ -181,7 +181,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 No chips on display — draw new ones from the bag
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="flex gap-3">
                 {elementOffers.map((genre, offerIdx) => {
                   const { emoji, rgb } = GENRE_THEME[genre]
                   const isSelected = selectedOfferIdx === offerIdx
@@ -189,7 +189,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     <button
                       key={`${genre}-${offerIdx}`}
                       disabled={!canInteract}
-                      className={`group relative rounded-lg p-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer hover:-translate-y-1' : 'cursor-default'}`}
+                      className={`group relative w-full rounded-lg p-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer hover:-translate-y-1' : 'cursor-default'}`}
                       style={{
                         background: isSelected
                           ? `linear-gradient(160deg, rgba(${rgb}, 0.22) 0%, rgba(${rgb}, 0.06) 100%)`
