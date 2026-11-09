@@ -390,7 +390,11 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                 ? '1px solid rgba(100, 180, 255, 0.4)'
                                 : '1px dashed rgba(212, 168, 83, 0.12)',
                             boxShadow: offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'upgrade-locked' ? `0 0 14px rgba(${offerRgb}, 0.25)` : undefined,
-                            cursor: (activeDie || isOffer) && canInteract ? 'pointer' : 'default',
+                            cursor: offerAction === 'upgrade-locked'
+                              ? 'not-allowed'
+                              : (activeDie || isOffer) && canInteract
+                              ? 'pointer'
+                              : 'default',
                           }}
                         >
                           {slot.dice ? (
@@ -420,7 +424,10 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               <div
                                 className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
                                 style={{
-                                  background: `linear-gradient(160deg, rgba(${offerRgb}, 0.34), rgba(42, 33, 24, 0.98))`,
+                                  background: `linear-gradient(160deg, rgb(${offerRgb}), rgb(42, 33, 24) 68%)`,
+                                  filter: offerAction === 'upgrade-locked'
+                                    ? 'grayscale(0.6) brightness(0.72)'
+                                    : undefined,
                                 }}
                               >
                                 <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">

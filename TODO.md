@@ -14,6 +14,8 @@
 
 ## Completed
 
+- Made the Studio upgrade overlay fully opaque so the current die cannot show through; unaffordable previews keep the solid cover but use a muted disabled treatment and not-allowed cursor.
+
 - Fixed matching-element upgrade previews in the Studio so the overlay and its EXP cost remain visible even when the player cannot yet afford the upgrade; unaffordable upgrades stay disabled.
 
 - Removed die swapping from the Studio: newly purchased and queued dice can only be slotted into empty songs, occupied slots are disabled, and the engine rejects replacement attempts without consuming the reward.
