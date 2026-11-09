@@ -305,7 +305,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           </Section>
 
           <Section title="🎵 Genres & Elements">
-            <p className="mb-3">Each die belongs to an element. Opposing elements are immune to each other, and every monster takes double damage from its own element:</p>
+            <p className="mb-3">You start with a d8 of your chosen element and a d4 of its opposite. Opposing elements are immune to each other, and every monster takes double damage from its own element:</p>
             <TypeChart className="mb-1" />
           </Section>
 
