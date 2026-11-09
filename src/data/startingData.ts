@@ -8,28 +8,19 @@ export const STARTER_DICE: { [key in Genre]: Dice[] } = {
   Shanty: [{ id: "shanty-starter-1", type: "d8", genre: "Shanty" }],
 };
 
-// Create 3 starter songs: the first holds the single starter d8 in its first
-// slot (its second slot is open), the others are empty.
+/** Every bard carries this many songs; each song holds exactly one die. */
+export const SONGS_PER_BARD = 6;
+
+// Create 6 starter songs of one die each: the first holds the starter d8, the
+// other five are empty.
 export function createStarterSongs(genre: Genre, playerId: string): Song[] {
   const starterDice = STARTER_DICE[genre];
 
-  return [
-    {
-      id: `${playerId}-song-1`,
-      slots: [{ dice: starterDice[0] }, { dice: null }],
-      used: false,
-    },
-    {
-      id: `${playerId}-song-2`,
-      slots: [{ dice: null }, { dice: null }],
-      used: false,
-    },
-    {
-      id: `${playerId}-song-3`,
-      slots: [{ dice: null }, { dice: null }],
-      used: false,
-    },
-  ];
+  return Array.from({ length: SONGS_PER_BARD }, (_, i): Song => ({
+    id: `${playerId}-song-${i + 1}`,
+    slots: [{ dice: i === 0 ? starterDice[0] : null }],
+    used: false,
+  }));
 }
 
 // Dice upgrade path

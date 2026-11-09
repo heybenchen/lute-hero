@@ -42,7 +42,7 @@ export interface SongSlot {
 
 export interface Song {
   id: string;
-  slots: [SongSlot, SongSlot]; // 2 dice slots
+  slots: [SongSlot]; // 1 die per song (6 songs per bard)
   used: boolean; // Can only use each song once per combat
 }
 

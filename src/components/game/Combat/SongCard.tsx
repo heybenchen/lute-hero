@@ -32,7 +32,7 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
 
   return (
     <div
-      className="w-[60px] h-[60px] aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs"
+      className="flex-1 min-w-0 h-[80px] rounded-lg flex flex-col items-center justify-center text-xs"
       style={{
         background: genreColor ? `${genreColor}1f` : 'rgba(255, 255, 255, 0.02)',
         border: genreColor ? `1px solid ${genreColor}80` : '1px dashed rgba(212, 168, 83, 0.12)',
@@ -73,11 +73,11 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
 
   return (
     <div
-      className="animate-slide-up snap-center shrink-0"
+      className="animate-slide-up min-w-0"
       style={{ animationDelay: `${index * 100 + 150}ms`, animationFillMode: 'both' }}
     >
       <div
-        className={`relative min-w-[320px] max-w-[350px] rounded-xl overflow-hidden transition-all duration-300 ${
+        className={`relative w-full rounded-xl overflow-hidden transition-all duration-300 ${
           song.used && !isCurrent ? 'opacity-35 scale-[0.98]' : !song.used ? 'hover:scale-[1.02]' : ''
         }`}
         style={{
@@ -99,7 +99,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
           <div className="h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.3), transparent)' }} />
         )}
 
-        <div className="p-5">
+        <div className="p-3">
           {/* Cover badge */}
           {isCover && ownerName && (
             <div className="mb-2 flex items-center gap-1.5">
@@ -118,7 +118,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
 
           {/* Dice */}
           <div className="mb-4 space-y-3">
-            <div className="flex gap-2 justify-center">
+            <div className="flex gap-2">
               {song.slots.map((slot, idx) => (
                 <SlotDie
                   key={idx}

@@ -17,12 +17,11 @@ function roll(diceId: string, value: number, critBonus = 0): DiceRoll {
   return { diceId, value, isCrit: critBonus > 0, critBonus, cascadeRolls: [] }
 }
 
-function song(genres: (Genre | null)[], ids: string[] = ['d1', 'd2']): Song {
+function song(genre: Genre | null): Song {
   return {
     id: 's1',
     slots: [
-      { dice: genres[0] ? { id: ids[0], type: 'd8', genre: genres[0] } : null },
-      { dice: genres[1] ? { id: ids[1], type: 'd8', genre: genres[1] } : null },
+      { dice: genre ? { id: 'd1', type: 'd8', genre } : null },
     ],
     used: false,
   }
@@ -52,27 +51,16 @@ describe('createShowdownBoss', () => {
 
 describe('getDominantGenre', () => {
   it('returns the genre of a single-element song', () => {
-    const s = song(['Ballad', 'Ballad'])
+    const s = song('Ballad')
     expect(getDominantGenre(s, [roll('d1', 3), roll('d2', 5)])).toBe('Ballad')
   })
 
-  it('picks the genre that contributed the most roll value', () => {
-    const s = song(['Ballad', 'Folk'])
-    expect(getDominantGenre(s, [roll('d1', 2), roll('d2', 6)])).toBe('Folk')
-  })
-
-  it('counts crit cascade bonuses toward the contribution', () => {
-    const s = song(['Ballad', 'Folk'])
-    expect(getDominantGenre(s, [roll('d1', 6, 5), roll('d2', 6)])).toBe('Ballad')
-  })
-
-  it('breaks ties by slot order', () => {
-    const s = song(['Shanty', 'Hymn'])
-    expect(getDominantGenre(s, [roll('d1', 4), roll('d2', 4)])).toBe('Shanty')
+  it('ignores rolls from other songs', () => {
+    expect(getDominantGenre(song('Ballad'), [roll('d1', 2), roll('d2', 20)])).toBe('Ballad')
   })
 
   it('returns null for a song with no dice', () => {
-    expect(getDominantGenre(song([null, null]), [])).toBeNull()
+    expect(getDominantGenre(song(null), [])).toBeNull()
   })
 })
 
@@ -137,8 +125,8 @@ describe('computeBossAdaptation', () => {
 
 describe('getPlayableSongs', () => {
   it('only returns songs with at least one die', () => {
-    const withDice = song(['Ballad', null])
-    const empty = { ...song([null, null]), id: 's2' }
+    const withDice = song('Ballad')
+    const empty = { ...song(null), id: 's2' }
     expect(getPlayableSongs([withDice, empty])).toEqual([withDice])
   })
 })
