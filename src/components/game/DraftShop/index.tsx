@@ -364,7 +364,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           disabled={!canInteract || (activeDie ? Boolean(slot.dice) : !isOffer)}
                           aria-label={slotLabel}
                           title={slotLabel}
-                          className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150 ${songIndex === 0 && idx === 0 ? 'gap-1.5 py-2' : ''} ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
+                          className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center gap-1.5 py-2 text-xs relative transition-all duration-150 ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
                           style={{
                             opacity: offerAction === 'locked' || (activeDie && slot.dice) ? 0.35 : 1,
                             background:
@@ -380,7 +380,9 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             border:
                               offerAction === 'buy'
                                 ? `1px dashed rgba(${offerRgb}, 0.8)`
-                                : offerAction === 'upgrade' || offerAction === 'upgrade-locked'
+                                : offerAction === 'upgrade-locked'
+                                ? '1px solid rgba(180, 180, 180, 0.65)'
+                                : offerAction === 'upgrade'
                                 ? `1px solid rgba(${offerRgb}, 0.85)`
                                 : slot.dice
                                 ? activeDie
@@ -389,7 +391,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                 : activeDie
                                 ? '1px solid rgba(100, 180, 255, 0.4)'
                                 : '1px dashed rgba(212, 168, 83, 0.12)',
-                            boxShadow: offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'upgrade-locked' ? `0 0 14px rgba(${offerRgb}, 0.25)` : undefined,
+                            boxShadow: offerAction === 'buy' || offerAction === 'upgrade' ? `0 0 14px rgba(${offerRgb}, 0.25)` : undefined,
                             cursor: offerAction === 'upgrade-locked'
                               ? 'not-allowed'
                               : (activeDie || isOffer) && canInteract
@@ -398,7 +400,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           }}
                         >
                           {slot.dice ? (
-                            <div className={`text-center relative flex flex-col ${songIndex === 0 && idx === 0 ? 'items-center' : ''}`}>
+                            <div className="text-center relative flex flex-col items-center">
                               <div className="text-2xl mb-0.5 text-gold-400"><DiceShape type={slot.dice.type} /></div>
                               <div className="absolute -top-1 -right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                                 style={{
@@ -420,30 +422,23 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             <div className="text-parchment-500/30 text-xs">Empty</div>
                           )}
                           {nextType && (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && (
-                            songIndex === 0 && idx === 0 ? (
-                              <div
-                                className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
-                                style={{
-                                  background: 'linear-gradient(165deg, rgb(42, 33, 24), rgb(30, 24, 18))',
-                                  filter: offerAction === 'upgrade-locked'
-                                    ? 'grayscale(0.6) brightness(0.72)'
-                                    : undefined,
-                                }}
-                              >
-                                <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">
-                                  <span aria-hidden="true">&uarr;</span>
-                                  <DiceShape type={nextType} />
-                                  <span>{nextType}</span>
-                                </div>
-                                <div className="mt-1 text-[11px] font-bold text-gold-300">
-                                  {upgradeCost} EXP
-                                </div>
+                            <div
+                              className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
+                              style={{
+                                background: offerAction === 'upgrade-locked'
+                                  ? 'linear-gradient(165deg, rgb(96, 96, 96), rgb(62, 62, 62))'
+                                  : 'linear-gradient(165deg, rgb(42, 33, 24), rgb(30, 24, 18))',
+                              }}
+                            >
+                              <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">
+                                <span aria-hidden="true">&uarr;</span>
+                                <DiceShape type={nextType} />
+                                <span>{nextType}</span>
                               </div>
-                            ) : (
-                              <div className="absolute bottom-1 text-[10px] font-bold leading-none text-gold-300 whitespace-nowrap">
-                                &uarr; {nextType} &middot; {upgradeCost} EXP
+                              <div className={`mt-1 text-[11px] font-bold ${offerAction === 'upgrade-locked' ? 'text-parchment-100' : 'text-gold-300'}`}>
+                                {upgradeCost} EXP
                               </div>
-                            )
+                            </div>
                           )}
                         </button>
                       )
