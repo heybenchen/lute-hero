@@ -59,8 +59,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     dispatch({ type: 'UPGRADE_DIE', offerIndex: selectedOfferIdx, diceId: die.id })
   }
 
-  // Buy a d4 of the chosen element and drop it straight into the clicked slot
-  // (into an empty slot, or replacing a die of another element)
+  // Buy a d4 of the chosen element and drop it straight into an empty slot.
   const handleBuyIntoSlot = async (songId: string, slotIndex: number) => {
     if (!canInteract || selectedOfferIdx === null || !selectedElement || player.exp < newD4Cost() || buyingIntoSlot.current) return
     buyingIntoSlot.current = true
@@ -255,8 +254,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     <span className="font-bold text-gold-300">an empty slot buys a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP)</span>
                     <span className="text-parchment-500">&middot;</span>
                     <span className="font-bold text-gold-300">a {selectedElement} die upgrades it</span>
-                    <span className="text-parchment-500">&middot;</span>
-                    <span className="text-orange-300">any other die can be swapped for the new d4</span>
                   </>
                 )}
               </div>
@@ -302,7 +299,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </div>
               {activeReward && (
                 <div className="mt-2.5 text-xs text-parchment-400">
-                  Click a song slot below to place this die (replacing an existing die = remix).
+                  Click an empty song slot below to place this die.
                 </div>
               )}
             </div>
@@ -332,29 +329,27 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     {song.slots.map((slot, idx) => {
                       const upgradeCost = slot.dice ? getUpgradeCost(slot.dice.type) : null
                       const canAffordD4 = player.exp >= newD4Cost()
-                      let offerAction: 'buy' | 'upgrade' | 'replace' | 'locked' | null = null
+                      let offerAction: 'buy' | 'upgrade' | 'locked' | null = null
                       if (selectedElement && !activeDie) {
                         if (slot.dice?.genre === selectedElement) {
                           offerAction = upgradeCost !== null && player.exp >= upgradeCost ? 'upgrade' : 'locked'
-                        } else if (canAffordD4) {
-                          offerAction = slot.dice ? 'replace' : 'buy'
+                        } else if (!slot.dice && canAffordD4) {
+                          offerAction = 'buy'
                         } else {
                           offerAction = 'locked'
                         }
                       }
-                      const isOffer = offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'replace'
+                      const isOffer = offerAction === 'buy' || offerAction === 'upgrade'
                       const slotLabel =
                         offerAction === 'buy'
                           ? `Buy a ${selectedElement} d4 for ${newD4Cost()} EXP into Song ${songIndex + 1}`
                           : offerAction === 'upgrade' && slot.dice
                           ? `Upgrade Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} to ${getNextDiceType(slot.dice.type)} for ${upgradeCost} EXP`
-                          : offerAction === 'replace' && slot.dice
-                          ? `Swap Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} for a new ${selectedElement} d4 (${newD4Cost()} EXP)`
                           : undefined
                       const offerRgb = selectedElement ? GENRE_THEME[selectedElement].rgb : '212, 168, 83'
                       const nextType = slot.dice ? getNextDiceType(slot.dice.type) : null
                       const onSlotClick = () => {
-                        if (offerAction === 'buy' || offerAction === 'replace') return handleBuyIntoSlot(song.id, idx)
+                        if (offerAction === 'buy') return handleBuyIntoSlot(song.id, idx)
                         if (offerAction === 'upgrade' && slot.dice) return handleUpgradeDie(slot.dice)
                         handleSlotDice(song.id, idx)
                       }
@@ -362,12 +357,12 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                         <button
                           key={idx}
                           onClick={onSlotClick}
-                          disabled={!canInteract || (!activeDie && !isOffer)}
+                          disabled={!canInteract || (activeDie ? Boolean(slot.dice) : !isOffer)}
                           aria-label={slotLabel}
                           title={slotLabel}
                           className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150 ${songIndex === 0 && idx === 0 ? 'gap-1.5 py-2' : ''} ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
                           style={{
-                            opacity: offerAction === 'locked' ? 0.35 : 1,
+                            opacity: offerAction === 'locked' || (activeDie && slot.dice) ? 0.35 : 1,
                             background:
                               offerAction === 'buy' || offerAction === 'upgrade'
                                 ? `rgba(${offerRgb}, 0.14)`
@@ -381,8 +376,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             border:
                               offerAction === 'buy'
                                 ? `1px dashed rgba(${offerRgb}, 0.8)`
-                                : offerAction === 'replace'
-                                ? '1px dashed rgba(255, 170, 90, 0.45)'
                                 : offerAction === 'upgrade'
                                 ? `1px solid rgba(${offerRgb}, 0.85)`
                                 : slot.dice
@@ -440,16 +433,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                 &uarr; {nextType} &middot; {upgradeCost} EXP
                               </div>
                             )
-                          )}
-                          {offerAction === 'replace' && (
-                            <div className="absolute bottom-1 text-[10px] font-bold text-orange-300/80 whitespace-nowrap">
-                              &#x21C4; swap &middot; {newD4Cost()} EXP
-                            </div>
-                          )}
-                          {activeDie && slot.dice && (
-                            <div className="absolute bottom-1 text-[10px] text-orange-400 font-bold">
-                              Remix
-                            </div>
                           )}
                         </button>
                       )

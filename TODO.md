@@ -14,6 +14,8 @@
 
 ## Completed
 
+- Removed die swapping from the Studio: newly purchased and queued dice can only be slotted into empty songs, occupied slots are disabled, and the engine rejects replacement attempts without consuming the reward.
+
 - Starting loadouts now contain one d8 of the bard's chosen element and one d4 of the opposite element (Ballad ↔ Shanty, Folk ↔ Hymn), placed in the first two one-die songs.
 
 - Cleaned up six-song migration and test helpers: removed unnecessary tuple casts, limited legacy song-ID expansion to actual split slots, preserved showdown reroll snapshots, and prevented independent songs from being marked spent after reload. Ignored the local pnpm store.

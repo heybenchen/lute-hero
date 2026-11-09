@@ -519,11 +519,31 @@ describe('shop actions', () => {
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
     state = apply(state, { type: 'BUY_DIE', offerIndex: 0 }).state
     const reward = state.pendingRewards['player-1'][0]
-    const song = state.players[0].songs[1] // empty song
+    const song = state.players[0].songs[2] // empty song
     state = apply(state, { type: 'SLOT_DIE_REWARD', rewardId: reward.id, songId: song.id, slotIndex: 0 }).state
     expect(state.pendingRewards['player-1']).toHaveLength(0)
-    const slot = state.players[0].songs[1].slots[0]
+    const slot = state.players[0].songs[2].slots[0]
     expect(slot.dice).not.toBeNull()
+  })
+
+  it('SLOT_DIE_REWARD rejects an occupied slot without consuming the reward', () => {
+    let state = openStudio(startTwoPlayerGame())
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
+    state = apply(state, { type: 'BUY_DIE', offerIndex: 0 }).state
+    const reward = state.pendingRewards['player-1'][0]
+    const occupiedSong = state.players[0].songs[0]
+    const existingDie = occupiedSong.slots[0].dice
+
+    const result = applyAction(
+      state,
+      { type: 'SLOT_DIE_REWARD', rewardId: reward.id, songId: occupiedSong.id, slotIndex: 0 },
+      ctx(),
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.ok === false && result.message).toBe('Slot already contains a die')
+    expect(state.players[0].songs[0].slots[0].dice).toEqual(existingDie)
+    expect(state.pendingRewards['player-1']).toContainEqual(reward)
   })
 
   it('tracks the Studio visit so the UI can hint it after a fight', () => {
