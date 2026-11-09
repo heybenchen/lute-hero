@@ -419,9 +419,27 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             <div className="text-parchment-500/30 text-xs">Empty</div>
                           )}
                           {nextType && offerAction === 'upgrade' && (
-                            <div className={`${songIndex === 0 && idx === 0 ? 'mt-0.5 border-t border-gold-400/20 px-1.5 pt-1' : 'absolute bottom-1'} text-[10px] font-bold leading-none text-gold-300 whitespace-nowrap`}>
-                              &uarr; {nextType} &middot; {upgradeCost} EXP
-                            </div>
+                            songIndex === 0 && idx === 0 ? (
+                              <div
+                                className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
+                                style={{
+                                  background: `linear-gradient(160deg, rgba(${offerRgb}, 0.34), rgba(42, 33, 24, 0.98))`,
+                                }}
+                              >
+                                <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">
+                                  <span aria-hidden="true">&uarr;</span>
+                                  <DiceShape type={nextType} />
+                                  <span>{nextType}</span>
+                                </div>
+                                <div className="mt-1 text-[11px] font-bold text-gold-300">
+                                  {upgradeCost} EXP
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="absolute bottom-1 text-[10px] font-bold leading-none text-gold-300 whitespace-nowrap">
+                                &uarr; {nextType} &middot; {upgradeCost} EXP
+                              </div>
+                            )
                           )}
                           {offerAction === 'replace' && (
                             <div className="absolute bottom-1 text-[10px] font-bold text-orange-300/80 whitespace-nowrap">
