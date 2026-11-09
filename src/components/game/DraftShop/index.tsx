@@ -418,7 +418,10 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           ) : (
                             <div className="text-parchment-500/30 text-xs">Empty</div>
                           )}
-                          {offerAction === 'upgrade' && nextType && (
+                          {nextType && (
+                            offerAction === 'upgrade'
+                            || (songIndex === 0 && idx === 0 && !activeDie && (!selectedElement || selectedElement === slot.dice?.genre))
+                          ) && (
                             <div className="absolute bottom-1 text-[10px] font-bold text-gold-300 whitespace-nowrap">
                               &uarr; {nextType} &middot; {upgradeCost} EXP
                             </div>
