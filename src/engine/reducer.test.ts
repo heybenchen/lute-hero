@@ -91,9 +91,11 @@ describe('START_GAME', () => {
     expect(dice(alba)[0]).toMatchObject({ type: 'd8', genre: 'Ballad' })
     expect(dice(bryn)).toHaveLength(1)
     expect(dice(bryn)[0]).toMatchObject({ type: 'd8', genre: 'Folk' })
-    // It sits in the first song's first slot; the second slot stays open
+    // Six single-slot songs retain room for six dice.
     expect(alba.songs[0].slots[0].dice?.type).toBe('d8')
-    expect(alba.songs[0].slots[1].dice).toBeNull()
+    expect(alba.songs).toHaveLength(6)
+    expect(alba.songs.every((song) => song.slots.length === 1)).toBe(true)
+    expect(alba.songs[1].slots[0].dice).toBeNull()
   })
 
   it('deals the opening chips evenly across elements, in a random order', () => {
@@ -759,8 +761,8 @@ describe('debug actions', () => {
         dice: [
           // retype + re-element the starter die
           { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd20', genre: 'Shanty' } },
-          // fill the open slot next to it
-          { playerId: 'player-1', songId: song1.id, slotIndex: 1, dice: { type: 'd12', genre: 'Hymn' } },
+          // fill another song
+          { playerId: 'player-1', songId: state.players[0].songs[2].id, slotIndex: 0, dice: { type: 'd12', genre: 'Hymn' } },
           // and stock an empty song
           { playerId: 'player-1', songId: song2.id, slotIndex: 0, dice: { type: 'd4', genre: 'Folk' } },
         ],
@@ -771,10 +773,10 @@ describe('debug actions', () => {
     expect(edited.songs[0].slots[0].dice).toMatchObject({ type: 'd20', genre: 'Shanty' })
     // Editing in place keeps the die id, so in-flight combat rolls still match
     expect(edited.songs[0].slots[0].dice!.id).toBe(starterDieId)
-    expect(edited.songs[0].slots[1].dice).toMatchObject({ type: 'd12', genre: 'Hymn' })
+    expect(edited.songs[2].slots[0].dice).toMatchObject({ type: 'd12', genre: 'Hymn' })
     expect(edited.songs[1].slots[0].dice).toMatchObject({ type: 'd4', genre: 'Folk' })
     // A newly added die gets its own id
-    expect(edited.songs[0].slots[1].dice!.id).not.toBe(starterDieId)
+    expect(edited.songs[2].slots[0].dice!.id).not.toBe(starterDieId)
     // The other player is untouched
     expect(state.players[1].songs[0].slots[0].dice).toMatchObject({ type: 'd8', genre: 'Folk' })
 
@@ -903,5 +905,38 @@ describe('seat validation (online)', () => {
     expect(result.state.combat.isActive).toBe(false)
     expect(result.state.currentTurnPlayerIndex).toBe(1)
     expect(result.events.some((e) => e.type === 'combatEnded')).toBe(true)
+  })
+})
+
+describe('single-die song migration', () => {
+  it('preserves dice, original song references and spent status across reloads', () => {
+    const state = startTwoPlayerGame()
+    const player = state.players[0]
+    const first = player.songs[0]
+    player.songs = [
+      {
+        ...first,
+        // A saved legacy song has two slots, unlike the current Song tuple.
+        slots: [first.slots[0], { dice: { id: 'extra', type: 'd12', genre: 'Folk' } }] as never,
+      },
+      ...player.songs.slice(1, 3),
+    ]
+    state.combat.spentSongIds = [first.id]
+    const migrated = normalizeEngineState(state)
+    const songs = migrated.players[0].songs
+    expect(songs).toHaveLength(6)
+    expect(songs.every((song) => song.slots.length === 1)).toBe(true)
+    expect(songs[0].id).toBe(first.id)
+    expect(songs[0].slots[0].dice).toEqual(first.slots[0].dice)
+    const extra = songs.find((song) => song.slots[0].dice?.id === 'extra')!
+    expect(migrated.combat.spentSongIds).toContain(extra.id)
+    expect(normalizeEngineState(migrated)).toEqual(migrated)
+
+    // Once split, spending the original song must not spend its former slot.
+    migrated.combat.spentSongIds = [first.id]
+    migrated.showdownSongsUsed = [first.id]
+    const reloaded = normalizeEngineState(migrated)
+    expect(reloaded.combat.spentSongIds).toEqual([first.id])
+    expect(reloaded.showdownSongsUsed).toEqual([first.id])
   })
 })

@@ -13,6 +13,7 @@ import {
   DamageCalculation,
 } from '../types/index.js'
 import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
+import { SONGS_PER_BARD } from '../data/startingData.js'
 import { Tunables, DEFAULT_TUNABLES, normalizeTunables } from '../data/tunables.js'
 
 /**
@@ -172,16 +173,48 @@ function migrateDice<T extends { type: DiceType }>(dice: T): T {
   return replacement ? { ...dice, type: replacement } : dice
 }
 
-function migratePlayerDice(players: Player[]): Player[] {
-  return players.map((player) => ({
-    ...player,
-    songs: player.songs.map((song) => ({
-      ...song,
-      slots: song.slots.map((slot) =>
-        slot.dice ? { ...slot, dice: migrateDice(slot.dice) } : slot
-      ) as Song['slots'],
-    })),
+/**
+ * Split legacy multi-slot songs without losing dice or original song ids,
+ * then pad the hand to six songs.
+ */
+function migrateSongShape(player: Player): Player {
+  const fits = player.songs.length >= SONGS_PER_BARD
+    && player.songs.every((song) => song.slots.length === 1)
+  if (fits) return player
+  // Keep original song ids attached to their first die: live combat, rerolls,
+  // and showdown history refer to these ids. Additional dice get new songs.
+  const songs: Song[] = player.songs.map((song) => ({
+    ...song,
+    slots: [{ dice: song.slots[0]?.dice ?? null }],
   }))
+  for (const song of player.songs) {
+    song.slots.slice(1).forEach((slot, index) => {
+      if (slot.dice) songs.push({
+        id: `${song.id}-slot-${index + 2}`,
+        slots: [{ dice: slot.dice }],
+        used: song.used,
+      })
+    })
+  }
+  while (songs.length < SONGS_PER_BARD) {
+    let suffix = songs.length + 1
+    while (songs.some((song) => song.id === `${player.id}-song-${suffix}`)) suffix++
+    songs.push({ id: `${player.id}-song-${suffix}`, slots: [{ dice: null }], used: false })
+  }
+  return { ...player, songs }
+}
+
+function migratePlayerDice(players: Player[]): Player[] {
+  return players.map((player) => {
+    const migrated = migrateSongShape(player)
+    return {
+      ...migrated,
+      songs: migrated.songs.map((song): Song => ({
+        ...song,
+        slots: [{ dice: song.slots[0].dice ? migrateDice(song.slots[0].dice) : null }],
+      })),
+    }
+  })
 }
 
 function migrateRewardDice(rewards: Record<string, PendingReward[]>): Record<string, PendingReward[]> {
@@ -198,11 +231,37 @@ function migrateRewardDice(rewards: Record<string, PendingReward[]>): Record<str
  * loading a game saved by an older version.
  */
 export function normalizeEngineState(state: EngineState): EngineState {
+  const players = migratePlayerDice(state.players ?? [])
+  // Only legacy slots create aliases. Do not infer relationships from ids in
+  // already-migrated games: each song can be spent independently after reload.
+  const splitSongIds = new Map<string, string[]>()
+  for (const player of state.players ?? []) {
+    for (const song of player.songs) {
+      splitSongIds.set(song.id, song.slots.slice(1).flatMap((slot, index) =>
+        slot.dice ? [`${song.id}-slot-${index + 2}`] : []
+      ))
+    }
+  }
+  const migrateSongIds = (ids: string[] = []): string[] =>
+    [...new Set(ids.flatMap((id) => [id, ...splitSongIds.get(id) ?? []]))]
   return {
     ...state,
-    players: migratePlayerDice(state.players ?? []),
+    players,
     pendingRewards: migrateRewardDice(state.pendingRewards ?? {}),
-    combat: { ...createInitialCombatState(), ...state.combat },
+    combat: {
+      ...createInitialCombatState(),
+      ...state.combat,
+      spentSongIds: migrateSongIds(state.combat?.spentSongIds),
+      undoSnapshot: state.combat?.undoSnapshot ? {
+        ...state.combat.undoSnapshot,
+        spentSongIds: migrateSongIds(state.combat.undoSnapshot.spentSongIds),
+      } : null,
+    },
+    showdownSongsUsed: migrateSongIds(state.showdownSongsUsed),
+    showdownUndo: state.showdownUndo ? {
+      ...state.showdownUndo,
+      songsUsed: migrateSongIds(state.showdownUndo.songsUsed),
+    } : null,
     studio: { ...createInitialStudioState(), ...state.studio },
     // Fills in defaults and clamps every value, so a stale save or a
     // hand-edited preset can never leave the engine with a broken number.

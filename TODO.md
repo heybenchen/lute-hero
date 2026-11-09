@@ -14,6 +14,10 @@
 
 ## Completed
 
+- Cleaned up six-song migration and test helpers: removed unnecessary tuple casts, limited legacy song-ID expansion to actual split slots, preserved showdown reroll snapshots, and prevented independent songs from being marked spent after reload. Ignored the local pnpm store.
+
+- Imported Dessn “Board · 6 × 1”: six single-die songs per bard, edge-filling song cards, and compact board/combat/Studio grids. Older games preserve dice, song references, and spent-song restrictions when migrated. Verified desktop board against the frame and mobile Studio without horizontal overflow; build, API type-check, lint, and tests pass (one existing lint warning).
+
 - Imported Dessn Studio option B (buy, replace, and upgrade directly in song slots with visible costs) with the Fight button kept in its original position. Online purchases wait for the matching reward update. Removed the extra design-system reference page and preview-only changes.
 
 - Updated the shared `DiceShape` and `DiceDisplay` components from the latest Figma designs: all four die types reuse the repository's existing SVG assets, while the display now supports the new genre-bordered Ready/Rolled/Critical states, combined cascading-critical notation, and the existing dynamic roll animation.

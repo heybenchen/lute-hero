@@ -12,17 +12,17 @@ interface SongCardProps {
  */
 export function SongCard({ song }: SongCardProps) {
   return (
-    <div className="card flex-1 min-w-0 p-1.5 lg:p-3 lg:flex-none lg:w-full lg:max-w-[280px] lg:mx-auto">
-      <div className="flex items-stretch justify-center gap-3">
+    <div className="card flex-1 min-w-0 p-1 lg:p-1.5 lg:w-full">
+      <div className="flex items-stretch">
         {/* Dice slots */}
-        <div className="flex gap-1.5 lg:gap-2 shrink-0">
+        <div className="flex flex-1 min-w-0 gap-1.5 lg:gap-2">
           {song.slots.map((slot, idx) => {
             // Tint each die by its genre element color
             const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
             return (
               <div
                 key={idx}
-                className="w-8 h-8 lg:w-[60px] lg:h-[60px] aspect-square shrink-0 rounded-lg flex flex-col items-center justify-center text-xs"
+                className="flex-1 min-w-0 h-8 lg:h-[72px] rounded-lg flex flex-col items-center justify-center text-xs"
                 style={{
                   background: genreColor ? `${genreColor}1f` : 'rgba(255, 255, 255, 0.02)',
                   border: genreColor ? `1px solid ${genreColor}80` : '1px dashed rgba(212, 168, 83, 0.12)',

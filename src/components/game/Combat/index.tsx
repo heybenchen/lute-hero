@@ -231,7 +231,7 @@ export function CombatModal() {
               detail={`${ownSongsRemaining} unspent`}
               detailColor="text-gold-400"
             />
-            <div className="flex gap-3 sm:gap-5 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 pb-2">
               {player.songs.map((song, idx) => (
                 <SongCard
                   key={song.id}
@@ -268,7 +268,7 @@ export function CombatModal() {
                       {coverPlayer.name}'s Songs
                     </span>
                   </div>
-                  <div className="flex gap-3 sm:gap-5 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
+                  <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 pb-2">
                     {songs.map((song, idx) => (
                       <SongCard
                         key={song.id}

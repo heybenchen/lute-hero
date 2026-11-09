@@ -181,7 +181,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 No chips on display — draw new ones from the bag
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {elementOffers.map((genre, offerIdx) => {
                   const { emoji, rgb } = GENRE_THEME[genre]
                   const isSelected = selectedOfferIdx === offerIdx
@@ -316,7 +316,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {player.songs.map((song, songIndex) => (
                 <div
                   key={song.id}
