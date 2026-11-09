@@ -14,29 +14,17 @@
 
 ## Completed
 
-- Added an unaffordable empty-slot preview in the Studio: it still shows the `+ d4` action and EXP cost, but uses the same dark surface, 35% opacity, subdued border, no glow, and disabled cursor as locked upgrades.
-
-- Returned unaffordable Studio upgrades to the same dark card surface, border, and 35% opacity as other disabled slots while retaining the up arrow, next-die shape/tier, and high-contrast EXP cost.
-
-- Removed gradients from the Studio upgrade overlays: both enabled and disabled previews use a solid dark wood surface.
-
-- Unified all six Studio song slots to use the same spacing, alignment, and full upgrade overlay. Unaffordable upgrades use the normal disabled-card treatment with high-contrast parchment text.
-
-- Restyled the Studio upgrade overlay with the app's opaque dark wood surface, leaving element color to the existing border and glow.
-
-- Made the Studio upgrade overlay fully opaque so the current die cannot show through; unaffordable previews keep the solid cover but use a muted disabled treatment and not-allowed cursor.
-
-- Fixed matching-element upgrade previews in the Studio so the overlay and its EXP cost remain visible even when the player cannot yet afford the upgrade; unaffordable upgrades stay disabled.
-
-- Removed die swapping from the Studio: newly purchased and queued dice can only be slotted into empty songs, occupied slots are disabled, and the engine rejects replacement attempts without consuming the reward.
+- Finalized Studio die placement: newly purchased and queued dice can only enter empty songs, with engine validation preserving rewards on rejected replacement attempts. All six slots share one layout; matching-element upgrades use an opaque dark-card overlay with the next-die icon and cost, and unaffordable buys/upgrades retain those previews using the standard 35%-opacity disabled treatment.
 
 - Starting loadouts now contain one d8 of the bard's chosen element and one d4 of the opposite element (Ballad ↔ Shanty, Folk ↔ Hymn), placed in the first two one-die songs.
+
+- Simplified the combat Reroll button to omit the redundant Inspiration balance while retaining its one-Inspiration tooltip and disabled state.
 
 - Cleaned up six-song migration and test helpers: removed unnecessary tuple casts, limited legacy song-ID expansion to actual split slots, preserved showdown reroll snapshots, and prevented independent songs from being marked spent after reload. Ignored the local pnpm store.
 
 - Imported Dessn “Board · 6 × 1”: six single-die songs per bard, edge-filling song cards, and compact board/combat/Studio grids. Older games preserve dice, song references, and spent-song restrictions when migrated. Verified desktop board against the frame and mobile Studio without horizontal overflow; build, API type-check, lint, and tests pass (one existing lint warning).
 
-- Imported Dessn Studio option B (buy, replace, and upgrade directly in song slots with visible costs) with the Fight button kept in its original position. Online purchases wait for the matching reward update. Removed the extra design-system reference page and preview-only changes.
+- Imported Dessn Studio option B (buy and upgrade directly in song slots with visible costs) with the Fight button kept in its original position. Online purchases wait for the matching reward update. Removed the extra design-system reference page and preview-only changes.
 
 - Updated the shared `DiceShape` and `DiceDisplay` components from the latest Figma designs: all four die types reuse the repository's existing SVG assets, while the display now supports the new genre-bordered Ready/Rolled/Critical states, combined cascading-critical notation, and the existing dynamic roll animation.
 
