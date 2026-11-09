@@ -14,11 +14,11 @@
 
 ## Completed
 
+- Matched unaffordable Studio upgrades to the other disabled controls at 35% opacity, with a lighter solid gray base and neutral border so the overlay stays visually clear.
+
 - Removed gradients from the Studio upgrade overlays: enabled previews use a solid dark wood surface and disabled previews use a solid medium gray.
 
 - Unified all six Studio song slots to use the same spacing, alignment, and full upgrade overlay. Unaffordable upgrades now use an opaque medium-gray surface, neutral border, no active glow, and high-contrast parchment text.
-
-- Added a standalone game-map code layer at `/map`: it skips mode selection and player setup, creates a stable two-player opening state through the real deterministic engine, installs the normal hotseat driver, and opens directly into the existing interactive `GameView`.
 
 - Restyled the Studio upgrade overlay with the app's opaque dark wood surface, leaving element color to the existing border and glow.
 

@@ -366,7 +366,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           title={slotLabel}
                           className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center gap-1.5 py-2 text-xs relative transition-all duration-150 ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
                           style={{
-                            opacity: offerAction === 'locked' || (activeDie && slot.dice) ? 0.35 : 1,
+                            opacity: offerAction === 'locked' || offerAction === 'upgrade-locked' || (activeDie && slot.dice) ? 0.35 : 1,
                             background:
                               offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'upgrade-locked'
                                 ? `rgba(${offerRgb}, 0.14)`
@@ -381,7 +381,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               offerAction === 'buy'
                                 ? `1px dashed rgba(${offerRgb}, 0.8)`
                                 : offerAction === 'upgrade-locked'
-                                ? '1px solid rgba(180, 180, 180, 0.65)'
+                                ? '1px solid rgba(210, 210, 210, 0.8)'
                                 : offerAction === 'upgrade'
                                 ? `1px solid rgba(${offerRgb}, 0.85)`
                                 : slot.dice
@@ -426,7 +426,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
                               style={{
                                 background: offerAction === 'upgrade-locked'
-                                  ? 'rgb(78, 78, 78)'
+                                  ? 'rgb(112, 112, 112)'
                                   : 'rgb(42, 33, 24)',
                               }}
                             >
