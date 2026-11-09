@@ -14,6 +14,8 @@
 
 ## Completed
 
+- Fixed matching-element upgrade previews in the Studio so the overlay and its EXP cost remain visible even when the player cannot yet afford the upgrade; unaffordable upgrades stay disabled.
+
 - Removed die swapping from the Studio: newly purchased and queued dice can only be slotted into empty songs, occupied slots are disabled, and the engine rejects replacement attempts without consuming the reward.
 
 - Starting loadouts now contain one d8 of the bard's chosen element and one d4 of the opposite element (Ballad ↔ Shanty, Folk ↔ Hymn), placed in the first two one-die songs.

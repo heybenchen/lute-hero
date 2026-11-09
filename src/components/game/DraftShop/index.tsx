@@ -329,10 +329,14 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     {song.slots.map((slot, idx) => {
                       const upgradeCost = slot.dice ? getUpgradeCost(slot.dice.type) : null
                       const canAffordD4 = player.exp >= newD4Cost()
-                      let offerAction: 'buy' | 'upgrade' | 'locked' | null = null
+                      let offerAction: 'buy' | 'upgrade' | 'upgrade-locked' | 'locked' | null = null
                       if (selectedElement && !activeDie) {
                         if (slot.dice?.genre === selectedElement) {
-                          offerAction = upgradeCost !== null && player.exp >= upgradeCost ? 'upgrade' : 'locked'
+                          offerAction = upgradeCost === null
+                            ? 'locked'
+                            : player.exp >= upgradeCost
+                            ? 'upgrade'
+                            : 'upgrade-locked'
                         } else if (!slot.dice && canAffordD4) {
                           offerAction = 'buy'
                         } else {
@@ -343,7 +347,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                       const slotLabel =
                         offerAction === 'buy'
                           ? `Buy a ${selectedElement} d4 for ${newD4Cost()} EXP into Song ${songIndex + 1}`
-                          : offerAction === 'upgrade' && slot.dice
+                          : (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && slot.dice
                           ? `Upgrade Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} to ${getNextDiceType(slot.dice.type)} for ${upgradeCost} EXP`
                           : undefined
                       const offerRgb = selectedElement ? GENRE_THEME[selectedElement].rgb : '212, 168, 83'
@@ -364,7 +368,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           style={{
                             opacity: offerAction === 'locked' || (activeDie && slot.dice) ? 0.35 : 1,
                             background:
-                              offerAction === 'buy' || offerAction === 'upgrade'
+                              offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'upgrade-locked'
                                 ? `rgba(${offerRgb}, 0.14)`
                                 : slot.dice
                                 ? activeDie
@@ -376,7 +380,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             border:
                               offerAction === 'buy'
                                 ? `1px dashed rgba(${offerRgb}, 0.8)`
-                                : offerAction === 'upgrade'
+                                : offerAction === 'upgrade' || offerAction === 'upgrade-locked'
                                 ? `1px solid rgba(${offerRgb}, 0.85)`
                                 : slot.dice
                                 ? activeDie
@@ -385,7 +389,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                 : activeDie
                                 ? '1px solid rgba(100, 180, 255, 0.4)'
                                 : '1px dashed rgba(212, 168, 83, 0.12)',
-                            boxShadow: offerAction === 'buy' || offerAction === 'upgrade' ? `0 0 14px rgba(${offerRgb}, 0.25)` : undefined,
+                            boxShadow: offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'upgrade-locked' ? `0 0 14px rgba(${offerRgb}, 0.25)` : undefined,
                             cursor: (activeDie || isOffer) && canInteract ? 'pointer' : 'default',
                           }}
                         >
@@ -411,7 +415,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           ) : (
                             <div className="text-parchment-500/30 text-xs">Empty</div>
                           )}
-                          {nextType && offerAction === 'upgrade' && (
+                          {nextType && (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && (
                             songIndex === 0 && idx === 0 ? (
                               <div
                                 className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
