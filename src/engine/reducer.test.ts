@@ -80,22 +80,48 @@ describe('START_GAME', () => {
     expect(state.elementOffers).toHaveLength(4)
   })
 
-  it('gives every bard a single starter d8 of their element', () => {
-    const state = startTwoPlayerGame()
-    const [alba, bryn] = state.players
+  it('gives every bard a d8 of their element and an opposing d4', () => {
+    const result = applyAction(
+      createInitialEngineState(),
+      {
+        type: 'START_GAME',
+        playerConfigs: [
+          { name: 'Alba', starterGenre: 'Ballad', color: '#3b82f6' },
+          { name: 'Bryn', starterGenre: 'Folk', color: '#ef4444' },
+          { name: 'Cleo', starterGenre: 'Hymn', color: '#22c55e' },
+          { name: 'Dara', starterGenre: 'Shanty', color: '#a855f7' },
+        ],
+      },
+      ctx(),
+    )
+    if (!result.ok) throw new Error(result.message)
+    const [alba, bryn, cleo, dara] = result.state.players
 
-    const dice = (p: (typeof state.players)[number]) =>
+    const dice = (p: (typeof result.state.players)[number]) =>
       p.songs.flatMap((s) => s.slots.map((slot) => slot.dice)).filter((d) => d !== null)
 
-    expect(dice(alba)).toHaveLength(1)
-    expect(dice(alba)[0]).toMatchObject({ type: 'd8', genre: 'Ballad' })
-    expect(dice(bryn)).toHaveLength(1)
-    expect(dice(bryn)[0]).toMatchObject({ type: 'd8', genre: 'Folk' })
+    expect(dice(alba)).toMatchObject([
+      { type: 'd8', genre: 'Ballad' },
+      { type: 'd4', genre: 'Shanty' },
+    ])
+    expect(dice(bryn)).toMatchObject([
+      { type: 'd8', genre: 'Folk' },
+      { type: 'd4', genre: 'Hymn' },
+    ])
+    expect(dice(cleo)).toMatchObject([
+      { type: 'd8', genre: 'Hymn' },
+      { type: 'd4', genre: 'Folk' },
+    ])
+    expect(dice(dara)).toMatchObject([
+      { type: 'd8', genre: 'Shanty' },
+      { type: 'd4', genre: 'Ballad' },
+    ])
     // Six single-slot songs retain room for six dice.
     expect(alba.songs[0].slots[0].dice?.type).toBe('d8')
+    expect(alba.songs[1].slots[0].dice?.type).toBe('d4')
     expect(alba.songs).toHaveLength(6)
     expect(alba.songs.every((song) => song.slots.length === 1)).toBe(true)
-    expect(alba.songs[1].slots[0].dice).toBeNull()
+    expect(alba.songs[2].slots[0].dice).toBeNull()
   })
 
   it('deals the opening chips evenly across elements, in a random order', () => {
@@ -493,11 +519,31 @@ describe('shop actions', () => {
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
     state = apply(state, { type: 'BUY_DIE', offerIndex: 0 }).state
     const reward = state.pendingRewards['player-1'][0]
-    const song = state.players[0].songs[1] // empty song
+    const song = state.players[0].songs[2] // empty song
     state = apply(state, { type: 'SLOT_DIE_REWARD', rewardId: reward.id, songId: song.id, slotIndex: 0 }).state
     expect(state.pendingRewards['player-1']).toHaveLength(0)
-    const slot = state.players[0].songs[1].slots[0]
+    const slot = state.players[0].songs[2].slots[0]
     expect(slot.dice).not.toBeNull()
+  })
+
+  it('SLOT_DIE_REWARD rejects an occupied slot without consuming the reward', () => {
+    let state = openStudio(startTwoPlayerGame())
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
+    state = apply(state, { type: 'BUY_DIE', offerIndex: 0 }).state
+    const reward = state.pendingRewards['player-1'][0]
+    const occupiedSong = state.players[0].songs[0]
+    const existingDie = occupiedSong.slots[0].dice
+
+    const result = applyAction(
+      state,
+      { type: 'SLOT_DIE_REWARD', rewardId: reward.id, songId: occupiedSong.id, slotIndex: 0 },
+      ctx(),
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.ok === false && result.message).toBe('Slot already contains a die')
+    expect(state.players[0].songs[0].slots[0].dice).toEqual(existingDie)
+    expect(state.pendingRewards['player-1']).toContainEqual(reward)
   })
 
   it('tracks the Studio visit so the UI can hint it after a fight', () => {

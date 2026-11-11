@@ -59,8 +59,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     dispatch({ type: 'UPGRADE_DIE', offerIndex: selectedOfferIdx, diceId: die.id })
   }
 
-  // Buy a d4 of the chosen element and drop it straight into the clicked slot
-  // (into an empty slot, or replacing a die of another element)
+  // Buy a d4 of the chosen element and drop it straight into an empty slot.
   const handleBuyIntoSlot = async (songId: string, slotIndex: number) => {
     if (!canInteract || selectedOfferIdx === null || !selectedElement || player.exp < newD4Cost() || buyingIntoSlot.current) return
     buyingIntoSlot.current = true
@@ -181,7 +180,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 No chips on display — draw new ones from the bag
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="flex w-full flex-row gap-3">
                 {elementOffers.map((genre, offerIdx) => {
                   const { emoji, rgb } = GENRE_THEME[genre]
                   const isSelected = selectedOfferIdx === offerIdx
@@ -189,7 +188,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     <button
                       key={`${genre}-${offerIdx}`}
                       disabled={!canInteract}
-                      className={`group relative rounded-lg p-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer hover:-translate-y-1' : 'cursor-default'}`}
+                      className={`group relative w-full rounded-lg p-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer hover:-translate-y-1' : 'cursor-default'}`}
                       style={{
                         background: isSelected
                           ? `linear-gradient(160deg, rgba(${rgb}, 0.22) 0%, rgba(${rgb}, 0.06) 100%)`
@@ -255,8 +254,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     <span className="font-bold text-gold-300">an empty slot buys a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP)</span>
                     <span className="text-parchment-500">&middot;</span>
                     <span className="font-bold text-gold-300">a {selectedElement} die upgrades it</span>
-                    <span className="text-parchment-500">&middot;</span>
-                    <span className="text-orange-300">any other die can be swapped for the new d4</span>
                   </>
                 )}
               </div>
@@ -302,7 +299,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </div>
               {activeReward && (
                 <div className="mt-2.5 text-xs text-parchment-400">
-                  Click a song slot below to place this die (replacing an existing die = remix).
+                  Click an empty song slot below to place this die.
                 </div>
               )}
             </div>
@@ -332,29 +329,31 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     {song.slots.map((slot, idx) => {
                       const upgradeCost = slot.dice ? getUpgradeCost(slot.dice.type) : null
                       const canAffordD4 = player.exp >= newD4Cost()
-                      let offerAction: 'buy' | 'upgrade' | 'replace' | 'locked' | null = null
+                      let offerAction: 'buy' | 'buy-locked' | 'upgrade' | 'upgrade-locked' | 'locked' | null = null
                       if (selectedElement && !activeDie) {
                         if (slot.dice?.genre === selectedElement) {
-                          offerAction = upgradeCost !== null && player.exp >= upgradeCost ? 'upgrade' : 'locked'
-                        } else if (canAffordD4) {
-                          offerAction = slot.dice ? 'replace' : 'buy'
+                          offerAction = upgradeCost === null
+                            ? 'locked'
+                            : player.exp >= upgradeCost
+                            ? 'upgrade'
+                            : 'upgrade-locked'
+                        } else if (!slot.dice) {
+                          offerAction = canAffordD4 ? 'buy' : 'buy-locked'
                         } else {
                           offerAction = 'locked'
                         }
                       }
-                      const isOffer = offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'replace'
+                      const isOffer = offerAction === 'buy' || offerAction === 'upgrade'
                       const slotLabel =
-                        offerAction === 'buy'
+                        (offerAction === 'buy' || offerAction === 'buy-locked')
                           ? `Buy a ${selectedElement} d4 for ${newD4Cost()} EXP into Song ${songIndex + 1}`
-                          : offerAction === 'upgrade' && slot.dice
+                          : (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && slot.dice
                           ? `Upgrade Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} to ${getNextDiceType(slot.dice.type)} for ${upgradeCost} EXP`
-                          : offerAction === 'replace' && slot.dice
-                          ? `Swap Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} for a new ${selectedElement} d4 (${newD4Cost()} EXP)`
                           : undefined
                       const offerRgb = selectedElement ? GENRE_THEME[selectedElement].rgb : '212, 168, 83'
                       const nextType = slot.dice ? getNextDiceType(slot.dice.type) : null
                       const onSlotClick = () => {
-                        if (offerAction === 'buy' || offerAction === 'replace') return handleBuyIntoSlot(song.id, idx)
+                        if (offerAction === 'buy') return handleBuyIntoSlot(song.id, idx)
                         if (offerAction === 'upgrade' && slot.dice) return handleUpgradeDie(slot.dice)
                         handleSlotDice(song.id, idx)
                       }
@@ -362,14 +361,16 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                         <button
                           key={idx}
                           onClick={onSlotClick}
-                          disabled={!canInteract || (!activeDie && !isOffer)}
+                          disabled={!canInteract || (activeDie ? Boolean(slot.dice) : !isOffer)}
                           aria-label={slotLabel}
                           title={slotLabel}
-                          className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center text-xs relative transition-all duration-150 ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
+                          className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center gap-1.5 py-2 text-xs relative transition-all duration-150 ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
                           style={{
-                            opacity: offerAction === 'locked' ? 0.35 : 1,
+                            opacity: offerAction === 'locked' || offerAction === 'buy-locked' || offerAction === 'upgrade-locked' || (activeDie && slot.dice) ? 0.35 : 1,
                             background:
-                              offerAction === 'buy' || offerAction === 'upgrade'
+                              offerAction === 'buy-locked'
+                                ? 'rgb(42, 33, 24)'
+                                : offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'upgrade-locked'
                                 ? `rgba(${offerRgb}, 0.14)`
                                 : slot.dice
                                 ? activeDie
@@ -381,8 +382,10 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             border:
                               offerAction === 'buy'
                                 ? `1px dashed rgba(${offerRgb}, 0.8)`
-                                : offerAction === 'replace'
-                                ? '1px dashed rgba(255, 170, 90, 0.45)'
+                                : offerAction === 'buy-locked'
+                                ? '1px dashed rgba(212, 168, 83, 0.25)'
+                                : offerAction === 'upgrade-locked'
+                                ? '1px solid rgba(212, 168, 83, 0.25)'
                                 : offerAction === 'upgrade'
                                 ? `1px solid rgba(${offerRgb}, 0.85)`
                                 : slot.dice
@@ -393,11 +396,15 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                 ? '1px solid rgba(100, 180, 255, 0.4)'
                                 : '1px dashed rgba(212, 168, 83, 0.12)',
                             boxShadow: offerAction === 'buy' || offerAction === 'upgrade' ? `0 0 14px rgba(${offerRgb}, 0.25)` : undefined,
-                            cursor: (activeDie || isOffer) && canInteract ? 'pointer' : 'default',
+                            cursor: offerAction === 'buy-locked' || offerAction === 'upgrade-locked'
+                              ? 'not-allowed'
+                              : (activeDie || isOffer) && canInteract
+                              ? 'pointer'
+                              : 'default',
                           }}
                         >
                           {slot.dice ? (
-                            <div className="text-center relative flex flex-col">
+                            <div className="text-center relative flex flex-col items-center">
                               <div className="text-2xl mb-0.5 text-gold-400"><DiceShape type={slot.dice.type} /></div>
                               <div className="absolute -top-1 -right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                                 style={{
@@ -410,27 +417,31 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               </div>
                               <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
                             </div>
-                          ) : offerAction === 'buy' ? (
+                          ) : offerAction === 'buy' || offerAction === 'buy-locked' ? (
                             <div className="text-center leading-tight">
                               <div className="text-sm font-bold text-parchment-100">+ <DiceShape type="d4" /> d4</div>
-                              <div className="text-[11px] font-bold text-gold-300 mt-1">{newD4Cost()} EXP</div>
+                              <div className={`mt-1 text-[11px] font-bold ${offerAction === 'buy-locked' ? 'text-parchment-100' : 'text-gold-300'}`}>
+                                {newD4Cost()} EXP
+                              </div>
                             </div>
                           ) : (
                             <div className="text-parchment-500/30 text-xs">Empty</div>
                           )}
-                          {offerAction === 'upgrade' && nextType && (
-                            <div className="absolute bottom-1 text-[10px] font-bold text-gold-300 whitespace-nowrap">
-                              &uarr; {nextType} &middot; {upgradeCost} EXP
-                            </div>
-                          )}
-                          {offerAction === 'replace' && (
-                            <div className="absolute bottom-1 text-[10px] font-bold text-orange-300/80 whitespace-nowrap">
-                              &#x21C4; swap &middot; {newD4Cost()} EXP
-                            </div>
-                          )}
-                          {activeDie && slot.dice && (
-                            <div className="absolute bottom-1 text-[10px] text-orange-400 font-bold">
-                              Remix
+                          {nextType && (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && (
+                            <div
+                              className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
+                              style={{
+                                background: 'rgb(42, 33, 24)',
+                              }}
+                            >
+                              <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">
+                                <span aria-hidden="true">&uarr;</span>
+                                <DiceShape type={nextType} />
+                                <span>{nextType}</span>
+                              </div>
+                              <div className={`mt-1 text-[11px] font-bold ${offerAction === 'upgrade-locked' ? 'text-parchment-100' : 'text-gold-300'}`}>
+                                {upgradeCost} EXP
+                              </div>
                             </div>
                           )}
                         </button>

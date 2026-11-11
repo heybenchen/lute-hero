@@ -287,6 +287,7 @@ export function validateAction(
       if (action.slotIndex < 0 || action.slotIndex >= song.slots.length) {
         return illegal('No such slot')
       }
+      if (song.slots[action.slotIndex].dice) return illegal('Slot already contains a die')
       return ok
     }
 

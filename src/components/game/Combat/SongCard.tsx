@@ -144,7 +144,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
               }}
               title={inspiration > 0 ? 'Reroll this song for 1 Inspiration' : 'Requires Inspiration'}
             >
-              &#x2728; Reroll &mdash; {inspiration} Insp
+              &#x2728; Reroll
             </button>
           ) : (
             <button
