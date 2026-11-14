@@ -9,6 +9,7 @@ import { calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logi
 import { computeCombatRewards } from '@/engine/reducer'
 import { Monster, Song } from '@/types'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
+import { diceBus, useDiceTrayBusy } from '@/components/dice3d/diceBus'
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
@@ -26,6 +27,8 @@ export function CombatModal() {
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
+  // While 3D dice are airborne, hold back the result breakdown so it can't spoil the roll
+  const diceBusy = useDiceTrayBusy()
 
   // The chosen single-target monster for the next song
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
@@ -92,12 +95,17 @@ export function CombatModal() {
   // Spectators animate other players' songs from the SSE event stream
   useEffect(() => {
     if (!remoteEntry || !isActive) return
-    for (const event of remoteEntry.events) {
-      if (event.type === 'damageDealt') {
-        const newPopups = createDamagePopups(event.calculations, event.monstersBefore, event.monstersAfter)
-        setPopups((prev) => [...prev, ...newPopups])
+    let cancelled = false
+    void diceBus.whenSettled().then(() => {
+      if (cancelled) return
+      for (const event of remoteEntry.events) {
+        if (event.type === 'damageDealt') {
+          const newPopups = createDamagePopups(event.calculations, event.monstersBefore, event.monstersAfter)
+          setPopups((prev) => [...prev, ...newPopups])
+        }
       }
-    }
+    })
+    return () => { cancelled = true }
   }, [remoteEntry, isActive])
 
   if (!isActive || !player) return null
@@ -128,7 +136,9 @@ export function CombatModal() {
   const totalExp = calculateTotalMonsterExp(monsters)
   const isCombatOver = allMonstersDefeated || !canContinue
 
-  const showDamageEvents = (events: { type: string }[]) => {
+  const showDamageEvents = async (events: { type: string }[]) => {
+    // Damage numbers pop once the 3D dice have landed, not while they're airborne
+    await diceBus.whenSettled()
     for (const event of events) {
       if (event.type === 'damageDealt') {
         const dmg = event as {
@@ -154,13 +164,13 @@ export function CombatModal() {
   const handlePlaySong = async (songId: string, ownerId: string) => {
     if (!canAct || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
     const result = await dispatch({ type: 'PLAY_SONG', songId, ownerId, targetMonsterId: selectedTargetId })
-    if (result.ok) showDamageEvents(result.events)
+    if (result.ok) void showDamageEvents(result.events)
   }
 
   const handleReroll = async () => {
     if (!canAct || !lastPlayedSong || player.inspiration <= 0) return
     const result = await dispatch({ type: 'REROLL_SONG' })
-    if (result.ok) showDamageEvents(result.events)
+    if (result.ok) void showDamageEvents(result.events)
   }
 
   const handleEndCombat = () => {
@@ -217,7 +227,9 @@ export function CombatModal() {
                     onSelect={canAct && monster.currentHP > 0 ? () => setSelectedTargetId(monster.id) : undefined}
                   />
                   {monster.id === lastTargetMonsterId && lastDamageCalculations[idx] && (
-                    <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
+                    <div className={`transition-opacity duration-300 ${diceBusy ? 'opacity-0' : 'opacity-100'}`}>
+                      <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
+                    </div>
                   )}
                 </div>
               ))}

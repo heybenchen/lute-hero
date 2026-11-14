@@ -26,7 +26,7 @@ interface SongCardProps {
 function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
   const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
   const maxValue = slot.dice ? getMaxValue(slot.dice.type) : 0
-  const { displayValue, rolling } = useRollAnimation(roll?.value, maxValue, true)
+  const { displayValue, rolling } = useRollAnimation(roll?.value, maxValue, true, slot.dice?.id)
   const isCrit = roll?.isCrit ?? false
   const cascadeSum = roll?.cascadeRolls?.reduce((s, v) => s + v, 0) ?? 0
 

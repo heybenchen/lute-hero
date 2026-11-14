@@ -4,6 +4,7 @@ import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
 import realmMap from '@/imports/board-background.jpg'
 import realmMapMobile from '@/imports/board-background-mobile.jpg'
+import { Footprints, Map, Sparkles } from 'lucide-react'
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)
@@ -45,17 +46,7 @@ export function Board() {
   }
 
   return (
-    <div
-      className="relative w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
-      style={{
-        // Warm wood-plank brown matching the map image's wooden border
-        background: `
-          radial-gradient(ellipse at 30% 20%, rgba(212, 168, 83, 0.06) 0%, transparent 45%),
-          radial-gradient(ellipse at 70% 80%, rgba(139, 111, 71, 0.07) 0%, transparent 45%),
-          linear-gradient(160deg, #5a4835 0%, #695641 50%, #5a4835 100%)
-        `,
-      }}
-    >
+    <div className="tabletop-board relative w-full h-full overflow-hidden flex flex-col">
       {/* Parchment realm map background — a lighter 1x image loads on mobile */}
       <picture>
         <source media="(max-width: 640px)" srcSet={realmMapMobile} />
@@ -64,68 +55,76 @@ export function Board() {
           alt=""
           aria-hidden="true"
           draggable={false}
-          className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+          className="absolute inset-0 h-full w-full object-cover pointer-events-none opacity-20 mix-blend-luminosity"
         />
       </picture>
 
-      {/* Subtle dot-grid map texture */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(rgba(212, 168, 83, 0.08) 0.8px, transparent 0.8px)',
-          backgroundSize: '28px 28px',
-        }}
-      />
-
-      {/* Inspiration travel toggle */}
-      {(canTravel || travelMode) && (
-        <button
-          onClick={() => setTravelMode((m) => !m)}
-          disabled={!canTravel && !travelMode}
-          className="absolute top-3 right-3 z-30 text-xs sm:text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 hover:enabled:-translate-y-0.5"
-          style={{
-            background: travelMode ? 'rgba(176, 124, 255, 0.28)' : 'rgba(176, 124, 255, 0.12)',
-            border: `1px solid rgba(176, 124, 255, ${travelMode ? 0.8 : 0.45})`,
-            color: '#e6d9ff',
-            boxShadow: travelMode ? '0 0 14px rgba(176, 124, 255, 0.35)' : undefined,
-          }}
-          title="Spend 1 Inspiration and 1 move to travel to any space"
-        >
-          {travelMode ? '✖ Cancel Travel' : `✨ Travel (1)`}
-        </button>
-      )}
-
-      <div className="relative w-full p-2 sm:p-6 lg:p-8 max-w-[calc(50dvh_-_6rem)] lg:max-w-[calc(100dvh_-_5rem)]">
-        {/* 4x4 tile grid — space ids are row-major grid positions */}
-        <div
-          className="grid grid-cols-4 gap-2 sm:gap-3 lg:px-20"
-          onMouseLeave={() => setHoveredSpaceId(null)}
-        >
-          {spaces.map((space) => (
-            <div
-              key={space.id}
-              className="animate-tile-in"
-              style={{ animationDelay: `${space.id * 35}ms` }}
-              // Hover handled on the wrapper: disabled tile buttons swallow mouse events
-              onMouseEnter={() => setHoveredSpaceId(space.id)}
-              onMouseLeave={() => setHoveredSpaceId(null)}
-            >
-              <BoardSpaceComponent
-                space={space}
-                players={players}
-                isCurrentPlayer={currentPlayer.position === space.id}
-                canMoveTo={validMoves.some((s) => s.id === space.id)}
-                isTravelTarget={travelMode && space.id !== currentPlayer.position}
-                isLinkedToHovered={
-                  hoveredSpace !== null &&
-                  hoveredSpace !== undefined &&
-                  hoveredSpace.connections.includes(space.id)
-                }
-                onClick={() => handleSpaceClick(space.id)}
-              />
+      <div className="relative z-20 flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="board-title-icon">
+            <Map size={18} aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <div className="font-medieval font-bold text-sm sm:text-base text-parchment-100">The Resonant Realm</div>
+            <div className="flex items-center gap-1.5 text-[10px] text-parchment-500">
+              <Footprints size={11} aria-hidden="true" />
+              {Math.max(0, 2 - currentPlayer.movesThisTurn)} moves remaining
             </div>
-          ))}
+          </div>
         </div>
+
+        {(canTravel || travelMode) && (
+          <button
+            onClick={() => setTravelMode((m) => !m)}
+            disabled={!canTravel && !travelMode}
+            className={`travel-token ${travelMode ? 'travel-token-active' : ''}`}
+            title="Spend 1 Inspiration and 1 move to travel to any space"
+          >
+            <Sparkles size={14} aria-hidden="true" />
+            <span>{travelMode ? 'Cancel' : 'Travel'}</span>
+            {!travelMode && <strong>1</strong>}
+          </button>
+        )}
+      </div>
+
+      <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center p-3 sm:p-5 lg:p-6">
+        <div className="tile-tray w-full max-w-[min(100%,42rem)]">
+          {/* 4x4 tile grid — space ids are row-major grid positions */}
+          <div
+            className="board-tile-grid grid grid-cols-4 gap-1.5 sm:gap-2.5"
+            onMouseLeave={() => setHoveredSpaceId(null)}
+          >
+            {spaces.map((space) => (
+              <div
+                key={space.id}
+                className="board-tile-slot animate-tile-in"
+                style={{ animationDelay: `${space.id * 35}ms` }}
+                onMouseEnter={() => setHoveredSpaceId(space.id)}
+                onMouseLeave={() => setHoveredSpaceId(null)}
+              >
+                <BoardSpaceComponent
+                  space={space}
+                  players={players}
+                  isCurrentPlayer={currentPlayer.position === space.id}
+                  canMoveTo={validMoves.some((s) => s.id === space.id)}
+                  isTravelTarget={travelMode && space.id !== currentPlayer.position}
+                  isLinkedToHovered={
+                    hoveredSpace !== null &&
+                    hoveredSpace !== undefined &&
+                    hoveredSpace.connections.includes(space.id)
+                  }
+                  onClick={() => handleSpaceClick(space.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-20 flex items-center justify-center gap-4 px-4 py-2 text-[9px] uppercase tracking-[0.16em] text-parchment-500">
+        <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-current" /> Your tile</span>
+        <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-move" /> In range</span>
+        <span className="hidden sm:flex items-center gap-1.5"><i className="legend-swatch legend-swatch-danger" /> Threat</span>
       </div>
     </div>
   )
