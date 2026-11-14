@@ -16,6 +16,7 @@ import { RemoteDriver } from '@/drivers/remoteDriver'
 import { Snapshot, PublicSeat, EventLogEntry } from '@/net/protocol'
 import * as api from '@/net/api'
 import { ApiRequestError } from '@/net/api'
+import { announceDiceEvents } from '@/components/dice3d/diceBus'
 import {
   getIdentity,
   saveIdentityName,
@@ -161,7 +162,10 @@ export const useGameStore = create<GameStore>()(
               lobby: lobby ? { ...lobby, status: msg.status, seats: msg.seats } : lobby,
             })
           },
-          onRemoteEntry: (entry) => set({ remoteEntry: entry }),
+          onRemoteEntry: (entry) => {
+            announceDiceEvents(entry.events, get().players)
+            set({ remoteEntry: entry })
+          },
           onPresence: (msg) => {
             const lobby = get().lobby
             if (!lobby) return
@@ -196,6 +200,7 @@ export const useGameStore = create<GameStore>()(
           if (!result.ok && result.error) {
             set({ lastError: result.error })
           }
+          if (result.ok) announceDiceEvents(result.events, get().players)
           return result
         },
 

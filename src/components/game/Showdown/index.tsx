@@ -5,6 +5,7 @@ import { SongCard } from '../Combat/SongCard'
 import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
+import { diceBus } from '@/components/dice3d/diceBus'
 import { getPlayableSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
 
 type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
@@ -67,17 +68,7 @@ export function FinalShowdown() {
         const song = owner?.songs.find((sg) => sg.id === event.songId)
         if (song) setLastRolls({ song, rolls: event.rolls })
       }
-      if (event.type === 'showdownPlay') {
-        const popup: FandomPopup = {
-          id: `fandom-${event.playerId}-${Date.now()}`,
-          fandom: event.fandom,
-          hadCrit: event.hadCrit,
-          hitWeakness: event.hitWeakness,
-          wasResisted: event.wasResisted,
-        }
-        setPopups((prev) => [...prev, popup])
-        setTimeout(() => setPopups((prev) => prev.filter((pp) => pp.id !== popup.id)), 1900)
-      }
+      if (event.type === 'showdownPlay') void showFandomPopup(event)
       if (event.type === 'showdownAdvance') {
         setLastRolls(null)
         if (event.advance === 'bossAdapts') {
@@ -102,7 +93,9 @@ export function FinalShowdown() {
   const hasPerformed = showdownSongsUsed.length >= 1
   const performanceDone = hasPerformed || playableSongs.length === 0
 
-  const showFandomPopup = (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
+  const showFandomPopup = async (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
+    // Fandom pops once the 3D dice have landed
+    await diceBus.whenSettled()
     const popup: FandomPopup = {
       id: `fandom-${Date.now()}`,
       fandom: result.fandom,
@@ -119,7 +112,7 @@ export function FinalShowdown() {
     if (!result.ok) return
     for (const event of result.events) {
       if (event.type === 'diceRolled') setLastRolls({ song, rolls: event.rolls })
-      if (event.type === 'showdownPlay') showFandomPopup(event)
+      if (event.type === 'showdownPlay') void showFandomPopup(event)
     }
   }
 
@@ -129,7 +122,7 @@ export function FinalShowdown() {
     if (!result.ok) return
     for (const event of result.events) {
       if (event.type === 'diceRolled') setLastRolls({ song: lastRolls.song, rolls: event.rolls })
-      if (event.type === 'showdownPlay') showFandomPopup(event)
+      if (event.type === 'showdownPlay') void showFandomPopup(event)
     }
   }
 
