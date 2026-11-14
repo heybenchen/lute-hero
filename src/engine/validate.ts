@@ -61,6 +61,15 @@ export function validateAction(
     return ok
   }
 
+  const pendingCritical = state.combat.pendingCriticalDieId
+  if (pendingCritical && (action.type === 'PLAY_SONG' || action.type === 'END_COMBAT')) {
+    return illegal('Finish the critical roll first')
+  }
+
+  if (state.showdownCritical && action.type === 'FINISH_SHOWDOWN_PERFORMANCE') {
+    return illegal('Finish the critical roll first')
+  }
+
   switch (action.type) {
     case 'START_GAME': {
       if (!isHost) return forbidden('Only the host can start the game')
@@ -135,6 +144,11 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (!state.combat.isActive) return illegal('No active combat')
+      if (pendingCritical || action.criticalStep !== undefined) {
+        return pendingCritical && action.criticalStep === state.nextIdSeq
+          ? ok
+          : illegal('This critical roll is no longer available')
+      }
       if (!state.combat.undoSnapshot || !state.combat.lastPlayedSongId) {
         return illegal('Nothing to reroll')
       }
@@ -322,6 +336,11 @@ export function validateAction(
       const performerId = currentPerformerId(state)
       if (isSeat && seatPlayerId !== performerId) return forbidden('Not your performance')
       if (!state.showdownUndo) return illegal('Nothing to reroll')
+      if (state.showdownCritical || action.criticalStep !== undefined) {
+        return state.showdownCritical && action.criticalStep === state.nextIdSeq
+          ? ok
+          : illegal('This critical roll is no longer available')
+      }
       const performer = state.players.find((p) => p.id === performerId)
       if (!performer || performer.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
       return ok

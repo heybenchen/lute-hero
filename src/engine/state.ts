@@ -37,6 +37,7 @@ export interface EngineCombatState {
   /** Monster the last song targeted (single-target combat). */
   lastTargetMonsterId: string | null
   rolls: DiceRoll[]
+  pendingCriticalDieId: string | null
   totalDamage: number
   lastDamageCalculations: DamageCalculation[]
   /** Pre-play snapshot so the last song can be rerolled (Inspiration). */
@@ -116,6 +117,7 @@ export interface EngineState {
   showdownCrits: Record<string, number>
   /** Pre-play accumulators so the current performance can be rerolled. */
   showdownUndo: ShowdownUndo | null
+  showdownCritical: { dieId: string; rolls: DiceRoll[] } | null
 
   /** Monotonic counter backing deterministic id generation. */
   nextIdSeq: number
@@ -144,6 +146,7 @@ export function createInitialCombatState(): EngineCombatState {
     currentSongId: null,
     lastTargetMonsterId: null,
     rolls: [],
+    pendingCriticalDieId: null,
     totalDamage: 0,
     lastDamageCalculations: [],
     undoSnapshot: null,
@@ -258,6 +261,7 @@ export function normalizeEngineState(state: EngineState): EngineState {
       } : null,
     },
     showdownSongsUsed: migrateSongIds(state.showdownSongsUsed),
+    showdownCritical: state.showdownCritical ?? null,
     showdownUndo: state.showdownUndo ? {
       ...state.showdownUndo,
       songsUsed: migrateSongIds(state.showdownUndo.songsUsed),
@@ -305,6 +309,7 @@ export function createInitialEngineState(): EngineState {
     showdownBestHit: {},
     showdownCrits: {},
     showdownUndo: null,
+    showdownCritical: null,
 
     nextIdSeq: 1,
   }

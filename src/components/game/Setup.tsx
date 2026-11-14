@@ -156,7 +156,7 @@ export function Setup() {
             <li>Play songs to deal damage (AOE to all monsters)</li>
             <li>Defeat monsters to gain Fame and EXP</li>
             <li>A monster's matching genre deals 2x damage; its immune genre deals 0 (no damage)</li>
-            <li>Rolling max value = Critical Hit (double damage!)</li>
+            <li>Rolling the highest face triggers a critical. Choose Roll Again to add bonus damage.</li>
           </ul>
         </div>
       </div>

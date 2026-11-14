@@ -1,4 +1,5 @@
 import {
+  DiceRoll,
   Player,
   Genre,
   Song,
@@ -13,7 +14,8 @@ import { EngineEvent } from './events.js'
 import { validateAction, roundEndChipsPerElement } from './validate.js'
 import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, addGenreTag, capGenreTags, scatterChipsRandomly } from '../game-logic/board/graphBuilder.js'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
-import { rollSong, calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
+import { rollDie, getMaxValue } from '../game-logic/dice/roller.js'
+import { calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
 import {
   calculateFameEarned,
   calculateMonsterFameValue,
@@ -150,6 +152,12 @@ function reduce(
       const ownerId = state.combat.lastPlayedOwnerId!
       const owner = state.players.find((p) => p.id === ownerId)!
       const song = owner.songs.find((s) => s.id === state.combat.lastPlayedSongId)!
+      if (action.criticalStep !== undefined) {
+        const rolls = rerollCriticalDie(song, state.combat.rolls, state.combat.pendingCriticalDieId!, rng)
+        const combat = performCombatPlay(state.combat, state.combat.undoSnapshot!, song, ownerId,
+          state.combat.lastTargetMonsterId!, rng, events, rolls)
+        return { ...state, combat }
+      }
       const players = state.players.map((p) =>
         p.id === fighterId ? { ...p, inspiration: p.inspiration - inspirationSpend() } : p
       )
@@ -309,7 +317,7 @@ function reduce(
       return playShowdownSong(state, action.songId, rng, events)
 
     case 'REROLL_SHOWDOWN_SONG':
-      return rerollShowdownSong(state, rng, events)
+      return rerollShowdownSong(state, rng, events, action.criticalStep !== undefined)
 
     case 'FINISH_SHOWDOWN_PERFORMANCE':
       return finishShowdownPerformance(state, events)
@@ -578,6 +586,32 @@ interface CombatSnapshot {
  * single-target now, not AOE. Defeating the target returns the song's dice (the
  * song stays playable); damaging without defeating spends it for the combat.
  */
+function rollInitialFaces(song: Song, rng: Rng): DiceRoll[] {
+  return song.slots.flatMap(({ dice }) => {
+    if (!dice) return []
+    const value = rollDie(dice.type, rng)
+    return [{ diceId: dice.id, value, isCrit: value === getMaxValue(dice.type), critBonus: 0, cascadeRolls: [] }]
+  })
+}
+
+function findPendingCritical(song: Song, rolls: DiceRoll[]): DiceRoll | undefined {
+  const cascadeLimit = Math.max(1, getTunables().maxCritCascades)
+  return rolls.find((roll) => {
+    if (!roll.isCrit || roll.cascadeRolls.length >= cascadeLimit) return false
+    const die = song.slots.find((slot) => slot.dice?.id === roll.diceId)?.dice
+    const latest = roll.cascadeRolls[roll.cascadeRolls.length - 1] ?? roll.value
+    return Boolean(die && latest === getMaxValue(die.type))
+  })
+}
+
+function rerollCriticalDie(song: Song, rolls: DiceRoll[], dieId: string, rng: Rng): DiceRoll[] {
+  const die = song.slots.find((slot) => slot.dice?.id === dieId)!.dice!
+  const value = rollDie(die.type, rng)
+  return rolls.map((roll) => roll.diceId === dieId
+    ? { ...roll, critBonus: roll.critBonus + value, cascadeRolls: [...roll.cascadeRolls, value] }
+    : roll)
+}
+
 function performCombatPlay(
   combat: EngineCombatState,
   base: CombatSnapshot,
@@ -585,13 +619,24 @@ function performCombatPlay(
   ownerId: string,
   targetMonsterId: string,
   rng: Rng,
-  events: EngineEvent[]
+  events: EngineEvent[],
+  previousRolls?: DiceRoll[],
 ): EngineCombatState {
   const isCover = ownerId !== combat.playerId
   const monstersBefore = base.monsters
   const targetBefore = monstersBefore.find((m) => m.id === targetMonsterId)
 
-  const rolls = rollSong(song, rng)
+  const rolls = previousRolls ?? rollInitialFaces(song, rng)
+  const pending = findPendingCritical(song, rolls)
+  if (pending) {
+    return {
+      ...combat,
+      pendingCriticalDieId: pending.diceId,
+      currentSongId: song.id,
+      lastTargetMonsterId: targetMonsterId,
+      rolls,
+    }
+  }
   const { damageCalculations, updatedMonsters } = calculateSingleTargetDamage(
     song,
     rolls,
@@ -626,6 +671,7 @@ function performCombatPlay(
   return {
     ...combat,
     monsters: updatedMonsters,
+    pendingCriticalDieId: null,
     songsUsed: [...base.songsUsed, { songId: song.id, ownerId, isCover }],
     spentSongIds,
     killCredits: [...base.killCredits, ...newKillCredits],
@@ -918,13 +964,17 @@ function rollShowdownPlay(
   performerId: string,
   base: { currentFandom: number; fandomTotal: number; bestHit: { damage: number } | undefined; crits: number },
   rng: Rng,
-  events: EngineEvent[]
-) {
+  events: EngineEvent[],
+  previousRolls?: DiceRoll[],
+): Partial<EngineState> {
+  const rolls = previousRolls ?? rollInitialFaces(song, rng)
+  const pending = findPendingCritical(song, rolls)
+  if (pending) return { showdownCritical: { dieId: pending.diceId, rolls } }
+
   const boss = createShowdownBoss({
     resistGenre: state.showdownResistGenre,
     weakGenre: state.showdownWeakGenre,
   })
-  const rolls = rollSong(song, rng)
   const calc = calculateDamage(song, rolls, boss)
   const fandom = Math.max(0, calc.totalDamage)
   const genre = getDominantGenre(song, rolls)
@@ -954,6 +1004,7 @@ function rollShowdownPlay(
   })
 
   return {
+    showdownCritical: null,
     showdownCurrentFandom: base.currentFandom + fandom,
     showdownCurrentGenre: genre,
     showdownFandom: { ...state.showdownFandom, [performerId]: base.fandomTotal + fandom },
@@ -992,21 +1043,24 @@ function playShowdownSong(state: EngineState, songId: string, rng: Rng, events: 
   }
 }
 
-function rerollShowdownSong(state: EngineState, rng: Rng, events: EngineEvent[]): EngineState {
+function rerollShowdownSong(state: EngineState, rng: Rng, events: EngineEvent[], critical: boolean): EngineState {
   const undo = state.showdownUndo!
   const performer = state.players.find((p) => p.id === undo.performerId)!
   const song = performer.songs.find((s) => s.id === undo.songId)!
 
   // Spend 1 Inspiration, then replay from the snapshot — the snapshot stays put
   // so the performance can be rerolled again.
-  const players = adjustInspiration(state.players, undo.performerId, -inspirationSpend())
+  const players = critical ? state.players : adjustInspiration(state.players, undo.performerId, -inspirationSpend())
+  const pending = state.showdownCritical
+  const rolls = critical && pending ? rerollCriticalDie(song, pending.rolls, pending.dieId, rng) : undefined
   const fields = rollShowdownPlay(
     state,
     song,
     undo.performerId,
     { currentFandom: undo.currentFandom, fandomTotal: undo.fandomTotal, bestHit: undo.bestHit, crits: undo.crits },
     rng,
-    events
+    events,
+    rolls,
   )
   return { ...state, players, ...fields }
 }
