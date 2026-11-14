@@ -23,6 +23,8 @@ const CRIT_PAUSE_MS = 650
 const FADE_MS = 360
 const CAMERA_TILT = THREE.MathUtils.degToRad(17)
 const FOV = 30
+/** Longest stretch of throw time one animation frame may cover. */
+const MAX_STEP_S = 2.5 / FRAME_RATE
 
 // ------------------------------------------------------------------
 // Render geometry + face textures (shared across dice)
@@ -262,6 +264,33 @@ export class DiceTray {
     this.scene.add(floor)
 
     this.resize()
+    this.warmUp()
+  }
+
+  /**
+   * Compile every shader program a throw needs (resin dice with shadows and
+   * environment lighting, the shadow floor) ahead of time, so the first roll
+   * doesn't hitch while the GPU builds them.
+   */
+  private warmUp() {
+    const props = (['d4', 'd8', 'd12', 'd20'] as DiceType[]).map((type) => {
+      const shape = getDieShape(type)
+      const die = this.spawn(shape, 'Ballad', 0, 1)
+      die.mesh.visible = true
+      die.mesh.position.set(0, -50, 0)
+      return die
+    })
+    const finish = () => {
+      if (this.cancelled) return
+      this.render()
+      for (const die of props) {
+        this.scene.remove(die.mesh)
+        die.materials.forEach((m) => m.dispose())
+      }
+      this.dice = this.dice.filter((d) => !props.includes(d))
+      this.render()
+    }
+    this.renderer.compileAsync(this.scene, this.camera).then(finish, finish)
   }
 
   /** Fit the camera so a die is a comfortable size on screen, and wall the tray to the visible floor. */
@@ -394,11 +423,17 @@ export class DiceTray {
     }
     const duration = sim.frameCount / FRAME_RATE
     return new Promise((resolve) => {
-      const start = performance.now()
+      // Advance by real elapsed time, but never more than a couple of frames
+      // per tick: a hitch (first-use shader compile, a busy main thread) then
+      // slows the throw down for an instant instead of skipping it entirely.
+      let t = 0
+      let last = -1
       const tick = () => {
         const now = performance.now()
         if (this.cancelled) return resolve()
-        const t = this.skipRequested ? duration : (now - start) / 1000
+        if (last >= 0) t += Math.min(MAX_STEP_S, (now - last) / 1000)
+        last = now
+        if (this.skipRequested) t = duration
         apply(t)
         this.render()
         if (t >= duration) return resolve()

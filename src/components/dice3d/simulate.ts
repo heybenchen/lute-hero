@@ -21,6 +21,8 @@ export interface ThrowResult {
   frameCount: number
   /** Per die: the face (or d4 vertex) that ended up on top. */
   landed: number[]
+  /** How far the furthest die came to rest from the table's centre (0 = centre, 1 = wall). */
+  spread: number
 }
 
 export const FRAME_RATE = 60
@@ -28,6 +30,8 @@ const SUBSTEPS = 2
 const MAX_SECONDS = 6
 const GRAVITY = -42
 const UP = new THREE.Vector3(0, 1, 0)
+/** Dice should settle within this fraction of the way from the centre to the walls. */
+const COMFORT_ZONE = 0.62
 
 const diceMaterial = new CANNON.Material('dice')
 const floorMaterial = new CANNON.Material('floor')
@@ -122,7 +126,9 @@ function attempt(dice: DieShape[], resting: RestingDie[], arena: Arena, rng: () 
     const targetX = centerX + spread * 1.3 + (rng() - 0.5) * width * 0.25
     const targetZ = centerZ + (rng() - 0.5) * depth * 0.25
     const travel = Math.hypot(targetX - startX, targetZ - startZ)
-    const speed = THREE.MathUtils.clamp(travel * 0.92, 5.5, 12) * (0.9 + rng() * 0.2)
+    // Rounder dice roll much further once they land, so they get a gentler toss
+    const roundness = shape.faces.length >= 12 ? 0.72 : shape.faces.length === 8 ? 0.88 : 1
+    const speed = THREE.MathUtils.clamp(travel * 0.92, 5, 12) * roundness * (0.9 + rng() * 0.2)
     const dirX = (targetX - startX) / travel
     const dirZ = (targetZ - startZ) / travel
     body.velocity.set(dirX * speed, 1 + rng() * 2.5, dirZ * speed)
@@ -196,7 +202,11 @@ function attempt(dice: DieShape[], resting: RestingDie[], arena: Arena, rng: () 
     track.set(r.slice((total - 1) * 7, total * 7), (frameCount - 1) * 7)
     return track
   })
-  return { tracks, frameCount, landed }
+  // How far the furthest die strayed from the middle of the table (0 = centre, 1 = wall)
+  const cx = (arena.minX + arena.maxX) / 2, cz = (arena.minZ + arena.maxZ) / 2
+  const halfW = (arena.maxX - arena.minX) / 2, halfD = (arena.maxZ - arena.minZ) / 2
+  const spread = Math.max(...bodies.map((b) => Math.max(Math.abs(b.position.x - cx) / halfW, Math.abs(b.position.z - cz) / halfD)))
+  return { tracks, frameCount, landed, spread }
 }
 
 /**
@@ -205,9 +215,14 @@ function attempt(dice: DieShape[], resting: RestingDie[], arena: Arena, rng: () 
  * faces so the landed one shows the engine's predetermined result.
  */
 export function simulateThrow(dice: DieShape[], resting: RestingDie[], arena: Arena, rng: () => number = Math.random): ThrowResult | null {
-  for (let tries = 0; tries < 12; tries++) {
+  // Prefer throws that come to rest in the middle of the screen, where the
+  // player is looking; fall back to the most central valid throw.
+  let best: ThrowResult | null = null
+  for (let tries = 0; tries < 16; tries++) {
     const result = attempt(dice, resting, arena, rng)
-    if (result) return result
+    if (!result) continue
+    if (result.spread <= COMFORT_ZONE) return result
+    if (!best || result.spread < best.spread) best = result
   }
-  return null
+  return best
 }

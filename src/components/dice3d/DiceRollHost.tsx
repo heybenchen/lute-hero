@@ -33,8 +33,16 @@ export function DiceRollHost() {
     if (request) {
       load()
     } else {
-      const timer = window.setTimeout(load, 2500)
-      return () => { cancelled = true; window.clearTimeout(timer) }
+      // Load (and warm up) the 3D tray as soon as the browser is idle, well
+      // before the first fight, so the first roll is as smooth as the rest.
+      const idle = window.requestIdleCallback
+        ? window.requestIdleCallback(load, { timeout: 1500 })
+        : window.setTimeout(load, 600)
+      return () => {
+        cancelled = true
+        if (window.cancelIdleCallback) window.cancelIdleCallback(idle)
+        else window.clearTimeout(idle)
+      }
     }
     return () => { cancelled = true }
   }, [request, Overlay])
