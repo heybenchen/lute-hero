@@ -14,6 +14,8 @@
 
 ## Completed
 
+- Imported the Figma code layer “Map View — Modular Tiles”: the main game screen is now a modular tabletop workspace — a felt-lined board tray with individually framed location tiles, physical player pieces and element-chip racks, a compact header rail with a round marker, and a right-side player console that splits the score track, active bard, resources, song rack, turn counters and actions into separate modules. Also added a `/map` route (path-routed in `main.tsx`) that skips mode select and setup, starting or resuming a default two-player hotseat game. The layer's `CriticalRollDialog` was left out because it depends on engine state that does not exist in this repo.
+
 - Finalized Studio die placement: newly purchased and queued dice can only enter empty songs, with engine validation preserving rewards on rejected replacement attempts. All six slots share one layout; matching-element upgrades use an opaque dark-card overlay with the next-die icon and cost, and unaffordable buys/upgrades retain those previews using the standard 35%-opacity disabled treatment.
 
 - Starting loadouts now contain one d8 of the bard's chosen element and one d4 of the opposite element (Ballad ↔ Shanty, Folk ↔ Hymn), placed in the first two one-die songs.
