@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useGameStore, hasSavedGame } from './store'
+import { CriticalRollDialog } from './components/game/CriticalRollDialog'
 import { getOnlineSession, getIdentity } from './net/identity'
 import * as api from './net/api'
 import { DebugPanel } from './components/game/DebugPanel'
@@ -64,6 +65,7 @@ function App() {
     <>
       {renderScreen()}
       <DebugPanel />
+      <CriticalRollDialog />
     </>
   )
 

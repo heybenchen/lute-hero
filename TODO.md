@@ -14,6 +14,9 @@
 
 ## Completed
 
+- Imported the Figma Modular Tiles board and player console, with a direct `/map` entry that resumes or starts a hotseat game.
+- Added manual critical cascades in combat and the Final Showdown. The active bard confirms each bonus roll, with an elemental dice animation and a reduced-motion fallback.
+
 - Finalized Studio die placement: newly purchased and queued dice can only enter empty songs, with engine validation preserving rewards on rejected replacement attempts. All six slots share one layout; matching-element upgrades use an opaque dark-card overlay with the next-die icon and cost, and unaffordable buys/upgrades retain those previews using the standard 35%-opacity disabled treatment.
 
 - Starting loadouts now contain one d8 of the bard's chosen element and one d4 of the opposite element (Ballad ↔ Shanty, Folk ↔ Hymn), placed in the first two one-die songs.
