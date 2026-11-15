@@ -9,6 +9,7 @@ import actions from '../games/[id]/actions'
 import stateRoute from '../games/[id]/state'
 import { ApiRequest, ApiResponse } from '../_lib/http'
 import { Snapshot } from '../../src/net/protocol'
+import { GENRE_THEME } from '../../src/data/genreTheme'
 import { loadGameDoc, casWriteDoc } from '../_lib/gameDoc'
 
 let redis: MemoryRedis
@@ -161,6 +162,28 @@ describe('lobby lifecycle', () => {
     // Seats bound to engine players in join order
     expect(snap.seats[0].playerId).toBe('player-1')
     expect(snap.seats[1].playerId).toBe('player-2')
+  })
+
+  it('gives every seat its own element, with a color to match', async () => {
+    const created = await createGame()
+    const joined = await joinGame(created.joinCode, TOKEN_B, 'Bryn')
+    const seats = joined.data.snapshot.seats
+    expect(seats.map((s: { starterGenre: string }) => s.starterGenre)).toEqual(['Ballad', 'Folk'])
+    expect(seats.map((s: { color: string }) => s.color)).toEqual([GENRE_THEME.Ballad.color, GENRE_THEME.Folk.color])
+
+    // Taking another bard's element is refused...
+    const taken = await call(lobbyOp, makeReq('POST', `/api/games/${created.gameId}/lobby`, { token: TOKEN_B, body: { op: 'unready', starterGenre: 'Ballad' } }))
+    expect(taken.status).toBe(422)
+    // ...a free one is fine, and recolors the seat
+    const free = await call(lobbyOp, makeReq('POST', `/api/games/${created.gameId}/lobby`, { token: TOKEN_B, body: { op: 'unready', starterGenre: 'Shanty' } }))
+    expect(free.status).toBe(200)
+    const bryn = (free.json() as { snapshot: Snapshot }).snapshot.seats[1]
+    expect([bryn.starterGenre, bryn.color]).toEqual(['Shanty', GENRE_THEME.Shanty.color])
+
+    await ready(created.gameId, TOKEN_A)
+    await ready(created.gameId, TOKEN_B)
+    const started = (await start(created.gameId, TOKEN_A)).json() as { snapshot: Snapshot }
+    expect(started.snapshot.engineState.players.map((p) => p.color)).toEqual([GENRE_THEME.Ballad.color, GENRE_THEME.Shanty.color])
   })
 })
 

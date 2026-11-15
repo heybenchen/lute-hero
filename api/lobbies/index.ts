@@ -5,8 +5,7 @@ import { hashToken, newGameId, newSeatId, newJoinCode } from '../_lib/auth.js'
 import { buildSnapshot } from '../_lib/gameDoc.js'
 import { ApiRequest, ApiResponse, readJsonBody, sendJson, sendError, methodNotAllowed, getPlayerToken } from '../_lib/http.js'
 
-const SEAT_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
-const SEAT_GENRES = ['Ballad', 'Folk', 'Hymn', 'Shanty'] as const
+import { ALL_GENRES, playerColorFor } from '../../src/data/genreTheme.js'
 
 /** POST /api/lobbies — create a lobby; the creator takes the host seat. */
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
@@ -25,8 +24,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     seatId: newSeatId(),
     playerId: null,
     name,
-    color: SEAT_COLORS[0],
-    starterGenre: SEAT_GENRES[0],
+    color: playerColorFor(ALL_GENRES[0]),
+    starterGenre: ALL_GENRES[0],
     ready: false,
     tokenHash: hashToken(token),
   }

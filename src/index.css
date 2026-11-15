@@ -220,6 +220,13 @@
 
   .turn-pip-ready { background: #d4a853; box-shadow: 0 0 5px rgba(212,168,83,0.45); }
 
+  .mobile-turn-bar {
+    background: rgba(24, 17, 11, 0.96);
+    border-top: 1px solid rgba(212, 168, 83, 0.28);
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+  }
+
   .player-console .btn-primary,
   .player-console .btn-secondary,
   .player-console button[style] {

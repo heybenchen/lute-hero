@@ -48,8 +48,10 @@ export interface DebugDiceEdit {
 /** One player's setup choices, supplied when the game starts. */
 export interface PlayerConfig {
   name: string
+  /** Each bard needs a different element; it also sets their color. */
   starterGenre: Genre
-  color: string
+  /** Ignored: kept so older clients' payloads still validate. */
+  color?: string
 }
 
 /**

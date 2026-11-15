@@ -59,7 +59,7 @@ export function Board() {
         />
       </picture>
 
-      <div className="relative z-20 flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+      <div className="relative z-20 flex items-center justify-between gap-3 px-3 py-2 sm:px-5 sm:py-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="board-title-icon">
             <Map size={18} aria-hidden="true" />
@@ -87,7 +87,7 @@ export function Board() {
         )}
       </div>
 
-      <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center p-3 sm:p-5 lg:p-6">
+      <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center px-2 pb-2 sm:p-5 lg:p-6">
         <div className="tile-tray w-full max-w-[min(100%,42rem)]">
           {/* 4x4 tile grid — space ids are row-major grid positions */}
           <div
@@ -121,7 +121,7 @@ export function Board() {
         </div>
       </div>
 
-      <div className="relative z-20 flex items-center justify-center gap-4 px-4 py-2 text-[9px] uppercase tracking-[0.16em] text-parchment-500">
+      <div className="relative z-20 hidden sm:flex items-center justify-center gap-4 px-4 py-2 text-[9px] uppercase tracking-[0.16em] text-parchment-500">
         <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-current" /> Your tile</span>
         <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-move" /> In range</span>
         <span className="hidden sm:flex items-center gap-1.5"><i className="legend-swatch legend-swatch-danger" /> Threat</span>

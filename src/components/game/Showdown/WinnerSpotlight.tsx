@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Player } from '@/types'
 import { calculateFinalRankings } from '@/game-logic/fame/calculator'
+import { readableTextColor } from '@/data/genreTheme'
 
 interface WinnerSpotlightProps {
   players: Player[]
@@ -131,7 +132,7 @@ export function WinnerSpotlight({ players, showdownFandom, onContinue }: WinnerS
           <div className="absolute -inset-5 rounded-full animate-winner-ring pointer-events-none" style={{ border: '2px solid rgba(240, 215, 140, 0.5)' }} />
           <div
             className="player-avatar w-28 h-28 sm:w-32 sm:h-32 text-5xl animate-winner-glow"
-            style={{ backgroundColor: winner.color, border: '3px solid rgba(240, 215, 140, 0.9)' }}
+            style={{ backgroundColor: winner.color, color: readableTextColor(winner.color), border: '3px solid rgba(240, 215, 140, 0.9)' }}
           >
             {winner.name.charAt(0)}
           </div>
@@ -176,7 +177,7 @@ export function WinnerSpotlight({ players, showdownFandom, onContinue }: WinnerS
                     <div className="w-7 text-center font-display text-lg" style={{ color: idx === 0 ? '#f0d78c' : idx === 1 ? '#c0c0c0' : idx === 2 ? '#cd7f32' : '#8a7a60' }}>
                       {idx + 1}
                     </div>
-                    <div className="player-avatar w-9 h-9 text-sm flex-shrink-0" style={{ backgroundColor: p.color }}>
+                    <div className="player-avatar w-9 h-9 text-sm flex-shrink-0" style={{ backgroundColor: p.color, color: readableTextColor(p.color) }}>
                       {p.name.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0 text-left">

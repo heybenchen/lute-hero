@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useGameStore } from '@/store'
 import { Genre } from '@/types'
-import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
+import { GENRE_THEME, ALL_GENRES, readableTextColor } from '@/data/genreTheme'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 
 /**
@@ -91,7 +91,10 @@ export function LobbyRoom() {
                 }}
               >
                 <div className="relative">
-                  <div className="player-avatar w-10 h-10 text-base" style={{ backgroundColor: seat.color }}>
+                  <div
+                    className="player-avatar w-10 h-10 text-base"
+                    style={{ backgroundColor: theme.color, color: readableTextColor(theme.color) }}
+                  >
                     {seat.name.charAt(0)}
                   </div>
                   <span
@@ -145,12 +148,15 @@ export function LobbyRoom() {
               {ALL_GENRES.map((genre) => {
                 const { emoji, rgb } = GENRE_THEME[genre]
                 const isChosen = mySeat.starterGenre === genre
+                // One bard per element: someone else's element can't be picked
+                const takenBy = lobby.seats.find((s) => s.seatId !== mySeat.seatId && s.starterGenre === genre)
                 return (
                   <button
                     key={genre}
                     onClick={() => handleGenrePick(genre)}
-                    disabled={busy}
-                    className="rounded-lg py-2 flex flex-col items-center gap-1 transition-all duration-150 hover:-translate-y-0.5"
+                    disabled={busy || !!takenBy}
+                    title={takenBy ? `${takenBy.name} plays ${genre}` : undefined}
+                    className="rounded-lg py-2 flex flex-col items-center gap-1 transition-all duration-150 hover:enabled:-translate-y-0.5 disabled:opacity-35 disabled:cursor-not-allowed"
                     style={{
                       background: isChosen ? `rgba(${rgb}, 0.2)` : 'rgba(0,0,0,0.25)',
                       border: `1px solid rgba(${rgb}, ${isChosen ? 0.7 : 0.25})`,

@@ -15,6 +15,15 @@ export const GENRE_THEME: Record<Genre, { emoji: string; color: string; rgb: str
 export const ALL_GENRES: Genre[] = ["Ballad", "Folk", "Hymn", "Shanty"];
 
 /**
+ * A bard's color is always their starter element's color — the same as the
+ * d8 they open with — so the board token, score track, lobby seat and every
+ * other surface agree. Each element belongs to at most one bard per game.
+ */
+export function playerColorFor(starterGenre: Genre): string {
+  return GENRE_THEME[starterGenre].color;
+}
+
+/**
  * Choose black or white text for legibility on an arbitrary background color,
  * using sRGB-weighted perceptual luminance.
  */

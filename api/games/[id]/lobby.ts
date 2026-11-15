@@ -14,7 +14,8 @@ import {
   getGameId,
 } from '../../_lib/http.js'
 
-const VALID_GENRES = ['Ballad', 'Folk', 'Hymn', 'Shanty']
+import { ALL_GENRES, playerColorFor } from '../../../src/data/genreTheme.js'
+import type { Genre } from '../../../src/types/index.js'
 
 /** POST /api/games/[id]/lobby — ready/unready/leave/start. */
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
@@ -41,17 +42,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
         if (doc.status !== 'lobby') {
           return { ok: false as const, status: 422, code: 'illegal' as const, message: 'Game already started' }
         }
+        const wanted = body.starterGenre && ALL_GENRES.includes(body.starterGenre as Genre)
+          ? body.starterGenre
+          : seat.starterGenre
+        // Each element belongs to one bard, and it sets their color
+        if (doc.seats.some((s) => s.seatId !== seat.seatId && s.starterGenre === wanted)) {
+          return { ok: false as const, status: 422, code: 'illegal' as const, message: `Another bard already plays ${wanted}` }
+        }
         const seats = doc.seats.map((s) => {
           if (s.seatId !== seat.seatId) return s
-          return {
-            ...s,
-            ready: body.op === 'ready',
-            starterGenre:
-              body.starterGenre && VALID_GENRES.includes(body.starterGenre)
-                ? body.starterGenre
-                : s.starterGenre,
-            color: body.color ?? s.color,
-          }
+          return { ...s, ready: body.op === 'ready', starterGenre: wanted, color: playerColorFor(wanted) }
         })
         return {
           doc: { ...doc, seats },
@@ -89,7 +89,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
         const playerConfigs: PlayerConfig[] = doc.seats.map((s) => ({
           name: s.name,
           starterGenre: s.starterGenre,
-          color: s.color,
         }))
 
         const applied = applyActionToDoc(

@@ -7,6 +7,7 @@ import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
 import { diceBus } from '@/components/dice3d/diceBus'
 import { getPlayableSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
+import { readableTextColor } from '@/data/genreTheme'
 
 type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
 
@@ -238,7 +239,7 @@ export function FinalShowdown() {
           <div className="card-ornate p-4 sm:p-6" key={`${showdownTurn}-${performerId}`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 animate-fade-in">
               <div className="flex items-center gap-3">
-                <div className="player-avatar w-12 h-12 text-xl animate-token-bob" style={{ backgroundColor: performer.color }}>
+                <div className="player-avatar w-12 h-12 text-xl animate-token-bob" style={{ backgroundColor: performer.color, color: readableTextColor(performer.color) }}>
                   {performer.name.charAt(0)}
                 </div>
                 <div>

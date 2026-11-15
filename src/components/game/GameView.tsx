@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Board } from './Board'
 import { CombatModal } from './Combat'
 import { DraftShop } from './DraftShop'
-import { PlayerPanel } from './PlayerPanel'
+import { PlayerPanel, MobileTurnBar } from './PlayerPanel'
 import { useGameStore, selectCanAct, selectIsHost, clearSavedGame } from '@/store'
 import { TypeChart } from './TypeChart'
 import { MonsterLevelTable } from './MonsterLevelTable'
@@ -198,9 +198,12 @@ export function GameView() {
       {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)} />}
 
       {/* Main content */}
-      <main className="relative z-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_22rem] gap-3 flex-1 min-h-0 px-2 sm:px-4 pb-3 sm:pb-4">
+      {/* Phones: the map comes first and the turn bar is pinned to the bottom,
+          so the board and Fight / Studio are on screen without scrolling. The
+          score track, stats and songs sit below the map for when you want them. */}
+      <main className="relative z-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_22rem] gap-3 flex-1 min-h-0 px-2 sm:px-4 pb-36 lg:pb-4">
         {/* Board area */}
-        <section className="min-h-[34rem] lg:min-h-0 min-w-0">
+        <section className="lg:min-h-0 min-w-0">
           <div className="h-full min-h-0 overflow-hidden rounded-[1.25rem]">
             <Board />
           </div>
@@ -211,6 +214,8 @@ export function GameView() {
           <PlayerPanel />
         </aside>
       </main>
+
+      <MobileTurnBar />
 
       {/* Combat modal overlay */}
       <CombatModal />

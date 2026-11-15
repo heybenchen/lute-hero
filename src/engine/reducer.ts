@@ -33,11 +33,10 @@ import {
 } from '../game-logic/showdown/showdown.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
 import { getTunables, withTunables, normalizeTunables } from '../data/tunables.js'
-import { ALL_GENRES } from '../data/genreTheme.js'
+import { ALL_GENRES, playerColorFor } from '../data/genreTheme.js'
 
 export { roundEndChipsPerElement } from './validate.js'
 
-export const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
 export const STARTING_POSITIONS = [0, 3, 12, 15] // 4x4 grid corners
 
 export interface ActionCtx {
@@ -508,7 +507,7 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
     return {
       id: playerId,
       name: config.name,
-      color: config.color || PLAYER_COLORS[index] || '#888888',
+      color: playerColorFor(config.starterGenre),
       starterGenre: config.starterGenre,
       position: STARTING_POSITIONS[index] || 0,
       songs: createStarterSongs(config.starterGenre, playerId),
