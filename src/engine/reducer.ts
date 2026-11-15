@@ -111,7 +111,33 @@ function reduce(
         newId
       )
       const spaces = state.spaces.map((s) => (s.id === action.toSpaceId ? { ...s, monsters } : s))
-      return { ...state, players, spaces }
+      const mover = state.players.find((p) => p.id === action.playerId)!
+      const moveTrail = [
+        ...state.moveTrail,
+        {
+          playerId: action.playerId,
+          fromSpaceId: mover.position,
+          inspirationSpent: action.inspirationTravel ? inspirationSpend() : 0,
+        },
+      ]
+      return { ...state, players, spaces, moveTrail }
+    }
+
+    case 'UNDO_MOVE': {
+      // Step back to where the last move started and refund it. The space
+      // being left keeps its monsters; the one returned to never lost them.
+      const step = state.moveTrail[state.moveTrail.length - 1]
+      const players = state.players.map((p) =>
+        p.id === step.playerId
+          ? {
+              ...p,
+              position: step.fromSpaceId,
+              movesThisTurn: Math.max(0, p.movesThisTurn - 1),
+              inspiration: p.inspiration + step.inspirationSpent,
+            }
+          : p
+      )
+      return { ...state, players, moveTrail: state.moveTrail.slice(0, -1) }
     }
 
     case 'START_COMBAT': {
@@ -127,7 +153,8 @@ function reduce(
         spaceId: space.id,
         monsters: space.monsters,
       }
-      return { ...state, players, combat, studio: createInitialStudioState() }
+      // Fighting locks in this turn's movement: no taking moves back after
+      return { ...state, players, combat, studio: createInitialStudioState(), moveTrail: [] }
     }
 
     case 'PLAY_SONG': {
@@ -329,7 +356,8 @@ function reduce(
     }
 
     case 'DEBUG_PATCH':
-      return applyDebugPatch(state, action.patch, rng, newId)
+      // Patches can teleport bards; a stale trail would undo to the wrong space
+      return { ...applyDebugPatch(state, action.patch, rng, newId), moveTrail: [] }
 
     case 'DEBUG_LOAD_STATE':
       return loadDebugState(state, action.engineState)
@@ -770,6 +798,8 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
 // ============================================================
 
 function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
+  // Moves can only be taken back within the turn they were made
+  state = { ...state, moveTrail: [] }
   const current = state.players[state.currentTurnPlayerIndex]
   let players = state.players.map((p) =>
     p.id === current.id

@@ -3,6 +3,9 @@ import { useGameStore } from '@/store'
 import { Genre } from '@/types'
 import { ALL_GENRES, GENRE_THEME, playerColorFor, readableTextColor } from '@/data/genreTheme'
 
+const SELECT_CHEVRON =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23e8d5b0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E\")"
+
 export function Setup() {
   const [playerCount, setPlayerCount] = useState(2)
   const [playerNames, setPlayerNames] = useState(['Player 1', 'Player 2', 'Player 3', 'Player 4'])
@@ -118,9 +121,14 @@ export function Setup() {
                     newGenres[idx] = genre
                     setSelectedGenres(newGenres)
                   }}
-                  className="flex-shrink-0 px-2 sm:px-4 py-2 pr-6 sm:pr-8 rounded-lg text-white font-game"
+                  className="flex-shrink-0 w-32 sm:w-44 appearance-none truncate pl-3 sm:pl-4 pr-9 sm:pr-11 py-2 rounded-lg text-white font-game cursor-pointer"
                   style={{
-                    background: 'rgba(42, 33, 24, 0.9)',
+                    backgroundColor: 'rgba(42, 33, 24, 0.9)',
+                    // Own chevron (the native one hugs the edge): inset from the right.
+                    backgroundImage: SELECT_CHEVRON,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 0.85rem center',
+                    backgroundSize: '0.75rem',
                     border: '1px solid rgba(212, 168, 83, 0.2)',
                   }}
                 >
@@ -163,7 +171,7 @@ export function Setup() {
           <ul className="list-disc list-inside space-y-1 text-parchment-400 text-xs">
             <li>Move to connected spaces each turn</li>
             <li>Genre tags spawn monsters when you enter</li>
-            <li>Play songs to deal damage (AOE to all monsters)</li>
+            <li>Play a song at one monster to deal damage</li>
             <li>Defeat monsters to gain Fame and EXP</li>
             <li>A monster's matching genre deals 2x damage; its immune genre deals 0 (no damage)</li>
             <li>Rolling max value = Critical Hit (double damage!)</li>

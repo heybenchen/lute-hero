@@ -4,7 +4,7 @@ import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
 import realmMap from '@/imports/board-background.jpg'
 import realmMapMobile from '@/imports/board-background-mobile.jpg'
-import { Footprints, Map, Sparkles } from 'lucide-react'
+import { Footprints, Map, Sparkles, Undo2 } from 'lucide-react'
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)
@@ -12,6 +12,9 @@ export function Board() {
   const currentPlayer = useGameStore(selectCurrentPlayer)
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
+  const moveTrail = useGameStore((state) => state.moveTrail)
+  const combatActive = useGameStore((state) => state.isActive)
+  const studioOpen = useGameStore((state) => state.studio.playerId !== null)
 
   const [hoveredSpaceId, setHoveredSpaceId] = useState<number | null>(null)
   const [travelMode, setTravelMode] = useState(false)
@@ -24,9 +27,26 @@ export function Board() {
 
   // Travel spends 1 Inspiration and 1 movement, so it needs a move available
   const canTravel = currentPlayer.inspiration > 0 && canMove
+  // The last move this turn can be taken back (refunding the move and any
+  // travel Inspiration) until the bard starts a fight.
+  const lastStep = moveTrail[moveTrail.length - 1]
+  const canUndoMove = canAct && !combatActive && !studioOpen && lastStep?.playerId === currentPlayer.id
+  const backtrackSpaceId = canUndoMove ? lastStep.fromSpaceId : null
+  const undoMove = () => {
+    if (!canUndoMove) return
+    setTravelMode(false)
+    dispatch({ type: 'UNDO_MOVE', playerId: currentPlayer.id })
+  }
+
   const hoveredSpace = hoveredSpaceId !== null ? spaces.find((s) => s.id === hoveredSpaceId) : null
 
   const handleSpaceClick = (spaceId: number) => {
+    // Stepping back onto the space you just came from takes the move back
+    if (spaceId === backtrackSpaceId) {
+      undoMove()
+      return
+    }
+
     // Inspiration travel: hop to any space (not the current one) for 1 Inspiration + 1 move
     if (travelMode) {
       if (spaceId === currentPlayer.position || !canMove) return
@@ -73,6 +93,17 @@ export function Board() {
           </div>
         </div>
 
+        <div className="flex items-center gap-2">
+        {canUndoMove && (
+          <button
+            onClick={undoMove}
+            className="travel-token"
+            title="Take back your last move (the move and any Inspiration spent are refunded)"
+          >
+            <Undo2 size={14} aria-hidden="true" />
+            <span>Undo move</span>
+          </button>
+        )}
         {(canTravel || travelMode) && (
           <button
             onClick={() => setTravelMode((m) => !m)}
@@ -85,6 +116,7 @@ export function Board() {
             {!travelMode && <strong>1</strong>}
           </button>
         )}
+        </div>
       </div>
 
       <div className="relative z-10 flex-1 min-h-0 flex items-center justify-center px-2 pb-2 sm:p-5 lg:p-6">
@@ -106,7 +138,7 @@ export function Board() {
                   space={space}
                   players={players}
                   isCurrentPlayer={currentPlayer.position === space.id}
-                  canMoveTo={validMoves.some((s) => s.id === space.id)}
+                  canMoveTo={space.id === backtrackSpaceId || validMoves.some((s) => s.id === space.id)}
                   isTravelTarget={travelMode && space.id !== currentPlayer.position}
                   isLinkedToHovered={
                     hoveredSpace !== null &&
