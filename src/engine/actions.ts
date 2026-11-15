@@ -1,4 +1,4 @@
-import { Genre, GamePhase, DiceType } from '../types/index.js'
+import { Genre, GamePhase, DiceType, StyleId } from '../types/index.js'
 import type { Tunables } from '../data/tunables.js'
 import type { EngineState } from './state.js'
 
@@ -35,6 +35,8 @@ export interface DebugPlayerFields {
   movesThisTurn: number
   fightsThisTurn: number
   monstersDefeated: number
+  /** Replace the player's styles (unknown ids dropped, Coda's song kept in sync). */
+  styles: StyleId[]
 }
 
 /** One dice-slot edit: set the slot's die, or clear it with `dice: null`. */
@@ -64,7 +66,8 @@ export type GameAction =
   | { type: 'MOVE'; playerId: string; toSpaceId: number; inspirationTravel: boolean }
   | { type: 'START_COMBAT'; playerId: string }
   | { type: 'PLAY_SONG'; songId: string; ownerId: string; targetMonsterId: string }
-  | { type: 'REROLL_SONG' }
+  /** Spend Inspiration to reroll the last song; `rubato` makes it free (once per turn, d4/d8). */
+  | { type: 'REROLL_SONG'; rubato?: boolean }
   | { type: 'SELECT_COMBAT_SPREAD'; genre: Genre | null }
   | { type: 'END_COMBAT'; spreadGenre?: Genre }
   | { type: 'END_TURN' }
@@ -77,8 +80,11 @@ export type GameAction =
   | { type: 'REFRESH_ELEMENT_OFFERS' }
   | { type: 'SLOT_DIE_REWARD'; rewardId: string; songId: string; slotIndex: number }
   | { type: 'BUY_INSPIRATION' }
+  /** Buy an offered style; at the cap, `replaceStyleId` names the one to give up. */
+  | { type: 'BUY_STYLE'; offerIndex: number; replaceStyleId?: StyleId }
+  | { type: 'REFRESH_STYLE_OFFERS' }
   | { type: 'PLAY_SHOWDOWN_SONG'; songId: string }
-  | { type: 'REROLL_SHOWDOWN_SONG' }
+  | { type: 'REROLL_SHOWDOWN_SONG'; rubato?: boolean }
   | { type: 'FINISH_SHOWDOWN_PERFORMANCE' }
   | { type: 'ADVANCE_TO_SUMMARY' }
   | { type: 'RESET_GAME' }

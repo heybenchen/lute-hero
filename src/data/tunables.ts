@@ -67,6 +67,37 @@ export interface Tunables {
 
   // --- Final Showdown ---
   showdownTurns: number
+
+  // --- Styles (see src/data/styles.ts) ---
+  /** Styles a bard can own at once; buying past this replaces one. */
+  maxStyles: number
+  /** Styles on offer in the Studio; redrawn after every turn. */
+  styleOfferCount: number
+  /** EXP price of each style. */
+  styleCostStaccato: number
+  styleCostCoda: number
+  styleCostOstinato: number
+  styleCostRubato: number
+  styleCostVirtuoso: number
+  styleCostFortissimo: number
+  styleCostFermata: number
+  styleCostCounterpoint: number
+  styleCostTutti: number
+  styleCostOverture: number
+  styleCostBravo: number
+  styleCostIspirato: number
+  /** Fortissimo: added to every d20 roll (can crit). */
+  fortissimoBonus: number
+  /** Overture: added to your first roll each turn (can't crit). */
+  overtureBonus: number
+  /** Tutti: added to your first roll each turn when you hold all four elements (can't crit). */
+  tuttiBonus: number
+  /** Ostinato: lowest d4 face that crits (cascade dice still need a 4). */
+  ostinatoCritFace: number
+  /** Counterpoint: multiplier on the first immune hit each turn. */
+  counterpointMultiplier: number
+  /** Bravo: extra Fame per monster tamed. */
+  bravoFamePerTame: number
 }
 
 export const DEFAULT_TUNABLES: Tunables = {
@@ -103,6 +134,27 @@ export const DEFAULT_TUNABLES: Tunables = {
   chipsPerElementPerPlayer: 6,
 
   showdownTurns: 3,
+
+  maxStyles: 2,
+  styleOfferCount: 2,
+  styleCostStaccato: 4,
+  styleCostCoda: 1,
+  styleCostOstinato: 3,
+  styleCostRubato: 2,
+  styleCostVirtuoso: 4,
+  styleCostFortissimo: 5,
+  styleCostFermata: 4,
+  styleCostCounterpoint: 2,
+  styleCostTutti: 3,
+  styleCostOverture: 2,
+  styleCostBravo: 3,
+  styleCostIspirato: 3,
+  fortissimoBonus: 2,
+  overtureBonus: 2,
+  tuttiBonus: 4,
+  ostinatoCritFace: 3,
+  counterpointMultiplier: 0.5,
+  bravoFamePerTame: 1,
 }
 
 // ============================================================
@@ -118,6 +170,7 @@ export type TunableGroup =
   | 'Economy'
   | 'Shop'
   | 'Showdown'
+  | 'Styles'
 
 export interface TunableField {
   /** Scalar key, or `key.index` for one slot of an array tunable. */
@@ -165,6 +218,27 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'chipsPerElementPerPlayer', label: 'Bag chips per element/player', group: 'Shop', min: 1, max: 30, step: 1 },
 
   { key: 'showdownTurns', label: 'Showdown verses', group: 'Showdown', min: 1, max: 10, step: 1 },
+
+  { key: 'maxStyles', label: 'Styles per bard', group: 'Styles', min: 0, max: 12, step: 1 },
+  { key: 'styleOfferCount', label: 'Styles on offer', group: 'Styles', min: 0, max: 12, step: 1 },
+  { key: 'styleCostStaccato', label: 'Staccato cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostCoda', label: 'Coda cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostOstinato', label: 'Ostinato cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostRubato', label: 'Rubato cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostVirtuoso', label: 'Virtuoso cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostFortissimo', label: 'Fortissimo cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostFermata', label: 'Fermata cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostCounterpoint', label: 'Counterpoint cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostTutti', label: 'Tutti cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostOverture', label: 'Overture cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostBravo', label: 'Bravo cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostIspirato', label: 'Ispirato cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'fortissimoBonus', label: 'Fortissimo: d20 bonus', group: 'Styles', min: 0, max: 20, step: 1 },
+  { key: 'overtureBonus', label: 'Overture: first-roll bonus', group: 'Styles', min: 0, max: 20, step: 1 },
+  { key: 'tuttiBonus', label: 'Tutti: first-roll bonus', group: 'Styles', min: 0, max: 20, step: 1 },
+  { key: 'ostinatoCritFace', label: 'Ostinato: d4 crits from', group: 'Styles', min: 1, max: 4, step: 1 },
+  { key: 'counterpointMultiplier', label: 'Counterpoint: immune ×', group: 'Styles', min: 0, max: 2, step: 0.25 },
+  { key: 'bravoFamePerTame', label: 'Bravo: Fame per tame', group: 'Styles', min: 0, max: 20, step: 1 },
 ]
 
 const LEVEL_COUNT = 5
@@ -194,6 +268,7 @@ export const TUNABLE_FIELDS: TunableField[] = [
   ...SCALAR_FIELDS.filter((f) => f.group === 'Economy').map(toField),
   ...SCALAR_FIELDS.filter((f) => f.group === 'Shop').map(toField),
   ...SCALAR_FIELDS.filter((f) => f.group === 'Showdown').map(toField),
+  ...SCALAR_FIELDS.filter((f) => f.group === 'Styles').map(toField),
 ]
 
 function toField(f: (typeof SCALAR_FIELDS)[number]): TunableField {
@@ -209,6 +284,7 @@ export const TUNABLE_GROUPS: TunableGroup[] = [
   'Economy',
   'Shop',
   'Showdown',
+  'Styles',
 ]
 
 // ============================================================

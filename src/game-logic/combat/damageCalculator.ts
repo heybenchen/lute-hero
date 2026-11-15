@@ -38,6 +38,7 @@ export function calculateDamage(
   song: Song,
   rolls: DiceRoll[],
   monster: Monster,
+  opts: DamageOptions = {},
 ): DamageCalculation {
   // 1. Calculate base damage (sum of all roll values)
   const baseDamage = rolls.reduce((sum, roll) => sum + roll.value, 0);
@@ -49,6 +50,7 @@ export function calculateDamage(
   const genreMultipliers: { genre: Genre; multiplier: number }[] = [];
   const perDie: DieContribution[] = [];
   let genreAdjustedDamage = 0;
+  let softenedImmunity = false;
 
   rolls.forEach((roll) => {
     // Find the slot that created this roll
@@ -56,18 +58,24 @@ export function calculateDamage(
     const slot = slotIdx >= 0 ? song.slots[slotIdx] : undefined;
     const dice = slot?.dice;
 
+    const bonus = roll.bonus ?? 0;
     if (dice) {
-      const multiplier = getGenreMultiplier(dice.genre, monster);
+      let multiplier = getGenreMultiplier(dice.genre, monster);
+      // Counterpoint: an immune hit lands at a reduced multiplier instead
+      if (opts.immuneMultiplier !== undefined && monster.resistance === dice.genre && multiplier < opts.immuneMultiplier) {
+        multiplier = opts.immuneMultiplier;
+        softenedImmunity = true;
+      }
       genreMultipliers.push({ genre: dice.genre, multiplier });
 
-      const damage = (roll.value + roll.critBonus) * multiplier;
+      const damage = (roll.value + bonus + roll.critBonus) * multiplier;
       genreAdjustedDamage += damage;
-      perDie.push({ genre: dice.genre, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier, damage });
+      perDie.push({ genre: dice.genre, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier, damage, ...(bonus ? { bonus } : {}) });
     } else {
       // Extra dice with no slotted genre — no genre multiplier lookup
-      const damage = roll.value + roll.critBonus;
+      const damage = roll.value + bonus + roll.critBonus;
       genreAdjustedDamage += damage;
-      perDie.push({ genre: null, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier: 1, damage });
+      perDie.push({ genre: null, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier: 1, damage, ...(bonus ? { bonus } : {}) });
     }
   });
 
@@ -79,7 +87,14 @@ export function calculateDamage(
     critBonuses,
     totalDamage,
     perDie,
+    ...(softenedImmunity ? { softenedImmunity } : {}),
   };
+}
+
+/** Per-play damage adjustments from styles. */
+export interface DamageOptions {
+  /** Counterpoint: multiplier to use instead of immunity's (if higher). */
+  immuneMultiplier?: number;
 }
 
 /**
@@ -123,6 +138,7 @@ export function calculateSingleTargetDamage(
   rolls: DiceRoll[],
   monsters: Monster[],
   targetMonsterId: string,
+  opts: DamageOptions = {},
 ): {
   damageCalculations: DamageCalculation[];
   updatedMonsters: Monster[];
@@ -132,7 +148,7 @@ export function calculateSingleTargetDamage(
 
   monsters.forEach((monster) => {
     if (monster.id === targetMonsterId) {
-      const damageCalc = calculateDamage(song, rolls, monster);
+      const damageCalc = calculateDamage(song, rolls, monster, opts);
       damageCalculations.push(damageCalc);
       updatedMonsters.push(applyDamageToMonster(monster, damageCalc.totalDamage));
     } else {

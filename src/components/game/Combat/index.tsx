@@ -11,6 +11,8 @@ import { Monster, Song } from '@/types'
 import type { EngineEvent } from '@/engine/events'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 import { diceBus, useDiceTrayBusy } from '@/components/dice3d/diceBus'
+import { StyleChip } from '@/components/ui/StyleBadge'
+import { rubatoCanReroll } from '@/game-logic/styles/styleEffects'
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
@@ -28,6 +30,8 @@ export function CombatModal() {
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
+  const stylesUsed = useGameStore((state) => state.stylesUsed)
+  const styleNotes = useGameStore((state) => state.styleNotes)
   // While 3D dice are airborne, hold back the result breakdown so it can't spoil the roll
   const diceBusy = useDiceTrayBusy()
 
@@ -64,8 +68,8 @@ export function CombatModal() {
 
   // Reward math lives in the engine; the component only maps names for display
   const rewards = useMemo(
-    () => computeCombatRewards({ monsters, killCredits }),
-    [monsters, killCredits]
+    () => computeCombatRewards({ monsters, killCredits }, player?.styles),
+    [monsters, killCredits, player?.styles]
   )
   const monstersDefeatedCount = rewards.monstersDefeatedCount
   const totalFameEarned = rewards.totalFameEarned
@@ -159,6 +163,16 @@ export function CombatModal() {
     if (result.ok) void showDamageEvents(result.events)
   }
 
+  // Rubato: a free reroll of a d4/d8 song, once per turn
+  const canRubato = (song: Song) =>
+    player.styles.includes('rubato') && !stylesUsed.includes('rubato') && rubatoCanReroll(song)
+
+  const handleRubato = async () => {
+    if (!canAct || !lastPlayedSong || !canRubato(lastPlayedSong)) return
+    const result = await dispatch({ type: 'REROLL_SONG', rubato: true })
+    if (result.ok) void showDamageEvents(result.events)
+  }
+
   const handleEndCombat = () => {
     // The engine awards EXP/fame, clears or re-tags the space, and checks
     // the phase transition — all in one atomic action
@@ -187,10 +201,14 @@ export function CombatModal() {
               </p>
               <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
             </div>
-            <div className="mt-2 text-sm text-parchment-400">
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm text-parchment-400">
               <span title="Inspiration — spend to reroll a song">
                 &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
               </span>
+              {/* The bard's styles; once-per-turn ones grey out after they fire */}
+              {player.styles.map((id) => (
+                <StyleChip key={id} id={id} spent={stylesUsed.includes(id)} />
+              ))}
             </div>
           </div>
 
@@ -215,6 +233,13 @@ export function CombatModal() {
                   {monster.id === lastTargetMonsterId && lastDamageCalculations[idx] && (
                     <div className={`transition-opacity duration-300 ${diceBusy ? 'opacity-0' : 'opacity-100'}`}>
                       <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
+                      {styleNotes.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap justify-center gap-1" aria-label="Styles that shaped this play">
+                          {styleNotes.map((name) => (
+                            <span key={name} className="style-chip">&#x266A; {name}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -239,6 +264,7 @@ export function CombatModal() {
                   index={idx}
                   rolls={currentSongId === song.id ? rolls : undefined}
                   onReroll={canAct && canRerollSong(song.id) ? handleReroll : undefined}
+                  onRubato={canAct && canRerollSong(song.id) && canRubato(song) ? handleRubato : undefined}
                   inspiration={player.inspiration}
                 />
               ))}
@@ -278,6 +304,7 @@ export function CombatModal() {
                         ownerName={coverPlayer.name}
                         rolls={currentSongId === song.id ? rolls : undefined}
                         onReroll={canAct && canRerollSong(song.id) ? handleReroll : undefined}
+                        onRubato={canAct && canRerollSong(song.id) && canRubato(song) ? handleRubato : undefined}
                         inspiration={player.inspiration}
                       />
                     ))}
