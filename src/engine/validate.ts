@@ -95,6 +95,18 @@ export function validateAction(
       return ok
     }
 
+    case 'UNDO_MOVE': {
+      const gate = requireCurrentTurn()
+      if (!gate.ok) return gate
+      if (state.phase !== 'main') return illegal('Movement only during the main phase')
+      if (state.combat.isActive) return illegal('Cannot move during combat')
+      if (state.studio.playerId) return illegal('Close the Studio before moving')
+      if (action.playerId !== currentPlayerId(state)) return illegal('Not this player\'s turn')
+      const last = state.moveTrail[state.moveTrail.length - 1]
+      if (!last || last.playerId !== action.playerId) return illegal('No move to take back')
+      return ok
+    }
+
     case 'START_COMBAT': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate

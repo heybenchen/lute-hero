@@ -367,10 +367,10 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           className={`flex-1 h-24 rounded-lg flex flex-col items-center justify-center gap-1.5 py-2 text-xs relative transition-all duration-150 ${isOffer ? 'hover:-translate-y-0.5' : ''}`}
                           style={{
                             opacity: offerAction === 'locked' || offerAction === 'buy-locked' || offerAction === 'upgrade-locked' || (activeDie && slot.dice) ? 0.35 : 1,
+                            // Unaffordable offers keep the element's color (dimmed by
+                            // the opacity above) so they read like the buyable ones
                             background:
-                              offerAction === 'buy-locked'
-                                ? 'rgb(42, 33, 24)'
-                                : offerAction === 'buy' || offerAction === 'upgrade' || offerAction === 'upgrade-locked'
+                              offerAction === 'buy' || offerAction === 'buy-locked' || offerAction === 'upgrade' || offerAction === 'upgrade-locked'
                                 ? `rgba(${offerRgb}, 0.14)`
                                 : slot.dice
                                 ? activeDie
@@ -380,13 +380,9 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                 ? 'rgba(0, 100, 200, 0.1)'
                                 : 'rgba(255, 255, 255, 0.02)',
                             border:
-                              offerAction === 'buy'
+                              offerAction === 'buy' || offerAction === 'buy-locked'
                                 ? `1px dashed rgba(${offerRgb}, 0.8)`
-                                : offerAction === 'buy-locked'
-                                ? '1px dashed rgba(212, 168, 83, 0.25)'
-                                : offerAction === 'upgrade-locked'
-                                ? '1px solid rgba(212, 168, 83, 0.25)'
-                                : offerAction === 'upgrade'
+                                : offerAction === 'upgrade' || offerAction === 'upgrade-locked'
                                 ? `1px solid rgba(${offerRgb}, 0.85)`
                                 : slot.dice
                                 ? activeDie
@@ -431,7 +427,8 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             <div
                               className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
                               style={{
-                                background: 'rgb(42, 33, 24)',
+                                // Opaque (hides the current die) but tinted with the element
+                                background: `linear-gradient(rgba(${offerRgb}, 0.14), rgba(${offerRgb}, 0.14)), rgb(42, 33, 24)`,
                               }}
                             >
                               <div className="flex items-center gap-1 text-sm font-bold text-parchment-100">

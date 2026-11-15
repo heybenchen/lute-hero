@@ -81,7 +81,7 @@ describe('START_GAME', () => {
     expect(state.elementOffers).toHaveLength(4)
   })
 
-  it('gives every bard a d8 of their element and an opposing d4', () => {
+  it('gives every bard a single d8 of their element', () => {
     const result = applyAction(
       createInitialEngineState(),
       {
@@ -96,33 +96,19 @@ describe('START_GAME', () => {
       ctx(),
     )
     if (!result.ok) throw new Error(result.message)
-    const [alba, bryn, cleo, dara] = result.state.players
 
     const dice = (p: (typeof result.state.players)[number]) =>
       p.songs.flatMap((s) => s.slots.map((slot) => slot.dice)).filter((d) => d !== null)
 
-    expect(dice(alba)).toMatchObject([
-      { type: 'd8', genre: 'Ballad' },
-      { type: 'd4', genre: 'Shanty' },
-    ])
-    expect(dice(bryn)).toMatchObject([
-      { type: 'd8', genre: 'Folk' },
-      { type: 'd4', genre: 'Hymn' },
-    ])
-    expect(dice(cleo)).toMatchObject([
-      { type: 'd8', genre: 'Hymn' },
-      { type: 'd4', genre: 'Folk' },
-    ])
-    expect(dice(dara)).toMatchObject([
-      { type: 'd8', genre: 'Shanty' },
-      { type: 'd4', genre: 'Ballad' },
-    ])
-    // Six single-slot songs retain room for six dice.
+    for (const player of result.state.players) {
+      expect(dice(player)).toMatchObject([{ type: 'd8', genre: player.starterGenre }])
+    }
+    const alba = result.state.players[0]
+    // Six single-slot songs: the d8 in song 1, the rest empty.
     expect(alba.songs[0].slots[0].dice?.type).toBe('d8')
-    expect(alba.songs[1].slots[0].dice?.type).toBe('d4')
     expect(alba.songs).toHaveLength(6)
     expect(alba.songs.every((song) => song.slots.length === 1)).toBe(true)
-    expect(alba.songs[2].slots[0].dice).toBeNull()
+    expect(alba.songs.slice(1).every((song) => song.slots[0].dice === null)).toBe(true)
   })
 
   it('deals the opening chips evenly across elements, in a random order', () => {
@@ -219,6 +205,51 @@ describe('MOVE', () => {
   })
 })
 
+describe('UNDO_MOVE', () => {
+  it('steps back along this turn\'s moves, refunding each move', () => {
+    let state = startTwoPlayerGame()
+    const p1 = state.players[0]
+    const start = p1.position
+    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1, inspirationTravel: false }).state
+    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 2, inspirationTravel: false }).state
+    expect(state.players[0].movesThisTurn).toBe(2)
+
+    state = apply(state, { type: 'UNDO_MOVE', playerId: p1.id }).state
+    expect(state.players[0].position).toBe(1)
+    expect(state.players[0].movesThisTurn).toBe(1)
+    state = apply(state, { type: 'UNDO_MOVE', playerId: p1.id }).state
+    expect(state.players[0].position).toBe(start)
+    expect(state.players[0].movesThisTurn).toBe(0)
+    expect(applyAction(state, { type: 'UNDO_MOVE', playerId: p1.id }, ctx()).ok).toBe(false)
+  })
+
+  it('refunds the Inspiration spent on travel', () => {
+    let state = startTwoPlayerGame()
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 2 } : p)) }
+    const p1 = state.players[0]
+    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 10, inspirationTravel: true }).state
+    expect(state.players[0].inspiration).toBe(1)
+    state = apply(state, { type: 'UNDO_MOVE', playerId: p1.id }).state
+    expect(state.players[0].inspiration).toBe(2)
+    expect(state.players[0].position).toBe(p1.position)
+  })
+
+  it('cannot take back a move once combat has started, or in a later turn', () => {
+    let state = startTwoPlayerGame()
+    const p1 = state.players[0]
+    // Guarantee a fight on the destination
+    state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Folk'] } : s)) }
+    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1, inspirationTravel: false }).state
+    const fought = apply(state, { type: 'START_COMBAT', playerId: p1.id }).state
+    expect(fought.moveTrail).toEqual([])
+    const ended = apply(fought, { type: 'END_COMBAT' }).state
+    expect(applyAction(ended, { type: 'UNDO_MOVE', playerId: p1.id }, ctx()).ok).toBe(false)
+
+    const nextTurn = apply(state, { type: 'END_TURN' }).state
+    expect(nextTurn.moveTrail).toEqual([])
+  })
+})
+
 describe('combat flow', () => {
   function stateWithMonsterAtPlayer(): EngineState {
     let state = startTwoPlayerGame()
@@ -299,6 +330,29 @@ describe('combat flow', () => {
     for (const g of survivingGenres) {
       expect(space.genreTags).toContain(g)
     }
+  })
+
+  it('retreat pays EXP only for monsters the bard wounded', () => {
+    let state = stateWithMonsterAtPlayer()
+    state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Folk', 'Hymn', 'Hymn'] } : s)) }
+    // Step off and back on so the space respawns from the new chips
+    state = apply(state, { type: 'UNDO_MOVE', playerId: 'player-1' }).state
+    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false }).state
+    state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    const folk = state.combat.monsters.find((m) => m.level === 1)!
+    expect(state.combat.monsters.map((m) => m.level).sort()).toEqual([1, 2])
+    const expBefore = state.players[0].exp
+
+    // Untouched: a straight retreat pays nothing
+    expect(apply(state, { type: 'END_COMBAT' }).state.players[0].exp).toBe(expBefore)
+
+    // Wound the Lv1 only: its 1 EXP, not the Lv2's
+    const wounded = {
+      ...state,
+      combat: { ...state.combat, monsters: state.combat.monsters.map((m) => (m.id === folk.id ? { ...m, currentHP: m.maxHP - 1 } : m)) },
+    }
+    expect(computeCombatRewards(wounded.combat).totalExp).toBe(DEFAULT_TUNABLES.monsterExpPerLevel)
+    expect(apply(wounded, { type: 'END_COMBAT' }).state.players[0].exp).toBe(expBefore + DEFAULT_TUNABLES.monsterExpPerLevel)
   })
 
   it('reroll replays the last song from its snapshot and spends inspiration', () => {

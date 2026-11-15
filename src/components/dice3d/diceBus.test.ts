@@ -19,6 +19,33 @@ describe('diceBus', () => {
     await expect(diceBus.whenSettled()).resolves.toBeUndefined()
   })
 
+  it('stays busy while held, through the hand-off to a queued throw', async () => {
+    release = diceBus.registerHost()
+    const unhold = diceBus.hold()
+    expect(diceBus.isBusy()).toBe(true)
+    let settled = false
+    const waiting = diceBus.whenSettled().then(() => { settled = true })
+
+    diceBus.enqueue([die])
+    unhold()
+    unhold() // idempotent
+    await Promise.resolve()
+    expect(diceBus.isBusy()).toBe(true)
+    expect(settled).toBe(false)
+
+    diceBus.finish(diceBus.current()!.id)
+    await waiting
+    expect(diceBus.isBusy()).toBe(false)
+  })
+
+  it('a hold with no throw (e.g. reduced motion) settles on release', async () => {
+    const unhold = diceBus.hold()
+    expect(diceBus.isBusy()).toBe(true)
+    unhold()
+    expect(diceBus.isBusy()).toBe(false)
+    await expect(diceBus.whenSettled()).resolves.toBeUndefined()
+  })
+
   it('tracks a throw from enqueue until the tray finishes it', async () => {
     release = diceBus.registerHost()
     diceBus.enqueue([die])
