@@ -677,7 +677,10 @@ export function computeCombatRewards(combat: {
 } {
   const defeated = combat.monsters.filter((m) => m.currentHP <= 0)
   const monstersDefeatedCount = defeated.length
-  const totalExp = calculateTotalMonsterExp(combat.monsters)
+  // EXP is paid only for monsters the bard actually hurt: every one on a
+  // victory, but on a retreat the untouched ones pay nothing.
+  const wounded = combat.monsters.filter((m) => m.currentHP < m.maxHP)
+  const totalExp = calculateTotalMonsterExp(wounded)
   const totalFameEarned = calculateFameEarned(defeated.map((m) => m.level))
 
   const fameForKill = (monsterId: string) => {
@@ -713,7 +716,7 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
   const success = combat.monsters.every((m) => m.currentHP <= 0)
   const rewards = computeCombatRewards(combat)
 
-  // EXP always awarded for the full encounter; fame per kill credit
+  // EXP for every wounded monster; fame per kill credit
   let players = adjustExp(state.players, fighterId, rewards.totalExp)
   // Clearing every monster on a space earns the victor 1 Inspiration.
   if (success) {

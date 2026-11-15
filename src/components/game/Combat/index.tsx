@@ -414,7 +414,7 @@ export function CombatModal() {
                 className={`btn-secondary disabled:opacity-40 disabled:cursor-not-allowed ${
                   canContinue ? 'text-sm px-6 py-2' : 'text-base sm:text-lg px-10 py-3 w-full max-w-md'
                 }`}
-                title="Leave the fight now — you still collect the EXP and any Fame earned so far"
+                title="Leave the fight now — you earn EXP for every monster you wounded and Fame for each one you defeated"
               >
                 Retreat
               </button>

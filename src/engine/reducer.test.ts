@@ -332,6 +332,29 @@ describe('combat flow', () => {
     }
   })
 
+  it('retreat pays EXP only for monsters the bard wounded', () => {
+    let state = stateWithMonsterAtPlayer()
+    state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Folk', 'Hymn', 'Hymn'] } : s)) }
+    // Step off and back on so the space respawns from the new chips
+    state = apply(state, { type: 'UNDO_MOVE', playerId: 'player-1' }).state
+    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false }).state
+    state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    const folk = state.combat.monsters.find((m) => m.level === 1)!
+    expect(state.combat.monsters.map((m) => m.level).sort()).toEqual([1, 2])
+    const expBefore = state.players[0].exp
+
+    // Untouched: a straight retreat pays nothing
+    expect(apply(state, { type: 'END_COMBAT' }).state.players[0].exp).toBe(expBefore)
+
+    // Wound the Lv1 only: its 1 EXP, not the Lv2's
+    const wounded = {
+      ...state,
+      combat: { ...state.combat, monsters: state.combat.monsters.map((m) => (m.id === folk.id ? { ...m, currentHP: m.maxHP - 1 } : m)) },
+    }
+    expect(computeCombatRewards(wounded.combat).totalExp).toBe(DEFAULT_TUNABLES.monsterExpPerLevel)
+    expect(apply(wounded, { type: 'END_COMBAT' }).state.players[0].exp).toBe(expBefore + DEFAULT_TUNABLES.monsterExpPerLevel)
+  })
+
   it('reroll replays the last song from its snapshot and spends inspiration', () => {
     let state = stateWithMonsterAtPlayer()
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 1 } : p)) }
