@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { announceDiceEvents, diceBus } from './diceBus'
 import type { EngineEvent } from '@/engine/events'
+import type { SongSlot } from '@/types'
 
 const die = { dieId: 'd1', type: 'd8' as const, genre: 'Ballad' as const, values: [8, 3] }
 
@@ -48,7 +49,7 @@ describe('diceBus', () => {
 
   it('turns diceRolled events into throws with every cascade value', () => {
     release = diceBus.registerHost()
-    const players = [{ songs: [{ id: 's1', slots: [{ dice: { id: 'd1', type: 'd8' as const, genre: 'Folk' as const } }] }] }]
+    const players = [{ songs: [{ id: 's1', used: false, slots: [{ dice: { id: 'd1', type: 'd8', genre: 'Folk' } }] as [SongSlot] }] }]
     const events: EngineEvent[] = [{
       type: 'diceRolled', playerId: 'p1', songId: 's1', context: 'combat',
       rolls: [{ diceId: 'd1', value: 8, isCrit: true, critBonus: 5, cascadeRolls: [5] }],

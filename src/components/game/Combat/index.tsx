@@ -8,6 +8,7 @@ import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopu
 import { calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
 import { computeCombatRewards } from '@/engine/reducer'
 import { Monster, Song } from '@/types'
+import type { EngineEvent } from '@/engine/events'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 import { diceBus, useDiceTrayBusy } from '@/components/dice3d/diceBus'
 
@@ -92,21 +93,23 @@ export function CombatModal() {
     }
   }, [isActive, monsters, selectedTargetId])
 
-  // Spectators animate other players' songs from the SSE event stream
+  /** Damage numbers pop once the 3D dice have landed, not while they're airborne. */
+  const showDamageEvents = useCallback(async (events: EngineEvent[]) => {
+    await diceBus.whenSettled()
+    for (const event of events) {
+      if (event.type !== 'damageDealt') continue
+      const newPopups = createDamagePopups(event.calculations, event.monstersBefore, event.monstersAfter)
+      setPopups((prev) => [...prev, ...newPopups])
+    }
+  }, [])
+
+  // Spectators animate other players' songs from the SSE event stream. Not
+  // cancelled when the next entry arrives: a spectator still watching this
+  // throw must get its popups even if the next action lands meanwhile.
   useEffect(() => {
     if (!remoteEntry || !isActive) return
-    let cancelled = false
-    void diceBus.whenSettled().then(() => {
-      if (cancelled) return
-      for (const event of remoteEntry.events) {
-        if (event.type === 'damageDealt') {
-          const newPopups = createDamagePopups(event.calculations, event.monstersBefore, event.monstersAfter)
-          setPopups((prev) => [...prev, ...newPopups])
-        }
-      }
-    })
-    return () => { cancelled = true }
-  }, [remoteEntry, isActive])
+    void showDamageEvents(remoteEntry.events)
+  }, [remoteEntry, isActive, showDamageEvents])
 
   if (!isActive || !player) return null
 
@@ -135,23 +138,6 @@ export function CombatModal() {
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
   const totalExp = calculateTotalMonsterExp(monsters)
   const isCombatOver = allMonstersDefeated || !canContinue
-
-  const showDamageEvents = async (events: { type: string }[]) => {
-    // Damage numbers pop once the 3D dice have landed, not while they're airborne
-    await diceBus.whenSettled()
-    for (const event of events) {
-      if (event.type === 'damageDealt') {
-        const dmg = event as {
-          type: 'damageDealt'
-          calculations: Parameters<typeof createDamagePopups>[0]
-          monstersBefore: Monster[]
-          monstersAfter: Monster[]
-        }
-        const newPopups = createDamagePopups(dmg.calculations, dmg.monstersBefore, dmg.monstersAfter)
-        setPopups((prev) => [...prev, ...newPopups])
-      }
-    }
-  }
 
   /**
    * Reroll is offered only for a song whose dice are SPENT — it damaged without

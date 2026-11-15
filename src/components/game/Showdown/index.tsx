@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore, selectCanPerform } from '@/store'
 import { Song, DiceRoll } from '@/types'
 import { SongCard } from '../Combat/SongCard'
@@ -59,6 +59,21 @@ export function FinalShowdown() {
     return () => clearTimeout(timer)
   }, [stage])
 
+  /** Fandom pops once the 3D dice have landed. */
+  const popupSeq = useRef(0)
+  const showFandomPopup = useCallback(async (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
+    await diceBus.whenSettled()
+    const popup: FandomPopup = {
+      id: `fandom-${++popupSeq.current}`,
+      fandom: result.fandom,
+      hadCrit: result.hadCrit,
+      hitWeakness: result.hitWeakness,
+      wasResisted: result.wasResisted,
+    }
+    setPopups((prev) => [...prev, popup])
+    setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
+  }, [])
+
   // Spectators follow other performers live via the SSE event stream
   useEffect(() => {
     if (!remoteEntry) return
@@ -80,7 +95,7 @@ export function FinalShowdown() {
         }
       }
     }
-  }, [remoteEntry])
+  }, [remoteEntry, showFandomPopup])
 
   const performerId = showdownOrder[showdownPerformerIdx]
   const performer = players.find((p) => p.id === performerId)
@@ -92,20 +107,6 @@ export function FinalShowdown() {
   // Each player performs exactly one song per turn
   const hasPerformed = showdownSongsUsed.length >= 1
   const performanceDone = hasPerformed || playableSongs.length === 0
-
-  const showFandomPopup = async (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
-    // Fandom pops once the 3D dice have landed
-    await diceBus.whenSettled()
-    const popup: FandomPopup = {
-      id: `fandom-${Date.now()}`,
-      fandom: result.fandom,
-      hadCrit: result.hadCrit,
-      hitWeakness: result.hitWeakness,
-      wasResisted: result.wasResisted,
-    }
-    setPopups((prev) => [...prev, popup])
-    setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
-  }
 
   const handlePlaySong = async (song: Song) => {
     const result = await dispatch({ type: 'PLAY_SHOWDOWN_SONG', songId: song.id })

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { diceBus, type TrayRequest } from './diceBus'
 import { DiceTray, type TrayBadge } from './tray'
 
@@ -76,7 +76,7 @@ export function DiceRollOverlay({ request }: { request: TrayRequest | null }) {
           <div
             key={badge.id}
             className="dice-badge pointer-events-none absolute"
-            style={{ left: badge.x, top: badge.y, '--badge-color': badge.color } as React.CSSProperties}
+            style={{ left: badge.x, top: badge.y, '--badge-color': badge.color } as CSSProperties}
           >
             {badge.crit && <span className="dice-badge-crit">Crit!</span>}
             <span className="dice-badge-value">{badge.text}</span>

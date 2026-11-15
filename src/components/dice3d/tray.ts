@@ -219,8 +219,6 @@ export class DiceTray {
   private frame = 0
   private cancelled = false
   private skipRequested = false
-  private width = 1
-  private height = 1
 
   constructor(
     private host: HTMLElement,
@@ -269,39 +267,33 @@ export class DiceTray {
 
   /**
    * Compile every shader program a throw needs (resin dice with shadows and
-   * environment lighting, the shadow floor) ahead of time, so the first roll
-   * doesn't hitch while the GPU builds them.
+   * environment lighting, the shadow floor) up front. The tray is built while
+   * the browser is idle, so this one-off cost lands there instead of hitching
+   * the first roll. Synchronous on purpose: nothing is left pending if the
+   * tray is disposed straight after.
    */
   private warmUp() {
     const props = (['d4', 'd8', 'd12', 'd20'] as DiceType[]).map((type) => {
-      const shape = getDieShape(type)
-      const die = this.spawn(shape, 'Ballad', 0, 1)
-      die.mesh.visible = true
+      const die = this.createDie(getDieShape(type), 'Ballad', 0, 1)
       die.mesh.position.set(0, -50, 0)
+      this.scene.add(die.mesh)
       return die
     })
-    const finish = () => {
-      if (this.cancelled) return
-      this.render()
-      for (const die of props) {
-        this.scene.remove(die.mesh)
-        die.materials.forEach((m) => m.dispose())
-      }
-      this.dice = this.dice.filter((d) => !props.includes(d))
-      this.render()
-    }
-    this.renderer.compileAsync(this.scene, this.camera).then(finish, finish)
+    this.renderer.compile(this.scene, this.camera)
+    this.render()
+    props.forEach((die) => this.disposeDie(die))
+    this.render()
   }
 
   /** Fit the camera so a die is a comfortable size on screen, and wall the tray to the visible floor. */
   resize() {
-    this.width = Math.max(1, this.host.clientWidth)
-    this.height = Math.max(1, this.host.clientHeight)
-    this.renderer.setSize(this.width, this.height, false)
-    const aspect = this.width / this.height
+    const width = Math.max(1, this.host.clientWidth)
+    const height = Math.max(1, this.host.clientHeight)
+    this.renderer.setSize(width, height, false)
+    const aspect = width / height
     this.camera.aspect = aspect
-    const diePx = THREE.MathUtils.clamp(Math.min(this.width, this.height) * 0.1, 58, 92)
-    const worldWidth = (this.width / diePx) * 1.75
+    const diePx = THREE.MathUtils.clamp(Math.min(width, height) * 0.1, 58, 92)
+    const worldWidth = (width / diePx) * 1.75
     const distance = worldWidth / (2 * Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * aspect)
     this.camera.position.set(0, distance * Math.cos(CAMERA_TILT), distance * Math.sin(CAMERA_TILT))
     this.camera.lookAt(0, 0, 0)
@@ -340,7 +332,6 @@ export class DiceTray {
 
   /** Throw every die in the request (then any crit cascades) and resolve once they've landed and faded. */
   async play(request: TrayRequest): Promise<void> {
-    this.cancelled = false
     this.skipRequested = false
     this.clear()
     this.host.style.transition = ''
@@ -365,8 +356,9 @@ export class DiceTray {
       if (added.some((d) => d.crit) && wave < waves - 1) await this.critFlash(added.filter((d) => d.crit))
     }
 
-    if (!this.cancelled) await this.wait(this.skipRequested ? 120 : HOLD_MS)
-    if (!this.cancelled) {
+    // Let the result sit for a beat, then fade (both skipped if nothing landed)
+    if (this.dice.length > 0 && !this.cancelled) {
+      await this.wait(HOLD_MS)
       this.host.style.transition = `opacity ${FADE_MS}ms ease-out`
       this.host.style.opacity = '0'
       await this.wait(FADE_MS)
@@ -376,7 +368,8 @@ export class DiceTray {
     this.render()
   }
 
-  private spawn(shape: DieShape, genre: Genre, landed: number, value: number): LiveDie {
+  /** A die mesh labelled so the face (or vertex) it will land on shows `value`. */
+  private createDie(shape: DieShape, genre: Genre, landed: number, value: number): LiveDie {
     const labels = labelsShowing(shape, landed, value)
     const maxAnisotropy = this.renderer.capabilities.getMaxAnisotropy()
     const materials = shape.faces.map((_, f) => new THREE.MeshPhysicalMaterial({
@@ -392,11 +385,22 @@ export class DiceTray {
     const mesh = new THREE.Mesh(renderShape(shape).geometry, materials)
     mesh.castShadow = true
     mesh.receiveShadow = true
-    mesh.visible = false
-    this.scene.add(mesh)
-    const live: LiveDie = { shape, mesh, materials, value, crit: false, genre }
-    this.dice.push(live)
-    return live
+    return { shape, mesh, materials, value, crit: false, genre }
+  }
+
+  /** Add a die to this throw; it stays hidden until playback positions it. */
+  private spawn(shape: DieShape, genre: Genre, landed: number, value: number): LiveDie {
+    const die = this.createDie(shape, genre, landed, value)
+    die.mesh.visible = false
+    this.scene.add(die.mesh)
+    this.dice.push(die)
+    return die
+  }
+
+  /** Geometry and textures are shared caches; only the per-die materials are freed. */
+  private disposeDie(die: LiveDie) {
+    this.scene.remove(die.mesh)
+    die.materials.forEach((m) => m.dispose())
   }
 
   private playback(sim: ThrowResult, dice: LiveDie[]): Promise<void> {
@@ -481,6 +485,7 @@ export class DiceTray {
         dice.forEach((die) => die.materials.forEach((m) => { m.emissiveIntensity = pulse * 0.22 }))
         this.render()
         if (t >= 1 || this.skipRequested) {
+          // A faint warmth lingers so the crit die stays identifiable among the rest
           dice.forEach((die) => die.materials.forEach((m) => { m.emissiveIntensity = 0.06 }))
           cleanup()
           this.render()
@@ -510,12 +515,12 @@ export class DiceTray {
     }))
   }
 
+  /** Resolves after `ms`, or at once when cancelled or skipped. */
   private wait(ms: number): Promise<void> {
     return new Promise((resolve) => {
       const start = performance.now()
       const tick = () => {
-        const now = performance.now()
-        if (this.cancelled || now - start >= ms || (this.skipRequested && now - start >= Math.min(ms, 120))) return resolve()
+        if (this.cancelled || this.skipRequested || performance.now() - start >= ms) return resolve()
         this.frame = requestAnimationFrame(tick)
       }
       this.frame = requestAnimationFrame(tick)
@@ -527,10 +532,7 @@ export class DiceTray {
   }
 
   private clear() {
-    for (const die of this.dice) {
-      this.scene.remove(die.mesh)
-      die.materials.forEach((m) => m.dispose())
-    }
+    this.dice.forEach((die) => this.disposeDie(die))
     this.dice = []
   }
 

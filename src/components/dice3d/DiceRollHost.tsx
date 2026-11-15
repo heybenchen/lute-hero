@@ -3,8 +3,11 @@ import { diceBus, useTrayRequest, type TrayRequest } from './diceBus'
 
 type Overlay = ComponentType<{ request: TrayRequest | null }>
 
-/** Longest a single throw may hold the table before we let the game carry on. */
-const WATCHDOG_MS = 15000
+/**
+ * Longest a single throw may hold the table before the game carries on
+ * regardless (a long crit cascade runs ~3s per wave).
+ */
+const WATCHDOG_MS = 25000
 
 function loadOverlay() {
   return import('./DiceRollOverlay').then((m) => m.DiceRollOverlay)

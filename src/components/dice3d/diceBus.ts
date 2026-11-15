@@ -1,4 +1,4 @@
-import type { DiceType, Genre } from '@/types'
+import type { DiceType, Genre, Player } from '@/types'
 import type { EngineEvent } from '@/engine/events'
 import { useSyncExternalStore } from 'react'
 
@@ -118,10 +118,7 @@ export const diceBus = {
 }
 
 /** Queue every `diceRolled` event in a batch of engine events for the tray. */
-export function announceDiceEvents(
-  events: EngineEvent[],
-  players: { songs: { id: string; slots: { dice: { id: string; type: DiceType; genre: Genre } | null }[] }[] }[],
-) {
+export function announceDiceEvents(events: EngineEvent[], players: Pick<Player, 'songs'>[]) {
   for (const event of events) {
     if (event.type !== 'diceRolled') continue
     const song = players.flatMap((p) => p.songs).find((s) => s.id === event.songId)
@@ -135,6 +132,8 @@ export function announceDiceEvents(
     diceBus.enqueue(dice)
   }
 }
+
+// React bindings
 
 export function useDieInFlight(dieId: string | undefined): boolean {
   return useSyncExternalStore(
