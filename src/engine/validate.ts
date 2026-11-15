@@ -68,6 +68,10 @@ export function validateAction(
       if (action.playerConfigs.length < 1 || action.playerConfigs.length > 4) {
         return illegal('1-4 players required')
       }
+      const elements = action.playerConfigs.map((c) => c.starterGenre)
+      if (new Set(elements).size !== elements.length) {
+        return illegal('Each bard needs a different starting element')
+      }
       return ok
     }
 

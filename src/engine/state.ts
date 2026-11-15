@@ -14,6 +14,7 @@ import {
 } from '../types/index.js'
 import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
 import { SONGS_PER_BARD } from '../data/startingData.js'
+import { playerColorFor } from '../data/genreTheme.js'
 import { Tunables, DEFAULT_TUNABLES, normalizeTunables } from '../data/tunables.js'
 
 /**
@@ -231,7 +232,8 @@ function migrateRewardDice(rewards: Record<string, PendingReward[]>): Record<str
  * loading a game saved by an older version.
  */
 export function normalizeEngineState(state: EngineState): EngineState {
-  const players = migratePlayerDice(state.players ?? [])
+  // Colors used to follow seat order; they now always match the starter element
+  const players = migratePlayerDice(state.players ?? []).map((p) => ({ ...p, color: playerColorFor(p.starterGenre) }))
   // Only legacy slots create aliases. Do not infer relationships from ids in
   // already-migrated games: each song can be spent independently after reload.
   const splitSongIds = new Map<string, string[]>()

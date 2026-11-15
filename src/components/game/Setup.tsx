@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { useGameStore } from '@/store'
 import { Genre } from '@/types'
-
-const GENRES: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
-const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
+import { ALL_GENRES, GENRE_THEME, playerColorFor, readableTextColor } from '@/data/genreTheme'
 
 export function Setup() {
   const [playerCount, setPlayerCount] = useState(2)
@@ -17,8 +15,7 @@ export function Setup() {
     for (let i = 0; i < playerCount; i++) {
       playerConfigs.push({
         name: playerNames[i] || `Player ${i + 1}`,
-        starterGenre: selectedGenres[i] || GENRES[0],
-        color: PLAYER_COLORS[i] || '#888888',
+        starterGenre: selectedGenres[i],
       })
     }
     dispatch({ type: 'START_GAME', playerConfigs })
@@ -84,7 +81,11 @@ export function Setup() {
               <div key={idx} className="flex gap-3 items-center">
                 <div
                   className="player-avatar w-10 h-10 text-base flex-shrink-0"
-                  style={{ backgroundColor: PLAYER_COLORS[idx] }}
+                  style={{
+                    backgroundColor: playerColorFor(selectedGenres[idx]),
+                    color: readableTextColor(playerColorFor(selectedGenres[idx])),
+                  }}
+                  title={`${GENRE_THEME[selectedGenres[idx]].emoji} ${selectedGenres[idx]} bard`}
                 >
                   {idx + 1}
                 </div>
@@ -108,8 +109,13 @@ export function Setup() {
                 <select
                   value={selectedGenres[idx]}
                   onChange={(e) => {
+                    // Each element belongs to one bard: taking one another
+                    // player has swaps the two, so the lineup stays unique.
+                    const genre = e.target.value as Genre
                     const newGenres = [...selectedGenres]
-                    newGenres[idx] = e.target.value as Genre
+                    const holder = newGenres.indexOf(genre)
+                    if (holder >= 0) newGenres[holder] = newGenres[idx]
+                    newGenres[idx] = genre
                     setSelectedGenres(newGenres)
                   }}
                   className="flex-shrink-0 px-2 sm:px-4 py-2 pr-6 sm:pr-8 rounded-lg text-white font-game"
@@ -118,11 +124,15 @@ export function Setup() {
                     border: '1px solid rgba(212, 168, 83, 0.2)',
                   }}
                 >
-                  {GENRES.map((genre) => (
-                    <option key={genre} value={genre}>
-                      {genre}
-                    </option>
-                  ))}
+                  {ALL_GENRES.map((genre) => {
+                    const holder = selectedGenres.indexOf(genre)
+                    const takenBy = holder >= 0 && holder !== idx && holder < playerCount ? playerNames[holder] || `Player ${holder + 1}` : null
+                    return (
+                      <option key={genre} value={genre}>
+                        {GENRE_THEME[genre].emoji} {genre}{takenBy ? ` (swap with ${takenBy})` : ''}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
             ))}

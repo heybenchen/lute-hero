@@ -90,8 +90,9 @@ export function BoardSpace({
       )}
 
       <div className="relative z-20 flex items-start justify-between gap-1">
-        <div className="tile-nameplate text-left text-[7px] sm:text-[9px] lg:text-[10px] font-medieval font-bold leading-tight text-parchment-100 line-clamp-2">
-          {space.name}
+        <div className="tile-nameplate text-left text-[7px] sm:text-[9px] lg:text-[10px] font-medieval font-bold leading-tight text-parchment-100">
+          {/* Clamp an inner span: on the padded plate a third line peeks through the padding */}
+          <span className="line-clamp-2">{space.name}</span>
         </div>
         {hasMonsters && (
           <div className="threat-counter" title={`${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}`}>
@@ -110,7 +111,7 @@ export function BoardSpace({
                 key={player.id}
                 className={`player-piece w-5 h-5 sm:w-7 sm:h-7 text-[8px] sm:text-[10px] ${isCurrentPlayer ? 'animate-token-bob' : ''}`}
                 style={{
-                  backgroundColor: player.color,
+                  backgroundColor: player.color, color: readableTextColor(player.color),
                 }}
                 title={player.name}
               >

@@ -5,6 +5,7 @@ import { GameAction } from './actions'
 import { mulberry32 } from './rng'
 import { DEFAULT_TUNABLES } from '../data/tunables'
 import { Genre } from '../types'
+import { GENRE_THEME } from '../data/genreTheme'
 
 const HOTSEAT: Pick<ActionCtx, 'actor'> = { actor: { kind: 'hotseat' } }
 
@@ -984,5 +985,37 @@ describe('single-die song migration', () => {
     const reloaded = normalizeEngineState(migrated)
     expect(reloaded.combat.spentSongIds).toEqual([first.id])
     expect(reloaded.showdownSongsUsed).toEqual([first.id])
+  })
+})
+
+describe('player colors follow the starter element', () => {
+  it('colors each bard by their element, ignoring any supplied color', () => {
+    const state = startTwoPlayerGame()
+    expect(state.players.map((p) => [p.starterGenre, p.color])).toEqual([
+      ['Ballad', GENRE_THEME.Ballad.color],
+      ['Folk', GENRE_THEME.Folk.color],
+    ])
+    // The opening d8 is the same element as the bard's color
+    for (const player of state.players) {
+      const die = player.songs[0].slots[0].dice!
+      expect([die.type, die.genre]).toEqual(['d8', player.starterGenre])
+    }
+  })
+
+  it('rejects two bards with the same element', () => {
+    const result = applyAction(createInitialEngineState(), {
+      type: 'START_GAME',
+      playerConfigs: [
+        { name: 'Alba', starterGenre: 'Hymn' },
+        { name: 'Bryn', starterGenre: 'Hymn' },
+      ],
+    }, ctx())
+    expect(result.ok).toBe(false)
+  })
+
+  it('recolors players from older saves', () => {
+    const state = startTwoPlayerGame()
+    const legacy = { ...state, players: state.players.map((p) => ({ ...p, color: '#3b82f6' })) }
+    expect(normalizeEngineState(legacy).players.map((p) => p.color)).toEqual([GENRE_THEME.Ballad.color, GENRE_THEME.Folk.color])
   })
 })

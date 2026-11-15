@@ -131,6 +131,7 @@ export interface JoinLobbyResponse {
 export interface LobbyOpRequest {
   op: 'ready' | 'unready' | 'leave' | 'start'
   starterGenre?: Genre
+  /** Ignored: a seat's color always follows its starter element. */
   color?: string
 }
 

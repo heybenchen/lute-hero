@@ -4,9 +4,10 @@ import { hashToken, newSeatId, findSeatByToken } from '../_lib/auth.js'
 import { buildSnapshot, loadGameDoc, mutateGameDoc } from '../_lib/gameDoc.js'
 import { ApiRequest, ApiResponse, readJsonBody, sendJson, sendError, methodNotAllowed, getPlayerToken } from '../_lib/http.js'
 
-const SEAT_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']
-const SEAT_GENRES = ['Ballad', 'Folk', 'Hymn', 'Shanty'] as const
-const MAX_SEATS = 4
+import { ALL_GENRES, playerColorFor } from '../../src/data/genreTheme.js'
+
+/** One seat per element: four elements, four bards. */
+const MAX_SEATS = ALL_GENRES.length
 
 /**
  * POST /api/lobbies/join — join a lobby by code. If the caller's token is
@@ -54,13 +55,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     if (doc.seats.length >= MAX_SEATS) {
       return { ok: false, status: 403, code: 'forbidden', message: 'Lobby is full' }
     }
-    const index = doc.seats.length
+    // Newcomers take the first element nobody has claimed
+    const starterGenre = ALL_GENRES.find((g) => !doc.seats.some((s) => s.starterGenre === g)) ?? ALL_GENRES[0]
     const seat: Seat = {
       seatId,
       playerId: null,
       name,
-      color: SEAT_COLORS[index % SEAT_COLORS.length],
-      starterGenre: SEAT_GENRES[index % SEAT_GENRES.length],
+      color: playerColorFor(starterGenre),
+      starterGenre,
       ready: false,
       tokenHash: hashToken(token),
     }

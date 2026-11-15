@@ -1,6 +1,6 @@
 import { Genre, Player } from '@/types'
 import { ShowdownPerformance } from '@/game-logic/showdown/showdown'
-import { GENRE_THEME } from '@/data/genreTheme'
+import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
 
 interface AdaptBannerProps {
   turnEnded: number
@@ -52,7 +52,7 @@ export function AdaptBanner({
                 className="flex items-center gap-3 animate-slide-up"
                 style={{ animationDelay: `${idx * 140 + 100}ms`, animationFillMode: 'both' }}
               >
-                <div className="player-avatar w-8 h-8 text-xs flex-shrink-0" style={{ backgroundColor: player.color }}>
+                <div className="player-avatar w-8 h-8 text-xs flex-shrink-0" style={{ backgroundColor: player.color, color: readableTextColor(player.color) }}>
                   {player.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0 text-left">

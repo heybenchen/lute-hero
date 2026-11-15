@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useGameStore } from '@/store'
 import { Player } from '@/types'
 import { calculateFinalRankings } from '@/game-logic/fame/calculator'
+import { readableTextColor } from '@/data/genreTheme'
 
 interface Award {
   title: string
@@ -152,7 +153,7 @@ export function FinalSummary() {
 
               {/* Identity + award */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="player-avatar w-14 h-14 text-2xl flex-shrink-0" style={{ backgroundColor: s.player.color }}>
+                <div className="player-avatar w-14 h-14 text-2xl flex-shrink-0" style={{ backgroundColor: s.player.color, color: readableTextColor(s.player.color) }}>
                   {s.player.name.charAt(0)}
                 </div>
                 <div className="min-w-0">
