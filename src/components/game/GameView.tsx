@@ -6,6 +6,7 @@ import { PlayerPanel } from './PlayerPanel'
 import { useGameStore, selectCanAct, selectIsHost, clearSavedGame } from '@/store'
 import { TypeChart } from './TypeChart'
 import { MonsterLevelTable } from './MonsterLevelTable'
+import { Menu as MenuIcon, Radio, Sparkles } from 'lucide-react'
 
 export function GameView() {
   const dispatch = useGameStore((state) => state.dispatch)
@@ -74,7 +75,7 @@ export function GameView() {
   }
 
   return (
-    <div className="h-[100dvh] flex flex-col overflow-hidden relative">
+    <div className="game-table min-h-[100dvh] lg:h-[100dvh] flex flex-col lg:overflow-hidden relative">
       {/* Atmospheric background gradient */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -87,60 +88,50 @@ export function GameView() {
         }}
       />
 
-      {/* Title bar */}
-      <div className="relative z-10 flex items-center justify-center py-2 sm:py-3 px-3 sm:px-6 flex-shrink-0">
-        <div className="flex items-center justify-center gap-3 sm:gap-4 w-full">
+      {/* Table header */}
+      <header className="relative z-10 flex items-center justify-center px-3 py-2.5 sm:px-5 sm:py-3 flex-shrink-0">
+        <div className="tabletop-header flex items-center justify-between gap-3 w-full">
           <button
             onClick={() => setShowMenu(true)}
             title="Menu (Esc)"
-            className="absolute left-3 sm:left-6 px-3 py-1.5 rounded-lg font-medieval text-sm text-parchment-400 transition-all duration-150 hover:text-gold-400"
-            style={{
-              background: 'rgba(61, 48, 32, 0.4)',
-              border: '1px solid rgba(212, 168, 83, 0.15)',
-            }}
+            className="tabletop-icon-button"
           >
-            Menu
+            <MenuIcon size={17} aria-hidden="true" />
+            <span className="hidden sm:inline">Menu</span>
           </button>
-          <div
-            className="hidden sm:block h-px w-16"
-            style={{
-              background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.5))',
-            }}
-          />
-          <h1
-            className="font-display text-2xl sm:text-3xl text-gold-400 tracking-wide"
-            style={{ textShadow: '0 0 20px rgba(212, 168, 83, 0.35), 0 2px 4px rgba(0, 0, 0, 0.5)' }}
-          >
-            Lute Hero
-          </h1>
-          {mode === 'online' && connection !== 'connected' && (
-            <span
-              className="text-[10px] font-medieval font-bold px-2 py-0.5 rounded-full animate-pulse"
-              style={{
-                background: 'rgba(255, 180, 60, 0.1)',
-                border: '1px solid rgba(255, 180, 60, 0.4)',
-                color: '#ffd591',
-              }}
-            >
-              Reconnecting…
-            </span>
-          )}
-          <div
-            className="hidden sm:block h-px w-16"
-            style={{
-              background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.5))',
-            }}
-          />
-          <div className="absolute right-3 sm:right-6 flex items-center gap-2">
-            <span className="font-display text-sm text-gold-400">Round {currentRound}</span>
+
+          <div className="min-w-0 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Sparkles size={14} className="hidden sm:block text-gold-500/70" aria-hidden="true" />
+              <h1 className="font-display text-xl sm:text-2xl text-gold-300 tracking-[0.08em]">
+                Lute Hero
+              </h1>
+              <Sparkles size={14} className="hidden sm:block text-gold-500/70" aria-hidden="true" />
+            </div>
+            <p className="hidden sm:block text-[9px] uppercase tracking-[0.3em] text-parchment-500">
+              Songs against the silence
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            {mode === 'online' && connection !== 'connected' && (
+              <span className="hidden sm:flex items-center gap-1.5 text-[10px] font-medieval font-bold text-amber-200 animate-pulse">
+                <Radio size={12} aria-hidden="true" />
+                Reconnecting
+              </span>
+            )}
+            <div className="round-marker">
+              <span className="text-[8px] uppercase tracking-[0.22em] text-parchment-500">Round</span>
+              <strong className="font-display text-base text-gold-300 leading-none">{currentRound}</strong>
+            </div>
             {pendingPhase && finalTurnGranted && (
-              <span className="text-xs font-medieval font-bold text-amber-300 tracking-wide animate-pulse">
+              <span className="hidden md:inline text-xs font-medieval font-bold text-amber-300 tracking-wide animate-pulse">
                 Final Turn!
               </span>
             )}
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Menu modal */}
       {showMenu && (
@@ -207,21 +198,19 @@ export function GameView() {
       {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)} />}
 
       {/* Main content */}
-      <div className="relative z-10 flex flex-col lg:flex-row gap-2 sm:gap-3 flex-1 min-h-0 px-2 sm:px-3 pb-2 sm:pb-3">
-        {/* Player panel */}
-        <div className="w-full max-h-[50dvh] lg:max-h-none lg:w-80 flex-shrink-0 overflow-auto min-h-0">
-          <PlayerPanel />
-        </div>
-
+      <main className="relative z-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_22rem] gap-3 flex-1 min-h-0 px-2 sm:px-4 pb-3 sm:pb-4">
         {/* Board area */}
-        <div className="flex-1 min-h-0 flex flex-col min-w-0">
-          <div className="flex-1 min-h-0 overflow-hidden rounded-xl" style={{
-            border: '1px solid rgba(212, 168, 83, 0.15)',
-          }}>
+        <section className="min-h-[34rem] lg:min-h-0 min-w-0">
+          <div className="h-full min-h-0 overflow-hidden rounded-[1.25rem]">
             <Board />
           </div>
-        </div>
-      </div>
+        </section>
+
+        {/* Player board / turn console */}
+        <aside className="min-h-0 lg:overflow-auto">
+          <PlayerPanel />
+        </aside>
+      </main>
 
       {/* Combat modal overlay */}
       <CombatModal />

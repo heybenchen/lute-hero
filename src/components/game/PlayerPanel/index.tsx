@@ -1,6 +1,17 @@
 import { useGameStore, selectCurrentPlayer, selectCanAct, selectIsHost } from '@/store'
 import { SongCard } from '../SongCard'
 import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
+import {
+  Award,
+  CircleDot,
+  Flag,
+  Lightbulb,
+  MapPin,
+  Sparkles,
+  Store,
+  Swords,
+} from 'lucide-react'
+import type { CSSProperties, ReactNode } from 'react'
 
 export function PlayerPanel() {
   const players = useGameStore((state) => state.players)
@@ -42,82 +53,105 @@ export function PlayerPanel() {
   }
 
   return (
-    <div className="card-ornate p-4 sm:p-5 lg:h-full flex flex-col">
+    <div className="player-console lg:h-full flex flex-col gap-3 p-3 sm:p-4">
       {/* All players */}
-      <div className="flex gap-2">
-        {players.map((player) => {
-          const isCurrentTurn = player.id === currentPlayer.id
-          const genreColor = GENRE_THEME[player.starterGenre]?.color ?? player.color
-          const online = presenceFor(player.id)
-          return (
-            <div
-              key={player.id}
-              className={`rounded-lg transition-all duration-300 flex-1 min-w-0 overflow-hidden ${isCurrentTurn ? 'animate-active-glow -translate-y-0.5' : ''}`}
-              style={{
-                border: isCurrentTurn
-                  ? '2px solid rgba(255, 215, 130, 0.9)'
-                  : '1px solid rgba(0, 0, 0, 0.25)',
-              }}
-            >
+      <section>
+        <div className="module-label">Score track</div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {players.map((player) => {
+            const isCurrentTurn = player.id === currentPlayer.id
+            const genreColor = GENRE_THEME[player.starterGenre]?.color ?? player.color
+            const online = presenceFor(player.id)
+            return (
               <div
-                className="px-2 py-1 truncate font-bold text-[10px] flex items-center gap-1"
-                style={{ background: genreColor, color: readableTextColor(genreColor) }}
+                key={player.id}
+                className={`score-tile transition-all duration-300 min-w-0 overflow-hidden ${isCurrentTurn ? 'score-tile-active' : ''}`}
+                style={{
+                  '--player-color': genreColor,
+                } as CSSProperties}
               >
-                {online !== null && (
-                  <span
-                    className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0"
-                    style={{ background: online ? '#1f7a1f' : 'rgba(0,0,0,0.45)' }}
-                    title={online ? 'Online' : 'Disconnected'}
-                  />
-                )}
-                <span className="truncate">{player.name}</span>
+                <div className="flex items-center gap-2 p-2">
+                  <div className="score-token" style={{ background: genreColor, color: readableTextColor(genreColor) }}>
+                    {player.name.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medieval font-bold text-[10px] text-parchment-200 flex items-center gap-1">
+                      {online !== null && (
+                        <span
+                          className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0"
+                          style={{ background: online ? '#1f7a1f' : 'rgba(0,0,0,0.45)' }}
+                          title={online ? 'Online' : 'Disconnected'}
+                        />
+                      )}
+                      <span className="truncate">{player.name}</span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <strong className="font-display text-lg text-gold-300 leading-none">{player.fame}</strong>
+                      <span className="text-[8px] uppercase tracking-wider text-parchment-500">Fame</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="text-[10px] text-parchment-300 flex flex-col gap-0.5 px-2 py-1" style={{ background: 'rgba(20, 16, 10, 0.85)' }}>
-                <span title="Fame" className="whitespace-nowrap">&#x2B50;<span className="text-gold-400 font-bold ml-0.5">{player.fame}</span></span>
-                <span title="EXP" className="whitespace-nowrap">&#x2728;<span className="text-classical font-bold ml-0.5">{player.exp}</span></span>
-                <span title="Inspiration" className="whitespace-nowrap">&#x1F4A1;<span className="text-amber-300 font-bold ml-0.5">{player.inspiration}</span></span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="divider-ornate mt-5" />
+            )
+          })}
+        </div>
+      </section>
 
       {/* Current player */}
-      <div>
-        <div className="flex items-center gap-3 mb-3">
+      <section className="turn-module">
+        <div className="module-label">Active bard</div>
+        <div className="flex items-center gap-3">
           <div
-            className="player-avatar w-12 h-12 text-xl"
+            className="player-piece w-11 h-11 text-base"
             style={{ backgroundColor: currentPlayer.color }}
           >
             {currentPlayer.name.charAt(0)}
           </div>
-          <div>
-            <div className="font-medieval text-lg font-bold text-gold-300">{currentPlayer.name}</div>
-            <div className="text-sm text-parchment-200 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-              <span title="Fame">FAME: <span className="font-bold">{currentPlayer.fame}</span></span>
-              <span title="EXP">EXP: <span className="font-bold">{currentPlayer.exp}</span></span>
-              <span title="Inspiration — spend to reroll a song, travel anywhere, or refresh the shop">
-                INS: <span className="font-bold">{currentPlayer.inspiration}</span>
-              </span>
+          <div className="min-w-0">
+            <div className="font-medieval text-base font-bold text-gold-200 truncate">{currentPlayer.name}</div>
+            <div className="flex items-center gap-1 text-[10px] text-parchment-500 truncate">
+              <MapPin size={11} aria-hidden="true" />
+              {currentSpace?.name ?? 'Unknown location'}
             </div>
           </div>
         </div>
 
-        {/* Songs — right above the Moves/Fights trackers */}
-        <div className="mb-3">
-          <div className="grid grid-cols-6 lg:grid-cols-3 gap-2">
-            {currentPlayer.songs.map((song) => (
-              <SongCard key={song.id} song={song} />
-            ))}
+        <div className="grid grid-cols-3 gap-1.5 mt-3">
+          <ResourceTile icon={<Award size={14} />} label="Fame" value={currentPlayer.fame} />
+          <ResourceTile icon={<Sparkles size={14} />} label="EXP" value={currentPlayer.exp} />
+          <ResourceTile icon={<Lightbulb size={14} />} label="Inspiration" value={currentPlayer.inspiration} />
+        </div>
+      </section>
+
+      <section className="song-rack-module">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="module-label mb-0">Song rack</div>
+          <span className="text-[9px] text-parchment-500">{currentPlayer.songs.length} songs</span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {currentPlayer.songs.map((song) => (
+            <SongCard key={song.id} song={song} />
+          ))}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-2 gap-1.5">
+        <div className="turn-counter">
+          <span className="flex items-center gap-1.5"><CircleDot size={12} /> Movement</span>
+          <div className="flex gap-1">
+            {[0, 1].map((move) => <i key={move} className={`turn-pip ${move >= currentPlayer.movesThisTurn ? 'turn-pip-ready' : ''}`} />)}
           </div>
         </div>
-
-      </div>
+        <div className="turn-counter">
+          <span className="flex items-center gap-1.5"><Swords size={12} /> Battle</span>
+          <strong className={currentPlayer.fightsThisTurn < 1 ? 'text-emerald-300' : 'text-parchment-500'}>
+            {currentPlayer.fightsThisTurn < 1 ? 'Ready' : 'Spent'}
+          </strong>
+        </div>
+      </section>
 
       {/* Actions */}
-      <div className="space-y-2 mt-auto">
+      <div className="space-y-2 mt-auto pt-1">
         {mode === 'online' && !canAct && (
           <div className="text-center text-sm text-parchment-500 italic py-2 animate-pulse-slow">
             Waiting for {currentPlayer.name}&rsquo;s turn&hellip;
@@ -153,7 +187,7 @@ export function PlayerPanel() {
               boxShadow: canFight ? '0 0 12px rgba(232, 32, 64, 0.2)' : 'none',
             }}
           >
-            <span className="text-[1.2em]">&#x2694;</span> Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
+            <Swords size={16} aria-hidden="true" /> Fight {currentSpace!.monsters.length} Monster{currentSpace!.monsters.length > 1 ? 's' : ''}
             {!canFight && ' (No fights left)'}
           </button>
         )}
@@ -167,7 +201,7 @@ export function PlayerPanel() {
               }`}
               title={shouldHintStudio ? 'You fought this turn — spend your EXP before ending the turn' : undefined}
             >
-              Studio ({currentPlayer.exp} EXP)
+              <Store size={15} aria-hidden="true" /> Studio <span className="opacity-60">({currentPlayer.exp} EXP)</span>
             </button>
             <button
               onClick={handleEndTurn}
@@ -175,12 +209,21 @@ export function PlayerPanel() {
               title={canFight ? 'Fight the monster here before ending your turn' : undefined}
               className="btn-primary w-full text-sm py-1.5 px-3 sm:text-base sm:py-2.5 sm:px-5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              End Turn
+              <Flag size={15} aria-hidden="true" /> End Turn
             </button>
           </>
         )}
       </div>
+    </div>
+  )
+}
 
+function ResourceTile({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+  return (
+    <div className="resource-tile">
+      <span className="text-gold-400">{icon}</span>
+      <strong>{value}</strong>
+      <span>{label}</span>
     </div>
   )
 }

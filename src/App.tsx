@@ -3,6 +3,7 @@ import { useGameStore, hasSavedGame } from './store'
 import { getOnlineSession, getIdentity } from './net/identity'
 import * as api from './net/api'
 import { DebugPanel } from './components/game/DebugPanel'
+import { DiceRollHost } from './components/dice3d/DiceRollHost'
 import { Setup } from './components/game/Setup'
 import { GameView } from './components/game/GameView'
 import { FinalShowdown } from './components/game/Showdown'
@@ -64,6 +65,7 @@ function App() {
     <>
       {renderScreen()}
       <DebugPanel />
+      <DiceRollHost />
     </>
   )
 

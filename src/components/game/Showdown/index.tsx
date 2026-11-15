@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore, selectCanPerform } from '@/store'
 import { Song, DiceRoll } from '@/types'
 import { SongCard } from '../Combat/SongCard'
 import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
+import { diceBus } from '@/components/dice3d/diceBus'
 import { getPlayableSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
 
 type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
@@ -58,6 +59,21 @@ export function FinalShowdown() {
     return () => clearTimeout(timer)
   }, [stage])
 
+  /** Fandom pops once the 3D dice have landed. */
+  const popupSeq = useRef(0)
+  const showFandomPopup = useCallback(async (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
+    await diceBus.whenSettled()
+    const popup: FandomPopup = {
+      id: `fandom-${++popupSeq.current}`,
+      fandom: result.fandom,
+      hadCrit: result.hadCrit,
+      hitWeakness: result.hitWeakness,
+      wasResisted: result.wasResisted,
+    }
+    setPopups((prev) => [...prev, popup])
+    setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
+  }, [])
+
   // Spectators follow other performers live via the SSE event stream
   useEffect(() => {
     if (!remoteEntry) return
@@ -67,17 +83,7 @@ export function FinalShowdown() {
         const song = owner?.songs.find((sg) => sg.id === event.songId)
         if (song) setLastRolls({ song, rolls: event.rolls })
       }
-      if (event.type === 'showdownPlay') {
-        const popup: FandomPopup = {
-          id: `fandom-${event.playerId}-${Date.now()}`,
-          fandom: event.fandom,
-          hadCrit: event.hadCrit,
-          hitWeakness: event.hitWeakness,
-          wasResisted: event.wasResisted,
-        }
-        setPopups((prev) => [...prev, popup])
-        setTimeout(() => setPopups((prev) => prev.filter((pp) => pp.id !== popup.id)), 1900)
-      }
+      if (event.type === 'showdownPlay') void showFandomPopup(event)
       if (event.type === 'showdownAdvance') {
         setLastRolls(null)
         if (event.advance === 'bossAdapts') {
@@ -89,7 +95,7 @@ export function FinalShowdown() {
         }
       }
     }
-  }, [remoteEntry])
+  }, [remoteEntry, showFandomPopup])
 
   const performerId = showdownOrder[showdownPerformerIdx]
   const performer = players.find((p) => p.id === performerId)
@@ -102,24 +108,12 @@ export function FinalShowdown() {
   const hasPerformed = showdownSongsUsed.length >= 1
   const performanceDone = hasPerformed || playableSongs.length === 0
 
-  const showFandomPopup = (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
-    const popup: FandomPopup = {
-      id: `fandom-${Date.now()}`,
-      fandom: result.fandom,
-      hadCrit: result.hadCrit,
-      hitWeakness: result.hitWeakness,
-      wasResisted: result.wasResisted,
-    }
-    setPopups((prev) => [...prev, popup])
-    setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== popup.id)), 1900)
-  }
-
   const handlePlaySong = async (song: Song) => {
     const result = await dispatch({ type: 'PLAY_SHOWDOWN_SONG', songId: song.id })
     if (!result.ok) return
     for (const event of result.events) {
       if (event.type === 'diceRolled') setLastRolls({ song, rolls: event.rolls })
-      if (event.type === 'showdownPlay') showFandomPopup(event)
+      if (event.type === 'showdownPlay') void showFandomPopup(event)
     }
   }
 
@@ -129,7 +123,7 @@ export function FinalShowdown() {
     if (!result.ok) return
     for (const event of result.events) {
       if (event.type === 'diceRolled') setLastRolls({ song: lastRolls.song, rolls: event.rolls })
-      if (event.type === 'showdownPlay') showFandomPopup(event)
+      if (event.type === 'showdownPlay') void showFandomPopup(event)
     }
   }
 

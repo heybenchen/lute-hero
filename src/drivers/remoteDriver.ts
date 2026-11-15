@@ -52,7 +52,10 @@ export class RemoteDriver implements Driver {
   async dispatch(action: GameAction): Promise<DispatchResult> {
     try {
       const response = await sendAction(this.token, this.gameId, action, crypto.randomUUID())
-      // The actor animates from this response; suppress the SSE copy
+      // The stream can beat the POST response. If it already delivered (and
+      // animated) this action, don't hand the same events back to animate twice.
+      if (this.animatedSeqs.has(response.seq)) return { ok: true, events: [] }
+      // Otherwise the actor animates from this response; suppress the SSE copy
       this.animatedSeqs.add(response.seq)
       return { ok: true, events: response.events }
     } catch (err) {

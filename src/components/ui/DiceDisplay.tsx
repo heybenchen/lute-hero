@@ -25,7 +25,7 @@ export function DiceDisplay({
   animateRoll = false,
 }: DiceDisplayProps) {
   const maxValue = getMaxValue(dice.type)
-  const { displayValue, rolling } = useRollAnimation(value, maxValue, animateRoll)
+  const { displayValue, rolling } = useRollAnimation(value, maxValue, animateRoll, dice.id)
   const genreColor = GENRE_THEME[dice.genre].color
   const isCritical = isCrit && !rolling
   const result = displayValue === undefined
