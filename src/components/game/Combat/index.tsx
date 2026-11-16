@@ -1,16 +1,16 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { useGameStore, selectPlayerById, selectPlayersAtSpace, selectCanAct } from '@/store'
+import { useGameStore, selectCanAct } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
 import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
-import { calculateMonsterFameValue, calculateTotalMonsterExp } from '@/game-logic/fame/calculator'
+import { calculateMonsterFameValue } from '@/game-logic/fame/calculator'
 import { computeCombatRewards } from '@/engine/reducer'
 import { Monster, Song } from '@/types'
 import type { EngineEvent } from '@/engine/events'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
-import { diceBus, useDiceTrayBusy } from '@/components/dice3d/diceBus'
+import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
 import { StyleChip } from '@/components/ui/StyleBadge'
 import { rubatoCanReroll } from '@/game-logic/styles/styleEffects'
 
@@ -18,21 +18,41 @@ export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
   const playerId = useGameStore((state) => state.playerId)
   const spaceId = useGameStore((state) => state.spaceId)
-  const monsters = useGameStore((state) => state.monsters)
-  const spentSongIds = useGameStore((state) => state.spentSongIds)
-  const killCredits = useGameStore((state) => state.killCredits)
-  const rolls = useGameStore((state) => state.rolls)
-  const currentSongId = useGameStore((state) => state.currentSongId)
-  const lastDamageCalculations = useGameStore((state) => state.lastDamageCalculations)
-  const lastPlayedSongId = useGameStore((state) => state.lastPlayedSongId)
-  const lastTargetMonsterId = useGameStore((state) => state.lastTargetMonsterId)
   const selectedSpreadGenre = useGameStore((state) => state.selectedSpreadGenre)
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
-  const stylesUsed = useGameStore((state) => state.stylesUsed)
-  const styleNotes = useGameStore((state) => state.styleNotes)
-  // While 3D dice are airborne, hold back the result breakdown so it can't spoil the roll
+  // Everything a roll changes, held at its pre-roll value while the 3D dice
+  // are in the air: HP, spent songs, rewards and roll results only appear
+  // once the throw lands.
+  const liveView = useGameStore(
+    useShallow((state) => ({
+      monsters: state.monsters,
+      spentSongIds: state.spentSongIds,
+      killCredits: state.killCredits,
+      rolls: state.rolls,
+      currentSongId: state.currentSongId,
+      lastDamageCalculations: state.lastDamageCalculations,
+      lastPlayedSongId: state.lastPlayedSongId,
+      lastTargetMonsterId: state.lastTargetMonsterId,
+      players: state.players,
+      stylesUsed: state.stylesUsed,
+      styleNotes: state.styleNotes,
+    }))
+  )
+  const {
+    monsters,
+    spentSongIds,
+    killCredits,
+    rolls,
+    currentSongId,
+    lastDamageCalculations,
+    lastPlayedSongId,
+    lastTargetMonsterId,
+    players,
+    stylesUsed,
+    styleNotes,
+  } = useHeldWhileRolling(liveView)
   const diceBusy = useDiceTrayBusy()
 
   // The chosen single-target monster for the next song
@@ -43,13 +63,12 @@ export function CombatModal() {
     [spentSongIds]
   )
 
-  const player = useGameStore(
-    selectPlayerById(playerId || '')
-  )
+  const player = players.find((p) => p.id === playerId)
 
-  // Get co-located players for cover songs
-  const colocatedPlayers = useGameStore(
-    useShallow(selectPlayersAtSpace(spaceId ?? -1, playerId ?? undefined))
+  // Co-located players lend cover songs
+  const colocatedPlayers = useMemo(
+    () => players.filter((p) => p.position === spaceId && p.id !== playerId && !p.isEliminated),
+    [players, spaceId, playerId]
   )
 
   const [popups, setPopups] = useState<DamagePopupEntry[]>([])
@@ -72,7 +91,6 @@ export function CombatModal() {
     [monsters, killCredits, player?.styles]
   )
   const monstersDefeatedCount = rewards.monstersDefeatedCount
-  const totalFameEarned = rewards.totalFameEarned
 
   const fameBreakdown = useMemo(() => {
     const coverFameByPlayer = new Map<string, { name: string; fame: number }>()
@@ -140,7 +158,7 @@ export function CombatModal() {
 
   const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
-  const totalExp = calculateTotalMonsterExp(monsters)
+  const totalExp = rewards.totalExp
   const isCombatOver = allMonstersDefeated || !canContinue
 
   /**
@@ -151,14 +169,17 @@ export function CombatModal() {
   const canRerollSong = (songId: string) =>
     currentSongId === songId && isSongSpent(songId) && !allMonstersDefeated
 
+  // No new roll while the last one is still on the table
+  const canRoll = canAct && !diceBusy
+
   const handlePlaySong = async (songId: string, ownerId: string) => {
-    if (!canAct || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
+    if (!canRoll || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
     const result = await dispatch({ type: 'PLAY_SONG', songId, ownerId, targetMonsterId: selectedTargetId })
     if (result.ok) void showDamageEvents(result.events)
   }
 
   const handleReroll = async () => {
-    if (!canAct || !lastPlayedSong || player.inspiration <= 0) return
+    if (!canRoll || !lastPlayedSong || player.inspiration <= 0) return
     const result = await dispatch({ type: 'REROLL_SONG' })
     if (result.ok) void showDamageEvents(result.events)
   }
@@ -168,14 +189,15 @@ export function CombatModal() {
     player.styles.includes('rubato') && !stylesUsed.includes('rubato') && rubatoCanReroll(song)
 
   const handleRubato = async () => {
-    if (!canAct || !lastPlayedSong || !canRubato(lastPlayedSong)) return
+    if (!canRoll || !lastPlayedSong || !canRubato(lastPlayedSong)) return
     const result = await dispatch({ type: 'REROLL_SONG', rubato: true })
     if (result.ok) void showDamageEvents(result.events)
   }
 
   const handleEndCombat = () => {
     // The engine awards EXP/fame, clears or re-tags the space, and checks
-    // the phase transition — all in one atomic action
+    // the phase transition — all in one atomic action. Retreat is allowed at
+    // any point (e.g. when only immune dice are left).
     dispatch({ type: 'END_COMBAT' })
   }
 
@@ -186,23 +208,51 @@ export function CombatModal() {
         {/* Atmospheric top gradient */}
         <div className="h-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.4), transparent)' }} />
 
-        <div className="p-4 sm:p-6 lg:p-10">
-          {/* Header */}
-          <div className="text-center mb-5 sm:mb-8 animate-fade-in">
-            <div className="font-display text-2xl sm:text-4xl text-gold-400 mb-1.5"
-              style={{ textShadow: '0 0 20px rgba(212, 168, 83, 0.2)' }}
+        <div className="p-4 sm:p-6">
+          {/* Header — once the fight is over it becomes the rewards summary */}
+          {isCombatOver ? (
+            <div
+              className="mb-4 sm:mb-5 rounded-xl px-4 py-3 text-center animate-fade-in"
+              style={{
+                background: allMonstersDefeated
+                  ? 'linear-gradient(135deg, rgba(45, 140, 48, 0.1), rgba(42, 33, 24, 0.5))'
+                  : 'rgba(42, 33, 24, 0.5)',
+                border: `1px solid ${allMonstersDefeated ? 'rgba(76, 175, 80, 0.25)' : 'rgba(212, 168, 83, 0.15)'}`,
+                boxShadow: allMonstersDefeated ? '0 0 30px rgba(76, 175, 80, 0.08)' : undefined,
+              }}
             >
-              The Mashup
+              <div className="text-xs sm:text-sm font-medieval text-parchment-500 uppercase tracking-wider">
+                {allMonstersDefeated ? 'Victory' : 'Out of Songs'} — {player.name}'s Rewards{!canAct ? ' (watching live)' : ''}
+              </div>
+              <div className="flex flex-wrap items-baseline justify-center gap-x-5 gap-y-1 mt-1">
+                <span className="font-display text-2xl sm:text-3xl text-gold-400 tabular-nums" style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}>
+                  +{fameBreakdown.playerFame} Fame
+                </span>
+                <span className="font-display text-2xl sm:text-3xl text-gold-400 tabular-nums" style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}>
+                  +{totalExp} EXP
+                </span>
+                {allMonstersDefeated && (
+                  <span className="font-display text-xl sm:text-2xl tabular-nums" style={{ color: '#d9c2ff' }} title="Clearing a space earns 1 Inspiration">
+                    +1 &#x2728;
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-parchment-500 mt-1">
+                {monstersDefeatedCount} of {monsters.length} monster{monsters.length !== 1 ? 's' : ''} defeated
+                {Array.from(fameBreakdown.coverFameByPlayer.entries()).map(([ownerId, { name, fame }]) => (
+                  <span key={ownerId} style={{ color: '#4dd0e1' }}> · +{fame} Fame to {name} (cover)</span>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
-              <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.3))' }} />
+          ) : (
+            <div className="flex flex-wrap items-baseline justify-center gap-x-4 gap-y-1 mb-4 sm:mb-5 text-center animate-fade-in">
+              <div className="font-display text-2xl sm:text-3xl text-gold-400" style={{ textShadow: '0 0 20px rgba(212, 168, 83, 0.2)' }}>
+                The Mashup
+              </div>
               <p className="text-sm sm:text-base text-parchment-500 font-game tracking-wide">
                 {player.name}'s Performance{!canAct ? ' — watching live' : ''}
               </p>
-              <div className="hidden sm:block h-px w-20" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.3))' }} />
-            </div>
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm text-parchment-400">
-              <span title="Inspiration — spend to reroll a song">
+              <span className="text-sm text-parchment-400" title="Inspiration — spend to reroll a song">
                 &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
               </span>
               {/* The bard's styles; once-per-turn ones grey out after they fire */}
@@ -210,10 +260,10 @@ export function CombatModal() {
                 <StyleChip key={id} id={id} spent={stylesUsed.includes(id)} />
               ))}
             </div>
-          </div>
+          )}
 
           {/* Monsters Section */}
-          <div className="mb-6 sm:mb-8">
+          <div className="mb-4 sm:mb-5">
             <SectionHeader
               label="Monsters"
               detail={monstersAliveCount > 0 ? `${monstersAliveCount} remaining · pick a target` : 'All converted!'}
@@ -231,10 +281,10 @@ export function CombatModal() {
                     onSelect={canAct && monster.currentHP > 0 ? () => setSelectedTargetId(monster.id) : undefined}
                   />
                   {monster.id === lastTargetMonsterId && lastDamageCalculations[idx] && (
-                    <div className={`transition-opacity duration-300 ${diceBusy ? 'opacity-0' : 'opacity-100'}`}>
+                    <div className="flex flex-col gap-1.5">
                       <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
                       {styleNotes.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap justify-center gap-1" aria-label="Styles that shaped this play">
+                        <div className="flex flex-wrap justify-center gap-1" aria-label="Styles that shaped this play">
                           {styleNotes.map((name) => (
                             <span key={name} className="style-chip">&#x266A; {name}</span>
                           ))}
@@ -248,23 +298,23 @@ export function CombatModal() {
           </div>
 
           {/* Songs Section */}
-          <div className="mb-6 sm:mb-8">
+          <div className="mb-4 sm:mb-5">
             <SectionHeader
               label="Your Songs"
               detail={`${ownSongsRemaining} unspent`}
               detailColor="text-gold-400"
             />
-            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 pb-2">
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
               {player.songs.map((song, idx) => (
                 <SongCard
                   key={song.id}
                   song={{ ...song, used: isSongSpent(song.id) }}
                   onPlay={() => handlePlaySong(song.id, player.id)}
-                  disabled={!canAct || isSongSpent(song.id) || !hasLiveTarget}
+                  disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
                   index={idx}
                   rolls={currentSongId === song.id ? rolls : undefined}
-                  onReroll={canAct && canRerollSong(song.id) ? handleReroll : undefined}
-                  onRubato={canAct && canRerollSong(song.id) && canRubato(song) ? handleRubato : undefined}
+                  onReroll={canRoll && canRerollSong(song.id) ? handleReroll : undefined}
+                  onRubato={canRoll && canRerollSong(song.id) && canRubato(song) ? handleRubato : undefined}
                   inspiration={player.inspiration}
                 />
               ))}
@@ -273,15 +323,15 @@ export function CombatModal() {
 
           {/* Cover Songs Section */}
           {coverPlayersWithSongs.length > 0 && (
-            <div className="mb-6 sm:mb-8">
+            <div className="mb-4 sm:mb-5">
               <SectionHeader
                 label="Cover Songs"
                 detail={`${coverPlayersWithSongs.reduce((n, e) => n + e.songs.length, 0)} available`}
                 detailColor="text-cyan-400"
               />
               {coverPlayersWithSongs.map(({ player: coverPlayer, songs }) => (
-                <div key={coverPlayer.id} className="mb-4">
-                  <div className="flex items-center gap-2 mb-3">
+                <div key={coverPlayer.id} className="mb-3">
+                  <div className="flex items-center gap-2 mb-2">
                     <div
                       className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                       style={{ backgroundColor: coverPlayer.color, color: '#1a1410' }}
@@ -292,19 +342,19 @@ export function CombatModal() {
                       {coverPlayer.name}'s Songs
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 pb-2">
+                  <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
                     {songs.map((song, idx) => (
                       <SongCard
                         key={song.id}
                         song={{ ...song, used: isSongSpent(song.id) }}
                         onPlay={() => handlePlaySong(song.id, coverPlayer.id)}
-                        disabled={!canAct || isSongSpent(song.id) || !hasLiveTarget}
+                        disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
                         index={idx}
                         isCover
                         ownerName={coverPlayer.name}
                         rolls={currentSongId === song.id ? rolls : undefined}
-                        onReroll={canAct && canRerollSong(song.id) ? handleReroll : undefined}
-                        onRubato={canAct && canRerollSong(song.id) && canRubato(song) ? handleRubato : undefined}
+                        onReroll={canRoll && canRerollSong(song.id) ? handleReroll : undefined}
+                        onRubato={canRoll && canRerollSong(song.id) && canRubato(song) ? handleRubato : undefined}
                         inspiration={player.inspiration}
                       />
                     ))}
@@ -314,146 +364,93 @@ export function CombatModal() {
             </div>
           )}
 
-          {/* Rewards — always shown when combat is over */}
-          {isCombatOver && (
-            <div
-              className="mb-6 sm:mb-8 rounded-xl overflow-hidden animate-slide-up"
-              style={{
-                background: allMonstersDefeated
-                  ? 'linear-gradient(135deg, rgba(45, 140, 48, 0.08), rgba(42, 33, 24, 0.5))'
-                  : 'rgba(42, 33, 24, 0.5)',
-                border: `1px solid ${allMonstersDefeated ? 'rgba(76, 175, 80, 0.2)' : 'rgba(212, 168, 83, 0.12)'}`,
-                boxShadow: allMonstersDefeated ? '0 0 30px rgba(76, 175, 80, 0.08)' : undefined,
-              }}
-            >
-              <div className="px-4 sm:px-8 py-4 sm:py-5 text-center">
-                <div className="text-sm font-medieval text-parchment-500 uppercase tracking-wider mb-1.5">
-                  {allMonstersDefeated ? 'Victory' : 'Retreat'} — Rewards Earned
-                </div>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mt-2">
-                  {totalFameEarned > 0 && (
-                    <div>
-                      <div className="text-2xl sm:text-3xl font-bold text-gold-400 tabular-nums"
-                        style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
-                      >
-                        +{fameBreakdown.playerFame} Fame
-                      </div>
-                      <div className="text-xs text-parchment-500 mt-0.5">
-                        {monstersDefeatedCount} monster{monstersDefeatedCount !== 1 ? 's' : ''} defeated
-                      </div>
-                      {fameBreakdown.coverFameByPlayer.size > 0 && (
-                        <div className="mt-1.5 space-y-0.5">
-                          {Array.from(fameBreakdown.coverFameByPlayer.entries()).map(([ownerId, { name, fame }]) => (
-                            <div key={ownerId} className="text-xs" style={{ color: '#4dd0e1' }}>
-                              +{fame} Fame to {name} (cover)
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div>
-                    <div className="text-2xl sm:text-3xl font-bold text-gold-400 tabular-nums"
-                      style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}
-                    >
-                      +{totalExp} EXP
-                    </div>
-                    <div className="text-xs text-parchment-500 mt-0.5">
-                      {monsters.map((m, i) => <span key={m.id}>{i > 0 && ' + '}{calculateTotalMonsterExp([m])} <span className="text-parchment-600">(Lv.{m.level})</span></span>)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Actions */}
-          <div className="flex flex-col items-center gap-4 pt-4">
-            {allMonstersDefeated ? (
-              <div className="w-full flex flex-col items-center gap-4 animate-fade-in">
-                {/* Element choice — radiates to cardinal neighbors */}
-                <div className="w-full max-w-md text-center">
-                  <div className="text-sm font-medieval text-parchment-400 uppercase tracking-wider mb-1">
-                    Radiate an Element
-                  </div>
-                  <p className="text-xs text-parchment-500 mb-3">
-                    Every space bordering this one gains 1 tag of your chosen element.
-                  </p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {ALL_GENRES.map((genre) => {
-                      const { emoji, rgb } = GENRE_THEME[genre]
-                      const isChosen = selectedSpreadGenre === genre
-                      return (
-                        <button
-                          key={genre}
-                          disabled={!canAct}
-                          onClick={() => dispatch({
-                            type: 'SELECT_COMBAT_SPREAD',
-                            genre: isChosen ? null : genre,
-                          })}
-                          className={`relative rounded-lg py-2.5 flex flex-col items-center gap-1 transition-all duration-200 ease-out ${canAct ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
-                          style={{
-                            background: isChosen
-                              ? `linear-gradient(160deg, rgba(${rgb},0.28), rgba(${rgb},0.08))`
-                              : `linear-gradient(160deg, rgba(${rgb},0.1), rgba(42,33,24,0.9))`,
-                            border: `1px solid rgba(${rgb},${isChosen ? 0.75 : 0.3})`,
-                            boxShadow: isChosen
-                              ? `0 0 16px rgba(${rgb},0.35), inset 0 1px 0 rgba(255,255,255,0.08)`
-                              : 'inset 0 1px 0 rgba(255,255,255,0.04)',
-                          }}
-                        >
-                          <span className="text-2xl leading-none" style={{ filter: `drop-shadow(0 0 6px rgba(${rgb},${isChosen ? 0.6 : 0.3}))` }}>
-                            {emoji}
-                          </span>
-                          <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: `rgb(${rgb})` }}>
-                            {genre}
-                          </span>
-                          {isChosen && (
-                            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold"
-                              style={{ background: `rgb(${rgb})`, color: '#fff' }}>
-                              ✓
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
+          {allMonstersDefeated ? (
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-4 pt-1 animate-fade-in">
+              {/* Element choice — radiates to cardinal neighbors */}
+              <div className="md:w-48 shrink-0 text-center md:text-left">
+                <div className="text-sm font-medieval text-parchment-400 uppercase tracking-wider">
+                  Radiate an Element
                 </div>
-
-                <button
-                  onClick={handleEndCombat}
-                  disabled={!canAct || !selectedSpreadGenre}
-                  className="w-full max-w-md px-6 sm:px-10 py-3.5 font-medieval font-bold rounded-lg text-base sm:text-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
-                  style={{
-                    background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
-                    border: '1px solid rgba(100, 220, 100, 0.4)',
-                    color: '#d4ffd6',
-                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
-                    boxShadow: '0 0 25px rgba(100, 220, 100, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
-                  }}
-                  title={selectedSpreadGenre ? undefined : 'Choose an element to radiate first'}
-                >
-                  {selectedSpreadGenre ? 'Claim Fame & Glory' : 'Choose an Element Above'}
-                </button>
-              </div>
-            ) : canContinue ? (
-              <div className="flex items-center gap-4 animate-fade-in">
-                <div className="hidden sm:block h-px w-12" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.2))' }} />
-                <p className="text-base sm:text-lg text-parchment-500 italic font-game animate-pulse-slow text-center">
-                  Pick a target monster, then a song to perform...
+                <p className="text-xs text-parchment-500">
+                  Every bordering space gains 1 tag of it.
                 </p>
-                <div className="hidden sm:block h-px w-12" style={{ background: 'linear-gradient(to left, transparent, rgba(212, 168, 83, 0.2))' }} />
               </div>
-            ) : (
+              <div className="grid grid-cols-4 gap-2 flex-1">
+                {ALL_GENRES.map((genre) => {
+                  const { emoji, rgb } = GENRE_THEME[genre]
+                  const isChosen = selectedSpreadGenre === genre
+                  return (
+                    <button
+                      key={genre}
+                      disabled={!canAct}
+                      onClick={() => dispatch({
+                        type: 'SELECT_COMBAT_SPREAD',
+                        genre: isChosen ? null : genre,
+                      })}
+                      className={`relative rounded-lg py-1.5 flex items-center justify-center gap-1.5 transition-all duration-200 ease-out ${canAct ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
+                      style={{
+                        background: isChosen
+                          ? `linear-gradient(160deg, rgba(${rgb},0.28), rgba(${rgb},0.08))`
+                          : `linear-gradient(160deg, rgba(${rgb},0.1), rgba(42,33,24,0.9))`,
+                        border: `1px solid rgba(${rgb},${isChosen ? 0.75 : 0.3})`,
+                        boxShadow: isChosen
+                          ? `0 0 16px rgba(${rgb},0.35), inset 0 1px 0 rgba(255,255,255,0.08)`
+                          : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                      }}
+                    >
+                      <span className="text-xl leading-none" style={{ filter: `drop-shadow(0 0 6px rgba(${rgb},${isChosen ? 0.6 : 0.3}))` }}>
+                        {emoji}
+                      </span>
+                      <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-wide" style={{ color: `rgb(${rgb})` }}>
+                        {genre}
+                      </span>
+                      {isChosen && (
+                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold"
+                          style={{ background: `rgb(${rgb})`, color: '#fff' }}>
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
               <button
                 onClick={handleEndCombat}
-                disabled={!canAct}
-                className="btn-secondary text-base sm:text-lg px-10 py-3.5 animate-fade-in w-full max-w-md disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={!canAct || !selectedSpreadGenre}
+                className="md:w-60 shrink-0 px-6 py-3 font-medieval font-bold rounded-lg text-base transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
+                style={{
+                  background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
+                  border: '1px solid rgba(100, 220, 100, 0.4)',
+                  color: '#d4ffd6',
+                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
+                  boxShadow: '0 0 25px rgba(100, 220, 100, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
+                }}
+                title={selectedSpreadGenre ? undefined : 'Choose an element to radiate first'}
+              >
+                {selectedSpreadGenre ? 'Claim Fame & Glory' : 'Choose an Element'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 pt-1 animate-fade-in">
+              {canContinue && (
+                <p className="text-base text-parchment-500 italic font-game animate-pulse-slow text-center">
+                  Pick a target monster, then a song to perform...
+                </p>
+              )}
+              {/* Retreat is always on offer, even before a song is played */}
+              <button
+                onClick={handleEndCombat}
+                disabled={!canRoll}
+                className={`btn-secondary disabled:opacity-40 disabled:cursor-not-allowed ${
+                  canContinue ? 'text-sm px-6 py-2' : 'text-base sm:text-lg px-10 py-3 w-full max-w-md'
+                }`}
+                title="Leave the fight now — you earn EXP for every monster you wounded and Fame for each one you defeated"
               >
                 Retreat
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -76,6 +76,17 @@ export interface EngineStudioState {
 }
 
 /**
+ * One step of the active bard's movement this turn, kept so the move can be
+ * taken back (position restored, move and Inspiration refunded). The trail is
+ * cleared when combat starts and at the end of every turn.
+ */
+export interface MoveStep {
+  playerId: string
+  fromSpaceId: number
+  inspirationSpent: number
+}
+
+/**
  * The complete, serializable, authoritative game state. The server stores
  * exactly this document; the hotseat driver persists it to localStorage.
  * Seat/lobby metadata deliberately lives OUTSIDE this object.
@@ -101,6 +112,9 @@ export interface EngineState {
   /** Styles on offer in the Studio; redrawn after every turn. */
   styleOffers: StyleId[]
   studio: EngineStudioState
+
+  /** This turn's moves, newest last, for UNDO_MOVE (see `MoveStep`). */
+  moveTrail: MoveStep[]
 
   // Combat (synced, unlike the old client-only slice)
   combat: EngineCombatState
@@ -287,6 +301,7 @@ export function normalizeEngineState(state: EngineState): EngineState {
       songsUsed: migrateSongIds(state.showdownUndo.songsUsed),
     } : null,
     studio: { ...createInitialStudioState(), ...state.studio },
+    moveTrail: state.moveTrail ?? [],
     // Fills in defaults and clamps every value, so a stale save or a
     // hand-edited preset can never leave the engine with a broken number.
     tunables: normalizeTunables(state.tunables),
@@ -310,6 +325,7 @@ export function createInitialEngineState(): EngineState {
     pendingRewards: {},
     styleOffers: [],
     studio: createInitialStudioState(),
+    moveTrail: [],
 
     combat: createInitialCombatState(),
     tunables: DEFAULT_TUNABLES,

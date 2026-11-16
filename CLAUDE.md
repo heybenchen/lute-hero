@@ -51,6 +51,7 @@ React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel N
 ## Key Game Mechanics
 
 - **Damage flow**: Roll dice (crits cascade) → genre multipliers (2x vulnerable, 0x immune) → damage hits ONE chosen target monster (songs are single-target, not AOE)
+- **Combat rewards**: Fame per kill; EXP only for monsters the bard *wounded* (`currentHP < maxHP`) — every monster on a victory, but untouched ones pay nothing on a retreat (`computeCombatRewards`). Retreat is allowed at any point.
 - **Song economy in combat**: defeating the target returns that song's dice (it stays playable); damaging without defeating spends the song for that fight (`combat.spentSongIds`). There is no fixed song cap.
 - **Chip limits**: a space holds any number of monster chips, but at most `maxTagsPerGenre` (default 5) of the *same* element — the cap that keeps a monster from exceeding Lv5. Use `canAddGenreTag`/`addGenreTag`/`capGenreTags` from `graphBuilder` rather than checking `genreTags.length`.
 - **Monster spawning**: one monster per unique genre tag on a space; duplicate tags raise its level (a monster's level equals its genre's tag count, so the board chip matches the fight; capped at Lv5); fame per kill = 5/10/25/50/75 and EXP = 1/2/3/4/5 by level (Lv1–Lv5+)

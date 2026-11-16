@@ -1,6 +1,6 @@
 import type { DiceType, Genre, Player } from '@/types'
 import type { EngineEvent } from '@/engine/events'
-import { useSyncExternalStore } from 'react'
+import { useRef, useSyncExternalStore } from 'react'
 
 /** One physical die to throw, with every value it shows: the roll, then each cascading crit. */
 export interface TrayDie {
@@ -29,6 +29,8 @@ let current: TrayRequest | null = null
 const inFlight = new Set<string>()
 const listeners = new Set<() => void>()
 let settleWaiters: (() => void)[] = []
+/** Open holds: an action whose dice may be thrown is in flight (see `hold`). */
+let holds = 0
 
 function notify() {
   listeners.forEach((fn) => fn())
@@ -41,7 +43,7 @@ function prefersReducedMotion(): boolean {
 }
 
 function isIdle() {
-  return current === null && queue.length === 0
+  return current === null && queue.length === 0 && holds === 0
 }
 
 function advance() {
@@ -97,6 +99,29 @@ export const diceBus = {
     advance()
   },
 
+  /**
+   * Mark the tray busy before an action that may roll dice is dispatched, so
+   * views gated on `useDiceTrayBusy` can't render its results in the gap
+   * between the state update and the throw being queued. Returns a release
+   * function (idempotent); release once the action's dice are announced.
+   */
+  hold(): () => void {
+    holds++
+    notify()
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      holds--
+      advance()
+    }
+  },
+
+  /** True while a throw is queued, on the table, or about to be (held). */
+  isBusy(): boolean {
+    return !isIdle()
+  },
+
   current(): TrayRequest | null {
     return current
   },
@@ -147,7 +172,19 @@ export function useTrayRequest(): TrayRequest | null {
   return useSyncExternalStore(diceBus.subscribe, diceBus.current, () => null)
 }
 
-/** True while any throw is queued or on the table. */
+/** True while any throw is queued, on the table, or held for a pending roll. */
 export function useDiceTrayBusy(): boolean {
-  return useSyncExternalStore(diceBus.subscribe, () => diceBus.current() !== null, () => false)
+  return useSyncExternalStore(diceBus.subscribe, diceBus.isBusy, () => false)
+}
+
+/**
+ * Return `value` as it was before the current dice throw: while the tray is
+ * busy the last value seen while idle is kept, so a roll's results (HP drops,
+ * spent songs, rewards) only appear once the dice have landed.
+ */
+export function useHeldWhileRolling<T>(value: T): T {
+  const busy = useDiceTrayBusy()
+  const shown = useRef(value)
+  if (!busy) shown.current = value
+  return shown.current
 }

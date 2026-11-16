@@ -1,7 +1,5 @@
 import { Song, SongSlot, DiceRoll } from '@/types'
 import { DiceShape } from '@/components/ui/DiceShape'
-import { useRollAnimation } from '@/components/ui/useRollAnimation'
-import { getMaxValue } from '@/game-logic/dice/roller'
 import { GENRE_THEME } from '@/data/genreTheme'
 
 interface SongCardProps {
@@ -22,13 +20,13 @@ interface SongCardProps {
 }
 
 /**
- * A single dice slot. When a roll is present it tumbles, then settles on the
- * rolled value (with a crit glow); otherwise it shows the die's genre label.
+ * A single dice slot: the rolled value (with a crit glow) when a roll is
+ * present, otherwise the die's genre label. No in-card tumble — the combat
+ * view holds new rolls back until the 3D dice land, then shows the result.
  */
 function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
   const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
-  const maxValue = slot.dice ? getMaxValue(slot.dice.type) : 0
-  const { displayValue, rolling } = useRollAnimation(roll?.value, maxValue, true, slot.dice?.id)
+  const displayValue = roll?.value
   const isCrit = roll?.isCrit ?? false
   const cascadeSum = roll?.cascadeRolls?.reduce((s, v) => s + v, 0) ?? 0
   const styleBonus = roll?.bonus ?? 0
@@ -39,24 +37,24 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
       style={{
         background: genreColor ? `${genreColor}1f` : 'rgba(255, 255, 255, 0.02)',
         border: genreColor ? `1px solid ${genreColor}80` : '1px dashed rgba(212, 168, 83, 0.12)',
-        boxShadow: isCrit && !rolling ? `0 0 10px ${genreColor}80` : undefined,
+        boxShadow: isCrit ? `0 0 10px ${genreColor}80` : undefined,
       }}
     >
       {slot.dice ? (
-        <div className={`text-center ${rolling ? 'animate-dice-roll' : ''}`}>
+        <div className="text-center">
           <div className="text-xl leading-none mb-0.5" style={{ color: genreColor }}>
             <DiceShape type={slot.dice.type} />
           </div>
           {displayValue !== undefined ? (
             <div
               className="font-bold text-base leading-none tabular-nums"
-              style={{ color: rolling ? `${genreColor}cc` : isCrit ? '#f0d78c' : '#e8dcc0' }}
+              style={{ color: isCrit ? '#f0d78c' : '#e8dcc0' }}
             >
               {displayValue}
-              {!rolling && styleBonus > 0 && (
+              {styleBonus > 0 && (
                 <span className="text-[8px] align-top text-amber-300" title="Style bonus">+{styleBonus}</span>
               )}
-              {!rolling && cascadeSum > 0 && (
+              {cascadeSum > 0 && (
                 <span className="text-[8px] align-top text-gold-400" title="Crit bonus dice">+{cascadeSum}</span>
               )}
             </div>

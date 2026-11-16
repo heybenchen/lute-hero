@@ -122,7 +122,33 @@ function reduce(
         newId
       )
       const spaces = state.spaces.map((s) => (s.id === action.toSpaceId ? { ...s, monsters } : s))
-      return { ...state, players, spaces }
+      const mover = state.players.find((p) => p.id === action.playerId)!
+      const moveTrail = [
+        ...state.moveTrail,
+        {
+          playerId: action.playerId,
+          fromSpaceId: mover.position,
+          inspirationSpent: action.inspirationTravel ? inspirationSpend() : 0,
+        },
+      ]
+      return { ...state, players, spaces, moveTrail }
+    }
+
+    case 'UNDO_MOVE': {
+      // Step back to where the last move started and refund it. The space
+      // being left keeps its monsters; the one returned to never lost them.
+      const step = state.moveTrail[state.moveTrail.length - 1]
+      const players = state.players.map((p) =>
+        p.id === step.playerId
+          ? {
+              ...p,
+              position: step.fromSpaceId,
+              movesThisTurn: Math.max(0, p.movesThisTurn - 1),
+              inspiration: p.inspiration + step.inspirationSpent,
+            }
+          : p
+      )
+      return { ...state, players, moveTrail: state.moveTrail.slice(0, -1) }
     }
 
     case 'START_COMBAT': {
@@ -138,7 +164,8 @@ function reduce(
         spaceId: space.id,
         monsters: space.monsters,
       }
-      return { ...state, players, combat, studio: createInitialStudioState() }
+      // Fighting locks in this turn's movement: no taking moves back after
+      return { ...state, players, combat, studio: createInitialStudioState(), moveTrail: [] }
     }
 
     case 'PLAY_SONG': {
@@ -364,7 +391,8 @@ function reduce(
     }
 
     case 'DEBUG_PATCH':
-      return applyDebugPatch(state, action.patch, rng, newId)
+      // Patches can teleport bards; a stale trail would undo to the wrong space
+      return { ...applyDebugPatch(state, action.patch, rng, newId), moveTrail: [] }
 
     case 'DEBUG_LOAD_STATE':
       return loadDebugState(state, action.engineState)
@@ -784,7 +812,10 @@ export function computeCombatRewards(combat: {
 } {
   const defeated = combat.monsters.filter((m) => m.currentHP <= 0)
   const monstersDefeatedCount = defeated.length
-  const totalExp = calculateTotalMonsterExp(combat.monsters)
+  // EXP is paid only for monsters the bard actually hurt: every one on a
+  // victory, but on a retreat the untouched ones pay nothing.
+  const wounded = combat.monsters.filter((m) => m.currentHP < m.maxHP)
+  const totalExp = calculateTotalMonsterExp(wounded)
   const totalFameEarned = calculateFameEarned(defeated.map((m) => m.level))
 
   const fameForKill = (monsterId: string) => {
@@ -825,7 +856,7 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
   const fighterStyles = state.players.find((p) => p.id === fighterId)?.styles ?? []
   const rewards = computeCombatRewards(combat, fighterStyles)
 
-  // EXP always awarded for the full encounter; fame per kill credit
+  // EXP for every wounded monster; fame per kill credit
   let players = adjustExp(state.players, fighterId, rewards.totalExp)
   // Clearing every monster on a space earns the victor 1 Inspiration.
   if (success) {
@@ -910,6 +941,8 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
 // ============================================================
 
 function endTurn(state: EngineState, rng: Rng, newId: NewId): EngineState {
+  // Moves can only be taken back within the turn they were made
+  state = { ...state, moveTrail: [] }
   const current = state.players[state.currentTurnPlayerIndex]
   let players = state.players.map((p) =>
     p.id === current.id

@@ -64,6 +64,8 @@ export interface PlayerConfig {
 export type GameAction =
   | { type: 'START_GAME'; playerConfigs: PlayerConfig[] }
   | { type: 'MOVE'; playerId: string; toSpaceId: number; inspirationTravel: boolean }
+  /** Take back the last move this turn (only before any combat since). */
+  | { type: 'UNDO_MOVE'; playerId: string }
   | { type: 'START_COMBAT'; playerId: string }
   | { type: 'PLAY_SONG'; songId: string; ownerId: string; targetMonsterId: string }
   /** Spend Inspiration to reroll the last song; `rubato` makes it free (once per turn, d4/d8). */

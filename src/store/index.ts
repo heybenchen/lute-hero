@@ -16,7 +16,10 @@ import { RemoteDriver } from '@/drivers/remoteDriver'
 import { Snapshot, PublicSeat, EventLogEntry } from '@/net/protocol'
 import * as api from '@/net/api'
 import { ApiRequestError } from '@/net/api'
-import { announceDiceEvents } from '@/components/dice3d/diceBus'
+import { announceDiceEvents, diceBus } from '@/components/dice3d/diceBus'
+
+/** Actions that throw dice: their results stay hidden until the throw lands. */
+const ROLLING_ACTIONS = new Set<GameAction['type']>(['PLAY_SONG', 'REROLL_SONG', 'PLAY_SHOWDOWN_SONG', 'REROLL_SHOWDOWN_SONG'])
 import {
   getIdentity,
   saveIdentityName,
@@ -196,12 +199,20 @@ export const useGameStore = create<GameStore>()(
           if (!activeDriver) {
             return { ok: false, events: [], error: 'No active game driver' }
           }
-          const result = await activeDriver.dispatch(action)
-          if (!result.ok && result.error) {
-            set({ lastError: result.error })
+          // A roll's new state lands before its dice are queued; hold the
+          // tray busy across that gap so combat views never show the result
+          // ahead of the throw.
+          const release = ROLLING_ACTIONS.has(action.type) ? diceBus.hold() : null
+          try {
+            const result = await activeDriver.dispatch(action)
+            if (!result.ok && result.error) {
+              set({ lastError: result.error })
+            }
+            if (result.ok) announceDiceEvents(result.events, get().players)
+            return result
+          } finally {
+            release?.()
           }
-          if (result.ok) announceDiceEvents(result.events, get().players)
-          return result
         },
 
         startHotseat: () => {
