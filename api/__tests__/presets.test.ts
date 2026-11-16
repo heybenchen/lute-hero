@@ -72,6 +72,7 @@ function sampleState(): EngineState {
     hasShoppedThisTurn: false,
     inspiration: 1,
     inspirationBoughtThisTurn: 0,
+    styles: [],
   })
 
   return {

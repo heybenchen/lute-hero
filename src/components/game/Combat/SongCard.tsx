@@ -15,6 +15,8 @@ interface SongCardProps {
   onReroll?: () => void
   /** Player's current Inspiration, used to gate the in-card reroll */
   inspiration?: number
+  /** Rubato's free reroll, when the bard has it unspent and this is a d4/d8 song */
+  onRubato?: () => void
 }
 
 /**
@@ -27,6 +29,7 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
   const displayValue = roll?.value
   const isCrit = roll?.isCrit ?? false
   const cascadeSum = roll?.cascadeRolls?.reduce((s, v) => s + v, 0) ?? 0
+  const styleBonus = roll?.bonus ?? 0
 
   return (
     <div
@@ -48,8 +51,11 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
               style={{ color: isCrit ? '#f0d78c' : '#e8dcc0' }}
             >
               {displayValue}
+              {styleBonus > 0 && (
+                <span className="text-[8px] align-top text-amber-300" title="Style bonus">+{styleBonus}</span>
+              )}
               {cascadeSum > 0 && (
-                <span className="text-[8px] align-top text-gold-400">+{cascadeSum}</span>
+                <span className="text-[8px] align-top text-gold-400" title="Crit bonus dice">+{cascadeSum}</span>
               )}
             </div>
           ) : (
@@ -63,7 +69,7 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
   )
 }
 
-export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName, rolls, onReroll, inspiration = 0 }: SongCardProps) {
+export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName, rolls, onReroll, inspiration = 0, onRubato }: SongCardProps) {
   const hasDice = song.slots.some((s) => s.dice)
   // The just-played song shows its roll results, so keep it fully lit (not dimmed)
   const isCurrent = !!rolls && rolls.length > 0
@@ -126,6 +132,23 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
               ))}
             </div>
           </div>
+
+          {/* Rubato: a free reroll from the bard's style, offered ahead of the paid one */}
+          {onReroll && onRubato && (
+            <button
+              onClick={onRubato}
+              className="w-full mb-2 py-2.5 font-medieval font-bold rounded-lg transition-all duration-200 text-sm hover:-translate-y-0.5"
+              style={{
+                background: 'linear-gradient(135deg, rgba(212, 168, 83, 0.3), rgba(160, 120, 50, 0.22))',
+                border: '1px solid rgba(240, 215, 140, 0.55)',
+                color: '#f8e7b5',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+              }}
+              title="Rubato: reroll this d4/d8 song for free (once per turn)"
+            >
+              &#x266A; Rubato reroll (free)
+            </button>
+          )}
 
           {/* Reroll (just-played song) or Perform button */}
           {onReroll ? (

@@ -4,6 +4,8 @@ import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
 import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
 import { newD4Cost, getUpgradeCost, getInspirationCost, inspirationSpend } from '../data/draftCards.js'
 import { getTunables } from '../data/tunables.js'
+import { styleCost, maxStyles } from '../data/styles.js'
+import { rubatoCanReroll } from '../game-logic/styles/styleEffects.js'
 
 export function maxMovesPerTurn(): number {
   return getTunables().maxMovesPerTurn
@@ -160,7 +162,16 @@ export function validateAction(
         return illegal('That song defeated its target — play it again instead')
       }
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
-      if (!fighter || fighter.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
+      if (!fighter) return illegal('No fighter')
+      if (action.rubato) {
+        if (!fighter.styles.includes('rubato')) return illegal('Rubato is not one of your styles')
+        if (state.combat.stylesUsed.includes('rubato')) return illegal('Rubato is already used this turn')
+        const owner = state.players.find((p) => p.id === state.combat.lastPlayedOwnerId)
+        const song = owner?.songs.find((sg) => sg.id === state.combat.lastPlayedSongId)
+        if (!song || !rubatoCanReroll(song)) return illegal('Rubato rerolls only d4 and d8 songs')
+      } else if (fighter.inspiration < inspirationSpend()) {
+        return illegal('Not enough Inspiration')
+      }
       if (state.combat.monsters.every((m) => m.currentHP <= 0)) return illegal('All monsters defeated')
       return ok
     }
@@ -319,6 +330,37 @@ export function validateAction(
       return ok
     }
 
+    case 'BUY_STYLE': {
+      const gate = requireCurrentTurn()
+      if (!gate.ok) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
+      const player = state.players[state.currentTurnPlayerIndex]
+      if (!player) return illegal('No current player')
+      const styleId = state.styleOffers[action.offerIndex]
+      if (!styleId) return illegal('No such style on offer')
+      if (player.styles.includes(styleId)) return illegal('You already play in that style')
+      if (player.exp < styleCost(styleId)) return illegal('Not enough EXP')
+      if (player.styles.length >= maxStyles()) {
+        if (!action.replaceStyleId || !player.styles.includes(action.replaceStyleId)) {
+          return illegal(`You can hold ${maxStyles()} styles — choose one to replace`)
+        }
+      } else if (action.replaceStyleId) {
+        return illegal('You have room for another style')
+      }
+      return ok
+    }
+
+    case 'REFRESH_STYLE_OFFERS': {
+      const gate = requireCurrentTurn()
+      if (!gate.ok) return gate
+      const studioGate = requireOpenStudio()
+      if (studioGate.ok === false) return studioGate
+      const player = state.players[state.currentTurnPlayerIndex]
+      if (!player || player.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
+      return ok
+    }
+
     case 'PLAY_SHOWDOWN_SONG': {
       if (state.phase !== 'finalBoss' || !state.showdownActive) return illegal('No active showdown')
       if (state.showdownComplete) return illegal('Showdown is over')
@@ -339,7 +381,15 @@ export function validateAction(
       if (isSeat && seatPlayerId !== performerId) return forbidden('Not your performance')
       if (!state.showdownUndo) return illegal('Nothing to reroll')
       const performer = state.players.find((p) => p.id === performerId)
-      if (!performer || performer.inspiration < inspirationSpend()) return illegal('Not enough Inspiration')
+      if (!performer) return illegal('No performer')
+      if (action.rubato) {
+        if (!performer.styles.includes('rubato')) return illegal('Rubato is not one of your styles')
+        if (state.showdownUndo.rubatoUsed) return illegal('Rubato is already used this verse')
+        const song = performer.songs.find((sg) => sg.id === state.showdownUndo!.songId)
+        if (!song || !rubatoCanReroll(song)) return illegal('Rubato rerolls only d4 and d8 songs')
+      } else if (performer.inspiration < inspirationSpend()) {
+        return illegal('Not enough Inspiration')
+      }
       return ok
     }
 

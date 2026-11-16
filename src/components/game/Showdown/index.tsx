@@ -6,6 +6,7 @@ import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
 import { diceBus } from '@/components/dice3d/diceBus'
+import { rubatoCanReroll } from '@/game-logic/styles/styleEffects'
 import { getPlayableSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
 import { readableTextColor } from '@/data/genreTheme'
 
@@ -35,6 +36,7 @@ export function FinalShowdown() {
   const canPerform = useGameStore(selectCanPerform)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
   const mode = useGameStore((state) => state.mode)
+  const rubatoUsed = useGameStore((state) => !!state.showdownUndo?.rubatoUsed)
 
   // The engine starts the showdown when END_TURN flips the phase, so it is
   // already active on mount. Show the intro only for a fresh showdown;
@@ -121,6 +123,18 @@ export function FinalShowdown() {
   const handleReroll = async () => {
     if (!canPerform || !performer || !lastRolls || performer.inspiration <= 0) return
     const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG' })
+    if (!result.ok) return
+    for (const event of result.events) {
+      if (event.type === 'diceRolled') setLastRolls({ song: lastRolls.song, rolls: event.rolls })
+      if (event.type === 'showdownPlay') void showFandomPopup(event)
+    }
+  }
+
+  // Rubato: one free reroll of a d4/d8 performance per verse
+  const canRubato = !!performer && !!lastRolls && performer.styles.includes('rubato') && !rubatoUsed && rubatoCanReroll(lastRolls.song)
+  const handleRubato = async () => {
+    if (!canPerform || !lastRolls || !canRubato) return
+    const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG', rubato: true })
     if (!result.ok) return
     for (const event of result.events) {
       if (event.type === 'diceRolled') setLastRolls({ song: lastRolls.song, rolls: event.rolls })
@@ -271,6 +285,7 @@ export function FinalShowdown() {
                   index={idx}
                   rolls={lastRolls?.song.id === song.id ? lastRolls.rolls : undefined}
                   onReroll={canPerform && lastRolls?.song.id === song.id ? handleReroll : undefined}
+                  onRubato={canPerform && lastRolls?.song.id === song.id && canRubato ? handleRubato : undefined}
                   inspiration={performer.inspiration}
                 />
               ))}

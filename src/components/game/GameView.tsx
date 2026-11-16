@@ -312,6 +312,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
             <List items={[
               <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d8 → d12 → d20</Hl>.</>,
               <>Spend EXP to buy <Hl>Inspiration</Hl> — used for rerolls, travel, and refreshing offers.</>,
+              <>Learn up to <Hl>2 Styles</Hl> — named for musical terms, each changes how <Hl>all</Hl> your songs play. Two are on the shelf each turn; spend Inspiration for a new pair.</>,
             ]} />
           </Section>
 

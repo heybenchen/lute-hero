@@ -12,6 +12,7 @@ import {
   inspirationSpend,
 } from '@/data/draftCards'
 import { GENRE_THEME } from '@/data/genreTheme'
+import { StyleShelf } from './StyleShelf'
 
 interface DraftShopProps {
   playerId: string
@@ -151,6 +152,9 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </button>
             )}
           </div>
+
+          {/* Styles: change how every song plays */}
+          <StyleShelf player={player} canInteract={canInteract} />
 
           {/* Element chips drawn from the bag */}
           <div className="mb-6">

@@ -14,7 +14,8 @@ import { getIdentity } from '@/net/identity'
 import * as api from '@/net/api'
 import type { DebugPresetSummary } from '@/net/protocol'
 import { ALL_DICE_TYPES } from '@/data/startingData'
-import type { Genre, GamePhase, DiceType, Player } from '@/types'
+import type { Genre, GamePhase, DiceType, Player, StyleId } from '@/types'
+import { ALL_STYLE_IDS, STYLES, styleRule } from '@/data/styles'
 
 type Tab = 'values' | 'players' | 'board' | 'presets'
 
@@ -374,6 +375,7 @@ function PlayersTab() {
             </select>
           </div>
 
+          <StyleEditor player={player} />
           <DiceEditor player={player} />
         </div>
       ))}
@@ -386,6 +388,40 @@ function PlayersTab() {
  * to an empty slot, or clear it. Every change is a DEBUG_PATCH, so it syncs to
  * online seats and persists in saves and presets like any other edit.
  */
+/** Toggle any style on or off for a player (the cap isn't enforced here). */
+function StyleEditor({ player }: { player: Player }) {
+  const dispatch = useGameStore((state) => state.dispatch)
+  const toggle = (id: StyleId) => {
+    const styles = player.styles.includes(id) ? player.styles.filter((s) => s !== id) : [...player.styles, id]
+    dispatch({ type: 'DEBUG_PATCH', patch: { players: { [player.id]: { styles } } } })
+  }
+  return (
+    <div className="mt-2">
+      <span className="text-[10px] font-medieval uppercase tracking-widest text-parchment-500">Styles</span>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {ALL_STYLE_IDS.map((id) => {
+          const on = player.styles.includes(id)
+          return (
+            <button
+              key={id}
+              onClick={() => toggle(id)}
+              title={styleRule(id)}
+              className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+              style={{
+                background: on ? 'rgba(212, 168, 83, 0.25)' : 'rgba(0,0,0,0.3)',
+                border: `1px solid rgba(212, 168, 83, ${on ? 0.7 : 0.2})`,
+                color: on ? '#f0d78c' : '#a08d6c',
+              }}
+            >
+              {STYLES[id].name}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function DiceEditor({ player }: { player: Player }) {
   const dispatch = useGameStore((state) => state.dispatch)
 

@@ -31,10 +31,27 @@ export interface Dice {
 export interface DiceRoll {
   diceId: string;
   value: number;
-  isCrit: boolean; // True if rolled max value
+  isCrit: boolean; // True if the roll crit (max face, or a style's crit rule)
   critBonus: number; // Sum of cascade roll values
   cascadeRolls: number[]; // Each additional die value from cascading crits
+  /** Flat damage added by styles (Fortissimo, Overture, Tutti). Absent = 0. */
+  bonus?: number;
 }
+
+/** Purchasable play styles; each affects every song its bard performs. */
+export type StyleId =
+  | "staccato"
+  | "coda"
+  | "ostinato"
+  | "rubato"
+  | "virtuoso"
+  | "fortissimo"
+  | "fermata"
+  | "counterpoint"
+  | "tutti"
+  | "overture"
+  | "bravo"
+  | "ispirato";
 
 export interface SongSlot {
   dice: Dice | null;
@@ -113,6 +130,7 @@ export interface Player {
   hasShoppedThisTurn: boolean; // Track if player has shopped this turn
   inspiration: number; // Inspiration tokens held (spend to reroll, travel, or refresh shop)
   inspirationBoughtThisTurn: number; // Escalates the buy cost; resets each turn
+  styles: StyleId[]; // Owned play styles (capped by tunables.maxStyles)
 }
 
 // ============================================
@@ -149,6 +167,8 @@ export interface DamageCalculation {
   totalDamage: number;
   // Per-die contribution against this monster, for the damage-report breakdown
   perDie: DieContribution[];
+  /** Counterpoint turned an immune hit into a partial one. */
+  softenedImmunity?: boolean;
 }
 
 export interface DieContribution {
@@ -157,5 +177,6 @@ export interface DieContribution {
   critBonus: number; // extra damage from cascading crits (sum of cascadeRolls)
   cascadeRolls: number[]; // each cascading-crit roll, shown separately in the report
   multiplier: number; // genre multiplier applied to this die
-  damage: number; // (value + critBonus) × multiplier — this die's contribution
+  bonus?: number; // flat style bonus added before the multiplier
+  damage: number; // (value + bonus + critBonus) × multiplier — this die's contribution
 }

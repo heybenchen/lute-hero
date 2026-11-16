@@ -12,6 +12,7 @@ import {
   Swords,
 } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
+import { StyleChip } from '@/components/ui/StyleBadge'
 
 /** Everything the turn console and the mobile turn bar need to know about the active turn. */
 function useTurnState() {
@@ -232,6 +233,13 @@ export function PlayerPanel() {
           <ResourceTile icon={<Award size={14} />} label="Fame" value={currentPlayer.fame} />
           <ResourceTile icon={<Sparkles size={14} />} label="EXP" value={currentPlayer.exp} />
           <ResourceTile icon={<Lightbulb size={14} />} label="Inspiration" value={currentPlayer.inspiration} />
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <span className="module-label mb-0 mr-1">Styles</span>
+          {currentPlayer.styles.length > 0
+            ? currentPlayer.styles.map((id) => <StyleChip key={id} id={id} />)
+            : <span className="text-[10px] italic text-parchment-500">None yet — learn them in the Studio</span>}
         </div>
       </section>
 

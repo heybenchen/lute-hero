@@ -11,6 +11,7 @@ import {
   DiceRoll,
   DiceType,
   DamageCalculation,
+  StyleId,
 } from '../types/index.js'
 import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
 import { SONGS_PER_BARD } from '../data/startingData.js'
@@ -47,7 +48,16 @@ export interface EngineCombatState {
     spentSongIds: string[]
     killCredits: KillCredit[]
     totalDamage: number
+    stylesUsed: StyleId[]
   } | null
+  /**
+   * "Once per turn" styles already spent this turn. A bard fights at most once
+   * a turn, so this lives with the combat and is part of the reroll snapshot:
+   * rerolling a play replays its style triggers rather than burning them.
+   */
+  stylesUsed: StyleId[]
+  /** Names of the styles that shaped the last play, for the damage report. */
+  styleNotes: string[]
   lastPlayedSongId: string | null
   lastPlayedOwnerId: string | null
   /** Shared victory choice so spectators see the element being considered. */
@@ -99,6 +109,8 @@ export interface EngineState {
   elementDiscard: Genre[]
   elementOffers: Genre[]
   pendingRewards: Record<string, PendingReward[]>
+  /** Styles on offer in the Studio; redrawn after every turn. */
+  styleOffers: StyleId[]
   studio: EngineStudioState
 
   /** This turn's moves, newest last, for UNDO_MOVE (see `MoveStep`). */
@@ -145,6 +157,8 @@ export interface ShowdownUndo {
   bestHit: { damage: number } | undefined
   crits: number
   songsUsed: string[]
+  /** Rubato's free reroll has been used on this performance. */
+  rubatoUsed?: boolean
 }
 
 export function createInitialCombatState(): EngineCombatState {
@@ -165,6 +179,8 @@ export function createInitialCombatState(): EngineCombatState {
     lastPlayedSongId: null,
     lastPlayedOwnerId: null,
     selectedSpreadGenre: null,
+    stylesUsed: [],
+    styleNotes: [],
   }
 }
 
@@ -247,7 +263,11 @@ function migrateRewardDice(rewards: Record<string, PendingReward[]>): Record<str
  */
 export function normalizeEngineState(state: EngineState): EngineState {
   // Colors used to follow seat order; they now always match the starter element
-  const players = migratePlayerDice(state.players ?? []).map((p) => ({ ...p, color: playerColorFor(p.starterGenre) }))
+  const players = migratePlayerDice(state.players ?? []).map((p) => ({
+    ...p,
+    color: playerColorFor(p.starterGenre),
+    styles: p.styles ?? [],
+  }))
   // Only legacy slots create aliases. Do not infer relationships from ids in
   // already-migrated games: each song can be spent independently after reload.
   const splitSongIds = new Map<string, string[]>()
@@ -264,12 +284,14 @@ export function normalizeEngineState(state: EngineState): EngineState {
     ...state,
     players,
     pendingRewards: migrateRewardDice(state.pendingRewards ?? {}),
+    styleOffers: state.styleOffers ?? [],
     combat: {
       ...createInitialCombatState(),
       ...state.combat,
       spentSongIds: migrateSongIds(state.combat?.spentSongIds),
       undoSnapshot: state.combat?.undoSnapshot ? {
         ...state.combat.undoSnapshot,
+        stylesUsed: state.combat.undoSnapshot.stylesUsed ?? [],
         spentSongIds: migrateSongIds(state.combat.undoSnapshot.spentSongIds),
       } : null,
     },
@@ -301,6 +323,7 @@ export function createInitialEngineState(): EngineState {
     elementDiscard: [],
     elementOffers: [],
     pendingRewards: {},
+    styleOffers: [],
     studio: createInitialStudioState(),
     moveTrail: [],
 
