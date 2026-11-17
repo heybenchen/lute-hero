@@ -1,6 +1,7 @@
 import { Song, SongSlot, DiceRoll } from '@/types'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { GENRE_THEME } from '@/data/genreTheme'
+import { STYLES } from '@/data/styles'
 
 interface SongCardProps {
   song: Song
@@ -144,9 +145,9 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
                 color: '#f8e7b5',
                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
               }}
-              title="Rubato: reroll this d4/d8 song for free (once per turn)"
+              title={`${STYLES.rubato.name}: reroll this d4/d8 song for free (once per turn)`}
             >
-              &#x266A; Rubato reroll (free)
+              &#x266A; {STYLES.rubato.name} (free reroll)
             </button>
           )}
 

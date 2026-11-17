@@ -757,8 +757,8 @@ function performCombatPlay(
   let spentSongIds: string[]
   if (defeatedTarget) {
     spentSongIds = base.spentSongIds.filter((id) => id !== song.id)
-    // Staccato: a d4 tame refreshes the bard's other d4 songs
-    if (staccatoRefreshes(song, styleCtx)) {
+    // Staccato (Rallying Cry): any tame refreshes the bard's spent d4 songs
+    if (staccatoRefreshes(styleCtx)) {
       const d4Songs = new Set(fighter.songs.filter((sg) => sg.slots.some((sl) => sl.dice?.type === 'd4')).map((sg) => sg.id))
       if (spentSongIds.some((id) => d4Songs.has(id))) {
         spentSongIds = spentSongIds.filter((id) => !d4Songs.has(id))

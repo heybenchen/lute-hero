@@ -66,7 +66,7 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
                       <Music size={15} className="text-gold-400 flex-shrink-0" aria-hidden="true" />
                       <span className="font-display text-xl text-gold-300 leading-none">{style.name}</span>
                     </div>
-                    <div className="text-[11px] italic text-parchment-500 mt-1">{style.meaning}</div>
+                    <div className="text-[11px] italic text-parchment-500 mt-1">{style.flavor}</div>
                   </div>
                   <span className="text-sm font-bold text-gold-300 whitespace-nowrap">{cost} EXP</span>
                 </div>

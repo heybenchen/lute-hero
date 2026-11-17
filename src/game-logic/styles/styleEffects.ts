@@ -111,9 +111,9 @@ export function fermataHolds(song: Song, ctx: StyleContext): boolean {
   return available(ctx, 'fermata') && song.slots.some((s) => s.dice?.type === 'd12' || s.dice?.type === 'd20')
 }
 
-/** Staccato: a d4 song that tames refreshes your other d4 songs, once per turn. */
-export function staccatoRefreshes(song: Song, ctx: StyleContext): boolean {
-  return available(ctx, 'staccato') && song.slots.some((s) => s.dice?.type === 'd4')
+/** Staccato (Rallying Cry): any song that tames refreshes your d4 songs, once per turn. */
+export function staccatoRefreshes(ctx: StyleContext): boolean {
+  return available(ctx, 'staccato')
 }
 
 /** Rubato's free reroll works on d4 and d8 songs. */
