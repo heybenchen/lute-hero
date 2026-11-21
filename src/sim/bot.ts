@@ -28,7 +28,6 @@ import { getTunables, withTunables } from '../data/tunables.js'
 import { getUpgradeCost, newD4Cost, getInspirationCost } from '../data/draftCards.js'
 import { styleCost, maxStyles } from '../data/styles.js'
 import { ALL_GENRES } from '../data/genreTheme.js'
-import type { BardSnapshot } from '../data/roundProfiles.js'
 
 const FACES: Record<DiceType, number> = { d4: 4, d8: 8, d12: 12, d20: 20 }
 
@@ -297,6 +296,17 @@ function bestPlay(songs: Song[], alive: Monster[]): { song: Song; monster: Monst
   return kill ?? hit
 }
 
+/** A bard's holdings at one moment, used for the simulation summary table. */
+export interface BardSnapshot {
+  fame: number
+  exp: number
+  inspiration: number
+  monstersDefeated: number
+  styles: string[]
+  /** [die type, element offset from the bard's starter element in ALL_GENRES order] */
+  dice: [DiceType, number][]
+}
+
 export function snapshotBard(player: Player): BardSnapshot {
   const base = ALL_GENRES.indexOf(player.starterGenre)
   return {
@@ -351,4 +361,29 @@ function shuffleGenres(rng: Rng): Genre[] {
     ;[list[i], list[j]] = [list[j], list[i]]
   }
   return list
+}
+
+/**
+ * Let bots play `start` forward until `rounds` more rounds are complete.
+ * Returns the last state still in the main phase (start of a round) and how
+ * many rounds that covers — fewer than asked if the showdown arrived first.
+ */
+export function simulateRounds(
+  start: EngineState,
+  rounds: number,
+  rng: Rng
+): { state: EngineState; completed: number } {
+  const bot = new Bot(start, rng)
+  let best = { state: start, completed: 0 }
+  let round = start.currentRound
+  const playerCount = Math.max(1, start.players.length)
+  for (let turns = 0; turns < (rounds + 1) * playerCount * 2 && best.completed < rounds; turns++) {
+    if (bot.state.phase !== 'main') break
+    bot.takeTurn()
+    if (bot.state.currentRound !== round) {
+      round = bot.state.currentRound
+      if (bot.state.phase === 'main') best = { state: bot.state, completed: round - start.currentRound }
+    }
+  }
+  return best
 }

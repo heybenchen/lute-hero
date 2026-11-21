@@ -19,6 +19,7 @@
 
 - Simplified map tiles to show element chips and direct movement, added clearer movement and player markers, keyboard combat targeting, equipped-only setlists, and a focused victory screen.
 
+- Playtest console "Simulate the game through round N" (`DEBUG_SIMULATE`): bots replay the current table (same bards, elements, tunables) from a fresh deal through the real engine, then play continues from round N+1 or the Final Showdown starts there. Replaces the sampled-holdings showdown jump; `roundProfiles.ts` now only stores when games reach the showdown.
 - Final Showdown: the 3D throw now shows every die of the performed element (`announceDiceEvents` reads `songIds`), not just the first song's die.
 - Studio reorganised: Buy Inspiration and Refresh share one compact row; the Setlist (elements → your songs) comes first and Styles (shelf + your styles) below it. A bard's songs together are called their setlist (Studio, player panel, style text, rules). Element chips fit the width on phones.
 - Final Showdown boss no longer gains a 2× weakness between verses — it only becomes immune to the strongest performance's element. (A "taming" wording pass was tried and reverted.)

@@ -38,7 +38,7 @@ import { DICE_UPGRADE_PATH } from '../data/startingData.js'
 import { getTunables, withTunables, normalizeTunables } from '../data/tunables.js'
 import { ALL_GENRES, playerColorFor } from '../data/genreTheme.js'
 import { STYLES, drawStyleOffers, styleCost, styleOfferCount } from '../data/styles.js'
-import { ROUND_PROFILES } from '../data/roundProfiles.js'
+import { simulateRounds } from '../sim/bot.js'
 import {
   StyleContext,
   rollSongWithStyles,
@@ -450,8 +450,8 @@ function reduce(
     case 'DEBUG_LOAD_STATE':
       return loadDebugState(state, action.engineState)
 
-    case 'DEBUG_JUMP_TO_SHOWDOWN':
-      return jumpToShowdown(state, action.round, rng, newId)
+    case 'DEBUG_SIMULATE':
+      return simulateToRound(state, action.round, action.showdown, rng)
   }
 }
 
@@ -1198,65 +1198,47 @@ function startShowdownFields(playerIds: string[]): Partial<EngineState> {
 }
 
 /**
- * Playtest jump: start the showdown as if `round` rounds had been played.
- * Each bard draws one sample of simulated holdings at that round (clamped to
- * the rounds the simulation covers) — dice keep their element relative to the
- * bard's own, so a sample fits any bard.
+ * Playtest jump: replay this table (same bards, elements and tunables) from a
+ * fresh deal with bots playing every turn, until `round` rounds are complete.
+ * Everything — board chips, positions, dice, styles, Fame, EXP, Inspiration,
+ * the shop — comes out of real play, so it is realistic and self-consistent.
+ * A bot game can reach the showdown before the requested round; then a few
+ * more games are tried, and the one that got furthest is used. With
+ * `showdown`, the Final Showdown starts from that state.
  */
-function jumpToShowdown(state: EngineState, round: number, rng: Rng, newId: NewId): EngineState {
-  const available = Object.keys(ROUND_PROFILES).map(Number).sort((a, b) => a - b)
-  if (available.length === 0) return state
-  const r = Math.min(Math.max(round, available[0]), available[available.length - 1])
-  const pool = ROUND_PROFILES[r]
-
-  let next: EngineState = { ...state, pendingRewards: {} }
-  for (const player of state.players) {
-    const sample = pool[Math.floor(rng() * pool.length)]
-    const styles = sample.styles.filter((id): id is StyleId => id in STYLES).slice(0, getTunables().maxStyles)
-    next = setPlayerStyles(next, player.id, styles, newId)
-    const base = ALL_GENRES.indexOf(player.starterGenre)
-    next = {
-      ...next,
-      pendingRewards: { ...next.pendingRewards, [player.id]: [] },
-      players: next.players.map((p) => {
-        if (p.id !== player.id) return p
-        const songs = p.songs.map((song, i): Song => {
-          const die = sample.dice[i]
-          return {
-            ...song,
-            used: false,
-            slots: [{ dice: die ? { id: newId('die'), type: die[0], genre: ALL_GENRES[(base + die[1]) % ALL_GENRES.length] } : null }],
-          }
-        })
-        return {
-          ...p,
-          songs,
-          fame: sample.fame,
-          exp: sample.exp,
-          inspiration: sample.inspiration,
-          monstersDefeated: sample.monstersDefeated,
-          movesThisTurn: 0,
-          fightsThisTurn: 0,
-          hasShoppedThisTurn: false,
-          inspirationBoughtThisTurn: 0,
-        }
-      }),
-    }
+function simulateToRound(state: EngineState, round: number, showdown: boolean, rng: Rng): EngineState {
+  const playerConfigs = state.players.map((p) => ({ name: p.name, starterGenre: p.starterGenre }))
+  const target = Math.min(Math.max(1, round), MAX_SIMULATED_ROUND)
+  let best: { state: EngineState; completed: number } | null = null
+  for (let attempt = 0; attempt < SIMULATION_ATTEMPTS; attempt++) {
+    const dealt = applyAction(
+      { ...createInitialEngineState(), tunables: state.tunables },
+      { type: 'START_GAME', playerConfigs },
+      { rng, actor: { kind: 'hotseat' } }
+    )
+    if (!dealt.ok) return state
+    const result = simulateRounds(dealt.state, target, rng)
+    if (!best || result.completed > best.completed) best = result
+    if (best.completed >= target) break
   }
-
+  const played = best!.state
+  if (!showdown) return played
   return {
-    ...next,
+    ...played,
     phase: 'finalBoss',
     pendingPhase: null,
     finalTurnGranted: false,
-    currentRound: r + 1,
-    currentTurnPlayerIndex: 0,
     combat: createInitialCombatState(),
     studio: createInitialStudioState(),
     moveTrail: [],
-    ...startShowdownFields(state.players.map((p) => p.id)),
+    ...startShowdownFields(played.players.map((p) => p.id)),
   }
 }
+
+/** Bot games tried before settling for the one that got furthest. */
+const SIMULATION_ATTEMPTS = 12
+/** Simulated games rarely run longer; this caps the work a single action does. */
+export const MAX_SIMULATED_ROUND = 30
 
 // ============================================================
 // Round-end reinforcements
