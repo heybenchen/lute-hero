@@ -8,15 +8,17 @@ import {
   NewId,
   StyleId,
 } from '../types/index.js'
-import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState, normalizeEngineState } from './state.js'
+import { EngineState, EngineCombatState, FeatureRequest, createInitialEngineState, createInitialCombatState, createInitialStudioState, normalizeEngineState } from './state.js'
 import { GameAction, ActorSeat, PlayerConfig, DebugPatch, DebugDiceEdit } from './actions.js'
 import { EngineEvent } from './events.js'
 import { validateAction, roundEndChipsPerElement } from './validate.js'
-import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, addGenreTag, capGenreTags, scatterChipsRandomly } from '../game-logic/board/graphBuilder.js'
+import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, ensureStarterChips, addGenreTag, capGenreTags, scatterChipsRandomly } from '../game-logic/board/graphBuilder.js'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
-import { calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
+import { calculateSingleTargetDamage, calculateDamage, rollSong } from '../game-logic/combat/damageCalculator.js'
 import {
   calculateFameEarned,
+  calculateMonsterExp,
+  calculateMonsterFameValue,
   calculateTotalMonsterExp,
   getNextPhase,
 } from '../game-logic/fame/calculator.js'
@@ -106,7 +108,6 @@ function reduce(
               ...p,
               position: action.toSpaceId,
               movesThisTurn: p.movesThisTurn + 1,
-              inspiration: action.inspirationTravel ? p.inspiration - inspirationSpend() : p.inspiration,
             }
           : p
       )
@@ -126,7 +127,6 @@ function reduce(
         {
           playerId: action.playerId,
           fromSpaceId: mover.position,
-          inspirationSpent: action.inspirationTravel ? inspirationSpend() : 0,
         },
       ]
       return { ...state, players, spaces, moveTrail }
@@ -142,7 +142,7 @@ function reduce(
               ...p,
               position: step.fromSpaceId,
               movesThisTurn: Math.max(0, p.movesThisTurn - 1),
-              inspiration: p.inspiration + step.inspirationSpent,
+              inspiration: p.inspiration + (step.inspirationSpent ?? 0),
             }
           : p
       )
@@ -226,6 +226,20 @@ function reduce(
             : snapshot,
         },
       }
+    }
+
+    case 'PLAY_FEATURED_SONG':
+      return playFeaturedSong(state, action, rng, events)
+
+    case 'REQUEST_FEATURE': {
+      const { guestPlayerId, songId, targetMonsterId } = action
+      return { ...state, combat: { ...state.combat, featureRequest: { guestPlayerId, songId, targetMonsterId } } }
+    }
+
+    case 'ANSWER_FEATURE': {
+      const request = state.combat.featureRequest!
+      const cleared = { ...state, combat: { ...state.combat, featureRequest: null } }
+      return action.accept ? playFeaturedSong(cleared, request, rng, events) : cleared
     }
 
     case 'SELECT_COMBAT_SPREAD':
@@ -620,7 +634,14 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
   //    but its placement is random. (This replaces the old starter-element
   //    seeding onto each bard's neighbours, which skewed the element counts.)
   const startingTags = getTunables().startingTagsPerSpace
-  const dealt = dealBalancedGenreTags(spaces.length, startingTags, rng)
+  // Then swap chips so every bard's starting space holds a monster of their
+  // own element (element totals stay balanced).
+  const balanced = dealBalancedGenreTags(spaces.length, startingTags, rng)
+  const dealt = ensureStarterChips(
+    balanced,
+    players.map((p) => ({ spaceId: spaces.findIndex((s) => s.id === p.position), genre: p.starterGenre })),
+    rng
+  )
   spaces = spaces.map((s, i) => ({ ...s, genreTags: dealt[i] }))
 
   // 4. Initial monsters — one per unique genre chip, matching the board
@@ -817,7 +838,67 @@ function performCombatPlay(
   }
 }
 
-/** Rewards the active bard earns from the current combat. */
+/**
+ * A featured song: one song borrowed from another bard sharing the space.
+ * It rolls plain (neither bard's styles apply), each guest is featured at
+ * most once a fight, and it costs the fighter nothing — no song is spent, and
+ * a miss simply leaves its damage on the monster. A tame is credited to the
+ * guest too, who splits that monster's Fame and EXP (computeCombatRewards).
+ * A featured play can't be rerolled.
+ */
+function playFeaturedSong(state: EngineState, feature: FeatureRequest, rng: Rng, events: EngineEvent[]): EngineState {
+  const combat = state.combat
+  const guest = state.players.find((p) => p.id === feature.guestPlayerId)!
+  const song = guest.songs.find((s) => s.id === feature.songId)!
+  const monstersBefore = combat.monsters
+  const targetBefore = monstersBefore.find((m) => m.id === feature.targetMonsterId)
+
+  const rolls = rollSong(song, rng)
+  const { damageCalculations, updatedMonsters } = calculateSingleTargetDamage(
+    song,
+    rolls,
+    monstersBefore,
+    feature.targetMonsterId
+  )
+  const targetAfter = updatedMonsters.find((m) => m.id === feature.targetMonsterId)
+  const defeatedTarget = !!targetBefore && targetBefore.currentHP > 0 && !!targetAfter && targetAfter.currentHP <= 0
+  const damage = damageCalculations.reduce((sum, calc) => sum + calc.totalDamage, 0)
+
+  events.push({ type: 'diceRolled', playerId: guest.id, songId: song.id, context: 'combat', rolls })
+  events.push({ type: 'damageDealt', calculations: damageCalculations, monstersBefore, monstersAfter: updatedMonsters })
+
+  return {
+    ...state,
+    combat: {
+      ...combat,
+      monsters: updatedMonsters,
+      killCredits: defeatedTarget
+        ? [...combat.killCredits, { monsterId: feature.targetMonsterId, featuredPlayerId: guest.id }]
+        : combat.killCredits,
+      featuredPlayerIds: [...combat.featuredPlayerIds, guest.id],
+      currentSongId: song.id,
+      lastTargetMonsterId: feature.targetMonsterId,
+      rolls,
+      totalDamage: combat.totalDamage + damage,
+      lastDamageCalculations: damageCalculations,
+      styleNotes: [],
+      undoSnapshot: null,
+      lastPlayedSongId: null,
+    },
+  }
+}
+
+/** Fame and EXP a featured bard earns from the current combat. */
+export interface GuestReward {
+  fame: number
+  exp: number
+}
+
+/**
+ * Rewards from the current combat. `fighterFame` / `totalExp` are the active
+ * bard's; a monster tamed by a featured song splits its Fame and EXP with that
+ * guest (`guestRewards`), the fighter keeping the larger half of an odd split.
+ */
 export function computeCombatRewards(combat: {
   monsters: Monster[]
   killCredits: KillCredit[]
@@ -827,6 +908,7 @@ export function computeCombatRewards(combat: {
   totalExp: number
   monstersDefeatedCount: number
   bravoFame: number
+  guestRewards: Record<string, GuestReward>
 } {
   const defeated = combat.monsters.filter((m) => m.currentHP <= 0)
   const monstersDefeatedCount = defeated.length
@@ -841,11 +923,31 @@ export function computeCombatRewards(combat: {
   })
   const creditedFame = calculateFameEarned(creditedLevels)
 
+  const guestRewards: Record<string, GuestReward> = {}
+  for (const credit of combat.killCredits) {
+    if (!credit.featuredPlayerId) continue
+    const monster = combat.monsters.find((m) => m.id === credit.monsterId)
+    if (!monster) continue
+    const share = guestRewards[credit.featuredPlayerId] ?? { fame: 0, exp: 0 }
+    share.fame += Math.floor(calculateMonsterFameValue(monster.level) / 2)
+    share.exp += Math.floor(calculateMonsterExp(monster.level) / 2)
+    guestRewards[credit.featuredPlayerId] = share
+  }
+  const guestFame = Object.values(guestRewards).reduce((sum, r) => sum + r.fame, 0)
+  const guestExp = Object.values(guestRewards).reduce((sum, r) => sum + r.exp, 0)
+
   // Bravo: the crowd cheers every monster the fighter's performance tamed
   const bravoFame = fighterStyles.includes('bravo') ? monstersDefeatedCount * getTunables().bravoFamePerTame : 0
-  const fighterFame = creditedFame + bravoFame
+  const fighterFame = creditedFame - guestFame + bravoFame
 
-  return { totalFameEarned: totalFameEarned + bravoFame, fighterFame, totalExp, monstersDefeatedCount, bravoFame }
+  return {
+    totalFameEarned: totalFameEarned + bravoFame,
+    fighterFame,
+    totalExp: totalExp - guestExp,
+    monstersDefeatedCount,
+    bravoFame,
+    guestRewards,
+  }
 }
 
 function endCombat(state: EngineState, spreadGenre: Genre | null, events: EngineEvent[]): EngineState {
@@ -858,6 +960,11 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
 
   // EXP for every wounded monster; fame per kill credit
   let players = adjustExp(state.players, fighterId, rewards.totalExp)
+  // Featured bards take their half of the monsters their songs tamed
+  players = players.map((p) => {
+    const share = rewards.guestRewards[p.id]
+    return share ? { ...p, fame: p.fame + share.fame, exp: p.exp + share.exp } : p
+  })
   // Clearing every monster on a space earns the victor 1 Inspiration.
   if (success) {
     players = players.map((p) => (p.id === fighterId ? { ...p, inspiration: p.inspiration + 1 } : p))

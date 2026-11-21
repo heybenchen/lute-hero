@@ -275,7 +275,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
           <Section title="🔄 Your Turn">
             <List items={[
-              <>Move up to <Hl>2 spaces</Hl> across the board (or spend 1 Inspiration to travel to any space).</>,
+              <>Move up to <Hl>2 spaces</Hl> across the board.</>,
               <>If monsters are on your space, <Hl>Fight</Hl> once — one combat per turn.</>,
               <>Visit the <Hl>Studio</Hl> to spend EXP on dice (unlimited buys).</>,
               <>Press <Hl>End Turn</Hl> to pass to the next bard.</>,
@@ -289,6 +289,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
               <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for bonus damage.</>,
               <>Clear <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> and radiate an element.</>,
               <>Spend <Hl>Inspiration</Hl> to reroll the song you just performed.</>,
+              <>Sharing a space with another bard? Borrow one <Hl>featured song</Hl> from each of them per fight (online, they must agree). It costs you nothing, and a monster it tames <Hl>splits</Hl> its Fame and EXP with them.</>,
             ]} />
           </Section>
 
@@ -301,7 +302,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           </Section>
 
           <Section title="🎵 Genres & Elements">
-            <p className="mb-3">You start with two d4s of your chosen element. Opposing elements are immune to each other, and every monster takes double damage from its own element:</p>
+            <p className="mb-3">You start with one d8 of your chosen element. Opposing elements are immune to each other, and every monster takes double damage from its own element:</p>
             <TypeChart className="mb-1" />
           </Section>
 
@@ -313,7 +314,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           <Section title="🛠 The Studio (Shop)">
             <List items={[
               <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d8 → d12 → d20</Hl>.</>,
-              <>Spend EXP to buy <Hl>Inspiration</Hl> — used for rerolls, travel, and refreshing offers.</>,
+              <>Spend EXP to buy <Hl>Inspiration</Hl> — used for rerolls and refreshing offers.</>,
               <>Learn up to <Hl>2 Styles</Hl> — each changes how <Hl>all</Hl> your songs play. Two are on the shelf each turn; spend Inspiration for a new pair.</>,
             ]} />
           </Section>

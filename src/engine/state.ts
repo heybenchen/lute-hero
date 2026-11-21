@@ -67,6 +67,17 @@ export interface EngineCombatState {
   lastPlayedSongId: string | null
   /** Shared victory choice so spectators see the element being considered. */
   selectedSpreadGenre: Genre | null
+  /** Bards on the space whose featured song has been played this fight (one each). */
+  featuredPlayerIds: string[]
+  /** Online: the fighter's pending ask to feature another bard's song. */
+  featureRequest: FeatureRequest | null
+}
+
+/** A fighter's ask to play one of a guest bard's songs; the guest must agree. */
+export interface FeatureRequest {
+  guestPlayerId: string
+  songId: string
+  targetMonsterId: string
 }
 
 /**
@@ -88,7 +99,8 @@ export interface EngineStudioState {
 export interface MoveStep {
   playerId: string
   fromSpaceId: number
-  inspirationSpent: number
+  /** Inspiration refunded on undo — only set by saves from before travel was removed. */
+  inspirationSpent?: number
 }
 
 /**
@@ -186,6 +198,8 @@ export function createInitialCombatState(): EngineCombatState {
     stylesUsed: [],
     styleNotes: [],
     rallyReady: false,
+    featuredPlayerIds: [],
+    featureRequest: null,
   }
 }
 

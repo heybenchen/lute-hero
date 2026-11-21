@@ -45,7 +45,7 @@ describe('engine determinism', () => {
       let state = startTwoPlayerGame(seed)
       const p1 = state.players[0]
       const target = state.spaces.find((s) => s.connections.includes(p1.position))!
-      state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: p1.position === 0 ? 1 : target.id, inspirationTravel: false }, ctx(seed + 1)).state
+      state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: p1.position === 0 ? 1 : target.id }, ctx(seed + 1)).state
       state = apply(state, { type: 'END_TURN' }, ctx(seed + 2)).state
       return state
     }
@@ -81,7 +81,7 @@ describe('START_GAME', () => {
     expect(state.elementOffers).toHaveLength(4)
   })
 
-  it('gives every bard two d4s of their element', () => {
+  it('gives every bard one d8 of their element', () => {
     const result = applyAction(
       createInitialEngineState(),
       {
@@ -101,18 +101,17 @@ describe('START_GAME', () => {
       p.songs.flatMap((s) => s.slots.map((slot) => slot.dice)).filter((d) => d !== null)
 
     for (const player of result.state.players) {
-      expect(dice(player)).toMatchObject([
-        { type: 'd4', genre: player.starterGenre },
-        { type: 'd4', genre: player.starterGenre },
-      ])
+      expect(dice(player)).toMatchObject([{ type: 'd8', genre: player.starterGenre }])
+      // ...and opens on a space with a monster of that element
+      const home = result.state.spaces.find((sp) => sp.id === player.position)!
+      expect(home.monsters.some((m) => m.vulnerability === player.starterGenre)).toBe(true)
     }
     const alba = result.state.players[0]
-    // Six single-slot songs: a d4 in each of songs 1 and 2, the rest empty.
-    expect(alba.songs[0].slots[0].dice?.type).toBe('d4')
-    expect(alba.songs[1].slots[0].dice?.type).toBe('d4')
+    // Six single-slot songs: the d8 in song 1, the rest empty.
+    expect(alba.songs[0].slots[0].dice?.type).toBe('d8')
     expect(alba.songs).toHaveLength(6)
     expect(alba.songs.every((song) => song.slots.length === 1)).toBe(true)
-    expect(alba.songs.slice(2).every((song) => song.slots[0].dice === null)).toBe(true)
+    expect(alba.songs.slice(1).every((song) => song.slots[0].dice === null)).toBe(true)
   })
 
   it('deals the opening chips evenly across elements, in a random order', () => {
@@ -182,7 +181,7 @@ describe('MOVE', () => {
   it('moves to adjacent spaces, spends a move, and spawns monsters from tags', () => {
     const state = startTwoPlayerGame()
     const p1 = state.players[0]
-    const result = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1, inspirationTravel: false })
+    const result = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1 })
     const moved = result.state.players[0]
     expect(moved.position).toBe(1)
     expect(moved.movesThisTurn).toBe(1)
@@ -193,19 +192,17 @@ describe('MOVE', () => {
   it('rejects non-adjacent moves and exhausted moves', () => {
     let state = startTwoPlayerGame()
     const p1 = state.players[0]
-    expect(applyAction(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 15, inspirationTravel: false }, ctx()).ok).toBe(false)
-    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1, inspirationTravel: false }).state
-    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 2, inspirationTravel: false }).state
-    expect(applyAction(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 3, inspirationTravel: false }, ctx()).ok).toBe(false)
+    expect(applyAction(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 15 }, ctx()).ok).toBe(false)
+    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1 }).state
+    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 2 }).state
+    expect(applyAction(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 3 }, ctx()).ok).toBe(false)
   })
 
-  it('inspiration travel reaches any space and spends a token', () => {
+  it('cannot jump to a distant space, even holding Inspiration', () => {
     let state = startTwoPlayerGame()
-    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 2 } : p)) }
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 5 } : p)) }
     const p1 = state.players[0]
-    const result = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 10, inspirationTravel: true })
-    expect(result.state.players[0].position).toBe(10)
-    expect(result.state.players[0].inspiration).toBe(1)
+    expect(applyAction(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 10 }, ctx()).ok).toBe(false)
   })
 })
 
@@ -214,8 +211,8 @@ describe('UNDO_MOVE', () => {
     let state = startTwoPlayerGame()
     const p1 = state.players[0]
     const start = p1.position
-    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1, inspirationTravel: false }).state
-    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 2, inspirationTravel: false }).state
+    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1 }).state
+    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 2 }).state
     expect(state.players[0].movesThisTurn).toBe(2)
 
     state = apply(state, { type: 'UNDO_MOVE', playerId: p1.id }).state
@@ -227,23 +224,12 @@ describe('UNDO_MOVE', () => {
     expect(applyAction(state, { type: 'UNDO_MOVE', playerId: p1.id }, ctx()).ok).toBe(false)
   })
 
-  it('refunds the Inspiration spent on travel', () => {
-    let state = startTwoPlayerGame()
-    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 2 } : p)) }
-    const p1 = state.players[0]
-    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 10, inspirationTravel: true }).state
-    expect(state.players[0].inspiration).toBe(1)
-    state = apply(state, { type: 'UNDO_MOVE', playerId: p1.id }).state
-    expect(state.players[0].inspiration).toBe(2)
-    expect(state.players[0].position).toBe(p1.position)
-  })
-
   it('cannot take back a move once combat has started, or in a later turn', () => {
     let state = startTwoPlayerGame()
     const p1 = state.players[0]
     // Guarantee a fight on the destination
     state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Folk'] } : s)) }
-    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1, inspirationTravel: false }).state
+    state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1 }).state
     const fought = apply(state, { type: 'START_COMBAT', playerId: p1.id }).state
     expect(fought.moveTrail).toEqual([])
     const ended = apply(fought, { type: 'END_COMBAT' }).state
@@ -265,7 +251,7 @@ describe('combat flow', () => {
         s.id === 1 ? { ...s, genreTags: ['Ballad', 'Ballad'] } : s
       ),
     }
-    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false }).state
+    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 }).state
     return state
   }
 
@@ -353,7 +339,7 @@ describe('combat flow', () => {
     state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Folk', 'Hymn', 'Hymn'] } : s)) }
     // Step off and back on so the space respawns from the new chips
     state = apply(state, { type: 'UNDO_MOVE', playerId: 'player-1' }).state
-    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false }).state
+    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 }).state
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
     const folk = state.combat.monsters.find((m) => m.level === 1)!
     expect(state.combat.monsters.map((m) => m.level).sort()).toEqual([1, 2])
@@ -649,7 +635,7 @@ describe('shop actions', () => {
     let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 50 } : p)) }
     const p1 = state.players[0]
-    const die = p1.songs[0].slots[0].dice! // Ballad d4
+    const die = p1.songs[0].slots[0].dice! // Ballad d8
     const matchingIdx = state.elementOffers.findIndex((g) => g === die.genre)
     const mismatchIdx = state.elementOffers.findIndex((g) => g !== die.genre)
     if (mismatchIdx !== -1) {
@@ -657,7 +643,7 @@ describe('shop actions', () => {
     }
     if (matchingIdx !== -1) {
       const result = apply(state, { type: 'UPGRADE_DIE', offerIndex: matchingIdx, diceId: die.id })
-      expect(result.state.players[0].songs[0].slots[0].dice!.type).toBe('d8')
+      expect(result.state.players[0].songs[0].slots[0].dice!.type).toBe('d12')
       expect(result.state.players[0].exp).toBe(48)
     }
   })
@@ -740,7 +726,7 @@ describe('tunables', () => {
       ...state,
       spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Ballad'] } : s)),
     }
-    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false }).state
+    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 }).state
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
     state = {
       ...state,
@@ -813,7 +799,7 @@ describe('legacy save migration', () => {
     const reward = migrated.pendingRewards['player-1'][0]
     expect(reward.kind === 'die' && reward.dice.type).toBe('d8')
     // Untouched dice keep their type
-    expect(migrated.players[1].songs[0].slots[0].dice?.type).toBe('d4')
+    expect(migrated.players[1].songs[0].slots[0].dice?.type).toBe('d8')
   })
 })
 
@@ -894,7 +880,7 @@ describe('debug actions', () => {
     // A newly added die gets its own id
     expect(edited.songs[2].slots[0].dice!.id).not.toBe(starterDieId)
     // The other player is untouched
-    expect(state.players[1].songs[0].slots[0].dice).toMatchObject({ type: 'd4', genre: 'Folk' })
+    expect(state.players[1].songs[0].slots[0].dice).toMatchObject({ type: 'd8', genre: 'Folk' })
 
     // Clearing a slot empties it
     state = apply(state, {
@@ -972,7 +958,7 @@ describe('seat validation (online)', () => {
     const state = startTwoPlayerGame()
     const result = applyAction(
       state,
-      { type: 'MOVE', playerId: 'player-2', toSpaceId: 2, inspirationTravel: false },
+      { type: 'MOVE', playerId: 'player-2', toSpaceId: 2 },
       seatCtx('player-2')
     )
     expect(result.ok).toBe(false)
@@ -983,7 +969,7 @@ describe('seat validation (online)', () => {
     const state = startTwoPlayerGame()
     const result = applyAction(
       state,
-      { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false },
+      { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 },
       seatCtx('player-1')
     )
     expect(result.ok).toBe(true)
@@ -1015,7 +1001,7 @@ describe('seat validation (online)', () => {
       ...state,
       spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Ballad', 'Ballad'] } : s)),
     }
-    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false }).state
+    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 }).state
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
     const result = apply(state, { type: 'HOST_SKIP_TURN', targetPlayerId: 'player-1' }, seatCtx('host', true))
     expect(result.state.combat.isActive).toBe(false)
@@ -1064,12 +1050,10 @@ describe('player colors follow the starter element', () => {
       ['Ballad', GENRE_THEME.Ballad.color],
       ['Folk', GENRE_THEME.Folk.color],
     ])
-    // The opening d4s are the same element as the bard's color
+    // The opening d8 is the same element as the bard's color
     for (const player of state.players) {
-      for (const song of player.songs.slice(0, 2)) {
-        const die = song.slots[0].dice!
-        expect([die.type, die.genre]).toEqual(['d4', player.starterGenre])
-      }
+      const die = player.songs[0].slots[0].dice!
+      expect([die.type, die.genre]).toEqual(['d8', player.starterGenre])
     }
   })
 

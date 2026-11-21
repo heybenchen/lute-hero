@@ -128,7 +128,7 @@ export interface Player {
   movesThisTurn: number; // Track moves for 2-move limit
   fightsThisTurn: number; // Track fights for 1-fight limit
   hasShoppedThisTurn: boolean; // Track if player has shopped this turn
-  inspiration: number; // Inspiration tokens held (spend to reroll, travel, or refresh shop)
+  inspiration: number; // Inspiration tokens held (spend to reroll or refresh the shop)
   inspirationBoughtThisTurn: number; // Escalates the buy cost; resets each turn
   styles: StyleId[]; // Owned play styles (capped by tunables.maxStyles)
 }
@@ -150,6 +150,8 @@ export interface SongUsage {
 
 export interface KillCredit {
   monsterId: string;
+  /** Tamed by a featured song: this bard splits the monster's Fame and EXP. */
+  featuredPlayerId?: string;
 }
 
 // ============================================

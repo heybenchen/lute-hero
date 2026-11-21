@@ -184,6 +184,63 @@ export function dealBalancedGenreTags(
 }
 
 /**
+ * Make sure each listed space (a bard's starting space) holds at least one
+ * chip of that bard's element, so every bard opens next to a monster they
+ * can hunt. Works on the dealt chip lists (indexed by space id) by SWAPPING:
+ * a chip of the needed element moves in from another space and one of the
+ * start space's chips moves out to take its place, so each element's total
+ * on the board stays exactly balanced. Only if no chip of that element can
+ * move (e.g. an empty opening board) is a chip added instead.
+ */
+export function ensureStarterChips(
+  dealt: Genre[][],
+  needs: { spaceId: number; genre: Genre }[],
+  rng: Rng = Math.random
+): Genre[][] {
+  const tags = dealt.map((t) => [...t])
+  const required = new Map(needs.map((n) => [n.spaceId, n.genre]))
+  // A space may give up a chip of `genre` unless that chip is its own requirement
+  const canDonate = (id: number, genre: Genre) => {
+    const count = genreTagCount(tags[id], genre)
+    if (count === 0) return false
+    return required.get(id) !== genre || count > 1
+  }
+
+  for (const { spaceId, genre } of needs) {
+    const home = tags[spaceId]
+    if (!home || home.includes(genre)) continue
+    // Prefer donors that aren't anyone's starting space
+    const candidates = shuffle(
+      tags.map((_, id) => id).filter((id) => id !== spaceId && canDonate(id, genre)),
+      rng
+    ).sort((a, b) => Number(required.has(a)) - Number(required.has(b)))
+
+    let swapped = false
+    for (const donor of candidates) {
+      // The chip sent back must not break the donor's own requirement or cap
+      const outgoing = shuffle([...home], rng).find(
+        (g) => g !== genre && canAddGenreTag(tags[donor].filter((_, i) => i !== tags[donor].indexOf(genre)), g)
+      )
+      if (home.length > 0 && outgoing === undefined) continue
+      const donorTags = [...tags[donor]]
+      donorTags.splice(donorTags.indexOf(genre), 1)
+      const homeTags = [...home]
+      if (outgoing !== undefined) {
+        homeTags.splice(homeTags.indexOf(outgoing), 1)
+        donorTags.push(outgoing)
+      }
+      homeTags.push(genre)
+      tags[donor] = donorTags
+      tags[spaceId] = homeTags
+      swapped = true
+      break
+    }
+    if (!swapped) tags[spaceId] = addGenreTag(home, genre)
+  }
+  return tags
+}
+
+/**
  * Add a random genre tag to all neighboring spaces of a given space.
  * Called after each player's turn ends.
  */

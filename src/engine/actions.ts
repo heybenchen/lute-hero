@@ -63,7 +63,8 @@ export interface PlayerConfig {
  */
 export type GameAction =
   | { type: 'START_GAME'; playerConfigs: PlayerConfig[] }
-  | { type: 'MOVE'; playerId: string; toSpaceId: number; inspirationTravel: boolean }
+  /** Step to a connected space (Inspiration travel was removed). */
+  | { type: 'MOVE'; playerId: string; toSpaceId: number }
   /** Take back the last move this turn (only before any combat since). */
   | { type: 'UNDO_MOVE'; playerId: string }
   | { type: 'START_COMBAT'; playerId: string }
@@ -72,6 +73,15 @@ export type GameAction =
   | { type: 'REROLL_SONG'; rubato?: boolean }
   /** Rallying Cry: after a tame this turn, refresh one of your spent songs. */
   | { type: 'RALLY_SONG'; songId: string }
+  /**
+   * Play a featured song: one song from another bard sharing the space, once
+   * per bard per fight. Hotseat only — online the fighter asks first
+   * (REQUEST_FEATURE) and the guest's agreement plays it (ANSWER_FEATURE).
+   */
+  | { type: 'PLAY_FEATURED_SONG'; guestPlayerId: string; songId: string; targetMonsterId: string }
+  | { type: 'REQUEST_FEATURE'; guestPlayerId: string; songId: string; targetMonsterId: string }
+  /** The guest agrees (the song plays) or declines; the fighter may withdraw with `accept: false`. */
+  | { type: 'ANSWER_FEATURE'; accept: boolean }
   | { type: 'SELECT_COMBAT_SPREAD'; genre: Genre | null }
   | { type: 'END_COMBAT'; spreadGenre?: Genre }
   | { type: 'END_TURN' }

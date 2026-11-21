@@ -88,17 +88,6 @@
     border: 1px solid rgba(176, 124, 255, 0.4);
   }
 
-  .travel-token strong {
-    @apply flex items-center justify-center rounded-full text-[9px];
-    width: 16px; height: 16px; background: rgba(176, 124, 255, 0.25);
-  }
-
-  .travel-token-active {
-    background: rgba(132, 86, 191, 0.3);
-    border-color: rgba(199, 164, 255, 0.85);
-    box-shadow: 0 0 18px rgba(176, 124, 255, 0.24);
-  }
-
   .tile-tray {
     padding: clamp(8px, 1.5vw, 15px);
     border-radius: 18px;

@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { useGameStore, selectCanAct } from '@/store'
+import { useGameStore, selectCanAct, selectMyPlayerId } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
+import { FeaturedSongs } from './FeaturedSongs'
 import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateMonsterFameValue } from '@/game-logic/fame/calculator'
@@ -24,6 +25,10 @@ export function CombatModal() {
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
+  const online = useGameStore((state) => state.mode === 'online')
+  const myPlayerId = useGameStore(selectMyPlayerId)
+  const spaceId = useGameStore((state) => state.spaceId)
+  const featureRequest = useGameStore((state) => state.featureRequest)
   // Everything a roll changes, held at its pre-roll value while the 3D dice
   // are in the air: HP, spent songs, rewards and roll results only appear
   // once the throw lands.
@@ -41,6 +46,7 @@ export function CombatModal() {
       stylesUsed: state.stylesUsed,
       styleNotes: state.styleNotes,
       rallyReady: state.rallyReady,
+      featuredPlayerIds: state.featuredPlayerIds,
     }))
   )
   const {
@@ -56,6 +62,7 @@ export function CombatModal() {
     stylesUsed,
     styleNotes,
     rallyReady,
+    featuredPlayerIds,
   } = useHeldWhileRolling(liveView)
   const diceBusy = useDiceTrayBusy()
 
@@ -129,9 +136,16 @@ export function CombatModal() {
   const playableSongs = player.songs.filter((s) => s.slots.some((slot) => slot.dice))
   const ownSongsRemaining = playableSongs.filter((s) => !isSongSpent(s.id)).length
 
+  // Bards sharing the space can each lend one featured song this fight
+  const guests = players.filter((p) => p.id !== player.id && p.position === spaceId)
+  const featurableSongs = guests
+    .filter((g) => !featuredPlayerIds.includes(g.id))
+    .flatMap((g) => g.songs.filter((s) => s.slots.some((slot) => slot.dice)))
+
   // No fixed song cap now: fight on while you have unspent songs (defeating a
-  // monster returns that song's dice; a song that only wounds is spent).
-  const canContinue = ownSongsRemaining > 0
+  // monster returns that song's dice; a song that only wounds is spent) or a
+  // featured song still to borrow.
+  const canContinue = ownSongsRemaining > 0 || featurableSongs.length > 0
 
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
   const totalExp = rewards.totalExp
@@ -145,8 +159,9 @@ export function CombatModal() {
   const canRerollSong = (songId: string) =>
     currentSongId === songId && isSongSpent(songId) && !allMonstersDefeated
 
-  // No new roll while the last one is still on the table
-  const canRoll = canAct && !diceBusy
+  // No new roll while the last one is still on the table, or while a guest
+  // is deciding whether to feature their song
+  const canRoll = canAct && !diceBusy && !featureRequest
   const canPaidReroll = !!lastPlayedSong && canRerollSong(lastPlayedSong.id)
 
   const handlePlaySong = async (songId: string) => {
@@ -181,15 +196,31 @@ export function CombatModal() {
     if (result.ok) void showDamageEvents(result.events)
   }
 
+  // Hotseat: the guest always agrees, so the song just plays. Online: ask.
+  const handleFeature = async (guestPlayerId: string, songId: string) => {
+    if (!canRoll || !selectedTargetId || !hasLiveTarget) return
+    if (online) {
+      void dispatch({ type: 'REQUEST_FEATURE', guestPlayerId, songId, targetMonsterId: selectedTargetId })
+      return
+    }
+    const result = await dispatch({ type: 'PLAY_FEATURED_SONG', guestPlayerId, songId, targetMonsterId: selectedTargetId })
+    if (result.ok) void showDamageEvents(result.events)
+  }
+  const handleFeatureAnswer = async (accept: boolean) => {
+    const result = await dispatch({ type: 'ANSWER_FEATURE', accept })
+    if (result.ok) void showDamageEvents(result.events)
+  }
+
   // Songs that could still hurt something: if every remaining die is immune
   // against every living monster, retreating gives nothing up — no confirm.
+  // (Featured songs roll without styles, so Dissonance doesn't soften theirs.)
   const remainingSongs = playableSongs.filter((s) => !isSongSpent(s.id))
   const retreatForfeitsDamage =
     canContinue &&
     !allMonstersDefeated &&
-    songsCanStillDamage(remainingSongs, monsters, {
+    (songsCanStillDamage(remainingSongs, monsters, {
       immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false }),
-    })
+    }) || songsCanStillDamage(featurableSongs, monsters))
 
   const handleRetreatClick = () => {
     if (retreatForfeitsDamage && !confirmingRetreat) {
@@ -240,6 +271,11 @@ export function CombatModal() {
                   </span>
                 )}
               </div>
+              {Object.entries(rewards.guestRewards).map(([guestId, share]) => (
+                <div key={guestId} className="mt-1 text-sm text-parchment-300">
+                  Featured: {players.find((p) => p.id === guestId)?.name ?? 'Guest'} +{share.fame} Fame, +{share.exp} EXP
+                </div>
+              ))}
             </div>
           ) : (
             <div className="mb-4 flex flex-col gap-2 animate-fade-in sm:flex-row sm:items-end sm:justify-between">
@@ -387,6 +423,23 @@ export function CombatModal() {
             </div>
             <CombatStyles player={player} usedStyleIds={stylesUsed} />
           </section>
+
+          {!allMonstersDefeated && (
+            <FeaturedSongs
+              fighter={player}
+              guests={guests}
+              featuredPlayerIds={featuredPlayerIds}
+              featureRequest={featureRequest}
+              monsters={monsters}
+              currentSongId={currentSongId}
+              rolls={rolls}
+              canFeature={canRoll && hasLiveTarget}
+              online={online}
+              myPlayerId={myPlayerId}
+              onFeature={handleFeature}
+              onAnswer={handleFeatureAnswer}
+            />
+          )}
 
           {/* Actions */}
           {!allMonstersDefeated && (

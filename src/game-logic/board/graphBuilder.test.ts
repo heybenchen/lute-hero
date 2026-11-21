@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dealBalancedGenreTags, createBoardGraph, scatterChipsRandomly, capGenreTags } from './graphBuilder'
+import { dealBalancedGenreTags, createBoardGraph, scatterChipsRandomly, capGenreTags, ensureStarterChips } from './graphBuilder'
 import { mulberry32 } from '../../engine/rng'
 import { ALL_GENRES } from '../../data/genreTheme'
 import { Genre } from '../../types'
@@ -109,5 +109,35 @@ describe('capGenreTags', () => {
   it('does not cap a space total, only per element', () => {
     const tags: Genre[] = [...ALL_GENRES, ...ALL_GENRES, ...ALL_GENRES]
     expect(capGenreTags(tags)).toHaveLength(12)
+  })
+})
+
+describe('ensureStarterChips', () => {
+  const needs = [
+    { spaceId: 0, genre: 'Ballad' as const },
+    { spaceId: 3, genre: 'Folk' as const },
+    { spaceId: 12, genre: 'Hymn' as const },
+    { spaceId: 15, genre: 'Shanty' as const },
+  ]
+  const totals = (tags: string[][]) =>
+    tags.flat().reduce<Record<string, number>>((acc, g) => ({ ...acc, [g]: (acc[g] ?? 0) + 1 }), {})
+
+  it('puts each bard\'s element on their start space without changing element totals', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      for (const perSpace of [1, 2, 3]) {
+        const dealt = dealBalancedGenreTags(16, perSpace, mulberry32(seed))
+        const fixed = ensureStarterChips(dealt, needs, mulberry32(seed + 1000))
+        for (const { spaceId, genre } of needs) expect(fixed[spaceId]).toContain(genre)
+        expect(totals(fixed)).toEqual(totals(dealt))
+        expect(fixed.map((t) => t.length)).toEqual(dealt.map((t) => t.length))
+      }
+    }
+  })
+
+  it('adds a chip when the opening board is empty', () => {
+    const empty = Array.from({ length: 16 }, () => [])
+    const fixed = ensureStarterChips(empty, needs, mulberry32(1))
+    expect(fixed[0]).toEqual(['Ballad'])
+    expect(fixed[15]).toEqual(['Shanty'])
   })
 })
