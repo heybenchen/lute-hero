@@ -225,7 +225,7 @@ export function PlayerPanel() {
       </section>
 
       {/* Current player */}
-      <section className="turn-module">
+      <section className="turn-module -order-1 lg:order-none">
         <div className="module-label">Active bard</div>
         <div className="flex items-center gap-3">
           <BardToken name={currentPlayer.name} color={currentPlayer.color} className="w-11 h-11 text-base" />

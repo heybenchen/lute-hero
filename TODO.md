@@ -13,7 +13,7 @@
 (none)
 
 ## Completed
-- The mobile setlist sits immediately below the map, above the score track.
+- The mobile map is followed by the setlist, active bard, and score track, in that order.
 
 - Studio styles are placed by selecting an offer and a repertoire slot. Full setlists can replace a die with a purchased d4. Combat flags immune songs against the current target and scopes damage popups to each fight. Ending a turn with unspent EXP prompts if the Studio was never opened.
 
