@@ -94,7 +94,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     }
   }
 
-  const handleRefreshElements = () => {
+  const handleRefreshOffers = () => {
     if (!canInteract || player.inspiration < inspirationSpend()) return
     dispatch({ type: 'REFRESH_ELEMENT_OFFERS' })
   }
@@ -142,15 +142,25 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 <span title="Inspiration">&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
               </div>
             </div>
-            {canInteract && (
+            <div className="flex flex-col items-end justify-between self-stretch gap-3">
+              {canInteract && (
+                <button
+                  onClick={onClose}
+                  className="text-parchment-400 hover:text-parchment-200 transition-colors text-xl leading-none p-1"
+                  title="Close Studio"
+                >
+                  &#x2715;
+                </button>
+              )}
               <button
-                onClick={onClose}
-                className="text-parchment-400 hover:text-parchment-200 transition-colors text-xl leading-none p-1"
-                title="Close Studio"
+                onClick={handleRefreshOffers}
+                disabled={!canInteract || player.inspiration < inspirationSpend()}
+                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                title={player.inspiration >= inspirationSpend() ? 'Draw new element chips and new style offers' : 'Requires Inspiration'}
               >
-                &#x2715;
+                Refresh Elements &amp; Styles (&#x2728; {inspirationSpend()})
               </button>
-            )}
+            </div>
           </div>
 
           {/* Styles: change how every song plays */}
@@ -167,14 +177,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   {elementBag.length} left in bag
                 </div>
               </div>
-              <button
-                onClick={handleRefreshElements}
-                disabled={!canInteract || player.inspiration < inspirationSpend()}
-                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                title={player.inspiration >= inspirationSpend() ? 'Discard these chips and draw 4 new ones from the bag' : 'Requires Inspiration'}
-              >
-                Draw New (&#x2728; {inspirationSpend()})
-              </button>
             </div>
 
             {elementOffers.length === 0 ? (
@@ -192,7 +194,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     <button
                       key={`${genre}-${offerIdx}`}
                       disabled={!canInteract}
-                      className={`group relative w-full rounded-lg p-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer hover:-translate-y-1' : 'cursor-default'}`}
+                      className={`group relative w-full rounded-lg p-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer' : 'cursor-default'}`}
                       style={{
                         background: isSelected
                           ? `linear-gradient(160deg, rgba(${rgb}, 0.22) 0%, rgba(${rgb}, 0.06) 100%)`
@@ -211,12 +213,12 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     >
                       <div className="flex flex-col items-center gap-2">
                         <div
-                          className="text-4xl transition-transform duration-200 ease-out group-hover:scale-110"
+                          className="text-4xl transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:scale-110"
                           style={{ filter: `drop-shadow(0 0 8px rgba(${rgb}, ${isSelected ? 0.6 : 0.3}))` }}
                         >
                           {emoji}
                         </div>
-                        <GenreBadge genre={genre} className="text-xs" />
+                        <GenreBadge genre={genre} className="text-xs transition-transform duration-200 ease-out group-hover:-translate-y-0.5 group-hover:scale-105" />
                       </div>
                       {isSelected && (
                         <div
@@ -317,11 +319,11 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3">
               {player.songs.map((song, songIndex) => (
                 <div
                   key={song.id}
-                  className="card w-full max-w-[280px] mx-auto transition-all duration-150"
+                  className="card w-full min-w-0 mx-auto transition-all duration-150"
                 >
                   <div className="font-medieval text-base font-bold text-gold-400 mb-2 pb-2 text-center"
                     style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.2)' }}
