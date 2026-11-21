@@ -104,13 +104,24 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     dispatch({ type: 'SLOT_DIE_REWARD', rewardId: activeReward.id, songId, slotIndex })
   }
 
+  const refreshButton = (
+    <button
+      onClick={handleRefreshOffers}
+      disabled={!canInteract || player.inspiration < inspirationSpend()}
+      className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed sm:whitespace-nowrap"
+      title={player.inspiration >= inspirationSpend() ? 'Draw new element chips and new style offers' : 'Requires Inspiration'}
+    >
+      Refresh Elements &amp; Styles (&#x2728; {inspirationSpend()})
+    </button>
+  )
+
   return (
     <div className="modal-overlay">
       <div className="modal-content max-w-6xl">
         <div className="p-4 sm:p-6">
           {/* Header */}
           <div className="flex justify-between items-start gap-3 mb-5 sm:mb-6">
-            <div>
+            <div className="min-w-0">
               <div className="font-display text-2xl text-gold-400">
                 Studio
               </div>
@@ -141,6 +152,8 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 </button>
                 <span title="Inspiration">&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
               </div>
+              {/* On phones the refresh stacks under Buy Inspiration so the header never overflows */}
+              <div className="mt-2 sm:hidden">{refreshButton}</div>
             </div>
             <div className="flex flex-col items-end justify-between self-stretch gap-3">
               {canInteract && (
@@ -152,14 +165,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   &#x2715;
                 </button>
               )}
-              <button
-                onClick={handleRefreshOffers}
-                disabled={!canInteract || player.inspiration < inspirationSpend()}
-                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-                title={player.inspiration >= inspirationSpend() ? 'Draw new element chips and new style offers' : 'Requires Inspiration'}
-              >
-                Refresh Elements &amp; Styles (&#x2728; {inspirationSpend()})
-              </button>
+              <div className="hidden sm:block">{refreshButton}</div>
             </div>
           </div>
 

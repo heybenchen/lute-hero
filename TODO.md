@@ -14,6 +14,7 @@
 
 ## Completed
 
+- Mobile + retreat polish: the Studio's Refresh Elements & Styles button stacks under Buy Inspiration on phones (no horizontal scroll; board, Studio and fight verified at 390px). Retreating from a fight now asks for confirmation while an unspent song could still damage a living monster (`songsCanStillDamage`, counting an unused Dissonance); if every remaining die is immune, it retreats immediately.
 - Extracted Studio style offers into a shared `StyleOfferCard` component and made each card a full-height flex column so its Learn or replacement controls stay bottom-aligned across unequal content lengths.
 
 - Flattened the fight screen's secondary UI: monster rewards, HP, elemental matchups, active style rules, damage details, and the Rallying Cry notice now use natural spacing and divider lines instead of nested bordered containers.

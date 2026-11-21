@@ -162,3 +162,27 @@ export function calculateSingleTargetDamage(
     updatedMonsters,
   };
 }
+
+/**
+ * Could any of these songs still hurt a living monster? A die counts when its
+ * element isn't immune for at least one living monster — or, with an immune
+ * hit softened (Dissonance's `immuneMultiplier`), whenever it holds a die.
+ * Used to decide whether retreating gives up real damage.
+ */
+export function songsCanStillDamage(
+  songs: Song[],
+  monsters: Monster[],
+  opts: DamageOptions = {},
+): boolean {
+  const alive = monsters.filter((m) => m.currentHP > 0);
+  if (alive.length === 0) return false;
+  const softened = (opts.immuneMultiplier ?? 0) > 0;
+  return songs.some((song) =>
+    song.slots.some((slot) => {
+      if (!slot.dice) return false;
+      if (softened) return true;
+      const genre = slot.dice.genre;
+      return alive.some((m) => getGenreMultiplier(genre, m) > 0);
+    }),
+  );
+}

@@ -3,8 +3,9 @@ import {
   getGenreMultiplier,
   applyDamageToMonster,
   isMonsterDefeated,
+  songsCanStillDamage,
 } from './damageCalculator'
-import { Monster } from '@/types'
+import { Genre, Monster, Song } from '@/types'
 
 describe('Damage Calculator', () => {
   const createTestMonster = (): Monster => ({
@@ -89,6 +90,31 @@ describe('Damage Calculator', () => {
       }
 
       expect(isMonsterDefeated(monster)).toBe(true)
+    })
+  })
+
+  describe('songsCanStillDamage', () => {
+    const song = (genre: Genre | null): Song => ({
+      id: `s-${genre}`,
+      slots: [{ dice: genre ? { id: `d-${genre}`, type: 'd4', genre } : null }],
+      used: false,
+    })
+
+    it('is true when some die is not immune for a living monster', () => {
+      expect(songsCanStillDamage([song('Shanty'), song('Folk')], [createTestMonster()])).toBe(true)
+    })
+
+    it('is false when every die is immune for every living monster', () => {
+      expect(songsCanStillDamage([song('Shanty'), song(null)], [createTestMonster()])).toBe(false)
+    })
+
+    it('ignores defeated monsters', () => {
+      const dead = { ...createTestMonster(), id: 'dead', resistance: 'Folk' as Genre, currentHP: 0 }
+      expect(songsCanStillDamage([song('Shanty')], [createTestMonster(), { ...dead, resistance: 'Ballad' }])).toBe(false)
+    })
+
+    it('counts immune dice when Dissonance softens the hit', () => {
+      expect(songsCanStillDamage([song('Shanty')], [createTestMonster()], { immuneMultiplier: 0.5 })).toBe(true)
     })
   })
 })
