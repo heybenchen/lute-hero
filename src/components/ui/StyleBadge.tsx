@@ -11,7 +11,7 @@ export function StyleChip({ id, spent = false, className = '' }: { id: StyleId; 
   return (
     <span
       className={`style-chip ${spent ? 'style-chip-spent' : ''} ${className}`}
-      title={`${style.name} (${style.meaning}): ${styleRule(id)}${spent ? ' — used this turn' : ''}`}
+      title={`${style.name}: ${styleRule(id)}${spent ? ' — used this turn' : ''}`}
     >
       <Music size={11} aria-hidden="true" />
       {style.name}

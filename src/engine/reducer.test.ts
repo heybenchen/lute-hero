@@ -81,7 +81,7 @@ describe('START_GAME', () => {
     expect(state.elementOffers).toHaveLength(4)
   })
 
-  it('gives every bard a single d8 of their element', () => {
+  it('gives every bard two d4s of their element', () => {
     const result = applyAction(
       createInitialEngineState(),
       {
@@ -101,14 +101,18 @@ describe('START_GAME', () => {
       p.songs.flatMap((s) => s.slots.map((slot) => slot.dice)).filter((d) => d !== null)
 
     for (const player of result.state.players) {
-      expect(dice(player)).toMatchObject([{ type: 'd8', genre: player.starterGenre }])
+      expect(dice(player)).toMatchObject([
+        { type: 'd4', genre: player.starterGenre },
+        { type: 'd4', genre: player.starterGenre },
+      ])
     }
     const alba = result.state.players[0]
-    // Six single-slot songs: the d8 in song 1, the rest empty.
-    expect(alba.songs[0].slots[0].dice?.type).toBe('d8')
+    // Six single-slot songs: a d4 in each of songs 1 and 2, the rest empty.
+    expect(alba.songs[0].slots[0].dice?.type).toBe('d4')
+    expect(alba.songs[1].slots[0].dice?.type).toBe('d4')
     expect(alba.songs).toHaveLength(6)
     expect(alba.songs.every((song) => song.slots.length === 1)).toBe(true)
-    expect(alba.songs.slice(1).every((song) => song.slots[0].dice === null)).toBe(true)
+    expect(alba.songs.slice(2).every((song) => song.slots[0].dice === null)).toBe(true)
   })
 
   it('deals the opening chips evenly across elements, in a random order', () => {
@@ -798,7 +802,7 @@ describe('legacy save migration', () => {
     const reward = migrated.pendingRewards['player-1'][0]
     expect(reward.kind === 'die' && reward.dice.type).toBe('d8')
     // Untouched dice keep their type
-    expect(migrated.players[1].songs[0].slots[0].dice?.type).toBe('d8')
+    expect(migrated.players[1].songs[0].slots[0].dice?.type).toBe('d4')
   })
 })
 
@@ -879,7 +883,7 @@ describe('debug actions', () => {
     // A newly added die gets its own id
     expect(edited.songs[2].slots[0].dice!.id).not.toBe(starterDieId)
     // The other player is untouched
-    expect(state.players[1].songs[0].slots[0].dice).toMatchObject({ type: 'd8', genre: 'Folk' })
+    expect(state.players[1].songs[0].slots[0].dice).toMatchObject({ type: 'd4', genre: 'Folk' })
 
     // Clearing a slot empties it
     state = apply(state, {
@@ -1049,10 +1053,12 @@ describe('player colors follow the starter element', () => {
       ['Ballad', GENRE_THEME.Ballad.color],
       ['Folk', GENRE_THEME.Folk.color],
     ])
-    // The opening d8 is the same element as the bard's color
+    // The opening d4s are the same element as the bard's color
     for (const player of state.players) {
-      const die = player.songs[0].slots[0].dice!
-      expect([die.type, die.genre]).toEqual(['d8', player.starterGenre])
+      for (const song of player.songs.slice(0, 2)) {
+        const die = song.slots[0].dice!
+        expect([die.type, die.genre]).toEqual(['d4', player.starterGenre])
+      }
     }
   })
 

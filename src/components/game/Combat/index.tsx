@@ -12,6 +12,7 @@ import type { EngineEvent } from '@/engine/events'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
 import { StyleChip } from '@/components/ui/StyleBadge'
+import { STYLES } from '@/data/styles'
 import { rubatoCanReroll } from '@/game-logic/styles/styleEffects'
 
 export function CombatModal() {
@@ -38,6 +39,7 @@ export function CombatModal() {
       players: state.players,
       stylesUsed: state.stylesUsed,
       styleNotes: state.styleNotes,
+      rallyReady: state.rallyReady,
     }))
   )
   const {
@@ -52,6 +54,7 @@ export function CombatModal() {
     players,
     stylesUsed,
     styleNotes,
+    rallyReady,
   } = useHeldWhileRolling(liveView)
   const diceBusy = useDiceTrayBusy()
 
@@ -185,6 +188,15 @@ export function CombatModal() {
   }
 
   // Rubato: a free reroll of a d4/d8 song, once per turn
+  // Rallying Cry: armed by a tame this turn; the bard picks a spent song to refresh
+  const canRally =
+    canRoll && rallyReady && player.styles.includes('staccato') && !stylesUsed.includes('staccato')
+  const handleRally = (songId: string) => {
+    if (!canRally) return
+    void dispatch({ type: 'RALLY_SONG', songId })
+  }
+  const hasSpentOwnSong = player.songs.some((sg) => isSongSpent(sg.id))
+
   const canRubato = (song: Song) =>
     player.styles.includes('rubato') && !stylesUsed.includes('rubato') && rubatoCanReroll(song)
 
@@ -304,6 +316,13 @@ export function CombatModal() {
               detail={`${ownSongsRemaining} unspent`}
               detailColor="text-gold-400"
             />
+            {canRally && hasSpentOwnSong && (
+              <div className="mb-3 rounded-lg px-3 py-2 text-sm text-center animate-fade-in"
+                style={{ background: 'rgba(232, 120, 60, 0.1)', border: '1px solid rgba(255, 180, 120, 0.4)', color: '#ffd9bd' }}
+              >
+                &#x21BB; <span className="font-bold">{STYLES.staccato.name}</span> is ready: refresh any spent song below.
+              </div>
+            )}
             <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
               {player.songs.map((song, idx) => (
                 <SongCard
@@ -315,6 +334,7 @@ export function CombatModal() {
                   rolls={currentSongId === song.id ? rolls : undefined}
                   onReroll={canRoll && canRerollSong(song.id) ? handleReroll : undefined}
                   onRubato={canRoll && canRerollSong(song.id) && canRubato(song) ? handleRubato : undefined}
+                  onRally={canRally && isSongSpent(song.id) ? () => handleRally(song.id) : undefined}
                   inspiration={player.inspiration}
                 />
               ))}
@@ -435,7 +455,7 @@ export function CombatModal() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 pt-1 animate-fade-in">
               {canContinue && (
                 <p className="text-base text-parchment-500 italic font-game animate-pulse-slow text-center">
-                  Pick a target monster, then a song to perform...
+                  Pick a target monster, then tap a song's die to play it...
                 </p>
               )}
               {/* Retreat is always on offer, even before a song is played */}

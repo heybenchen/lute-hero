@@ -3,7 +3,6 @@ import { useGameStore } from '@/store'
 import { Player, StyleId } from '@/types'
 import { STYLES, styleCost, styleRule, maxStyles } from '@/data/styles'
 import { inspirationSpend } from '@/data/draftCards'
-import { StyleChip } from '@/components/ui/StyleBadge'
 import { Music, RefreshCw } from 'lucide-react'
 
 /**
@@ -30,9 +29,8 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
       <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">Styles</div>
-          <div className="flex flex-wrap items-center gap-1.5 text-sm text-parchment-500">
-            <span>Yours ({player.styles.length}/{cap}):</span>
-            {player.styles.length === 0 ? <span className="italic">none yet</span> : player.styles.map((id) => <StyleChip key={id} id={id} />)}
+          <div className="text-sm text-parchment-500">
+            {player.styles.length}/{cap} learned &middot; yours are listed under Your Songs
           </div>
         </div>
         <button
@@ -66,7 +64,7 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
                       <Music size={15} className="text-gold-400 flex-shrink-0" aria-hidden="true" />
                       <span className="font-display text-xl text-gold-300 leading-none">{style.name}</span>
                     </div>
-                    <div className="text-[11px] italic text-parchment-500 mt-1">{style.meaning}</div>
+                    <div className="text-[11px] italic text-parchment-500 mt-1">{style.flavor}</div>
                   </div>
                   <span className="text-sm font-bold text-gold-300 whitespace-nowrap">{cost} EXP</span>
                 </div>
@@ -106,6 +104,43 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * The bard's own styles with their full effects, shown under Your Songs so
+ * it's clear what every song is already getting. Empty slots show how many
+ * more can be learned.
+ */
+export function OwnedStyles({ player }: { player: Player }) {
+  const cap = maxStyles()
+  const empty = Math.max(0, cap - player.styles.length)
+  return (
+    <div className="mt-6">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">Your Styles</div>
+        <div className="text-xs text-parchment-500">({player.styles.length}/{cap}) — these apply to every song</div>
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {player.styles.map((id) => (
+          <div key={id} className="style-offer">
+            <div className="flex items-center gap-2">
+              <Music size={15} className="text-gold-400 flex-shrink-0" aria-hidden="true" />
+              <span className="font-display text-lg text-gold-300 leading-none">{STYLES[id].name}</span>
+            </div>
+            <p className="text-sm text-parchment-200 mt-2 leading-snug">{styleRule(id)}</p>
+          </div>
+        ))}
+        {Array.from({ length: empty }, (_, i) => (
+          <div key={`empty-${i}`} className="rounded-lg p-3 sm:p-4 flex items-center justify-center text-sm italic text-parchment-500"
+            style={{ border: '1px dashed rgba(212, 168, 83, 0.2)', background: 'rgba(255, 255, 255, 0.02)' }}
+          >
+            Empty style slot — learn one from the shelf above
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

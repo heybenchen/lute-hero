@@ -4,7 +4,7 @@ import { createInitialEngineState, EngineState } from './state'
 import { GameAction } from './actions'
 import { mulberry32 } from './rng'
 import { DiceType, Genre, Monster, Song, StyleId } from '../types'
-import { ALL_STYLE_IDS, styleCost } from '../data/styles'
+import { ALL_STYLE_IDS, STYLES, styleCost } from '../data/styles'
 
 // ------------------------------------------------------------------
 // Helpers
@@ -95,7 +95,7 @@ describe('Ostinato', () => {
     const { state: after } = play(state, 1, faces([3, 4], [3, 4]))
     expect(after.combat.rolls[0]).toMatchObject({ value: 3, isCrit: true, cascadeRolls: [3] })
     expect(hp(after)).toBe(50 - 6)
-    expect(after.combat.styleNotes).toContain('Ostinato')
+    expect(after.combat.styleNotes).toContain(STYLES.ostinato.name)
   })
 
   it('leaves a 3 as a plain roll without the style', () => {
@@ -161,7 +161,7 @@ describe('Fermata', () => {
     const state = fight(['fermata'], [['d20', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
     const first = play(state, 1, faces([5, 20])).state
     expect(spent(first, 1)).toBe(false)
-    expect(first.combat.styleNotes).toContain('Fermata')
+    expect(first.combat.styleNotes).toContain(STYLES.fermata.name)
     const second = play(first, 1, faces([5, 20])).state
     expect(spent(second, 1)).toBe(true)
   })
@@ -172,18 +172,50 @@ describe('Fermata', () => {
   })
 })
 
-describe('Staccato', () => {
-  it('refreshes your other d4 songs when a d4 tames, once per turn', () => {
-    const dice: DieSpec[] = [['d4', 'Hymn'], ['d4', 'Hymn'], ['d4', 'Hymn']]
-    let state = fight(['staccato'], dice, [{ currentHP: 50, maxHP: 50 }, { currentHP: 1, maxHP: 1 }])
-    state = play(state, 1, faces([1, 4]), 'm1').state
+describe('Staccato (Rallying Cry)', () => {
+  const rally = (state: EngineState, song: number) =>
+    applyAction(state, { type: 'RALLY_SONG', songId: `player-1-song-${song}` }, seeded())
+
+  it('lets you refresh one spent song of your choice after a tame, once per turn', () => {
+    const dice: DieSpec[] = [['d8', 'Hymn'], ['d4', 'Hymn'], ['d20', 'Hymn']]
+    let state = fight(['staccato'], dice, [{ currentHP: 50, maxHP: 50 }, { currentHP: 5, maxHP: 5 }, { currentHP: 50, maxHP: 50 }])
+    state = play(state, 1, faces([1, 8]), 'm1').state
     state = play(state, 2, faces([1, 4]), 'm1').state
     expect(spent(state, 1) && spent(state, 2)).toBe(true)
+    // Nothing tamed yet: Rallying Cry isn't ready
+    expect(rally(state, 1).ok).toBe(false)
 
-    state = play(state, 3, faces([2, 4]), 'm2').state // tames the 1-HP monster
-    expect(spent(state, 1) || spent(state, 2)).toBe(false)
-    expect(state.combat.styleNotes).toContain('Staccato')
+    state = play(state, 3, faces([10, 20]), 'm2').state // the d20 tames
+    expect(state.combat.rallyReady).toBe(true)
+    const rallied = rally(state, 1)
+    expect(rallied.ok).toBe(true)
+    state = rallied.ok ? rallied.state : state
+    expect(spent(state, 1)).toBe(false)
+    expect(spent(state, 2)).toBe(true) // only the chosen song comes back
     expect(state.combat.stylesUsed).toContain('staccato')
+    expect(state.combat.styleNotes).toContain(STYLES.staccato.name)
+
+    // Once per turn
+    state = play(state, 1, faces([1, 8]), 'm3').state
+    expect(rally(state, 1).ok).toBe(false)
+  })
+
+  it('only refreshes songs that are actually spent, and only your own', () => {
+    let state = fight(['staccato'], [['d20', 'Hymn'], ['d4', 'Hymn']], [{ currentHP: 5, maxHP: 5 }, { currentHP: 50, maxHP: 50 }])
+    state = play(state, 1, faces([10, 20]), 'm1').state
+    expect(rally(state, 2).ok).toBe(false) // song 2 was never spent
+    expect(applyAction(state, { type: 'RALLY_SONG', songId: 'player-2-song-1' }, seeded()).ok).toBe(false)
+  })
+
+  it('stays refreshed even if an earlier play is rerolled', () => {
+    let state = fight(['staccato'], [['d20', 'Hymn'], ['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 5, maxHP: 5 }, { currentHP: 80, maxHP: 80 }])
+    state = play(state, 1, faces([10, 20]), 'm1').state // tame: rally ready
+    state = play(state, 2, faces([1, 8]), 'm2').state   // song 2 spent
+    state = play(state, 3, faces([1, 8]), 'm2').state   // song 3 spent (last played)
+    const rallied = rally(state, 2)
+    state = rallied.ok ? rallied.state : state
+    state = apply(state, { type: 'REROLL_SONG' }, faces([2, 8])).state // reroll song 3
+    expect(spent(state, 2)).toBe(false)
   })
 })
 
@@ -192,7 +224,7 @@ describe('Counterpoint', () => {
     const state = fight(['counterpoint'], [['d8', 'Hymn'], ['d8', 'Hymn']], [{ resistance: 'Hymn' }])
     const first = play(state, 1, faces([6, 8])).state
     expect(hp(first)).toBe(50 - 3)
-    expect(first.combat.styleNotes).toContain('Counterpoint')
+    expect(first.combat.styleNotes).toContain(STYLES.counterpoint.name)
     const second = play(first, 2, faces([6, 8])).state
     expect(hp(second)).toBe(47)
   })
@@ -225,7 +257,7 @@ describe('Bravo', () => {
     state = play(state, 1, faces([10, 20])).state
     const plain = computeCombatRewards(state.combat)
     const cheered = computeCombatRewards(state.combat, ['bravo'])
-    expect(cheered.fighterFame - plain.fighterFame).toBe(1)
+    expect(cheered.fighterFame - plain.fighterFame).toBe(5)
     const fame = state.players[0].fame
     state = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' }).state
     expect(state.players[0].fame - fame).toBe(cheered.fighterFame)

@@ -70,6 +70,8 @@ export type GameAction =
   | { type: 'PLAY_SONG'; songId: string; ownerId: string; targetMonsterId: string }
   /** Spend Inspiration to reroll the last song; `rubato` makes it free (once per turn, d4/d8). */
   | { type: 'REROLL_SONG'; rubato?: boolean }
+  /** Rallying Cry: after a tame this turn, refresh one of your spent songs. */
+  | { type: 'RALLY_SONG'; songId: string }
   | { type: 'SELECT_COMBAT_SPREAD'; genre: Genre | null }
   | { type: 'END_COMBAT'; spreadGenre?: Genre }
   | { type: 'END_TURN' }

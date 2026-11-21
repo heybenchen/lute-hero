@@ -49,6 +49,7 @@ export interface EngineCombatState {
     killCredits: KillCredit[]
     totalDamage: number
     stylesUsed: StyleId[]
+    rallyReady: boolean
   } | null
   /**
    * "Once per turn" styles already spent this turn. A bard fights at most once
@@ -58,6 +59,11 @@ export interface EngineCombatState {
   stylesUsed: StyleId[]
   /** Names of the styles that shaped the last play, for the damage report. */
   styleNotes: string[]
+  /**
+   * Rallying Cry (`staccato`) is armed: a song tamed a monster this turn, so
+   * the bard may refresh one spent song of their choice (RALLY_SONG).
+   */
+  rallyReady: boolean
   lastPlayedSongId: string | null
   lastPlayedOwnerId: string | null
   /** Shared victory choice so spectators see the element being considered. */
@@ -181,6 +187,7 @@ export function createInitialCombatState(): EngineCombatState {
     selectedSpreadGenre: null,
     stylesUsed: [],
     styleNotes: [],
+    rallyReady: false,
   }
 }
 
@@ -292,6 +299,7 @@ export function normalizeEngineState(state: EngineState): EngineState {
       undoSnapshot: state.combat?.undoSnapshot ? {
         ...state.combat.undoSnapshot,
         stylesUsed: state.combat.undoSnapshot.stylesUsed ?? [],
+        rallyReady: state.combat.undoSnapshot.rallyReady ?? false,
         spentSongIds: migrateSongIds(state.combat.undoSnapshot.spentSongIds),
       } : null,
     },

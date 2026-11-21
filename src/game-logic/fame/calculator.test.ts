@@ -183,14 +183,14 @@ describe('Fame Calculator', () => {
   })
 
   describe('getNextPhase', () => {
-    it('should transition from main to finalBoss when any player reaches 150 fame', () => {
-      expect(getNextPhase('main', [150, 0, 0, 0])).toBe('finalBoss')
+    it('should transition from main to finalBoss when any player reaches 200 fame', () => {
+      expect(getNextPhase('main', [200, 0, 0, 0])).toBe('finalBoss')
       expect(getNextPhase('main', [100, 400, 50])).toBe('finalBoss')
-      expect(getNextPhase('main', [150])).toBe('finalBoss')
+      expect(getNextPhase('main', [200])).toBe('finalBoss')
     })
 
     it('should not transition from main when no player reaches threshold', () => {
-      expect(getNextPhase('main', [149, 149, 149, 149])).toBeNull()
+      expect(getNextPhase('main', [199, 199, 199, 199])).toBeNull()
       expect(getNextPhase('main', [0, 0])).toBeNull()
       expect(getNextPhase('main', [])).toBeNull()
     })

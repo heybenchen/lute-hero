@@ -249,6 +249,8 @@ export function GameView() {
 
 /** Rules reference opened from the Menu. */
 function HowToPlay({ onClose }: { onClose: () => void }) {
+  // The live threshold, so the rules match any playtest tweak
+  const fameGate = useGameStore((state) => state.tunables.fameFinalBossThreshold)
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -267,7 +269,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
         <div className="space-y-5 text-sm text-parchment-200 leading-relaxed">
           <Section title="🎯 Goal">
             You are a Bard defeating monsters with music. Earn <Hl>Fame</Hl> by winning
-            fights. The first bard to reach <Hl>150 Fame</Hl> triggers the Final Showdown,
+            fights. The first bard to reach <Hl>{fameGate} Fame</Hl> triggers the Final Showdown,
             and whoever has the most Fame after it is crowned Legend of the Realm.
           </Section>
 
@@ -299,7 +301,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           </Section>
 
           <Section title="🎵 Genres & Elements">
-            <p className="mb-3">You start with a single d8 of your chosen element. Opposing elements are immune to each other, and every monster takes double damage from its own element:</p>
+            <p className="mb-3">You start with two d4s of your chosen element. Opposing elements are immune to each other, and every monster takes double damage from its own element:</p>
             <TypeChart className="mb-1" />
           </Section>
 
@@ -312,7 +314,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
             <List items={[
               <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d8 → d12 → d20</Hl>.</>,
               <>Spend EXP to buy <Hl>Inspiration</Hl> — used for rerolls, travel, and refreshing offers.</>,
-              <>Learn up to <Hl>2 Styles</Hl> — named for musical terms, each changes how <Hl>all</Hl> your songs play. Two are on the shelf each turn; spend Inspiration for a new pair.</>,
+              <>Learn up to <Hl>2 Styles</Hl> — each changes how <Hl>all</Hl> your songs play. Two are on the shelf each turn; spend Inspiration for a new pair.</>,
             ]} />
           </Section>
 

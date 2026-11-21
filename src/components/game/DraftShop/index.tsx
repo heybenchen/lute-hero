@@ -12,7 +12,7 @@ import {
   inspirationSpend,
 } from '@/data/draftCards'
 import { GENRE_THEME } from '@/data/genreTheme'
-import { StyleShelf } from './StyleShelf'
+import { StyleShelf, OwnedStyles } from './StyleShelf'
 
 interface DraftShopProps {
   playerId: string
@@ -453,6 +453,9 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               ))}
             </div>
           </div>
+
+          {/* The bard's styles and what they do, right under the songs they affect */}
+          <OwnedStyles player={player} />
         </div>
       </div>
     </div>

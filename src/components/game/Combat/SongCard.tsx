@@ -1,6 +1,7 @@
 import { Song, SongSlot, DiceRoll } from '@/types'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { GENRE_THEME } from '@/data/genreTheme'
+import { STYLES } from '@/data/styles'
 
 interface SongCardProps {
   song: Song
@@ -17,6 +18,8 @@ interface SongCardProps {
   inspiration?: number
   /** Rubato's free reroll, when the bard has it unspent and this is a d4/d8 song */
   onRubato?: () => void
+  /** Rallying Cry: offered on a spent song once a tame has armed it */
+  onRally?: () => void
 }
 
 /**
@@ -24,7 +27,7 @@ interface SongCardProps {
  * present, otherwise the die's genre label. No in-card tumble — the combat
  * view holds new rolls back until the 3D dice land, then shows the result.
  */
-function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
+function SlotDie({ slot, roll, caption }: { slot: SongSlot; roll?: DiceRoll; caption?: string }) {
   const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
   const displayValue = roll?.value
   const isCrit = roll?.isCrit ?? false
@@ -61,6 +64,9 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
           ) : (
             <div className="font-bold text-[9px]" style={{ color: genreColor }}>{slot.dice.genre}</div>
           )}
+          {caption && (
+            <div className="mt-1 text-[9px] font-medieval font-bold uppercase tracking-wider text-parchment-400">{caption}</div>
+          )}
         </div>
       ) : (
         <div className="text-parchment-500/40 text-[10px]">-</div>
@@ -69,11 +75,15 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
   )
 }
 
-export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName, rolls, onReroll, inspiration = 0, onRubato }: SongCardProps) {
+export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName, rolls, onReroll, inspiration = 0, onRubato, onRally }: SongCardProps) {
   const hasDice = song.slots.some((s) => s.dice)
-  // The just-played song shows its roll results, so keep it fully lit (not dimmed)
+  // The just-played song shows its roll results, so keep it fully lit (not dimmed);
+  // a spent song on offer for Rallying Cry stays lit too.
   const isCurrent = !!rolls && rolls.length > 0
-  const dimmed = song.used && !isCurrent
+  const dimmed = song.used && !isCurrent && !onRally
+  // Clicking the die itself performs the song
+  const playable = hasDice && !song.used && !disabled && !onReroll
+  const caption = !hasDice ? undefined : playable ? 'Tap to play' : song.used && !onReroll ? 'Spent' : undefined
 
   return (
     <div
@@ -82,7 +92,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
     >
       <div
         className={`relative w-full rounded-xl overflow-hidden transition-all duration-300 ${
-          song.used && !isCurrent ? 'opacity-35 scale-[0.98]' : !song.used ? 'hover:scale-[1.02]' : ''
+          dimmed ? 'opacity-35 scale-[0.98]' : !song.used ? 'hover:scale-[1.02]' : ''
         }`}
         style={{
           background: dimmed
@@ -120,18 +130,42 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
             </div>
           )}
 
-          {/* Dice */}
-          <div className="mb-4 space-y-3">
-            <div className="flex gap-2">
-              {song.slots.map((slot, idx) => (
-                <SlotDie
-                  key={idx}
-                  slot={slot}
-                  roll={slot.dice ? rolls?.find((r) => r.diceId === slot.dice!.id) : undefined}
-                />
-              ))}
-            </div>
-          </div>
+          {/* Dice: click them to perform the song */}
+          <button
+            type="button"
+            onClick={playable ? onPlay : undefined}
+            disabled={!playable}
+            aria-label={playable ? 'Perform this song' : undefined}
+            className={`w-full flex gap-2 rounded-lg transition-all duration-200 ${
+              playable ? 'cursor-pointer hover:-translate-y-0.5 hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-400' : 'cursor-default'
+            } ${onReroll || onRubato || onRally ? 'mb-3' : ''}`}
+          >
+            {song.slots.map((slot, idx) => (
+              <SlotDie
+                key={idx}
+                slot={slot}
+                roll={slot.dice ? rolls?.find((r) => r.diceId === slot.dice!.id) : undefined}
+                caption={idx === 0 ? caption : undefined}
+              />
+            ))}
+          </button>
+
+          {/* Rallying Cry: bring this spent song back */}
+          {onRally && (
+            <button
+              onClick={onRally}
+              className="w-full py-2.5 font-medieval font-bold rounded-lg transition-all duration-200 text-sm hover:-translate-y-0.5 animate-gentle-flash"
+              style={{
+                background: 'linear-gradient(135deg, rgba(232, 120, 60, 0.3), rgba(180, 80, 40, 0.22))',
+                border: '1px solid rgba(255, 180, 120, 0.55)',
+                color: '#ffe0c7',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+              }}
+              title={`${STYLES.staccato.name}: refresh this spent song (once per turn)`}
+            >
+              &#x21BB; {STYLES.staccato.name}: refresh
+            </button>
+          )}
 
           {/* Rubato: a free reroll from the bard's style, offered ahead of the paid one */}
           {onReroll && onRubato && (
@@ -144,14 +178,14 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
                 color: '#f8e7b5',
                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
               }}
-              title="Rubato: reroll this d4/d8 song for free (once per turn)"
+              title={`${STYLES.rubato.name}: reroll this d4/d8 song for free (once per turn)`}
             >
-              &#x266A; Rubato reroll (free)
+              &#x266A; {STYLES.rubato.name} (free reroll)
             </button>
           )}
 
-          {/* Reroll (just-played song) or Perform button */}
-          {onReroll ? (
+          {/* Reroll the just-played song for Inspiration */}
+          {onReroll && (
             <button
               onClick={onReroll}
               disabled={inspiration <= 0}
@@ -166,25 +200,6 @@ export function SongCard({ song, onPlay, disabled, index = 0, isCover, ownerName
               title={inspiration > 0 ? 'Reroll this song for 1 Inspiration' : 'Requires Inspiration'}
             >
               &#x2728; Reroll
-            </button>
-          ) : (
-            <button
-              onClick={onPlay}
-              disabled={disabled || song.used || !hasDice}
-              className="w-full py-3 font-medieval font-bold rounded-lg transition-all duration-200 text-base disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                background: song.used
-                  ? 'rgba(100, 200, 100, 0.06)'
-                  : 'linear-gradient(135deg, #6d5638, #5a4529)',
-                border: song.used
-                  ? '1px solid rgba(100, 200, 100, 0.12)'
-                  : '1px solid rgba(212, 168, 83, 0.4)',
-                color: song.used ? 'rgba(100, 200, 100, 0.4)' : '#f0d78c',
-                textShadow: song.used ? 'none' : '0 1px 2px rgba(0, 0, 0, 0.5)',
-                boxShadow: song.used ? 'none' : '0 2px 8px rgba(0,0,0,0.3)',
-              }}
-            >
-              {song.used ? '✓ Spent' : !hasDice ? 'No Dice' : '♫ Perform'}
             </button>
           )}
         </div>

@@ -31,7 +31,7 @@ describe('read/write', () => {
   it('writes scalars and array slots, leaving the original untouched', () => {
     const next = writeTunable(DEFAULT_TUNABLES, 'fameFinalBossThreshold', 40)
     expect(next.fameFinalBossThreshold).toBe(40)
-    expect(DEFAULT_TUNABLES.fameFinalBossThreshold).toBe(150)
+    expect(DEFAULT_TUNABLES.fameFinalBossThreshold).toBe(200)
 
     const arrayEdit = writeTunable(DEFAULT_TUNABLES, 'monsterFameByLevel.2', 99)
     expect(arrayEdit.monsterFameByLevel[2]).toBe(99)

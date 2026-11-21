@@ -14,10 +14,10 @@ describe('Elemental Dice Shop', () => {
       expect(newD4Cost()).toBe(1)
     })
 
-    it('should cost 2/3/6 EXP to upgrade to d8/d12/d20', () => {
+    it('should cost 2/2/4 EXP to upgrade to d8/d12/d20', () => {
       expect(upgradeCostFor('d8')).toBe(2)
-      expect(upgradeCostFor('d12')).toBe(3)
-      expect(upgradeCostFor('d20')).toBe(6)
+      expect(upgradeCostFor('d12')).toBe(2)
+      expect(upgradeCostFor('d20')).toBe(4)
     })
 
     it('should escalate inspiration cost by 1 EXP per purchase this turn', () => {
@@ -43,8 +43,8 @@ describe('Elemental Dice Shop', () => {
   describe('getUpgradeCost', () => {
     it('should price upgrades by the resulting die type', () => {
       expect(getUpgradeCost('d4')).toBe(2) // -> d8
-      expect(getUpgradeCost('d8')).toBe(3) // -> d12
-      expect(getUpgradeCost('d12')).toBe(6) // -> d20
+      expect(getUpgradeCost('d8')).toBe(2) // -> d12
+      expect(getUpgradeCost('d12')).toBe(4) // -> d20
     })
 
     it('should return null for a maxed d20', () => {
