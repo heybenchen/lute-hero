@@ -130,7 +130,6 @@ export function Board() {
       <div className="relative z-20 hidden sm:flex items-center justify-center gap-4 px-4 py-2 text-[9px] uppercase tracking-[0.16em] text-parchment-500">
         <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-current" /> Your tile</span>
         <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-move" /> In range</span>
-        <span className="hidden sm:flex items-center gap-1.5"><i className="legend-swatch legend-swatch-danger" /> Threat</span>
       </div>
     </div>
   )

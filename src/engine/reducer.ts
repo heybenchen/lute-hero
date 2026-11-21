@@ -285,12 +285,29 @@ function reduce(
     case 'BUY_DIE': {
       const player = state.players[state.currentTurnPlayerIndex]
       const genre = state.elementOffers[action.offerIndex]
-      const reward = { kind: 'die' as const, id: newId('reward'), dice: createElementalDie(genre, newId) }
-      return {
+      const destination = action.destination
+      const paidPlayers = adjustExp(state.players, player.id, -newD4Cost())
+      const purchase = {
         ...state,
-        players: adjustExp(state.players, player.id, -newD4Cost()),
+        players: paidPlayers,
         elementOffers: state.elementOffers.filter((_, i) => i !== action.offerIndex),
         elementDiscard: [...state.elementDiscard, genre],
+        studio: { ...state.studio, selectedOfferIdx: null },
+      }
+      if (destination) {
+        const dice = createElementalDie(genre, newId)
+        return {
+          ...purchase,
+          players: paidPlayers.map((p) => p.id !== player.id ? p : {
+            ...p,
+            songs: p.songs.map((song) => song.id === destination.songId
+              ? { ...song, slots: [{ dice }] } : song),
+          }),
+        }
+      }
+      const reward = { kind: 'die' as const, id: newId('reward'), dice: createElementalDie(genre, newId) }
+      return {
+        ...purchase,
         pendingRewards: {
           ...state.pendingRewards,
           [player.id]: [...(state.pendingRewards[player.id] ?? []), reward],
@@ -694,7 +711,7 @@ const codaSongId = (playerId: string) => `${playerId}-coda`
 function buyStyle(state: EngineState, offerIndex: number, replaceStyleId: StyleId | undefined, newId: NewId): EngineState {
   const player = state.players[state.currentTurnPlayerIndex]
   const styleId = state.styleOffers[offerIndex]
-  const styles = [...player.styles.filter((id) => id !== replaceStyleId), styleId]
+  const styles = replaceStyleId ? player.styles.map((id) => id === replaceStyleId ? styleId : id) : [...player.styles, styleId]
   const paid = { ...state, players: adjustExp(state.players, player.id, -styleCost(styleId)) }
   return {
     ...setPlayerStyles(paid, player.id, styles, newId),

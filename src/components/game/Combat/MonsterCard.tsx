@@ -30,16 +30,18 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
   const accent = accentGenre ? genreAccentColors[accentGenre] : null
   const selectable = !!onSelect && !isDefeated
 
+  const TargetCard = selectable ? 'button' : 'div'
+
   return (
     <div
       className="animate-slide-up w-full"
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
     >
-      <div
+      <TargetCard
         onClick={selectable ? onSelect : undefined}
-        role={selectable ? 'button' : undefined}
+        type={selectable ? 'button' : undefined}
         aria-pressed={selectable ? isSelected : undefined}
-        className={`relative h-full w-full overflow-hidden rounded-xl transition-all duration-300 ${
+        className={`relative h-full w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-400 overflow-hidden rounded-xl transition-all duration-300 ${
           isDefeated ? 'opacity-30 scale-[0.97] grayscale' : isLowHP ? 'animate-pulse-slow' : ''
         } ${selectable ? 'cursor-pointer hover:-translate-y-0.5' : ''}`}
         style={{
@@ -166,7 +168,7 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
             </div>
           )}
         </div>
-      </div>
+      </TargetCard>
     </div>
   )
 }

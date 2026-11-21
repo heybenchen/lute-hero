@@ -290,7 +290,7 @@ describe('Buying styles', () => {
     const full = studio(['overture', 'bravo'], ['fermata'])
     expect(applyAction(full, { type: 'BUY_STYLE', offerIndex: 0 }, seeded()).ok).toBe(false)
     const state = apply(full, { type: 'BUY_STYLE', offerIndex: 0, replaceStyleId: 'overture' }).state
-    expect(state.players[0].styles).toEqual(['bravo', 'fermata'])
+    expect(state.players[0].styles).toEqual(['fermata', 'bravo'])
   })
 
   it('refuses a style you cannot afford', () => {

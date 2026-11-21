@@ -13,6 +13,11 @@
 (none)
 
 ## Completed
+- The mobile map is followed by the setlist, active bard, and score track, in that order.
+
+- Studio styles are placed by selecting an offer and a repertoire slot. Full setlists can replace a die with a purchased d4. Combat flags immune songs against the current target and scopes damage popups to each fight. Ending a turn with unspent EXP prompts if the Studio was never opened.
+
+- Simplified map tiles to show element chips and direct movement, added clearer movement and player markers, keyboard combat targeting, equipped-only setlists, and a focused victory screen.
 
 - Final Showdown: the 3D throw now shows every die of the performed element (`announceDiceEvents` reads `songIds`), not just the first song's die.
 - Studio reorganised: Buy Inspiration and Refresh share one compact row; the Setlist (elements → your songs) comes first and Styles (shelf + your styles) below it. A bard's songs together are called their setlist (Studio, player panel, style text, rules). Element chips fit the width on phones.

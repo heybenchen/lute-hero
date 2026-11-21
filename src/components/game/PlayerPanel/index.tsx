@@ -1,6 +1,6 @@
 import { useGameStore, selectCurrentPlayer, selectCanAct, selectIsHost } from '@/store'
 import { SongCard } from '../SongCard'
-import { readableTextColor } from '@/data/genreTheme'
+import { playerTokenLabel, readableTextColor } from '@/data/genreTheme'
 import {
   Award,
   CircleDot,
@@ -118,7 +118,11 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
             <span className="truncate">Studio <span className="opacity-60">({currentPlayer.exp}{compact ? '' : ' EXP'})</span></span>
           </button>
           <button
-            onClick={() => dispatch({ type: 'END_TURN' })}
+            onClick={() => {
+              if (currentPlayer.exp > 0 && !currentPlayer.hasShoppedThisTurn &&
+                !window.confirm(`You have ${currentPlayer.exp} EXP and haven’t visited the Studio this turn. End your turn anyway?`)) return
+              dispatch({ type: 'END_TURN' })
+            }}
             disabled={canFight}
             title={canFight ? 'Fight the monster here before ending your turn' : undefined}
             className={`btn-primary ${size} flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed`}
@@ -136,7 +140,7 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
 function BardToken({ name, color, className = '' }: { name: string; color: string; className?: string }) {
   return (
     <div className={`player-piece flex-shrink-0 ${className}`} style={{ backgroundColor: color, color: readableTextColor(color) }}>
-      {name.charAt(0)}
+      {playerTokenLabel(name)}
     </div>
   )
 }
@@ -176,6 +180,8 @@ export function PlayerPanel() {
 
   if (!currentPlayer) return null
 
+  const equippedSongs = currentPlayer.songs.filter((song) => song.slots.some((slot) => slot.dice))
+
   return (
     <div className="player-console lg:h-full flex flex-col gap-3 p-3 sm:p-4">
       {/* All players */}
@@ -193,7 +199,7 @@ export function PlayerPanel() {
               >
                 <div className="flex items-center gap-2 p-2">
                   <div className="score-token" style={{ background: player.color, color: readableTextColor(player.color) }}>
-                    {player.name.charAt(0)}
+                    {playerTokenLabel(player.name)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medieval font-bold text-[10px] text-parchment-200 flex items-center gap-1">
@@ -219,7 +225,7 @@ export function PlayerPanel() {
       </section>
 
       {/* Current player */}
-      <section className="turn-module">
+      <section className="turn-module -order-1 lg:order-none">
         <div className="module-label">Active bard</div>
         <div className="flex items-center gap-3">
           <BardToken name={currentPlayer.name} color={currentPlayer.color} className="w-11 h-11 text-base" />
@@ -246,13 +252,13 @@ export function PlayerPanel() {
         </div>
       </section>
 
-      <section className="song-rack-module">
+      <section className="song-rack-module order-first lg:order-none">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="module-label mb-0">Setlist</div>
-          <span className="text-[9px] text-parchment-500">{currentPlayer.songs.length} songs</span>
+          <span className="text-[9px] text-parchment-500">{equippedSongs.length} {equippedSongs.length === 1 ? 'song' : 'songs'}</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
-          {currentPlayer.songs.map((song) => (
+          {equippedSongs.map((song) => (
             <SongCard key={song.id} song={song} />
           ))}
         </div>

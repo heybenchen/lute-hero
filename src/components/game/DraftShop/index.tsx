@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
 import { Genre, Dice, PendingReward } from '@/types'
 import { getMaxValue } from '@/game-logic/dice/roller'
@@ -12,7 +12,7 @@ import {
   inspirationSpend,
 } from '@/data/draftCards'
 import { GENRE_THEME } from '@/data/genreTheme'
-import { StyleShelf, OwnedStyles } from './StyleShelf'
+import { StyleShelf } from './StyleShelf'
 import { RefreshCw } from 'lucide-react'
 
 interface DraftShopProps {
@@ -25,6 +25,7 @@ interface DraftShopProps {
 const EMPTY_REWARDS: PendingReward[] = []
 
 export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
+  const [replaceMode, setReplaceMode] = useState(false)
   const buyingIntoSlot = useRef(false)
   const player = useGameStore(selectPlayerById(playerId))
   const dispatch = useGameStore((state) => state.dispatch)
@@ -61,36 +62,15 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     dispatch({ type: 'UPGRADE_DIE', offerIndex: selectedOfferIdx, diceId: die.id })
   }
 
-  // Buy a d4 of the chosen element and drop it straight into an empty slot.
-  const handleBuyIntoSlot = async (songId: string, slotIndex: number) => {
-    if (!canInteract || selectedOfferIdx === null || !selectedElement || player.exp < newD4Cost() || buyingIntoSlot.current) return
+  const setlistFull = player.songs.every((song) => song.slots[0].dice)
+  const handleBuyIntoSlot = async (songId: string, previousDieId: string | null) => {
+    if (!canInteract || selectedOfferIdx === null || !selectedElement || buyingIntoSlot.current) return
     buyingIntoSlot.current = true
-    const existingIds = new Set((useGameStore.getState().pendingRewards[playerId] ?? []).map((reward) => reward.id))
-    let unsubscribe = () => {}
-    let timer: ReturnType<typeof setTimeout> | undefined
-    // Online purchases arrive through SSE, which can follow the POST response.
-    // Watch for this purchase rather than slotting a previously selected reward.
-    const rewardReady = new Promise<string | null>((resolve) => {
-      unsubscribe = useGameStore.subscribe((state) => {
-        const reward = state.pendingRewards[playerId]?.find((item) =>
-          !existingIds.has(item.id) && item.kind === 'die' && item.dice.genre === selectedElement
-        )
-        if (reward) resolve(reward.id)
-      })
-      // If the stream is unavailable, the purchase remains in Unclaimed Rewards.
-      timer = setTimeout(() => resolve(null), 10000)
-    })
     try {
-      const result = await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx })
-      if (!result.ok) return
-      const rewardId = await rewardReady
-      const state = useGameStore.getState()
-      if (rewardId && state.studio.playerId === playerId && state.players[state.currentTurnPlayerIndex]?.id === playerId) {
-        await dispatch({ type: 'SLOT_DIE_REWARD', rewardId, songId, slotIndex })
-      }
+      const result = await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx,
+        destination: { songId, previousDieId, genre: selectedElement } })
+      if (result.ok) setReplaceMode(false)
     } finally {
-      unsubscribe()
-      clearTimeout(timer)
       buyingIntoSlot.current = false
     }
   }
@@ -253,6 +233,13 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               >
                 {!selectedElement ? (
                   <span className="text-parchment-400">Choose an element, then click a slot in your setlist to buy or upgrade a die there.</span>
+                ) : setlistFull ? (
+                  <>
+                    <span>{replaceMode ? `Choose the die to replace with a ${selectedElement} d4 (${newD4Cost()} EXP).` : `Choose a matching die to upgrade, or buy a new ${selectedElement} d4.`}</span>
+                    <button className="btn-secondary" aria-pressed={replaceMode} onClick={() => setReplaceMode(!replaceMode)}>
+                      {replaceMode ? 'Cancel replacement' : `Replace a die · ${newD4Cost()} EXP`}
+                    </button>
+                  </>
                 ) : player.exp < newD4Cost() ? (
                   <>
                     <GenreBadge genre={selectedElement} className="text-xs" />
@@ -342,7 +329,9 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                       const canAffordD4 = player.exp >= newD4Cost()
                       let offerAction: 'buy' | 'buy-locked' | 'upgrade' | 'upgrade-locked' | 'locked' | null = null
                       if (selectedElement && !activeDie) {
-                        if (slot.dice?.genre === selectedElement) {
+                        if (setlistFull && replaceMode) {
+                          offerAction = canAffordD4 ? 'buy' : 'buy-locked'
+                        } else if (slot.dice?.genre === selectedElement) {
                           offerAction = upgradeCost === null
                             ? 'locked'
                             : player.exp >= upgradeCost
@@ -357,14 +346,14 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                       const isOffer = offerAction === 'buy' || offerAction === 'upgrade'
                       const slotLabel =
                         (offerAction === 'buy' || offerAction === 'buy-locked')
-                          ? `Buy a ${selectedElement} d4 for ${newD4Cost()} EXP into Song ${songIndex + 1}`
+                          ? `${slot.dice ? 'Replace ' + slot.dice.genre + ' ' + slot.dice.type + ' with' : 'Buy'} a ${selectedElement} d4 for ${newD4Cost()} EXP into Song ${songIndex + 1}`
                           : (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && slot.dice
                           ? `Upgrade Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} to ${getNextDiceType(slot.dice.type)} for ${upgradeCost} EXP`
                           : undefined
                       const offerRgb = selectedElement ? GENRE_THEME[selectedElement].rgb : '212, 168, 83'
                       const nextType = slot.dice ? getNextDiceType(slot.dice.type) : null
                       const onSlotClick = () => {
-                        if (offerAction === 'buy') return handleBuyIntoSlot(song.id, idx)
+                        if (offerAction === 'buy') return handleBuyIntoSlot(song.id, slot.dice?.id ?? null)
                         if (offerAction === 'upgrade' && slot.dice) return handleUpgradeDie(slot.dice)
                         handleSlotDice(song.id, idx)
                       }
@@ -434,6 +423,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           ) : (
                             <div className="text-parchment-500/30 text-xs">Empty</div>
                           )}
+                          {slot.dice && offerAction === 'buy' && <span className="text-xs text-gold-300">Replace · {newD4Cost()} EXP</span>}
                           {nextType && (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && (
                             <div
                               className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
@@ -464,7 +454,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
           {/* ===== Styles: change how every song in the setlist plays ===== */}
           <StudioSection title="Styles" subtitle="Add to your repertoire — each style changes how every song in your setlist plays." />
           <StyleShelf player={player} canInteract={canInteract} />
-          <OwnedStyles player={player} />
         </div>
       </div>
     </div>
