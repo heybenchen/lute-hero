@@ -11,14 +11,14 @@ import { Monster, Song } from '@/types'
 import type { EngineEvent } from '@/engine/events'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
-import { StyleChip } from '@/components/ui/StyleBadge'
 import { STYLES } from '@/data/styles'
 import { rubatoCanReroll } from '@/game-logic/styles/styleEffects'
+import { CombatStyles } from '../DraftShop/StyleShelf'
+import { Flag, RotateCcw, Sparkles, Target } from 'lucide-react'
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
   const playerId = useGameStore((state) => state.playerId)
-  const spaceId = useGameStore((state) => state.spaceId)
   const selectedSpreadGenre = useGameStore((state) => state.selectedSpreadGenre)
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
@@ -68,42 +68,17 @@ export function CombatModal() {
 
   const player = players.find((p) => p.id === playerId)
 
-  // Co-located players lend cover songs
-  const colocatedPlayers = useMemo(
-    () => players.filter((p) => p.position === spaceId && p.id !== playerId && !p.isEliminated),
-    [players, spaceId, playerId]
-  )
-
   const [popups, setPopups] = useState<DamagePopupEntry[]>([])
 
   const handlePopupComplete = useCallback((id: string) => {
     setPopups((prev) => prev.filter((p) => p.id !== id))
   }, [])
 
-  // All hooks must be called before any early return (Rules of Hooks)
-  const allAvailableSongs = useMemo(() => {
-    if (!player) return []
-    const songs = [...player.songs]
-    colocatedPlayers.forEach((p) => songs.push(...p.songs))
-    return songs
-  }, [player, colocatedPlayers])
-
-  // Reward math lives in the engine; the component only maps names for display
+  // Reward math lives in the engine.
   const rewards = useMemo(
     () => computeCombatRewards({ monsters, killCredits }, player?.styles),
     [monsters, killCredits, player?.styles]
   )
-  const monstersDefeatedCount = rewards.monstersDefeatedCount
-
-  const fameBreakdown = useMemo(() => {
-    const coverFameByPlayer = new Map<string, { name: string; fame: number }>()
-    rewards.coverFameByOwner.forEach((fame, ownerId) => {
-      const ownerPlayer = colocatedPlayers.find((p) => p.id === ownerId)
-      if (ownerPlayer) coverFameByPlayer.set(ownerId, { name: ownerPlayer.name, fame })
-    })
-    return { playerFame: rewards.fighterFame, coverFameByPlayer }
-  }, [rewards, colocatedPlayers])
-
   // Keep a live monster targeted: default to the first, and re-pick when the
   // current target is defeated.
   useEffect(() => {
@@ -139,27 +114,17 @@ export function CombatModal() {
   if (!isActive || !player) return null
 
   const lastPlayedSong: Song | null = lastPlayedSongId
-    ? allAvailableSongs.find((s) => s.id === lastPlayedSongId) ?? null
+    ? player.songs.find((s) => s.id === lastPlayedSongId) ?? null
     : null
 
   const allMonstersDefeated = monsters.every((m: Monster) => m.currentHP <= 0)
   const playableSongs = player.songs.filter((s) => s.slots.some((slot) => slot.dice))
   const ownSongsRemaining = playableSongs.filter((s) => !isSongSpent(s.id)).length
 
-  // Cover songs available from co-located players
-  const coverPlayersWithSongs = colocatedPlayers
-    .map((p) => ({
-      player: p,
-      songs: p.songs.filter((s) => s.slots.some((slot) => slot.dice) && !isSongSpent(s.id)),
-    }))
-    .filter((entry) => entry.songs.length > 0)
-
-  const hasCoverSongsLeft = coverPlayersWithSongs.length > 0
   // No fixed song cap now: fight on while you have unspent songs (defeating a
   // monster returns that song's dice; a song that only wounds is spent).
-  const canContinue = ownSongsRemaining > 0 || hasCoverSongsLeft
+  const canContinue = ownSongsRemaining > 0
 
-  const monstersAliveCount = monsters.filter((m: Monster) => m.currentHP > 0).length
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
   const totalExp = rewards.totalExp
   const isCombatOver = allMonstersDefeated || !canContinue
@@ -174,10 +139,11 @@ export function CombatModal() {
 
   // No new roll while the last one is still on the table
   const canRoll = canAct && !diceBusy
+  const canPaidReroll = !!lastPlayedSong && canRerollSong(lastPlayedSong.id)
 
-  const handlePlaySong = async (songId: string, ownerId: string) => {
+  const handlePlaySong = async (songId: string) => {
     if (!canRoll || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
-    const result = await dispatch({ type: 'PLAY_SONG', songId, ownerId, targetMonsterId: selectedTargetId })
+    const result = await dispatch({ type: 'PLAY_SONG', songId, targetMonsterId: selectedTargetId })
     if (result.ok) void showDamageEvents(result.events)
   }
 
@@ -199,6 +165,7 @@ export function CombatModal() {
 
   const canRubato = (song: Song) =>
     player.styles.includes('rubato') && !stylesUsed.includes('rubato') && rubatoCanReroll(song)
+  const canNimbleReroll = canPaidReroll && !!lastPlayedSong && canRubato(lastPlayedSong)
 
   const handleRubato = async () => {
     if (!canRoll || !lastPlayedSong || !canRubato(lastPlayedSong)) return
@@ -216,15 +183,12 @@ export function CombatModal() {
   return (
     <div className="modal-overlay">
       <DamagePopups entries={popups} onComplete={handlePopupComplete} />
-      <div className="modal-content max-w-6xl animate-scale-in">
-        {/* Atmospheric top gradient */}
-        <div className="h-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.4), transparent)' }} />
-
-        <div className="p-4 sm:p-6">
+      <div className="modal-content max-w-7xl animate-scale-in">
+        <div className="p-4 sm:p-5">
           {/* Header — once the fight is over it becomes the rewards summary */}
           {isCombatOver ? (
             <div
-              className="mb-4 sm:mb-5 rounded-xl px-4 py-3 text-center animate-fade-in"
+              className="mb-4 rounded-xl px-4 py-3 text-center animate-fade-in sm:px-5 sm:py-4"
               style={{
                 background: allMonstersDefeated
                   ? 'linear-gradient(135deg, rgba(45, 140, 48, 0.1), rgba(42, 33, 24, 0.5))'
@@ -233,12 +197,12 @@ export function CombatModal() {
                 boxShadow: allMonstersDefeated ? '0 0 30px rgba(76, 175, 80, 0.08)' : undefined,
               }}
             >
-              <div className="text-xs sm:text-sm font-medieval text-parchment-500 uppercase tracking-wider">
+              <div className="font-medieval text-sm uppercase tracking-wider text-parchment-400">
                 {allMonstersDefeated ? 'Victory' : 'Out of Songs'} — {player.name}'s Rewards{!canAct ? ' (watching live)' : ''}
               </div>
               <div className="flex flex-wrap items-baseline justify-center gap-x-5 gap-y-1 mt-1">
                 <span className="font-display text-2xl sm:text-3xl text-gold-400 tabular-nums" style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}>
-                  +{fameBreakdown.playerFame} Fame
+                  +{rewards.fighterFame} Fame
                 </span>
                 <span className="font-display text-2xl sm:text-3xl text-gold-400 tabular-nums" style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}>
                   +{totalExp} EXP
@@ -249,154 +213,35 @@ export function CombatModal() {
                   </span>
                 )}
               </div>
-              <div className="text-xs text-parchment-500 mt-1">
-                {monstersDefeatedCount} of {monsters.length} monster{monsters.length !== 1 ? 's' : ''} defeated
-                {Array.from(fameBreakdown.coverFameByPlayer.entries()).map(([ownerId, { name, fame }]) => (
-                  <span key={ownerId} style={{ color: '#4dd0e1' }}> · +{fame} Fame to {name} (cover)</span>
-                ))}
-              </div>
             </div>
           ) : (
-            <div className="flex flex-wrap items-baseline justify-center gap-x-4 gap-y-1 mb-4 sm:mb-5 text-center animate-fade-in">
-              <div className="font-display text-2xl sm:text-3xl text-gold-400" style={{ textShadow: '0 0 20px rgba(212, 168, 83, 0.2)' }}>
-                The Mashup
-              </div>
-              <p className="text-sm sm:text-base text-parchment-500 font-game tracking-wide">
-                {player.name}'s Performance{!canAct ? ' — watching live' : ''}
-              </p>
-              <span className="text-sm text-parchment-400" title="Inspiration — spend to reroll a song">
-                &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
-              </span>
-              {/* The bard's styles; once-per-turn ones grey out after they fire */}
-              {player.styles.map((id) => (
-                <StyleChip key={id} id={id} spent={stylesUsed.includes(id)} />
-              ))}
-            </div>
-          )}
-
-          {/* Monsters Section */}
-          <div className="mb-4 sm:mb-5">
-            <SectionHeader
-              label="Monsters"
-              detail={monstersAliveCount > 0 ? `${monstersAliveCount} remaining · pick a target` : 'All converted!'}
-              detailColor={monstersAliveCount > 0 ? 'text-red-400' : 'text-green-400'}
-            />
-            <div className="flex overflow-x-auto sm:overflow-x-visible sm:grid sm:grid-cols-4 gap-3 sm:gap-4 pb-2 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
-              {monsters.map((monster: Monster, idx: number) => (
-                // One column per monster: the card, with its damage lined up right below
-                <div key={monster.id} className="w-[320px] shrink-0 sm:w-full flex flex-col gap-3">
-                  <MonsterCard
-                    monster={monster}
-                    index={idx}
-                    fameValue={calculateMonsterFameValue(monster.level)}
-                    isSelected={selectedTargetId === monster.id}
-                    onSelect={canAct && monster.currentHP > 0 ? () => setSelectedTargetId(monster.id) : undefined}
-                  />
-                  {monster.id === lastTargetMonsterId && lastDamageCalculations[idx] && (
-                    <div className="flex flex-col gap-1.5">
-                      <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
-                      {styleNotes.length > 0 && (
-                        <div className="flex flex-wrap justify-center gap-1" aria-label="Styles that shaped this play">
-                          {styleNotes.map((name) => (
-                            <span key={name} className="style-chip">&#x266A; {name}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Songs Section */}
-          <div className="mb-4 sm:mb-5">
-            <SectionHeader
-              label="Your Songs"
-              detail={`${ownSongsRemaining} unspent`}
-              detailColor="text-gold-400"
-            />
-            {canRally && hasSpentOwnSong && (
-              <div className="mb-3 rounded-lg px-3 py-2 text-sm text-center animate-fade-in"
-                style={{ background: 'rgba(232, 120, 60, 0.1)', border: '1px solid rgba(255, 180, 120, 0.4)', color: '#ffd9bd' }}
-              >
-                &#x21BB; <span className="font-bold">{STYLES.staccato.name}</span> is ready: refresh any spent song below.
-              </div>
-            )}
-            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
-              {player.songs.map((song, idx) => (
-                <SongCard
-                  key={song.id}
-                  song={{ ...song, used: isSongSpent(song.id) }}
-                  onPlay={() => handlePlaySong(song.id, player.id)}
-                  disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
-                  index={idx}
-                  rolls={currentSongId === song.id ? rolls : undefined}
-                  onReroll={canRoll && canRerollSong(song.id) ? handleReroll : undefined}
-                  onRubato={canRoll && canRerollSong(song.id) && canRubato(song) ? handleRubato : undefined}
-                  onRally={canRally && isSongSpent(song.id) ? () => handleRally(song.id) : undefined}
-                  inspiration={player.inspiration}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Cover Songs Section */}
-          {coverPlayersWithSongs.length > 0 && (
-            <div className="mb-4 sm:mb-5">
-              <SectionHeader
-                label="Cover Songs"
-                detail={`${coverPlayersWithSongs.reduce((n, e) => n + e.songs.length, 0)} available`}
-                detailColor="text-cyan-400"
-              />
-              {coverPlayersWithSongs.map(({ player: coverPlayer, songs }) => (
-                <div key={coverPlayer.id} className="mb-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ backgroundColor: coverPlayer.color, color: '#1a1410' }}
-                    >
-                      {coverPlayer.name[0]}
-                    </div>
-                    <span className="text-sm font-medieval text-parchment-400">
-                      {coverPlayer.name}'s Songs
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
-                    {songs.map((song, idx) => (
-                      <SongCard
-                        key={song.id}
-                        song={{ ...song, used: isSongSpent(song.id) }}
-                        onPlay={() => handlePlaySong(song.id, coverPlayer.id)}
-                        disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
-                        index={idx}
-                        isCover
-                        ownerName={coverPlayer.name}
-                        rolls={currentSongId === song.id ? rolls : undefined}
-                        onReroll={canRoll && canRerollSong(song.id) ? handleReroll : undefined}
-                        onRubato={canRoll && canRerollSong(song.id) && canRubato(song) ? handleRubato : undefined}
-                        inspiration={player.inspiration}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Actions */}
-          {allMonstersDefeated ? (
-            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-4 pt-1 animate-fade-in">
-              {/* Element choice — radiates to cardinal neighbors */}
-              <div className="md:w-48 shrink-0 text-center md:text-left">
-                <div className="text-sm font-medieval text-parchment-400 uppercase tracking-wider">
-                  Radiate an Element
-                </div>
-                <p className="text-xs text-parchment-500">
-                  Every bordering space gains 1 tag of it.
+            <div className="mb-4 flex flex-col gap-2 animate-fade-in sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="font-display text-2xl leading-none text-gold-300 sm:text-3xl">The Mashup</div>
+                <p className="mt-1 text-sm text-parchment-400">
+                  {player.name}{!canAct ? ' · watching live' : ''}
                 </p>
               </div>
-              <div className="grid grid-cols-4 gap-2 flex-1">
+              {canContinue && (
+                <p className="flex items-center gap-2 text-sm text-parchment-300">
+                  <Target size={15} className="shrink-0 text-gold-400" aria-hidden="true" />
+                  Target a monster, then play a song.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Once the fight is won, the radiate choice replaces the monster cards. */}
+          {allMonstersDefeated ? (
+            <div className="mb-5 animate-fade-in">
+              <div className="mb-4 text-center">
+                <div className="font-display text-xl sm:text-2xl text-green-300">Radiate an Element</div>
+                <p className="mt-1 text-sm sm:text-base text-parchment-400">
+                  Choose an element. Every bordering space gains 1 tag of it.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {ALL_GENRES.map((genre) => {
                   const { emoji, rgb } = GENRE_THEME[genre]
                   const isChosen = selectedSpreadGenre === genre
@@ -408,26 +253,28 @@ export function CombatModal() {
                         type: 'SELECT_COMBAT_SPREAD',
                         genre: isChosen ? null : genre,
                       })}
-                      className={`relative rounded-lg py-1.5 flex items-center justify-center gap-1.5 transition-all duration-200 ease-out ${canAct ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
+                      className={`relative flex min-h-20 flex-col items-center justify-center gap-1 rounded-lg px-3 py-3 transition-all duration-200 ${canAct ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
                       style={{
                         background: isChosen
-                          ? `linear-gradient(160deg, rgba(${rgb},0.28), rgba(${rgb},0.08))`
-                          : `linear-gradient(160deg, rgba(${rgb},0.1), rgba(42,33,24,0.9))`,
-                        border: `1px solid rgba(${rgb},${isChosen ? 0.75 : 0.3})`,
+                          ? `rgba(${rgb},0.22)`
+                          : 'rgba(255,255,255,0.025)',
+                        border: `1px solid rgba(${rgb},${isChosen ? 0.85 : 0.28})`,
                         boxShadow: isChosen
-                          ? `0 0 16px rgba(${rgb},0.35), inset 0 1px 0 rgba(255,255,255,0.08)`
-                          : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                          ? `0 0 18px rgba(${rgb},0.18)`
+                          : 'none',
                       }}
                     >
-                      <span className="text-xl leading-none" style={{ filter: `drop-shadow(0 0 6px rgba(${rgb},${isChosen ? 0.6 : 0.3}))` }}>
+                      <span className="text-2xl leading-none">
                         {emoji}
                       </span>
-                      <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-wide" style={{ color: `rgb(${rgb})` }}>
+                      <span className="font-medieval text-sm sm:text-base font-bold uppercase tracking-wider" style={{ color: `rgb(${rgb})` }}>
                         {genre}
                       </span>
                       {isChosen && (
-                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold"
-                          style={{ background: `rgb(${rgb})`, color: '#fff' }}>
+                        <span
+                          className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
+                          style={{ background: `rgb(${rgb})`, color: '#fff' }}
+                        >
                           ✓
                         </span>
                       )}
@@ -435,16 +282,17 @@ export function CombatModal() {
                   )
                 })}
               </div>
+
               <button
                 onClick={handleEndCombat}
                 disabled={!canAct || !selectedSpreadGenre}
-                className="md:w-60 shrink-0 px-6 py-3 font-medieval font-bold rounded-lg text-base transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5"
+                className="btn-primary mt-3 w-full py-3 text-base disabled:cursor-not-allowed disabled:opacity-40"
                 style={{
                   background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
                   border: '1px solid rgba(100, 220, 100, 0.4)',
                   color: '#d4ffd6',
                   textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
-                  boxShadow: '0 0 25px rgba(100, 220, 100, 0.15), 0 4px 15px rgba(0,0,0,0.3)',
+                  boxShadow: 'none',
                 }}
                 title={selectedSpreadGenre ? undefined : 'Choose an element to radiate first'}
               >
@@ -452,22 +300,115 @@ export function CombatModal() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 pt-1 animate-fade-in">
-              {canContinue && (
-                <p className="text-base text-parchment-500 italic font-game animate-pulse-slow text-center">
-                  Pick a target monster, then tap a song's die to play it...
-                </p>
+            <section className="mb-4">
+              <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-x-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
+                {monsters.map((monster: Monster, idx: number) => (
+                  // One column per monster: the card, with its damage lined up right below
+                  <div key={monster.id} className="flex w-[min(82vw,320px)] shrink-0 snap-center flex-col gap-2.5 sm:w-full">
+                    <MonsterCard
+                      monster={monster}
+                      index={idx}
+                      fameValue={calculateMonsterFameValue(monster.level)}
+                      isSelected={selectedTargetId === monster.id}
+                      onSelect={canAct && monster.currentHP > 0 ? () => setSelectedTargetId(monster.id) : undefined}
+                    />
+                    {monster.id === lastTargetMonsterId && lastDamageCalculations[idx] && (
+                      <div className="flex flex-col gap-1.5">
+                        <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
+                        {styleNotes.length > 0 && (
+                          <div className="flex flex-wrap justify-end gap-1" aria-label="Styles that shaped this play">
+                            {styleNotes.map((name) => (
+                              <span key={name} className="style-chip">&#x266A; {name}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Songs Section */}
+          <section className="mb-4 border-t border-gold-700/15 pt-4">
+            <SectionHeader
+              label={`Choose a song · ${ownSongsRemaining} ready`}
+            />
+            {canRally && hasSpentOwnSong && (
+              <div className="mb-3 flex items-center justify-center gap-2 border-l-2 border-orange-300/40 py-1.5 pl-3 text-center text-sm text-orange-100 animate-fade-in">
+                <RotateCcw size={15} aria-hidden="true" />
+                <span><strong>{STYLES.staccato.name}</strong> is ready. Choose a spent song to refresh.</span>
+              </div>
+            )}
+            <div className={`grid grid-cols-[repeat(2,minmax(0,48%))] justify-between gap-y-1.5 min-[430px]:grid-cols-[repeat(3,minmax(0,31.5%))] min-[430px]:gap-y-2 sm:grid-cols-[repeat(4,minmax(0,23.5%))] sm:gap-y-2.5 md:grid-cols-[repeat(6,minmax(0,15.5%))] lg:gap-y-3 ${
+              player.styles.includes('coda')
+                ? 'lg:grid-cols-[repeat(7,minmax(0,13.5%))]'
+                : 'lg:grid-cols-[repeat(6,minmax(0,15.5%))]'
+            }`}>
+              {player.songs.map((song, idx) => (
+                <SongCard
+                  key={song.id}
+                  song={{ ...song, used: isSongSpent(song.id) }}
+                  onPlay={() => handlePlaySong(song.id)}
+                  disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
+                  index={idx}
+                  rolls={currentSongId === song.id ? rolls : undefined}
+                  onRally={canRally && isSongSpent(song.id) ? () => handleRally(song.id) : undefined}
+                />
+              ))}
+            </div>
+            <CombatStyles player={player} usedStyleIds={stylesUsed} />
+          </section>
+
+          {/* Actions */}
+          {!allMonstersDefeated && (
+            <div className="flex w-full flex-col gap-2 border-t border-gold-700/15 pt-4 sm:flex-row sm:justify-end animate-fade-in">
+              {canPaidReroll && (
+                <button
+                  onClick={canNimbleReroll ? handleRubato : handleReroll}
+                  disabled={!canRoll || (!canNimbleReroll && player.inspiration <= 0)}
+                  className={`flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-medieval font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                    canNimbleReroll
+                      ? 'border border-gold-400/30 bg-gold-400/10 text-gold-200 hover:enabled:bg-gold-400/15'
+                      : 'border border-violet-300/25 bg-violet-400/10 text-violet-100 hover:enabled:bg-violet-400/15'
+                  }`}
+                  title={
+                    canNimbleReroll
+                      ? `${STYLES.rubato.name}: reroll this song for free`
+                      : player.inspiration > 0
+                      ? 'Reroll the last song for 1 Inspiration'
+                      : 'Requires Inspiration'
+                  }
+                >
+                  <RotateCcw size={17} aria-hidden="true" />
+                  Reroll
+                  {canNimbleReroll ? (
+                    <span className="text-xs font-normal text-gold-200/70">{STYLES.rubato.name} · free</span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs font-normal text-violet-200/70">
+                      <Sparkles size={12} aria-hidden="true" /> 1 · {player.inspiration} left
+                    </span>
+                  )}
+                </button>
               )}
               {/* Retreat is always on offer, even before a song is played */}
               <button
                 onClick={handleEndCombat}
                 disabled={!canRoll}
-                className={`btn-secondary disabled:opacity-40 disabled:cursor-not-allowed ${
-                  canContinue ? 'text-sm px-6 py-2' : 'text-base sm:text-lg px-10 py-3 w-full max-w-md'
-                }`}
+                className="flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40 sm:min-w-40"
+                style={{
+                  background: canContinue
+                    ? 'linear-gradient(145deg, rgba(92, 70, 52, 0.48), rgba(50, 39, 30, 0.82))'
+                    : 'linear-gradient(145deg, rgba(130, 68, 48, 0.42), rgba(60, 36, 28, 0.86))',
+                  border: `1px solid ${canContinue ? 'rgba(212, 168, 83, 0.28)' : 'rgba(224, 124, 90, 0.38)'}`,
+                  color: canContinue ? '#d8c7a5' : '#f0c1aa',
+                  boxShadow: 'none',
+                }}
                 title="Leave the fight now — you earn EXP for every monster you wounded and Fame for each one you defeated"
               >
-                Retreat
+                <Flag size={16} className="shrink-0 opacity-80" aria-hidden="true" />
+                <span className="font-medieval font-bold">{canContinue ? 'Retreat' : 'End fight'}</span>
               </button>
             </div>
           )}
@@ -477,17 +418,11 @@ export function CombatModal() {
   )
 }
 
-/** Reusable section header with label, detail count, and decorative line */
-function SectionHeader({ label, detail, detailColor }: { label: string; detail: string; detailColor: string }) {
+/** Quiet step label: the cards carry the actual state. */
+function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <div className="text-sm font-medieval text-parchment-500 uppercase tracking-widest">
-        {label}
-      </div>
-      <div className={`text-sm font-bold ${detailColor}`}>
-        {detail}
-      </div>
-      <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.15), transparent)' }} />
+    <div className="mb-2.5 font-medieval text-xs font-bold uppercase tracking-widest text-parchment-400">
+      {label}
     </div>
   )
 }

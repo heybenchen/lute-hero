@@ -16,20 +16,20 @@ function formatMultiplier(multiplier: number): string {
  */
 export function DamageCell({ calc }: DamageCellProps) {
   return (
-    <div className="w-full p-2 rounded-lg flex flex-col items-center gap-1 text-center animate-scale-in"
-      style={{ border: '1px solid rgba(212, 168, 83, 0.12)' }}
-    >
-      {/* Damage total */}
-      <span className="text-red-400 font-bold text-lg leading-none tabular-nums"
-        style={{ textShadow: '0 0 6px rgba(232, 80, 80, 0.2)' }}
-      >
-        -{calc.totalDamage}
-      </span>
+    <div className="flex w-full flex-col gap-2 border-l-2 border-red-400/30 py-1.5 pl-3 animate-scale-in">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-parchment-500">Last hit</span>
+        <span className="text-xl font-bold leading-none tabular-nums text-red-400"
+          style={{ textShadow: '0 0 6px rgba(232, 80, 80, 0.2)' }}
+        >
+          -{calc.totalDamage} HP
+        </span>
+      </div>
 
       {/* Per-die math — numbers only, no genre tags */}
-      <div className="flex flex-col items-center gap-0.5 w-full">
+      <div className="flex w-full flex-col gap-1">
         {(calc.perDie ?? []).map((die, dieIdx) => (
-          <div key={dieIdx} className="flex items-center justify-center flex-wrap gap-1 text-[10px] tabular-nums">
+          <div key={dieIdx} className="flex flex-wrap items-center justify-end gap-1 text-xs tabular-nums">
             <span className="text-parchment-300">{die.value}</span>
             {/* Flat style bonus (Fortissimo, Overture, Tutti) */}
             {!!die.bonus && <span className="text-amber-300" title="Style bonus">+{die.bonus}</span>}
