@@ -14,7 +14,9 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "dev:api": "tsx scripts/api-dev.ts",
-    "typecheck:api": "tsc -p api/tsconfig.json"
+    "typecheck:api": "tsc -p api/tsconfig.json",
+    "design:install": "npx --yes impeccable@4.10.0 install --providers=codex --scope=project",
+    "design:check": "npx --yes impeccable@4.10.0 detect src/"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
