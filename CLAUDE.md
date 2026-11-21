@@ -70,7 +70,8 @@ React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel N
 `DebugPanel/` is a live tuning console for playtesting. Open it with `?debug=1`, the Menu's "Playtest Console" entry, or Ctrl/⌘+Shift+D.
 
 - **Values** — every tunable, grouped, with sliders and clamped number inputs
-- **Players** — per-player fame/EXP/Inspiration/position/counters, plus phase, round, turn index and shortcuts ("arm showdown", "jump to fame gate", and **Simulate the game through round N** — `DEBUG_SIMULATE`: bots replay this table (same bards, elements and tunables) from a fresh deal through the real engine, then play continues from round N+1 or the Final Showdown starts from that state)
+- **Players** — per-player fame/EXP/Inspiration/position/counters, plus phase, round, turn index and shortcuts ("arm showdown", "jump to fame gate")
+- **Simulate** — pick a round with a large −/+ stepper, then **Play on from round N+1** or **Showdown after round N** (`DEBUG_SIMULATE`: bots replay this table — same bards, elements and tunables — from a fresh deal through the real engine)
 - **Board** — add/remove monster chips per space, clear the board, respawn monsters
 - **Presets** — save the whole `EngineState` to the server under a name, then reload it later or share `?preset=<id>`
 
