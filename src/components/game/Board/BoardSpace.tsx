@@ -1,12 +1,13 @@
 import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
-import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
+import { GENRE_THEME, playerTokenLabel, readableTextColor } from '@/data/genreTheme'
 import { SPACE_ILLUSTRATIONS } from '@/data/boardIllustrations'
-import { Skull } from 'lucide-react'
+import { Footprints, Skull } from 'lucide-react'
 
 interface BoardSpaceProps {
   space: BoardSpaceType
   players: Player[]
   isCurrentPlayer: boolean
+  inspecting: boolean
   canMoveTo: boolean
   isLinkedToHovered?: boolean
   onClick: () => void
@@ -17,6 +18,7 @@ export function BoardSpace({
   players,
   isCurrentPlayer,
   canMoveTo,
+  inspecting,
   isLinkedToHovered = false,
   onClick,
 }: BoardSpaceProps) {
@@ -36,7 +38,8 @@ export function BoardSpace({
   return (
     <button
       onClick={onClick}
-      disabled={!canMoveTo}
+      disabled={!inspecting && !canMoveTo}
+      aria-label={`${inspecting ? 'Inspect' : 'Move to'} ${space.name}, ${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}, ${space.genreTags.join(', ') || 'no element tags'}`}
       className={`
         board-space-tile relative sm:hover:z-40 w-full aspect-square
         flex flex-col justify-between p-1.5 sm:p-2
@@ -84,7 +87,7 @@ export function BoardSpace({
       )}
 
       <div className="relative z-20 flex items-start justify-between gap-1">
-        <div className="tile-nameplate text-left text-[7px] sm:text-[9px] lg:text-[10px] font-medieval font-bold leading-tight text-parchment-100">
+        <div className="tile-nameplate text-left text-[9px] sm:text-[10px] lg:text-[10px] font-medieval font-bold leading-tight text-parchment-100">
           {/* Clamp an inner span: on the padded plate a third line peeks through the padding */}
           <span className="line-clamp-2">{space.name}</span>
         </div>
@@ -96,6 +99,7 @@ export function BoardSpace({
         )}
       </div>
 
+      {canMoveTo && <Footprints size={12} aria-hidden="true" className="absolute bottom-1 left-1 z-20 text-gold-300" />}
       {/* Player tokens */}
       <div className="relative z-20 flex-1 min-h-0 flex items-center justify-center pointer-events-none">
         {playersHere.length > 0 && (
@@ -109,7 +113,7 @@ export function BoardSpace({
                 }}
                 title={player.name}
               >
-                {player.name.charAt(0)}
+                {playerTokenLabel(player.name)}
               </div>
             ))}
           </div>
@@ -132,7 +136,7 @@ export function BoardSpace({
                   title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
                 >
                   <span
-                    className="text-[7px] sm:text-[9px] font-bold tabular-nums"
+                    className="text-[10px] sm:text-xs font-bold tabular-nums"
                     style={{ color: readableTextColor(color) }}
                   >
                     {count}

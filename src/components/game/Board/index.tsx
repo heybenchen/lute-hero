@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useGameStore, selectCurrentPlayer, selectCanAct } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
@@ -17,6 +17,11 @@ export function Board() {
   const studioOpen = useGameStore((state) => state.studio.playerId !== null)
 
   const [hoveredSpaceId, setHoveredSpaceId] = useState<number | null>(null)
+
+  const [inspecting, setInspecting] = useState(false)
+  const [inspectedId, setInspectedId] = useState<number | null>(null)
+  const dialog = useRef<HTMLDialogElement>(null)
+  const inspected = spaces.find((space) => space.id === inspectedId)
 
   if (!currentPlayer) return null
 
@@ -81,6 +86,9 @@ export function Board() {
         </div>
 
         <div className="flex items-center gap-2">
+        <button className="travel-token" aria-pressed={inspecting} onClick={() => setInspecting(!inspecting)}>
+          {inspecting ? 'Done inspecting' : 'Inspect map'}
+        </button>
         {canUndoMove && (
           <button
             onClick={undoMove}
@@ -119,7 +127,12 @@ export function Board() {
                     hoveredSpace !== undefined &&
                     hoveredSpace.connections.includes(space.id)
                   }
-                  onClick={() => handleSpaceClick(space.id)}
+                  inspecting={inspecting}
+                  onClick={() => {
+                    if (!inspecting) return handleSpaceClick(space.id)
+                    setInspectedId(space.id)
+                    dialog.current?.showModal()
+                  }}
                 />
               </div>
             ))}
@@ -127,6 +140,27 @@ export function Board() {
         </div>
       </div>
 
+      <dialog ref={dialog} aria-labelledby="tile-details-name" className="m-auto w-[min(90vw,24rem)] rounded-xl border border-gold-700 bg-wood-900 p-5 text-parchment-100 backdrop:bg-black/65">
+        {inspected && (
+          <>
+            <h2 id="tile-details-name" className="font-display text-xl">{inspected.name}</h2>
+            <p className="mt-1">{inspected.id === currentPlayer.position ? 'Current tile' : inspected.id === backtrackSpaceId ? 'Previous tile · move can be undone' : validMoves.some((space) => space.id === inspected.id) ? 'In range' : 'Out of range'}</p>
+            <p className="mt-3">Monsters · {inspected.monsters.map((monster) => monster.name).join(', ') || 'None'}</p>
+            <p>Element tags · {inspected.genreTags.join(', ') || 'None'}</p>
+            <p>Bards · {players.filter((player) => player.position === inspected.id).map((player) => player.name).join(', ') || 'None'}</p>
+            <div className="mt-4 flex gap-2">
+              <button autoFocus className="btn-secondary" onClick={() => dialog.current?.close()}>Close</button>
+              {(inspected.id === backtrackSpaceId || validMoves.some((space) => space.id === inspected.id)) && (
+                <button className="btn-primary" onClick={() => {
+                  handleSpaceClick(inspected.id)
+                  dialog.current?.close()
+                  setInspecting(false)
+                }}>{inspected.id === backtrackSpaceId ? 'Undo move' : 'Move here'}</button>
+              )}
+            </div>
+          </>
+        )}
+      </dialog>
       <div className="relative z-20 hidden sm:flex items-center justify-center gap-4 px-4 py-2 text-[9px] uppercase tracking-[0.16em] text-parchment-500">
         <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-current" /> Your tile</span>
         <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-move" /> In range</span>

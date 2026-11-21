@@ -100,7 +100,7 @@ export function SongCard({ song, onPlay, disabled, index = 0, rolls, onReroll, o
             type="button"
             onClick={playable ? onPlay : undefined}
             disabled={!playable}
-            aria-label={playable ? 'Perform this song' : undefined}
+            aria-label={playable ? `Perform song ${index + 1}: ${song.slots.flatMap(({ dice }) => dice ? [`${dice.genre} ${dice.type}`] : []).join(', ')}` : undefined}
             className={`flex w-full flex-col rounded-md transition-all duration-200 ${
               playable ? 'cursor-pointer hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-400' : 'cursor-default'
             } ${onRubato || onRally ? 'mb-2.5' : ''}`}

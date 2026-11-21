@@ -395,31 +395,33 @@ export function CombatModal() {
           )}
 
           {/* Songs Section */}
-          <section className="mb-4 border-t border-gold-700/15 pt-4">
-            <SectionHeader
-              label={`Choose a song · ${ownSongsRemaining} ready`}
-            />
-            {canRally && hasSpentOwnSong && (
-              <div className="mb-3 flex items-center justify-center gap-2 border-l-2 border-orange-300/40 py-1.5 pl-3 text-center text-sm text-orange-100 animate-fade-in">
-                <RotateCcw size={15} aria-hidden="true" />
-                <span><strong>{STYLES.staccato.name}</strong> is ready. Choose a spent song to refresh.</span>
-              </div>
-            )}
-            <SongGrid count={player.songs.length}>
-              {player.songs.map((song, idx) => (
-                <SongCard
-                  key={song.id}
-                  song={{ ...song, used: isSongSpent(song.id) }}
-                  onPlay={() => handlePlaySong(song.id)}
-                  disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
-                  index={idx}
-                  rolls={currentSongId === song.id ? rolls : undefined}
-                  onRally={canRally && isSongSpent(song.id) ? () => handleRally(song.id) : undefined}
-                />
-              ))}
-            </SongGrid>
-            <CombatStyles player={player} usedStyleIds={stylesUsed} />
-          </section>
+          {!allMonstersDefeated && (
+            <section className="mb-4 border-t border-gold-700/15 pt-4">
+              <SectionHeader
+                label={`Choose a song · ${ownSongsRemaining} ready`}
+              />
+              {canRally && hasSpentOwnSong && (
+                <div className="mb-3 flex items-center justify-center gap-2 border-l-2 border-orange-300/40 py-1.5 pl-3 text-center text-sm text-orange-100 animate-fade-in">
+                  <RotateCcw size={15} aria-hidden="true" />
+                  <span><strong>{STYLES.staccato.name}</strong> is ready. Choose a spent song to refresh.</span>
+                </div>
+              )}
+              <SongGrid count={playableSongs.length}>
+                {playableSongs.map((song, idx) => (
+                  <SongCard
+                    key={song.id}
+                    song={{ ...song, used: isSongSpent(song.id) }}
+                    onPlay={() => handlePlaySong(song.id)}
+                    disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
+                    index={idx}
+                    rolls={currentSongId === song.id ? rolls : undefined}
+                    onRally={canRally && isSongSpent(song.id) ? () => handleRally(song.id) : undefined}
+                  />
+                ))}
+              </SongGrid>
+              <CombatStyles player={player} usedStyleIds={stylesUsed} />
+            </section>
+          )}
 
           {!allMonstersDefeated && (
             <FeaturedSongs
@@ -506,7 +508,7 @@ export function CombatModal() {
               <button
                 onClick={handleRetreatClick}
                 disabled={!canRoll}
-                className="flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40 sm:min-w-40"
+                className={`flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${canContinue ? 'self-end' : 'sm:min-w-40'}`}
                 style={{
                   background: canContinue
                     ? 'linear-gradient(145deg, rgba(92, 70, 52, 0.48), rgba(50, 39, 30, 0.82))'

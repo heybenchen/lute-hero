@@ -14,6 +14,8 @@
 
 ## Completed
 
+- Added touch and keyboard map inspection, clearer movement and player markers, keyboard combat targeting, equipped-only setlists, and a focused victory screen.
+
 - Studio reorganised: Buy Inspiration and Refresh share one compact row; the Setlist (elements → your songs) comes first and Styles (shelf + your styles) below it. A bard's songs together are called their setlist (Studio, player panel, style text, rules). Element chips fit the width on phones.
 - Final Showdown boss no longer gains a 2× weakness between verses — it only becomes immune to the strongest performance's element. (A "taming" wording pass was tried and reverted.)
 - Final Showdown: tapping a die performs every die of that element together (`showdownElementSongs`); Inspiration (and Nimble Fingers) reroll the whole performance from a button; the crowd bar and fandom wait for the 3D dice to land. Songs use a shared `SongGrid` (two rows on phones) in fights, featured songs and the showdown. Playtest console: "Jump to Final Showdown after round N" with bard holdings sampled from 900 simulated bot games (`src/sim/bot.ts`, `scripts/sim-round-profiles.ts` → `src/data/roundProfiles.ts`).
