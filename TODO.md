@@ -6,6 +6,8 @@
 
 ## Medium Priority
 
+- Rebalance styles from the audit: Crowd Favorite 5→2 Fame/tame and Dragon's Roar +2→+1 (both sim to ~45%); limit Lingering Note to d20s and re-price Rallying Cry; rework Harmony (per-element bonus), Dissonance and Muse's Favor; consider the 12 proposed new styles (Session Player, Crescendo, Glass Cannon, Signature Sound, Tough Crowd, Wanderer, Word of Mouth, Duet, Busker, Showstopper, Underdog, Encore Act).
+
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
 
 ## Low Priority
