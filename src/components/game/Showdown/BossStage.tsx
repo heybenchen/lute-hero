@@ -100,9 +100,9 @@ export function BossStage({ turn, resistGenre, fandom, players, defeated }: Boss
                 border: '1px solid rgba(232, 32, 64, 0.4)',
                 color: '#ff9d9d',
               }}
-              title={`${resistGenre} dice win no fans this verse`}
+              title={`${resistGenre} dice deal no damage this verse`}
             >
-              🛡 0× {GENRE_THEME[resistGenre].emoji} <span style={{ color: GENRE_THEME[resistGenre].color }}>{resistGenre}</span> — unmoved
+              🛡 0× {GENRE_THEME[resistGenre].emoji} <span style={{ color: GENRE_THEME[resistGenre].color }}>{resistGenre}</span> — immune
             </span>
           )}
         </div>

@@ -40,7 +40,7 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
         role={selectable ? 'button' : undefined}
         aria-pressed={selectable ? isSelected : undefined}
         className={`relative h-full w-full overflow-hidden rounded-xl transition-all duration-300 ${
-          isDefeated ? 'opacity-70 scale-[0.97]' : isLowHP ? 'animate-pulse-slow' : ''
+          isDefeated ? 'opacity-30 scale-[0.97] grayscale' : isLowHP ? 'animate-pulse-slow' : ''
         } ${selectable ? 'cursor-pointer hover:-translate-y-0.5' : ''}`}
         style={{
           background: accent
@@ -79,7 +79,7 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
                   </span>
                 )}
                 {fameValue !== undefined && fameValue > 0 && (
-                  <span className="font-bold text-gold-300" title="Fame earned when this monster is tamed">
+                  <span className="font-bold text-gold-300" title="Fame earned if this monster is defeated">
                     {fameValue} Fame
                   </span>
                 )}
@@ -101,14 +101,14 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
 
           <div className="relative mb-3 border-y border-white/10 py-2.5">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="font-medieval text-[10px] font-bold uppercase tracking-[0.18em] text-parchment-400">Wildness</span>
+              <span className="font-medieval text-[10px] font-bold uppercase tracking-[0.18em] text-parchment-400">Vitality</span>
               <div className="flex items-baseline gap-1">
                 <span className={`font-display text-2xl leading-none tabular-nums ${
                   isDefeated ? 'text-green-400/60' : hpPercent > 50 ? 'text-parchment-100' : hpPercent > 25 ? 'text-gold-400' : 'text-red-400'
                 }`}>
                   {Math.max(0, monster.currentHP)}
                 </span>
-                <span className="text-xs text-parchment-500">/ {monster.maxHP}</span>
+                <span className="text-xs text-parchment-500">/ {monster.maxHP} HP</span>
               </div>
             </div>
             <div className="hp-bar h-2.5 rounded-full">
@@ -133,9 +133,9 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
             {monster.vulnerability && (
               <div
                 className="pr-3"
-                title="Adores this genre — its songs charm double"
+                title="Weak — takes double damage from this genre"
               >
-                <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-green-200/70">Adores</div>
+                <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-green-200/70">Weakness</div>
                 <div className="flex items-center justify-between gap-2">
                   <GenreBadge genre={monster.vulnerability} className="rounded px-2 py-0.5 text-xs" />
                   <span className="font-display text-xl leading-none text-green-200">×2</span>
@@ -145,9 +145,9 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
             {monster.resistance && (
               <div
                 className="pl-3"
-                title="Unmoved by this genre — its songs don't charm at all"
+                title="Immune — takes no damage from this genre"
               >
-                <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-300/65">Unmoved by</div>
+                <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-300/65">Immunity</div>
                 <div className="flex items-center justify-between gap-2">
                   <GenreBadge genre={monster.resistance} className="rounded px-2 py-0.5 text-xs" />
                   <span className="font-display text-xl leading-none text-slate-200">×0</span>
@@ -157,12 +157,11 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
           </div>
 
           {isDefeated && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/35">
-              <div className="rounded-full border border-pink-300/40 bg-pink-950/70 px-4 py-2 text-center font-medieval text-lg font-bold tracking-wider text-pink-200"
-                style={{ textShadow: '0 0 12px rgba(244, 114, 182, 0.5)' }}
+            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/45">
+              <div className="rounded-full border border-green-300/30 bg-green-950/70 px-4 py-2 font-medieval text-lg font-bold tracking-wider text-green-300"
+                style={{ textShadow: '0 0 12px rgba(74, 222, 128, 0.5)' }}
               >
-                TAMED ♥
-                <div className="text-[10px] font-normal normal-case tracking-normal text-pink-100/80">a new adoring fan</div>
+                CONVERTED
               </div>
             </div>
           )}

@@ -56,7 +56,7 @@ export function TypeChart({ className = '' }: { className?: string }) {
         viewBox={`0 0 ${VIEW} ${VIEW}`}
         className="w-full h-auto max-w-[340px] mx-auto"
         role="img"
-        aria-label="Element chart: monsters are unmoved (0×) by the opposing element and adore (2×) their own."
+        aria-label="Element type chart: opposing elements are immune (0×) to each other; each element takes 2× from its matching genre."
       >
         <defs>
           <radialGradient id="tc-hub" cx="50%" cy="50%" r="50%">
@@ -203,7 +203,7 @@ export function TypeChart({ className = '' }: { className?: string }) {
           >
             2×
           </span>
-          <span>Monsters <span className="text-green-300 font-bold">adore</span> their own element — double charm.</span>
+          <span>Hit a monster with its <span className="text-green-300 font-bold">matching</span> element for double damage.</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold flex-shrink-0"
@@ -211,7 +211,7 @@ export function TypeChart({ className = '' }: { className?: string }) {
           >
             0×
           </span>
-          <span>They're <span className="text-slate-300 font-bold">unmoved by</span> the opposite element — no charm at all.</span>
+          <span>The <span className="text-slate-300 font-bold">opposite</span> element is useless — the monster is immune.</span>
         </div>
       </div>
     </div>

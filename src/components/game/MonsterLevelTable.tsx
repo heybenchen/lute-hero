@@ -16,9 +16,9 @@ export function MonsterLevelTable({ className = '' }: { className?: string }) {
         <thead>
           <tr className="text-gold-300 font-medieval uppercase tracking-wider text-[10px]">
             <th className="text-left py-1 pr-2 font-bold">Level</th>
-            <th className="text-right py-1 px-2 font-bold" title="Charm needed to tame a monster of this level">🐾 Wildness</th>
-            <th className="text-right py-1 px-2 font-bold" title="Fame awarded when tamed">⭐ Fame</th>
-            <th className="text-right py-1 pl-2 font-bold" title="EXP awarded when tamed">✨ EXP</th>
+            <th className="text-right py-1 px-2 font-bold" title="Hit points at this level">❤ HP</th>
+            <th className="text-right py-1 px-2 font-bold" title="Fame awarded on defeat">⭐ Fame</th>
+            <th className="text-right py-1 pl-2 font-bold" title="EXP awarded on defeat">✨ EXP</th>
           </tr>
         </thead>
         <tbody>

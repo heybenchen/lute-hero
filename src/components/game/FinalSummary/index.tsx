@@ -34,11 +34,11 @@ function assignAwards(summaries: Omit<PlayerSummary, 'award'>[]): Map<string, Aw
       rankBy: (s) => s.player.fame,
     },
     {
-      award: { title: 'One-Hit Wonder', emoji: '💥', blurb: 'Biggest single performance of the showdown' },
+      award: { title: 'One-Hit Wonder', emoji: '💥', blurb: 'Biggest single hit of the showdown' },
       rankBy: (s) => s.bestHit?.damage ?? 0,
     },
     {
-      award: { title: 'Monster Whisperer', emoji: '🐾', blurb: 'Most monsters tamed into fans' },
+      award: { title: 'Beast Buster', emoji: '🗡️', blurb: 'Most monsters converted to fans' },
       rankBy: (s) => s.player.monstersDefeated,
     },
     {
@@ -183,8 +183,8 @@ export function FinalSummary() {
 
               {/* Fun stats grid */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <StatRow icon="🐾" label="Monsters tamed" value={`${s.player.monstersDefeated}`} />
-                <StatRow icon="💥" label="Biggest performance" value={s.bestHit ? `${s.bestHit.damage}` : '—'} />
+                <StatRow icon="🗡️" label="Monsters bested" value={`${s.player.monstersDefeated}`} />
+                <StatRow icon="💥" label="Biggest hit" value={s.bestHit ? `${s.bestHit.damage}` : '—'} />
                 <StatRow icon="🎲" label="Dice collected" value={`${s.diceCount}`} detail={s.strongestDie ? `best: ${s.strongestDie}` : undefined} />
                 <StatRow icon="⚡" label="Showdown crits" value={`${s.crits}`} />
                 <StatRow icon="💰" label="EXP unspent" value={`${s.player.exp}`} />

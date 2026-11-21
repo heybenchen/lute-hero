@@ -250,8 +250,8 @@ const PLAYER_FIELDS: { key: 'fame' | 'exp' | 'inspiration' | 'movesThisTurn' | '
   { key: 'exp', label: 'EXP', max: 500 },
   { key: 'inspiration', label: 'Inspiration', max: 50 },
   { key: 'movesThisTurn', label: 'Moves used', max: 16 },
-  { key: 'fightsThisTurn', label: 'Serenades used', max: 10 },
-  { key: 'monstersDefeated', label: 'Monsters tamed', max: 200 },
+  { key: 'fightsThisTurn', label: 'Fights used', max: 10 },
+  { key: 'monstersDefeated', label: 'Monsters beaten', max: 200 },
 ]
 
 const PHASES: GamePhase[] = ['setup', 'main', 'finalBoss', 'gameOver']

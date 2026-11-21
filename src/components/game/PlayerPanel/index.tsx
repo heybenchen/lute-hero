@@ -9,7 +9,7 @@ import {
   MapPin,
   Sparkles,
   Store,
-  Music,
+  Swords,
 } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
 import { StyleChip } from '@/components/ui/StyleBadge'
@@ -76,7 +76,7 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
             border: '1px solid rgba(255, 180, 60, 0.4)',
             color: '#ffd591',
           }}
-          title="The current player looks disconnected — skip their turn (their serenade ends with a bow)"
+          title="The current player looks disconnected — skip their turn (auto-retreats their combat)"
         >
           &#x23ED; Skip{compact ? '' : ` ${currentPlayer.name}'s Turn (offline)`}
         </button>
@@ -88,21 +88,21 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
           disabled={!canFight}
           className={`${size} flex items-center justify-center gap-2 font-medieval font-bold rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:brightness-110 hover:enabled:-translate-y-0.5 active:enabled:translate-y-0 ${canFight ? 'animate-danger-pulse' : ''}`}
           style={{
-            background: canFight ? 'linear-gradient(135deg, #c23a72, #86204d)' : 'rgba(100, 30, 60, 0.3)',
-            border: '1px solid rgba(240, 110, 170, 0.45)',
-            color: '#ffd9ea',
+            background: canFight ? 'linear-gradient(135deg, #c43030, #8c2020)' : 'rgba(100, 30, 30, 0.3)',
+            border: '1px solid rgba(232, 80, 80, 0.4)',
+            color: '#ffd4d4',
             textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
-            boxShadow: canFight ? '0 0 12px rgba(236, 72, 153, 0.22)' : 'none',
+            boxShadow: canFight ? '0 0 12px rgba(232, 32, 64, 0.2)' : 'none',
           }}
-          title={canFight ? undefined : 'You have already serenaded this turn'}
+          title={canFight ? undefined : 'You have already fought this turn'}
         >
-          <Music size={16} aria-hidden="true" />
+          <Swords size={16} aria-hidden="true" />
           <span className="truncate">
             {compact
-              ? 'Serenade'
+              ? 'Fight'
               : canFight
-                ? `Serenade ${monsterCount} Monster${monsterCount > 1 ? 's' : ''}`
-                : 'Already serenaded'}
+                ? `Fight ${monsterCount} Monster${monsterCount > 1 ? 's' : ''}`
+                : 'No fights left'}
           </span>
         </button>
       )}
@@ -112,7 +112,7 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
           <button
             onClick={() => dispatch({ type: 'OPEN_STUDIO', playerId: currentPlayer.id })}
             className={`btn-secondary ${size} flex items-center justify-center gap-2 ${shouldHintStudio ? 'animate-gentle-flash' : ''}`}
-            title={shouldHintStudio ? 'You serenaded this turn — spend your EXP before ending the turn' : undefined}
+            title={shouldHintStudio ? 'You fought this turn — spend your EXP before ending the turn' : undefined}
           >
             <Store size={15} aria-hidden="true" />
             <span className="truncate">Studio <span className="opacity-60">({currentPlayer.exp}{compact ? '' : ' EXP'})</span></span>
@@ -120,7 +120,7 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
           <button
             onClick={() => dispatch({ type: 'END_TURN' })}
             disabled={canFight}
-            title={canFight ? 'Serenade the monsters here before ending your turn' : undefined}
+            title={canFight ? 'Fight the monster here before ending your turn' : undefined}
             className={`btn-primary ${size} flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             <Flag size={15} aria-hidden="true" />
@@ -266,7 +266,7 @@ export function PlayerPanel() {
           </div>
         </div>
         <div className="turn-counter">
-          <span className="flex items-center gap-1.5"><Music size={12} /> Serenade</span>
+          <span className="flex items-center gap-1.5"><Swords size={12} /> Battle</span>
           <strong className={currentPlayer.fightsThisTurn < 1 ? 'text-emerald-300' : 'text-parchment-500'}>
             {currentPlayer.fightsThisTurn < 1 ? 'Ready' : 'Spent'}
           </strong>

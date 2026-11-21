@@ -166,7 +166,7 @@ export type TunableGroup =
   | 'Turn structure'
   | 'Board'
   | 'Monsters'
-  | 'Serenades'
+  | 'Combat'
   | 'Economy'
   | 'Shop'
   | 'Showdown'
@@ -191,19 +191,19 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'monsterExpPerLevel', label: 'EXP per monster level', group: 'Progression', min: 0, max: 20, step: 1 },
 
   { key: 'maxMovesPerTurn', label: 'Moves per turn', group: 'Turn structure', min: 0, max: 16, step: 1 },
-  { key: 'maxFightsPerTurn', label: 'Serenades per turn', group: 'Turn structure', min: 0, max: 10, step: 1 },
+  { key: 'maxFightsPerTurn', label: 'Fights per turn', group: 'Turn structure', min: 0, max: 10, step: 1 },
   { key: 'roundEndChipsPerElement', label: 'Round-end chips per element', group: 'Turn structure', min: 0, max: 5, step: 1, help: 'At round end every bard is dealt this many chips of each element to place.' },
 
   { key: 'maxTagsPerGenre', label: 'Max chips per element, per space', group: 'Board', min: 1, max: 20, step: 1, help: 'A space holds any number of chips; only same-element chips are capped.' },
   { key: 'startingTagsPerSpace', label: 'Starting chips per space', group: 'Board', min: 0, max: 10, step: 1, help: 'Applied when a new game starts.' },
 
   { key: 'maxMonsterLevel', label: 'Max monster level', group: 'Monsters', min: 1, max: 10, step: 1 },
-  { key: 'monsterBaseHp', label: 'Base Wildness (Lv.1)', group: 'Monsters', min: 1, max: 100, step: 1, help: 'Every monster spawns with this much Wildness, times its level multiplier.' },
-  { key: 'monsterHpScale', label: 'Monster Wildness scale', group: 'Monsters', min: 0.1, max: 10, step: 0.1, help: 'Global multiplier on spawn Wildness. Lower = faster taming.' },
+  { key: 'monsterBaseHp', label: 'Base HP (Lv.1)', group: 'Monsters', min: 1, max: 100, step: 1, help: 'Every monster spawns from this, times its level multiplier.' },
+  { key: 'monsterHpScale', label: 'Monster HP scale', group: 'Monsters', min: 0.1, max: 10, step: 0.1, help: 'Global multiplier on spawn HP. Lower = faster fights.' },
 
-  { key: 'vulnerabilityMultiplier', label: 'Adores multiplier (own element)', group: 'Serenades', min: 0, max: 10, step: 0.25 },
-  { key: 'resistanceMultiplier', label: 'Unmoved-by multiplier (opposite element)', group: 'Serenades', min: 0, max: 10, step: 0.25 },
-  { key: 'maxCritCascades', label: 'Max crit cascades', group: 'Serenades', min: 1, max: 50, step: 1 },
+  { key: 'vulnerabilityMultiplier', label: 'Weakness multiplier', group: 'Combat', min: 0, max: 10, step: 0.25 },
+  { key: 'resistanceMultiplier', label: 'Immunity multiplier', group: 'Combat', min: 0, max: 10, step: 0.25 },
+  { key: 'maxCritCascades', label: 'Max crit cascades', group: 'Combat', min: 1, max: 50, step: 1 },
 
   { key: 'startingInspiration', label: 'Starting Inspiration', group: 'Economy', min: 0, max: 20, step: 1 },
   { key: 'newD4Cost', label: 'New d4 cost', group: 'Economy', min: 0, max: 20, step: 1 },
@@ -237,7 +237,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'overtureBonus', label: 'Fanfare: first-roll bonus', group: 'Styles', min: 0, max: 20, step: 1 },
   { key: 'tuttiBonus', label: 'Harmony: first-roll bonus', group: 'Styles', min: 0, max: 20, step: 1 },
   { key: 'ostinatoCritFace', label: 'War Drums: d4 crits from', group: 'Styles', min: 1, max: 4, step: 1 },
-  { key: 'counterpointMultiplier', label: 'Dissonance: unmoved-by ×', group: 'Styles', min: 0, max: 2, step: 0.25 },
+  { key: 'counterpointMultiplier', label: 'Dissonance: immune ×', group: 'Styles', min: 0, max: 2, step: 0.25 },
   { key: 'bravoFamePerTame', label: 'Crowd Favorite: Fame per tame', group: 'Styles', min: 0, max: 20, step: 1 },
 ]
 
@@ -258,13 +258,13 @@ export const TUNABLE_FIELDS: TunableField[] = [
   ...SCALAR_FIELDS.filter((f) => f.group === 'Monsters').map(toField),
   ...Array.from({ length: LEVEL_COUNT }, (_, i) => ({
     path: `hpMultipliers.${i}`,
-    label: `Wildness × — Lv.${i + 1}`,
+    label: `HP × — Lv.${i + 1}`,
     group: 'Monsters' as const,
     min: 0.1,
     max: 25,
     step: 0.25,
   })),
-  ...SCALAR_FIELDS.filter((f) => f.group === 'Serenades').map(toField),
+  ...SCALAR_FIELDS.filter((f) => f.group === 'Combat').map(toField),
   ...SCALAR_FIELDS.filter((f) => f.group === 'Economy').map(toField),
   ...SCALAR_FIELDS.filter((f) => f.group === 'Shop').map(toField),
   ...SCALAR_FIELDS.filter((f) => f.group === 'Showdown').map(toField),
@@ -280,7 +280,7 @@ export const TUNABLE_GROUPS: TunableGroup[] = [
   'Turn structure',
   'Board',
   'Monsters',
-  'Serenades',
+  'Combat',
   'Economy',
   'Shop',
   'Showdown',

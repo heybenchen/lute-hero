@@ -27,7 +27,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
   staccato: {
     id: 'staccato',
     name: 'Rallying Cry',
-    flavor: 'One new fan, and a weary song finds its voice again.',
+    flavor: 'One victory, and a weary song finds its voice again.',
     rule: 'Once per turn, after one of your songs tames a monster, refresh a spent song of your choice.',
   },
   coda: {
@@ -39,7 +39,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
   ostinato: {
     id: 'ostinato',
     name: 'War Drums',
-    flavor: 'Small drums, struck with relentless joy.',
+    flavor: 'Small drums, struck without mercy.',
     rule: 'Your d4s crit on a 3 or 4 (bonus dice still need a 4).',
   },
   rubato: {
@@ -57,7 +57,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
   fortissimo: {
     id: 'fortissimo',
     name: "Dragon's Roar",
-    flavor: 'Loud enough to make a wyrm sway along.',
+    flavor: 'Loud enough to shake the scales off a wyrm.',
     rule: '+2 to every d20 roll. A d20 that reaches 20 this way crits.',
   },
   fermata: {
@@ -69,8 +69,8 @@ export const STYLES: Record<StyleId, StyleDef> = {
   counterpoint: {
     id: 'counterpoint',
     name: 'Dissonance',
-    flavor: 'A clashing chord even the stubbornest ear can\'t ignore.',
-    rule: 'Once per turn, a roll at a monster unmoved by its element still charms at half strength.',
+    flavor: 'A clashing chord that no ward can fully block.',
+    rule: 'Once per turn, a roll against an immune target deals half damage instead of none.',
   },
   tutti: {
     id: 'tutti',
@@ -81,7 +81,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
   overture: {
     id: 'overture',
     name: 'Fanfare',
-    flavor: 'Horns announce the bard before the first note.',
+    flavor: 'Horns announce the hero before the first blow.',
     rule: "+2 to your first roll each turn (can't crit).",
   },
   bravo: {

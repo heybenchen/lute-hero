@@ -99,11 +99,11 @@ export function AdaptBanner({
                   }}
                 >
                   <span className="text-sm text-parchment-300">
-                    🛡 It grows numb to the mightiest sound —{' '}
+                    🛡 It hardens against the mightiest sound —{' '}
                     <span className="font-bold" style={{ color: GENRE_THEME[resistGenre].color }}>
                       {GENRE_THEME[resistGenre].emoji} {resistGenre}
                     </span>{' '}
-                    dice win <span className="font-bold text-red-300">no fans</span> next verse.
+                    dice deal <span className="font-bold text-red-300">no damage</span> next verse.
                   </span>
                 </div>
               )}
