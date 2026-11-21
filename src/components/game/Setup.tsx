@@ -171,10 +171,10 @@ export function Setup() {
           <ul className="list-disc list-inside space-y-1 text-parchment-400 text-xs">
             <li>Move to connected spaces each turn</li>
             <li>Genre tags spawn monsters when you enter</li>
-            <li>Play a song at one monster to deal damage</li>
-            <li>Defeat monsters to gain Fame and EXP</li>
-            <li>A monster's matching genre deals 2x damage; its immune genre deals 0 (no damage)</li>
-            <li>Rolling max value = Critical Hit (double damage!)</li>
+            <li>Sing to one monster at a time — each roll is charm that wears down its Wildness</li>
+            <li>Tame monsters to turn them into fans: that's your Fame and EXP</li>
+            <li>A monster adores its own genre (2× charm) and is unmoved by its opposite (0×)</li>
+            <li>Rolling a die's top face = Encore (it rolls again for bonus charm!)</li>
           </ul>
         </div>
       </div>

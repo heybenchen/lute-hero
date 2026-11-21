@@ -1168,7 +1168,6 @@ function startShowdownFields(playerIds: string[]): Partial<EngineState> {
     showdownOrder: playerIds,
     showdownPerformerIdx: 0,
     showdownResistGenre: null,
-    showdownWeakGenre: null,
     showdownSongsUsed: [],
     showdownCurrentFandom: 0,
     showdownCurrentGenre: null,
@@ -1274,7 +1273,6 @@ function rollShowdownPlay(
 ) {
   const boss = createShowdownBoss({
     resistGenre: state.showdownResistGenre,
-    weakGenre: state.showdownWeakGenre,
   })
   // Styles apply in the showdown too. Each performance is the bard's whole
   // turn, so it is always their first roll and once-per-turn styles are fresh.
@@ -1296,7 +1294,6 @@ function rollShowdownPlay(
   const songGenres = song.slots
     .map((slot) => slot.dice?.genre)
     .filter((g): g is Genre => g !== undefined)
-  const hitWeakness = state.showdownWeakGenre !== null && songGenres.includes(state.showdownWeakGenre)
   const wasResisted = state.showdownResistGenre !== null && songGenres.includes(state.showdownResistGenre)
 
   const bestHit =
@@ -1312,7 +1309,6 @@ function rollShowdownPlay(
     songIds,
     fandom,
     hadCrit: critCount > 0,
-    hitWeakness,
     wasResisted,
     genre,
   })
@@ -1424,7 +1420,6 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
       showdownCurrentFandom: 0,
       showdownCurrentGenre: null,
       showdownResistGenre: adaptation.resistGenre,
-      showdownWeakGenre: adaptation.weakGenre,
       showdownUndo: null,
     }
   }

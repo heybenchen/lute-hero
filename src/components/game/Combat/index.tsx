@@ -257,7 +257,7 @@ export function CombatModal() {
               }}
             >
               <div className="font-medieval text-sm uppercase tracking-wider text-parchment-400">
-                {allMonstersDefeated ? 'Victory' : 'Out of Songs'} — {player.name}'s Rewards{!canAct ? ' (watching live)' : ''}
+                {allMonstersDefeated ? 'Everyone Tamed' : 'Out of Songs'} — {player.name}'s Rewards{!canAct ? ' (watching live)' : ''}
               </div>
               <div className="flex flex-wrap items-baseline justify-center gap-x-5 gap-y-1 mt-1">
                 <span className="font-display text-2xl sm:text-3xl text-gold-400 tabular-nums" style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}>
@@ -289,7 +289,7 @@ export function CombatModal() {
               {canContinue && (
                 <p className="flex items-center gap-2 text-sm text-parchment-300">
                   <Target size={15} className="shrink-0 text-gold-400" aria-hidden="true" />
-                  Target a monster, then play a song.
+                  Choose a monster, then sing it a song.
                 </p>
               )}
             </div>
@@ -299,9 +299,9 @@ export function CombatModal() {
           {allMonstersDefeated ? (
             <div className="mb-5 animate-fade-in">
               <div className="mb-4 text-center">
-                <div className="font-display text-xl sm:text-2xl text-green-300">Radiate an Element</div>
+                <div className="font-display text-xl sm:text-2xl text-green-300">Spread the Word</div>
                 <p className="mt-1 text-sm sm:text-base text-parchment-400">
-                  Choose an element. Every bordering space gains 1 tag of it.
+                  Your new fans spread the word of one element — every bordering space gains 1 chip of it.
                 </p>
               </div>
 
@@ -358,7 +358,7 @@ export function CombatModal() {
                   textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
                   boxShadow: 'none',
                 }}
-                title={selectedSpreadGenre ? undefined : 'Choose an element to radiate first'}
+                title={selectedSpreadGenre ? undefined : 'Choose an element to spread first'}
               >
                 {selectedSpreadGenre ? 'Claim Fame & Glory' : 'Choose an Element'}
               </button>
@@ -469,16 +469,16 @@ export function CombatModal() {
                   )}
                 </button>
               )}
-              {/* Retreat is always on offer, even before a song is played */}
+              {/* Taking a bow (retreat) is always on offer, even before a song is played */}
               {confirmingRetreat && retreatForfeitsDamage ? (
                 <div
                   className="flex flex-col gap-2 rounded-lg p-3 animate-fade-in sm:flex-row sm:items-center"
                   style={{ background: 'rgba(130, 68, 48, 0.18)', border: '1px solid rgba(224, 124, 90, 0.38)' }}
                   role="alertdialog"
-                  aria-label="Confirm retreat"
+                  aria-label="Confirm taking a bow"
                 >
                   <span className="text-sm text-parchment-200 sm:mr-2">
-                    You still have songs that can deal damage. Retreat anyway?
+                    You still have songs that could charm them. Take a bow anyway?
                   </span>
                   <div className="flex gap-2">
                     <button
@@ -498,7 +498,7 @@ export function CombatModal() {
                       }}
                     >
                       <Flag size={15} className="shrink-0" aria-hidden="true" />
-                      Retreat
+                      Take a Bow
                     </button>
                   </div>
                 </div>
@@ -515,10 +515,10 @@ export function CombatModal() {
                   color: canContinue ? '#d8c7a5' : '#f0c1aa',
                   boxShadow: 'none',
                 }}
-                title="Leave the fight now — you earn EXP for every monster you wounded and Fame for each one you defeated"
+                title="Leave the stage now — you earn EXP for every monster you charmed and Fame for each one you tamed"
               >
                 <Flag size={16} className="shrink-0 opacity-80" aria-hidden="true" />
-                <span className="font-medieval font-bold">{canContinue ? 'Retreat' : 'End fight'}</span>
+                <span className="font-medieval font-bold">{canContinue ? 'Take a Bow' : 'End the Serenade'}</span>
               </button>
               )}
             </div>

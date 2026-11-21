@@ -5,7 +5,6 @@ import { GENRE_THEME } from '@/data/genreTheme'
 interface BossStageProps {
   turn: number
   resistGenre: Genre | null
-  weakGenre: Genre | null
   fandom: Record<string, number>
   players: Player[]
   /** Ramps the boss's visual instability as its defeat approaches */
@@ -13,7 +12,7 @@ interface BossStageProps {
 }
 
 /** The Eternal Silence — a void orb that grows more unstable each turn. */
-export function BossStage({ turn, resistGenre, weakGenre, fandom, players, defeated }: BossStageProps) {
+export function BossStage({ turn, resistGenre, fandom, players, defeated }: BossStageProps) {
   const totalFandom = players.reduce((sum, p) => sum + (fandom[p.id] || 0), 0)
 
   return (
@@ -91,7 +90,7 @@ export function BossStage({ turn, resistGenre, weakGenre, fandom, players, defea
       </div>
 
       {/* Elemental adaptation badges — same mechanics as monster strengths/weaknesses */}
-      {(resistGenre || weakGenre) && (
+      {resistGenre && (
         <div className="flex flex-wrap justify-center gap-2 mb-4 animate-slide-up">
           {resistGenre && (
             <span
@@ -101,22 +100,9 @@ export function BossStage({ turn, resistGenre, weakGenre, fandom, players, defea
                 border: '1px solid rgba(232, 32, 64, 0.4)',
                 color: '#ff9d9d',
               }}
-              title={`${resistGenre} dice deal no damage this verse`}
+              title={`${resistGenre} dice win no fans this verse`}
             >
-              🛡 0× {GENRE_THEME[resistGenre].emoji} <span style={{ color: GENRE_THEME[resistGenre].color }}>{resistGenre}</span> — immune
-            </span>
-          )}
-          {weakGenre && (
-            <span
-              className="text-xs font-medieval font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5"
-              style={{
-                background: 'rgba(76, 175, 80, 0.12)',
-                border: '1px solid rgba(76, 175, 80, 0.45)',
-                color: '#a7f3ad',
-              }}
-              title={`${weakGenre} dice deal double damage this verse`}
-            >
-              💥 2× {GENRE_THEME[weakGenre].emoji} <span style={{ color: GENRE_THEME[weakGenre].color }}>{weakGenre}</span> — exposed
+              🛡 0× {GENRE_THEME[resistGenre].emoji} <span style={{ color: GENRE_THEME[resistGenre].color }}>{resistGenre}</span> — unmoved
             </span>
           )}
         </div>

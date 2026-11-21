@@ -30,7 +30,6 @@ export type EngineEvent =
       songIds?: string[]
       fandom: number
       hadCrit: boolean
-      hitWeakness: boolean
       wasResisted: boolean
       genre: Genre | null
     }

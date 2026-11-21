@@ -20,7 +20,6 @@ interface FandomPopup {
   id: string
   fandom: number
   hadCrit: boolean
-  hitWeakness: boolean
   wasResisted: boolean
 }
 
@@ -31,7 +30,6 @@ export function FinalShowdown() {
   const showdownOrder = useGameStore((state) => state.showdownOrder)
   const showdownPerformerIdx = useGameStore((state) => state.showdownPerformerIdx)
   const showdownResistGenre = useGameStore((state) => state.showdownResistGenre)
-  const showdownWeakGenre = useGameStore((state) => state.showdownWeakGenre)
   const showdownSongsUsed = useGameStore((state) => state.showdownSongsUsed)
   const showdownCurrentFandom = useGameStore((state) => state.showdownCurrentFandom)
   const showdownFandom = useGameStore((state) => state.showdownFandom)
@@ -69,13 +67,12 @@ export function FinalShowdown() {
 
   /** Fandom pops once the 3D dice have landed. */
   const popupSeq = useRef(0)
-  const showFandomPopup = useCallback(async (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
+  const showFandomPopup = useCallback(async (result: { fandom: number; hadCrit: boolean; wasResisted: boolean }) => {
     await diceBus.whenSettled()
     const popup: FandomPopup = {
       id: `fandom-${++popupSeq.current}`,
       fandom: result.fandom,
       hadCrit: result.hadCrit,
-      hitWeakness: result.hitWeakness,
       wasResisted: result.wasResisted,
     }
     setPopups((prev) => [...prev, popup])
@@ -180,7 +177,6 @@ export function FinalShowdown() {
         performances={adaptRecap}
         players={players}
         resistGenre={showdownResistGenre}
-        weakGenre={showdownWeakGenre}
         onContinue={() => setStage('perform')}
       />
     )
@@ -211,7 +207,7 @@ export function FinalShowdown() {
               className={`font-bold tabular-nums leading-none ${
                 p.wasResisted && p.fandom === 0
                   ? 'text-red-300 text-5xl'
-                  : p.hadCrit || p.hitWeakness
+                  : p.hadCrit
                     ? 'text-gold-300 text-6xl'
                     : 'text-gold-400 text-5xl'
               }`}
@@ -222,11 +218,8 @@ export function FinalShowdown() {
             <div className="text-parchment-300 font-medieval font-bold text-sm mt-1 tracking-wider uppercase" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}>
               ♪ Fandom
             </div>
-            {p.hitWeakness && (
-              <div className="text-green-300 font-medieval font-bold text-xs tracking-widest uppercase">Weakness ×2!</div>
-            )}
             {p.wasResisted && (
-              <div className="text-red-300 font-medieval font-bold text-xs tracking-widest uppercase">Immune 0×</div>
+              <div className="text-red-300 font-medieval font-bold text-xs tracking-widest uppercase">Unmoved 0×</div>
             )}
             {p.hadCrit && (
               <div className="text-gold-400 font-medieval font-bold text-xs tracking-widest uppercase animate-pulse">Encore!</div>
@@ -250,7 +243,6 @@ export function FinalShowdown() {
           <BossStage
             turn={showdownTurn}
             resistGenre={showdownResistGenre}
-            weakGenre={showdownWeakGenre}
             fandom={held.showdownFandom}
             players={players}
           />
@@ -407,8 +399,8 @@ function ShowdownIntro({ onBegin, playerCount }: { onBegin: () => void; playerCo
           <div className="text-xs font-medieval uppercase tracking-[0.3em] text-gold-500 mb-3 text-center">How the Showdown Works</div>
           <ul className="space-y-2.5 text-sm text-parchment-300">
             <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Three verses. Each verse, every bard performs <span className="text-gold-300 font-bold">one element</span> — every die of it rolls together — against the Silence. Spend Inspiration to reroll a performance.</span></li>
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Every point of damage earns you <span className="text-gold-300 font-bold">1 fandom</span>.</span></li>
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Between verses it adapts like any monster: it becomes <span className="text-red-300 font-bold">immune (0×)</span> to the element of the strongest attack and <span className="text-green-300 font-bold">weak (2×)</span> to the element of the weakest.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Every point of charm wins you <span className="text-gold-300 font-bold">1 fan</span>.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Between verses it adapts: it grows <span className="text-red-300 font-bold">unmoved (0×)</span> by the element of the strongest performance. It has no favorite element.</span></li>
             <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>After the third verse the Silence shatters — and the bard with the most fans is crowned <span className="text-gold-300 font-bold">Legend of the Realm</span>.</span></li>
           </ul>
         </div>

@@ -75,7 +75,7 @@ function FloatingNumber({ entry, onComplete }: { entry: DamagePopupEntry; onComp
             WebkitTextStroke: entry.isCrit || entry.isKill ? '1px rgba(0,0,0,0.3)' : undefined,
           }}
         >
-          -{entry.damage}
+          ♪{entry.damage}
         </div>
 
         {/* Label */}
@@ -84,7 +84,7 @@ function FloatingNumber({ entry, onComplete }: { entry: DamagePopupEntry; onComp
             className="text-gold-400 font-medieval font-bold text-sm mt-1 tracking-wider uppercase"
             style={{ textShadow: '0 0 8px rgba(240, 215, 140, 0.4)' }}
           >
-            Critical!
+            Encore!
           </div>
         )}
         {entry.isKill && (
@@ -92,7 +92,7 @@ function FloatingNumber({ entry, onComplete }: { entry: DamagePopupEntry; onComp
             className="text-green-400 font-medieval font-bold text-sm mt-1 tracking-wider uppercase"
             style={{ textShadow: '0 0 8px rgba(74, 222, 128, 0.4)' }}
           >
-            Defeated!
+            Tamed! ♥
           </div>
         )}
 

@@ -154,7 +154,7 @@ function FeatureRequestPrompt({
     >
       <span className="text-parchment-200">
         {isGuest ? (
-          <>{fighter.name} wants to feature your {dieLabel} against {target?.name ?? 'a monster'}. You split the rewards if it tames it.</>
+          <>{fighter.name} wants to feature your {dieLabel} for {target?.name ?? "a monster"}. If it tames it, you split the Fame and EXP.</>
         ) : isFighter ? (
           <>Waiting for {guest.name} to agree to feature their {dieLabel}…</>
         ) : (

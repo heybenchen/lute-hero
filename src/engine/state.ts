@@ -149,7 +149,6 @@ export interface EngineState {
   showdownOrder: string[]
   showdownPerformerIdx: number
   showdownResistGenre: Genre | null
-  showdownWeakGenre: Genre | null
   showdownSongsUsed: string[]
   showdownCurrentFandom: number
   showdownCurrentGenre: Genre | null
@@ -359,7 +358,6 @@ export function createInitialEngineState(): EngineState {
     showdownOrder: [],
     showdownPerformerIdx: 0,
     showdownResistGenre: null,
-    showdownWeakGenre: null,
     showdownSongsUsed: [],
     showdownCurrentFandom: 0,
     showdownCurrentGenre: null,

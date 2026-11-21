@@ -268,28 +268,30 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
         <div className="space-y-5 text-sm text-parchment-200 leading-relaxed">
           <Section title="🎯 Goal">
-            You are a Bard defeating monsters with music. Earn <Hl>Fame</Hl> by winning
-            fights. The first bard to reach <Hl>{fameGate} Fame</Hl> triggers the Final Showdown,
+            You are a Bard who tames wild monsters with music, turning each one into an
+            adoring fan. Earn <Hl>Fame</Hl> for every monster you tame. The first bard to reach <Hl>{fameGate} Fame</Hl> triggers the Final Showdown,
             and whoever has the most Fame after it is crowned Legend of the Realm.
           </Section>
 
           <Section title="🔄 Your Turn">
             <List items={[
               <>Move up to <Hl>2 spaces</Hl> across the board.</>,
-              <>If monsters are on your space, <Hl>Fight</Hl> once — one combat per turn.</>,
+              <>If monsters are on your space, <Hl>Serenade</Hl> them — one serenade per turn.</>,
               <>Visit the <Hl>Studio</Hl> to spend EXP on dice (unlimited buys).</>,
               <>Press <Hl>End Turn</Hl> to pass to the next bard.</>,
             ]} />
           </Section>
 
-          <Section title="🎲 Combat">
+          <Section title="🎶 Serenades">
             <List items={[
-              <>Pick <Hl>one monster</Hl> to target, then a song — songs hit a <Hl>single</Hl> target, not all.</>,
-              <>Defeat the target and you get that song's <Hl>dice back</Hl> to play it again; only wounding it <Hl>spends</Hl> the song for the fight.</>,
-              <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for bonus damage.</>,
-              <>Clear <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> and radiate an element.</>,
+              <>Pick <Hl>one monster</Hl> to sing to, then a song — each song charms a <Hl>single</Hl> monster, not all.</>,
+              <>Every point a song rolls is <Hl>charm</Hl>: it wears down the monster's <Hl>Wildness</Hl>. At 0 it's <Hl>tamed</Hl> and becomes your fan.</>,
+              <>Tame your target and you get that song's <Hl>dice back</Hl> to play it again; only charming it partway <Hl>spends</Hl> the song for this serenade.</>,
+              <>Rolling a die's highest face earns an <Hl>encore</Hl>, rolling again for bonus charm.</>,
+              <>Tame <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> — your new fans then spread the word of one element to the neighbouring spaces.</>,
+              <><Hl>Take a bow</Hl> to leave early: you keep EXP for every monster you charmed and Fame for every one you tamed.</>,
               <>Spend <Hl>Inspiration</Hl> to reroll the song you just performed.</>,
-              <>Sharing a space with another bard? Borrow one <Hl>featured song</Hl> from each of them per fight (online, they must agree). It costs you nothing, and a monster it tames <Hl>splits</Hl> its Fame and EXP with them.</>,
+              <>Sharing a space with another bard? Borrow one <Hl>featured song</Hl> from each of them per serenade (online, they must agree). It costs you nothing, and a monster it tames <Hl>splits</Hl> its Fame and EXP with them.</>,
             ]} />
           </Section>
 
@@ -297,17 +299,17 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
             <List items={[
               <>After every bard has taken a turn, the round ends with <Hl>reinforcements</Hl>.</>,
               <>Each bard adds <Hl>one chip of every element</Hl> — Ballad, Folk, Hymn and Shanty.</>,
-              <>They scatter across the board at random, <Hl>never two on the same tile</Hl>, spawning new threats for next round.</>,
+              <>They scatter across the board at random, <Hl>never two on the same tile</Hl>, drawing in new wild monsters for next round.</>,
             ]} />
           </Section>
 
           <Section title="🎵 Genres & Elements">
-            <p className="mb-3">You start with one d8 of your chosen element. Opposing elements are immune to each other, and every monster takes double damage from its own element:</p>
+            <p className="mb-3">You start with one d8 of your chosen element. Every monster <Hl>adores</Hl> its own element (double charm) and is <Hl>unmoved by</Hl> the opposing one (no charm at all):</p>
             <TypeChart className="mb-1" />
           </Section>
 
           <Section title="👹 Monster Levels">
-            <p className="mb-2">A space spawns one monster per element chip; duplicate chips level it up. Higher levels mean more health, Fame, and EXP:</p>
+            <p className="mb-2">A space spawns one monster per element chip; duplicate chips level it up. Higher levels mean more Wildness, Fame, and EXP:</p>
             <MonsterLevelTable />
           </Section>
 
@@ -322,8 +324,8 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           <Section title="⚡ The Final Showdown">
             <List items={[
               <>Three verses; each verse every bard performs <Hl>one element</Hl> — all their dice of it roll together — against The Eternal Silence.</>,
-              <>Every point of damage earns <Hl>1 fandom</Hl>, banked into your Fame.</>,
-              <>Between verses the boss <Hl>adapts</Hl>: immune to the strongest attack's element, weak to the weakest.</>,
+              <>Every point of charm wins <Hl>1 fan</Hl>, banked into your Fame.</>,
+              <>Between verses the Silence <Hl>adapts</Hl>: it grows <Hl>unmoved by</Hl> the element of the strongest performance (no charm next verse).</>,
               <>The bard with the most Fame at the end wins.</>,
             ]} />
           </Section>

@@ -48,7 +48,21 @@ React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel N
 
 **Tunables** (`src/data/tunables.ts`) hold every balance number. They live in `EngineState.tunables`, so tweaks persist in saves and sync to every online seat, and `applyAction` publishes them to a module-level active set via `withTunables` for the duration of one reduce — that is why game-logic reads `getTunables().x` instead of taking a parameter. Never re-add a hardcoded balance constant: add a field plus a `TUNABLE_FIELDS` entry instead.
 
-## Key Game Mechanics
+## Theme & vocabulary
+
+Bards **tame** monsters with music and turn them into **adoring fans** — nothing is killed. Keep player-facing text in this vocabulary (code identifiers such as `killCredits`, `currentHP`, `START_COMBAT`, `vulnerability`/`resistance` stay as they are):
+
+| Mechanic | Say | Never say |
+|---|---|---|
+| combat / fight | **serenade** (the encounter), sing to | fight, battle, combat |
+| defeat / kill | **tame** → the monster becomes a fan | kill, defeat, slay, beat |
+| HP | **Wildness** (charm wears it down to 0) | HP, health, vitality |
+| damage | **charm** | damage, hit, attack |
+| weakness ×2 | **adores** (its own element) | weak, vulnerable |
+| immunity ×0 | **unmoved by** (the opposite element) | immune |
+| retreat | **take a bow** | retreat, flee |
+| crit | crit / encore | — |
+
 
 - **Damage flow**: Roll dice (crits cascade) → genre multipliers (2x vulnerable, 0x immune) → damage hits ONE chosen target monster (songs are single-target, not AOE)
 - **Combat rewards**: Fame per kill; EXP only for monsters the bard *wounded* (`currentHP < maxHP`) — every monster on a victory, but untouched ones pay nothing on a retreat (`computeCombatRewards`). Retreat is allowed at any point.
@@ -59,7 +73,7 @@ React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel N
 - **Monster HP**: uniform per level, from `monsterBaseHp` (8) × the level multiplier — 8/14/24/40/60 for Lv1–5. Templates carry no HP: `MonsterTemplate.tier` only paces *which* monster shows up as rounds progress. Use `monsterSpawnHp(level)` rather than recomputing.
 - **Turn structure**: Move up to 2 connected spaces (there is no Inspiration travel), fight 1 combat, shop in the Studio, end turn. Clearing every monster on a space earns +1 Inspiration and radiates a chosen element to neighbors. Combat does NOT open the Studio — the Studio button pulses (`hasShoppedThisTurn`) until the player visits it.
 - **Round end**: after every player has taken a turn the board is reinforced automatically — one chip of *every* element per bard (`roundEndChipsPerElement`, default 1), scattered to random spaces with `scatterChipsRandomly` so no two of that round's chips share a space. No player input; the round just advances. This is the only way the board grows.
-- **Phase progression**: any single player reaching the fame gate (default 200, `tunables.fameFinalBossThreshold`) grants one "final turn," then triggers the Final Showdown (3 verses; each verse a bard performs one element — every die of it rolls together via `showdownElementSongs`, rerollable with Inspiration — boss adapts elementally between verses; damage = fandom; most total fans wins)
+- **Phase progression**: any single player reaching the fame gate (default 200, `tunables.fameFinalBossThreshold`) grants one "final turn," then triggers the Final Showdown (3 verses; each verse a bard performs one element — every die of it rolls together via `showdownElementSongs`, rerollable with Inspiration — between verses the boss grows unmoved (0×) by the strongest performance's element — it has no weakness; charm = fandom; most total fans wins)
 - **Styles**: Studio purchases that change how ALL of a bard's songs play — a bard holds at most `maxStyles` (2). Two are on the shelf (`EngineState.styleOffers`), redrawn at the start of every turn (`beginTurn`) or for Inspiration (`REFRESH_STYLE_OFFERS`); `BUY_STYLE` at the cap names one to replace. Catalog + live rule text in `src/data/styles.ts`. Players see high-fantasy names (Rallying Cry, Extra Verse, War Drums, Nimble Fingers, Master's Touch, Dragon's Roar, Lingering Note, Dissonance, Harmony, Fanfare, Crowd Favorite, Muse's Favor); the ids are the original musical working names (`staccato`, `coda`, `ostinato`, `rubato`, `virtuoso`, `fortissimo`, `fermata`, `counterpoint`, `tutti`, `overture`, `bravo`, `ispirato`) and stay fixed so saves keep their styles; roll/damage effects in `src/game-logic/styles/styleEffects.ts`, shared by combat and the showdown. "Once per turn" styles fire automatically and are tracked in `combat.stylesUsed` (part of the reroll snapshot, so rerolls replay them) — except Nimble Fingers (`rubato`), a free `REROLL_SONG { rubato: true }`, and Rallying Cry (`staccato`), which a tame arms (`combat.rallyReady`) so the bard can refresh a spent song of their choice with `RALLY_SONG`. In fights a song is performed by clicking its die. Extra Verse (`coda`) adds a 7th song (`<playerId>-coda`); losing it returns that song's die as an unclaimed reward. Every price and effect size is a tunable in the Styles group.
 - **Dice upgrade path**: d4 → d8 → d12 → d20 (2/2/4 EXP; a new d4 costs 1 — totals 1/3/5/9, so every upgrade step pays roughly the same damage per EXP). Every bard starts with one d8 of their chosen element, in song 1.
 - **EXP scale**: EXP is a small, tight currency — monsters pay 1 per level and everything in the Studio costs single digits. All of it is tunable (`monsterExpPerLevel`, `newD4Cost`, `upgradeCost*`, `inspirationBaseCost`/`Step`).
