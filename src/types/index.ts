@@ -146,14 +146,10 @@ export type PendingReward = { kind: "die"; id: string; dice: Dice };
 
 export interface SongUsage {
   songId: string;
-  ownerId: string; // Player who owns the song
-  isCover: boolean; // True if played by someone other than the owner
 }
 
 export interface KillCredit {
   monsterId: string;
-  songOwnerId: string; // Who owned the song that killed this monster
-  isCover: boolean;
 }
 
 // ============================================

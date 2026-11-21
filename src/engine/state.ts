@@ -65,7 +65,6 @@ export interface EngineCombatState {
    */
   rallyReady: boolean
   lastPlayedSongId: string | null
-  lastPlayedOwnerId: string | null
   /** Shared victory choice so spectators see the element being considered. */
   selectedSpreadGenre: Genre | null
 }
@@ -115,7 +114,7 @@ export interface EngineState {
   elementDiscard: Genre[]
   elementOffers: Genre[]
   pendingRewards: Record<string, PendingReward[]>
-  /** Styles on offer in the Studio; redrawn after every turn. */
+  /** Styles on offer in the Studio; persistent, with empty slots refilled after a turn. */
   styleOffers: StyleId[]
   studio: EngineStudioState
 
@@ -183,7 +182,6 @@ export function createInitialCombatState(): EngineCombatState {
     lastDamageCalculations: [],
     undoSnapshot: null,
     lastPlayedSongId: null,
-    lastPlayedOwnerId: null,
     selectedSpreadGenre: null,
     stylesUsed: [],
     styleNotes: [],
