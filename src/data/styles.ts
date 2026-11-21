@@ -76,7 +76,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'tutti',
     name: 'Harmony',
     flavor: 'Fire, earth, wind and wave, singing as one.',
-    rule: 'If your songs hold all four elements, +4 to your first roll each turn (can\'t crit).',
+    rule: 'If your setlist holds all four elements, +4 to your first roll each turn (can\'t crit).',
   },
   overture: {
     id: 'overture',
@@ -125,7 +125,7 @@ export function styleRule(id: StyleId): string {
   switch (id) {
     case 'fortissimo': return `+${t.fortissimoBonus} to every d20 roll. A d20 that reaches 20 this way crits.`
     case 'overture': return `+${t.overtureBonus} to your first roll each turn (can't crit).`
-    case 'tutti': return `If your songs hold all four elements, +${t.tuttiBonus} to your first roll each turn (can't crit).`
+    case 'tutti': return `If your setlist holds all four elements, +${t.tuttiBonus} to your first roll each turn (can't crit).`
     case 'ostinato': return `Your d4s crit on a ${t.ostinatoCritFace} or higher (bonus dice still need a 4).`
     case 'bravo': return `+${t.bravoFamePerTame} Fame for every monster you tame.`
     default: return STYLES[id].rule

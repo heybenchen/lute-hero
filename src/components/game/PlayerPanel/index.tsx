@@ -248,7 +248,7 @@ export function PlayerPanel() {
 
       <section className="song-rack-module">
         <div className="flex items-center justify-between gap-2 mb-2">
-          <div className="module-label mb-0">Song rack</div>
+          <div className="module-label mb-0">Setlist</div>
           <span className="text-[9px] text-parchment-500">{currentPlayer.songs.length} songs</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
