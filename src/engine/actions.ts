@@ -106,6 +106,12 @@ export type GameAction =
   // Playtest debug mode (host-only): tweak values, or restore a saved preset
   | { type: 'DEBUG_PATCH'; patch: DebugPatch }
   | { type: 'DEBUG_LOAD_STATE'; engineState: EngineState }
+  /**
+   * Skip to the Final Showdown as if `round` rounds had been played: every
+   * bard gets dice, styles, Fame, EXP and Inspiration drawn from simulated
+   * games at that round (src/data/roundProfiles.ts).
+   */
+  | { type: 'DEBUG_JUMP_TO_SHOWDOWN'; round: number }
 
 export type GameActionType = GameAction['type']
 

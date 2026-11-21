@@ -3,6 +3,7 @@ import { Player, Monster, DiceRoll } from '@/types'
 import type { FeatureRequest } from '@/engine/state'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { SongCard } from './SongCard'
+import { SongGrid } from './SongGrid'
 import { Mic2 } from 'lucide-react'
 
 interface FeaturedSongsProps {
@@ -87,7 +88,7 @@ export function FeaturedSongs({
               {songs.length === 0 ? (
                 <div className="text-xs italic text-parchment-500">No dice to lend.</div>
               ) : (
-                <div className="grid grid-cols-[repeat(2,minmax(0,48%))] justify-between gap-y-1.5 min-[430px]:grid-cols-[repeat(3,minmax(0,31.5%))] sm:grid-cols-[repeat(4,minmax(0,23.5%))] md:grid-cols-[repeat(6,minmax(0,15.5%))]">
+                <SongGrid count={songs.length}>
                   {songs.map((song, idx) => (
                     <SongCard
                       key={song.id}
@@ -98,7 +99,7 @@ export function FeaturedSongs({
                       rolls={currentSongId === song.id ? rolls : undefined}
                     />
                   ))}
-                </div>
+                </SongGrid>
               )}
             </div>
           )

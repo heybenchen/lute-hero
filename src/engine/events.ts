@@ -12,6 +12,8 @@ export type EngineEvent =
       type: 'diceRolled'
       playerId: string
       songId: string
+      /** Showdown: every song rolled together in this performance. */
+      songIds?: string[]
       context: 'combat' | 'showdown'
       rolls: DiceRoll[]
     }
@@ -25,6 +27,7 @@ export type EngineEvent =
       type: 'showdownPlay'
       playerId: string
       songId: string
+      songIds?: string[]
       fandom: number
       hadCrit: boolean
       hitWeakness: boolean

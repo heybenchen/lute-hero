@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
 import { FeaturedSongs } from './FeaturedSongs'
+import { SongGrid } from './SongGrid'
 import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateMonsterFameValue } from '@/game-logic/fame/calculator'
@@ -404,11 +405,7 @@ export function CombatModal() {
                 <span><strong>{STYLES.staccato.name}</strong> is ready. Choose a spent song to refresh.</span>
               </div>
             )}
-            <div className={`grid grid-cols-[repeat(2,minmax(0,48%))] justify-between gap-y-1.5 min-[430px]:grid-cols-[repeat(3,minmax(0,31.5%))] min-[430px]:gap-y-2 sm:grid-cols-[repeat(4,minmax(0,23.5%))] sm:gap-y-2.5 md:grid-cols-[repeat(6,minmax(0,15.5%))] lg:gap-y-3 ${
-              player.styles.includes('coda')
-                ? 'lg:grid-cols-[repeat(7,minmax(0,13.5%))]'
-                : 'lg:grid-cols-[repeat(6,minmax(0,15.5%))]'
-            }`}>
+            <SongGrid count={player.songs.length}>
               {player.songs.map((song, idx) => (
                 <SongCard
                   key={song.id}
@@ -420,7 +417,7 @@ export function CombatModal() {
                   onRally={canRally && isSongSpent(song.id) ? () => handleRally(song.id) : undefined}
                 />
               ))}
-            </div>
+            </SongGrid>
             <CombatStyles player={player} usedStyleIds={stylesUsed} />
           </section>
 

@@ -1,6 +1,6 @@
 import { EngineState } from './state.js'
 import { GameAction, ActorSeat } from './actions.js'
-import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
+import { getPlayableSongs, mergeSongs } from '../game-logic/showdown/showdown.js'
 import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
 import { newD4Cost, getUpgradeCost, getInspirationCost, inspirationSpend } from '../data/draftCards.js'
 import { getTunables } from '../data/tunables.js'
@@ -445,8 +445,9 @@ export function validateAction(
       if (action.rubato) {
         if (!performer.styles.includes('rubato')) return illegal('Rubato is not one of your styles')
         if (state.showdownUndo.rubatoUsed) return illegal('Rubato is already used this verse')
-        const song = performer.songs.find((sg) => sg.id === state.showdownUndo!.songId)
-        if (!song || !rubatoCanReroll(song)) return illegal('Rubato rerolls only d4 and d8 songs')
+        const undo = state.showdownUndo
+        const songs = performer.songs.filter((sg) => (undo.songIds ?? [undo.songId]).includes(sg.id))
+        if (!songs.length || !rubatoCanReroll(mergeSongs(songs))) return illegal('Rubato rerolls only d4 and d8 songs')
       } else if (performer.inspiration < inspirationSpend()) {
         return illegal('Not enough Inspiration')
       }
@@ -492,6 +493,13 @@ export function validateAction(
     case 'DEBUG_PATCH': {
       if (!isHost) return forbidden('Only the host can use debug mode')
       if (!action.patch || typeof action.patch !== 'object') return illegal('Missing debug patch')
+      return ok
+    }
+
+    case 'DEBUG_JUMP_TO_SHOWDOWN': {
+      if (!isHost) return forbidden('Only the host can use debug mode')
+      if (!Number.isInteger(action.round) || action.round < 1) return illegal('Choose a round of 1 or more')
+      if (state.players.length === 0) return illegal('Start a game first')
       return ok
     }
 

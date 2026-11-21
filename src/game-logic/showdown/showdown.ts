@@ -106,3 +106,22 @@ export function computeBossAdaptation(performances: ShowdownPerformance[]): Boss
 export function getPlayableSongs(songs: Song[]): Song[] {
   return songs.filter((s) => s.slots.some((slot) => slot.dice))
 }
+
+/**
+ * A showdown performance plays every die of one element at once: the tapped
+ * song plus every other playable song whose die shares its element.
+ */
+export function showdownElementSongs(songs: Song[], songId: string): Song[] {
+  const genre = songs.find((s) => s.id === songId)?.slots.find((slot) => slot.dice)?.dice?.genre
+  if (!genre) return []
+  return getPlayableSongs(songs).filter((s) => s.slots.some((slot) => slot.dice?.genre === genre))
+}
+
+/** Several songs rolled as one performance: a single virtual song holding all their dice. */
+export function mergeSongs(songs: Song[]): Song {
+  return {
+    id: songs[0]?.id ?? 'performance',
+    slots: songs.flatMap((s) => s.slots) as unknown as Song['slots'],
+    used: false,
+  }
+}

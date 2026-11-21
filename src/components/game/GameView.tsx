@@ -321,7 +321,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
           <Section title="⚡ The Final Showdown">
             <List items={[
-              <>Three verses; each verse every bard performs <Hl>one song</Hl> against The Eternal Silence.</>,
+              <>Three verses; each verse every bard performs <Hl>one element</Hl> — all their dice of it roll together — against The Eternal Silence.</>,
               <>Every point of damage earns <Hl>1 fandom</Hl>, banked into your Fame.</>,
               <>Between verses the boss <Hl>adapts</Hl>: immune to the strongest attack's element, weak to the weakest.</>,
               <>The bard with the most Fame at the end wins.</>,

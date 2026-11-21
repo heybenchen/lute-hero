@@ -168,6 +168,8 @@ export interface EngineState {
 /** Performer accumulators captured before a showdown play, enabling reroll. */
 export interface ShowdownUndo {
   songId: string
+  /** Every song in the performance (all the performer's dice of one element). */
+  songIds: string[]
   performerId: string
   currentFandom: number
   fandomTotal: number
@@ -318,6 +320,7 @@ export function normalizeEngineState(state: EngineState): EngineState {
     showdownSongsUsed: migrateSongIds(state.showdownSongsUsed),
     showdownUndo: state.showdownUndo ? {
       ...state.showdownUndo,
+      songIds: state.showdownUndo.songIds ?? [state.showdownUndo.songId],
       songsUsed: migrateSongIds(state.showdownUndo.songsUsed),
     } : null,
     studio: { ...createInitialStudioState(), ...state.studio },
