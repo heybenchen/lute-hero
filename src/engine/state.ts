@@ -67,6 +67,17 @@ export interface EngineCombatState {
   lastPlayedSongId: string | null
   /** Shared victory choice so spectators see the element being considered. */
   selectedSpreadGenre: Genre | null
+  /** Bards on the space whose featured song has been played this fight (one each). */
+  featuredPlayerIds: string[]
+  /** Online: the fighter's pending ask to feature another bard's song. */
+  featureRequest: FeatureRequest | null
+}
+
+/** A fighter's ask to play one of a guest bard's songs; the guest must agree. */
+export interface FeatureRequest {
+  guestPlayerId: string
+  songId: string
+  targetMonsterId: string
 }
 
 /**
@@ -88,7 +99,8 @@ export interface EngineStudioState {
 export interface MoveStep {
   playerId: string
   fromSpaceId: number
-  inspirationSpent: number
+  /** Inspiration refunded on undo — only set by saves from before travel was removed. */
+  inspirationSpent?: number
 }
 
 /**
@@ -137,7 +149,6 @@ export interface EngineState {
   showdownOrder: string[]
   showdownPerformerIdx: number
   showdownResistGenre: Genre | null
-  showdownWeakGenre: Genre | null
   showdownSongsUsed: string[]
   showdownCurrentFandom: number
   showdownCurrentGenre: Genre | null
@@ -156,6 +167,8 @@ export interface EngineState {
 /** Performer accumulators captured before a showdown play, enabling reroll. */
 export interface ShowdownUndo {
   songId: string
+  /** Every song in the performance (all the performer's dice of one element). */
+  songIds: string[]
   performerId: string
   currentFandom: number
   fandomTotal: number
@@ -186,6 +199,8 @@ export function createInitialCombatState(): EngineCombatState {
     stylesUsed: [],
     styleNotes: [],
     rallyReady: false,
+    featuredPlayerIds: [],
+    featureRequest: null,
   }
 }
 
@@ -304,6 +319,7 @@ export function normalizeEngineState(state: EngineState): EngineState {
     showdownSongsUsed: migrateSongIds(state.showdownSongsUsed),
     showdownUndo: state.showdownUndo ? {
       ...state.showdownUndo,
+      songIds: state.showdownUndo.songIds ?? [state.showdownUndo.songId],
       songsUsed: migrateSongIds(state.showdownUndo.songsUsed),
     } : null,
     studio: { ...createInitialStudioState(), ...state.studio },
@@ -342,7 +358,6 @@ export function createInitialEngineState(): EngineState {
     showdownOrder: [],
     showdownPerformerIdx: 0,
     showdownResistGenre: null,
-    showdownWeakGenre: null,
     showdownSongsUsed: [],
     showdownCurrentFandom: 0,
     showdownCurrentGenre: null,

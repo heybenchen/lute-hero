@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { useGameStore, selectCanAct } from '@/store'
+import { useGameStore, selectCanAct, selectMyPlayerId } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
+import { FeaturedSongs } from './FeaturedSongs'
+import { SongGrid } from './SongGrid'
 import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateMonsterFameValue } from '@/game-logic/fame/calculator'
@@ -12,7 +14,8 @@ import type { EngineEvent } from '@/engine/events'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
 import { STYLES } from '@/data/styles'
-import { rubatoCanReroll } from '@/game-logic/styles/styleEffects'
+import { counterpointMultiplier, rubatoCanReroll } from '@/game-logic/styles/styleEffects'
+import { songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
 import { Flag, RotateCcw, Sparkles, Target } from 'lucide-react'
 
@@ -23,6 +26,10 @@ export function CombatModal() {
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
+  const online = useGameStore((state) => state.mode === 'online')
+  const myPlayerId = useGameStore(selectMyPlayerId)
+  const spaceId = useGameStore((state) => state.spaceId)
+  const featureRequest = useGameStore((state) => state.featureRequest)
   // Everything a roll changes, held at its pre-roll value while the 3D dice
   // are in the air: HP, spent songs, rewards and roll results only appear
   // once the throw lands.
@@ -40,6 +47,7 @@ export function CombatModal() {
       stylesUsed: state.stylesUsed,
       styleNotes: state.styleNotes,
       rallyReady: state.rallyReady,
+      featuredPlayerIds: state.featuredPlayerIds,
     }))
   )
   const {
@@ -55,6 +63,7 @@ export function CombatModal() {
     stylesUsed,
     styleNotes,
     rallyReady,
+    featuredPlayerIds,
   } = useHeldWhileRolling(liveView)
   const diceBusy = useDiceTrayBusy()
 
@@ -69,6 +78,8 @@ export function CombatModal() {
   const player = players.find((p) => p.id === playerId)
 
   const [popups, setPopups] = useState<DamagePopupEntry[]>([])
+  // Retreating with damage left on the table asks once more
+  const [confirmingRetreat, setConfirmingRetreat] = useState(false)
 
   const handlePopupComplete = useCallback((id: string) => {
     setPopups((prev) => prev.filter((p) => p.id !== id))
@@ -92,6 +103,11 @@ export function CombatModal() {
       setSelectedTargetId(alive[0].id)
     }
   }, [isActive, monsters, selectedTargetId])
+
+  // Any new play (or a new fight) drops a pending retreat confirmation
+  useEffect(() => {
+    setConfirmingRetreat(false)
+  }, [isActive, monsters, spentSongIds])
 
   /** Damage numbers pop once the 3D dice have landed, not while they're airborne. */
   const showDamageEvents = useCallback(async (events: EngineEvent[]) => {
@@ -121,9 +137,16 @@ export function CombatModal() {
   const playableSongs = player.songs.filter((s) => s.slots.some((slot) => slot.dice))
   const ownSongsRemaining = playableSongs.filter((s) => !isSongSpent(s.id)).length
 
+  // Bards sharing the space can each lend one featured song this fight
+  const guests = players.filter((p) => p.id !== player.id && p.position === spaceId)
+  const featurableSongs = guests
+    .filter((g) => !featuredPlayerIds.includes(g.id))
+    .flatMap((g) => g.songs.filter((s) => s.slots.some((slot) => slot.dice)))
+
   // No fixed song cap now: fight on while you have unspent songs (defeating a
-  // monster returns that song's dice; a song that only wounds is spent).
-  const canContinue = ownSongsRemaining > 0
+  // monster returns that song's dice; a song that only wounds is spent) or a
+  // featured song still to borrow.
+  const canContinue = ownSongsRemaining > 0 || featurableSongs.length > 0
 
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
   const totalExp = rewards.totalExp
@@ -137,8 +160,9 @@ export function CombatModal() {
   const canRerollSong = (songId: string) =>
     currentSongId === songId && isSongSpent(songId) && !allMonstersDefeated
 
-  // No new roll while the last one is still on the table
-  const canRoll = canAct && !diceBusy
+  // No new roll while the last one is still on the table, or while a guest
+  // is deciding whether to feature their song
+  const canRoll = canAct && !diceBusy && !featureRequest
   const canPaidReroll = !!lastPlayedSong && canRerollSong(lastPlayedSong.id)
 
   const handlePlaySong = async (songId: string) => {
@@ -171,6 +195,41 @@ export function CombatModal() {
     if (!canRoll || !lastPlayedSong || !canRubato(lastPlayedSong)) return
     const result = await dispatch({ type: 'REROLL_SONG', rubato: true })
     if (result.ok) void showDamageEvents(result.events)
+  }
+
+  // Hotseat: the guest always agrees, so the song just plays. Online: ask.
+  const handleFeature = async (guestPlayerId: string, songId: string) => {
+    if (!canRoll || !selectedTargetId || !hasLiveTarget) return
+    if (online) {
+      void dispatch({ type: 'REQUEST_FEATURE', guestPlayerId, songId, targetMonsterId: selectedTargetId })
+      return
+    }
+    const result = await dispatch({ type: 'PLAY_FEATURED_SONG', guestPlayerId, songId, targetMonsterId: selectedTargetId })
+    if (result.ok) void showDamageEvents(result.events)
+  }
+  const handleFeatureAnswer = async (accept: boolean) => {
+    const result = await dispatch({ type: 'ANSWER_FEATURE', accept })
+    if (result.ok) void showDamageEvents(result.events)
+  }
+
+  // Songs that could still hurt something: if every remaining die is immune
+  // against every living monster, retreating gives nothing up — no confirm.
+  // (Featured songs roll without styles, so Dissonance doesn't soften theirs.)
+  const remainingSongs = playableSongs.filter((s) => !isSongSpent(s.id))
+  const retreatForfeitsDamage =
+    canContinue &&
+    !allMonstersDefeated &&
+    (songsCanStillDamage(remainingSongs, monsters, {
+      immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false }),
+    }) || songsCanStillDamage(featurableSongs, monsters))
+
+  const handleRetreatClick = () => {
+    if (retreatForfeitsDamage && !confirmingRetreat) {
+      setConfirmingRetreat(true)
+      return
+    }
+    setConfirmingRetreat(false)
+    handleEndCombat()
   }
 
   const handleEndCombat = () => {
@@ -213,6 +272,11 @@ export function CombatModal() {
                   </span>
                 )}
               </div>
+              {Object.entries(rewards.guestRewards).map(([guestId, share]) => (
+                <div key={guestId} className="mt-1 text-sm text-parchment-300">
+                  Featured: {players.find((p) => p.id === guestId)?.name ?? 'Guest'} +{share.fame} Fame, +{share.exp} EXP
+                </div>
+              ))}
             </div>
           ) : (
             <div className="mb-4 flex flex-col gap-2 animate-fade-in sm:flex-row sm:items-end sm:justify-between">
@@ -341,11 +405,7 @@ export function CombatModal() {
                 <span><strong>{STYLES.staccato.name}</strong> is ready. Choose a spent song to refresh.</span>
               </div>
             )}
-            <div className={`grid grid-cols-[repeat(2,minmax(0,48%))] justify-between gap-y-1.5 min-[430px]:grid-cols-[repeat(3,minmax(0,31.5%))] min-[430px]:gap-y-2 sm:grid-cols-[repeat(4,minmax(0,23.5%))] sm:gap-y-2.5 md:grid-cols-[repeat(6,minmax(0,15.5%))] lg:gap-y-3 ${
-              player.styles.includes('coda')
-                ? 'lg:grid-cols-[repeat(7,minmax(0,13.5%))]'
-                : 'lg:grid-cols-[repeat(6,minmax(0,15.5%))]'
-            }`}>
+            <SongGrid count={player.songs.length}>
               {player.songs.map((song, idx) => (
                 <SongCard
                   key={song.id}
@@ -357,9 +417,26 @@ export function CombatModal() {
                   onRally={canRally && isSongSpent(song.id) ? () => handleRally(song.id) : undefined}
                 />
               ))}
-            </div>
+            </SongGrid>
             <CombatStyles player={player} usedStyleIds={stylesUsed} />
           </section>
+
+          {!allMonstersDefeated && (
+            <FeaturedSongs
+              fighter={player}
+              guests={guests}
+              featuredPlayerIds={featuredPlayerIds}
+              featureRequest={featureRequest}
+              monsters={monsters}
+              currentSongId={currentSongId}
+              rolls={rolls}
+              canFeature={canRoll && hasLiveTarget}
+              online={online}
+              myPlayerId={myPlayerId}
+              onFeature={handleFeature}
+              onAnswer={handleFeatureAnswer}
+            />
+          )}
 
           {/* Actions */}
           {!allMonstersDefeated && (
@@ -393,8 +470,41 @@ export function CombatModal() {
                 </button>
               )}
               {/* Retreat is always on offer, even before a song is played */}
+              {confirmingRetreat && retreatForfeitsDamage ? (
+                <div
+                  className="flex flex-col gap-2 rounded-lg p-3 animate-fade-in sm:flex-row sm:items-center"
+                  style={{ background: 'rgba(130, 68, 48, 0.18)', border: '1px solid rgba(224, 124, 90, 0.38)' }}
+                  role="alertdialog"
+                  aria-label="Confirm retreat"
+                >
+                  <span className="text-sm text-parchment-200 sm:mr-2">
+                    You still have songs that can deal damage. Retreat anyway?
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setConfirmingRetreat(false)}
+                      className="btn-secondary min-h-11 flex-1 px-4 text-sm"
+                    >
+                      Keep fighting
+                    </button>
+                    <button
+                      onClick={handleRetreatClick}
+                      disabled={!canRoll}
+                      className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg px-4 font-medieval text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{
+                        background: 'linear-gradient(145deg, rgba(150, 70, 45, 0.6), rgba(70, 38, 28, 0.9))',
+                        border: '1px solid rgba(224, 124, 90, 0.55)',
+                        color: '#f6d2bf',
+                      }}
+                    >
+                      <Flag size={15} className="shrink-0" aria-hidden="true" />
+                      Retreat
+                    </button>
+                  </div>
+                </div>
+              ) : (
               <button
-                onClick={handleEndCombat}
+                onClick={handleRetreatClick}
                 disabled={!canRoll}
                 className="flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40 sm:min-w-40"
                 style={{
@@ -410,6 +520,7 @@ export function CombatModal() {
                 <Flag size={16} className="shrink-0 opacity-80" aria-hidden="true" />
                 <span className="font-medieval font-bold">{canContinue ? 'Retreat' : 'End fight'}</span>
               </button>
+              )}
             </div>
           )}
         </div>

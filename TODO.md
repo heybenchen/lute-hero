@@ -14,6 +14,11 @@
 
 ## Completed
 
+- Studio reorganised: Buy Inspiration and Refresh share one compact row; the Setlist (elements → your songs) comes first and Styles (shelf + your styles) below it. A bard's songs together are called their setlist (Studio, player panel, style text, rules). Element chips fit the width on phones.
+- Final Showdown boss no longer gains a 2× weakness between verses — it only becomes immune to the strongest performance's element. (A "taming" wording pass was tried and reverted.)
+- Final Showdown: tapping a die performs every die of that element together (`showdownElementSongs`); Inspiration (and Nimble Fingers) reroll the whole performance from a button; the crowd bar and fandom wait for the 3D dice to land. Songs use a shared `SongGrid` (two rows on phones) in fights, featured songs and the showdown. Playtest console: "Jump to Final Showdown after round N" with bard holdings sampled from 900 simulated bot games (`src/sim/bot.ts`, `scripts/sim-round-profiles.ts` → `src/data/roundProfiles.ts`).
+- Bards start with one d8 of their element (was two d4s), and each opens on a space holding a monster of their element (chips swapped after the balanced deal, totals unchanged). Removed Inspiration travel. Added featured songs: borrow one song from each bard sharing your space per fight — free, no reroll, rolls without styles; a tame splits that monster's Fame/EXP (guest gets the rounded-down half). Online the guest must agree (REQUEST_FEATURE / ANSWER_FEATURE).
+- Mobile + retreat polish: the Studio's Refresh Elements & Styles button stacks under Buy Inspiration on phones (no horizontal scroll; board, Studio and fight verified at 390px). Retreating from a fight now asks for confirmation while an unspent song could still damage a living monster (`songsCanStillDamage`, counting an unused Dissonance); if every remaining die is immune, it retreats immediately.
 - Extracted Studio style offers into a shared `StyleOfferCard` component and made each card a full-height flex column so its Learn or replacement controls stay bottom-aligned across unequal content lengths.
 
 - Flattened the fight screen's secondary UI: monster rewards, HP, elemental matchups, active style rules, damage details, and the Rallying Cry notice now use natural spacing and divider lines instead of nested bordered containers.

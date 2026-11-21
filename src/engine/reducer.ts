@@ -8,15 +8,17 @@ import {
   NewId,
   StyleId,
 } from '../types/index.js'
-import { EngineState, EngineCombatState, createInitialEngineState, createInitialCombatState, createInitialStudioState, normalizeEngineState } from './state.js'
+import { EngineState, EngineCombatState, FeatureRequest, createInitialEngineState, createInitialCombatState, createInitialStudioState, normalizeEngineState } from './state.js'
 import { GameAction, ActorSeat, PlayerConfig, DebugPatch, DebugDiceEdit } from './actions.js'
 import { EngineEvent } from './events.js'
 import { validateAction, roundEndChipsPerElement } from './validate.js'
-import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, addGenreTag, capGenreTags, scatterChipsRandomly } from '../game-logic/board/graphBuilder.js'
+import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, ensureStarterChips, addGenreTag, capGenreTags, scatterChipsRandomly } from '../game-logic/board/graphBuilder.js'
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
-import { calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
+import { calculateSingleTargetDamage, calculateDamage, rollSong } from '../game-logic/combat/damageCalculator.js'
 import {
   calculateFameEarned,
+  calculateMonsterExp,
+  calculateMonsterFameValue,
   calculateTotalMonsterExp,
   getNextPhase,
 } from '../game-logic/fame/calculator.js'
@@ -29,11 +31,14 @@ import {
   createShowdownBoss,
   getDominantGenre,
   computeBossAdaptation,
+  showdownElementSongs,
+  mergeSongs,
 } from '../game-logic/showdown/showdown.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
 import { getTunables, withTunables, normalizeTunables } from '../data/tunables.js'
 import { ALL_GENRES, playerColorFor } from '../data/genreTheme.js'
 import { STYLES, drawStyleOffers, styleCost, styleOfferCount } from '../data/styles.js'
+import { ROUND_PROFILES } from '../data/roundProfiles.js'
 import {
   StyleContext,
   rollSongWithStyles,
@@ -106,7 +111,6 @@ function reduce(
               ...p,
               position: action.toSpaceId,
               movesThisTurn: p.movesThisTurn + 1,
-              inspiration: action.inspirationTravel ? p.inspiration - inspirationSpend() : p.inspiration,
             }
           : p
       )
@@ -126,7 +130,6 @@ function reduce(
         {
           playerId: action.playerId,
           fromSpaceId: mover.position,
-          inspirationSpent: action.inspirationTravel ? inspirationSpend() : 0,
         },
       ]
       return { ...state, players, spaces, moveTrail }
@@ -142,7 +145,7 @@ function reduce(
               ...p,
               position: step.fromSpaceId,
               movesThisTurn: Math.max(0, p.movesThisTurn - 1),
-              inspiration: p.inspiration + step.inspirationSpent,
+              inspiration: p.inspiration + (step.inspirationSpent ?? 0),
             }
           : p
       )
@@ -226,6 +229,20 @@ function reduce(
             : snapshot,
         },
       }
+    }
+
+    case 'PLAY_FEATURED_SONG':
+      return playFeaturedSong(state, action, rng, events)
+
+    case 'REQUEST_FEATURE': {
+      const { guestPlayerId, songId, targetMonsterId } = action
+      return { ...state, combat: { ...state.combat, featureRequest: { guestPlayerId, songId, targetMonsterId } } }
+    }
+
+    case 'ANSWER_FEATURE': {
+      const request = state.combat.featureRequest!
+      const cleared = { ...state, combat: { ...state.combat, featureRequest: null } }
+      return action.accept ? playFeaturedSong(cleared, request, rng, events) : cleared
     }
 
     case 'SELECT_COMBAT_SPREAD':
@@ -415,6 +432,9 @@ function reduce(
 
     case 'DEBUG_LOAD_STATE':
       return loadDebugState(state, action.engineState)
+
+    case 'DEBUG_JUMP_TO_SHOWDOWN':
+      return jumpToShowdown(state, action.round, rng, newId)
   }
 }
 
@@ -620,7 +640,14 @@ function startGame(state: EngineState, configs: PlayerConfig[], rng: Rng, newId:
   //    but its placement is random. (This replaces the old starter-element
   //    seeding onto each bard's neighbours, which skewed the element counts.)
   const startingTags = getTunables().startingTagsPerSpace
-  const dealt = dealBalancedGenreTags(spaces.length, startingTags, rng)
+  // Then swap chips so every bard's starting space holds a monster of their
+  // own element (element totals stay balanced).
+  const balanced = dealBalancedGenreTags(spaces.length, startingTags, rng)
+  const dealt = ensureStarterChips(
+    balanced,
+    players.map((p) => ({ spaceId: spaces.findIndex((s) => s.id === p.position), genre: p.starterGenre })),
+    rng
+  )
   spaces = spaces.map((s, i) => ({ ...s, genreTags: dealt[i] }))
 
   // 4. Initial monsters — one per unique genre chip, matching the board
@@ -817,7 +844,67 @@ function performCombatPlay(
   }
 }
 
-/** Rewards the active bard earns from the current combat. */
+/**
+ * A featured song: one song borrowed from another bard sharing the space.
+ * It rolls plain (neither bard's styles apply), each guest is featured at
+ * most once a fight, and it costs the fighter nothing — no song is spent, and
+ * a miss simply leaves its damage on the monster. A tame is credited to the
+ * guest too, who splits that monster's Fame and EXP (computeCombatRewards).
+ * A featured play can't be rerolled.
+ */
+function playFeaturedSong(state: EngineState, feature: FeatureRequest, rng: Rng, events: EngineEvent[]): EngineState {
+  const combat = state.combat
+  const guest = state.players.find((p) => p.id === feature.guestPlayerId)!
+  const song = guest.songs.find((s) => s.id === feature.songId)!
+  const monstersBefore = combat.monsters
+  const targetBefore = monstersBefore.find((m) => m.id === feature.targetMonsterId)
+
+  const rolls = rollSong(song, rng)
+  const { damageCalculations, updatedMonsters } = calculateSingleTargetDamage(
+    song,
+    rolls,
+    monstersBefore,
+    feature.targetMonsterId
+  )
+  const targetAfter = updatedMonsters.find((m) => m.id === feature.targetMonsterId)
+  const defeatedTarget = !!targetBefore && targetBefore.currentHP > 0 && !!targetAfter && targetAfter.currentHP <= 0
+  const damage = damageCalculations.reduce((sum, calc) => sum + calc.totalDamage, 0)
+
+  events.push({ type: 'diceRolled', playerId: guest.id, songId: song.id, context: 'combat', rolls })
+  events.push({ type: 'damageDealt', calculations: damageCalculations, monstersBefore, monstersAfter: updatedMonsters })
+
+  return {
+    ...state,
+    combat: {
+      ...combat,
+      monsters: updatedMonsters,
+      killCredits: defeatedTarget
+        ? [...combat.killCredits, { monsterId: feature.targetMonsterId, featuredPlayerId: guest.id }]
+        : combat.killCredits,
+      featuredPlayerIds: [...combat.featuredPlayerIds, guest.id],
+      currentSongId: song.id,
+      lastTargetMonsterId: feature.targetMonsterId,
+      rolls,
+      totalDamage: combat.totalDamage + damage,
+      lastDamageCalculations: damageCalculations,
+      styleNotes: [],
+      undoSnapshot: null,
+      lastPlayedSongId: null,
+    },
+  }
+}
+
+/** Fame and EXP a featured bard earns from the current combat. */
+export interface GuestReward {
+  fame: number
+  exp: number
+}
+
+/**
+ * Rewards from the current combat. `fighterFame` / `totalExp` are the active
+ * bard's; a monster tamed by a featured song splits its Fame and EXP with that
+ * guest (`guestRewards`), the fighter keeping the larger half of an odd split.
+ */
 export function computeCombatRewards(combat: {
   monsters: Monster[]
   killCredits: KillCredit[]
@@ -827,6 +914,7 @@ export function computeCombatRewards(combat: {
   totalExp: number
   monstersDefeatedCount: number
   bravoFame: number
+  guestRewards: Record<string, GuestReward>
 } {
   const defeated = combat.monsters.filter((m) => m.currentHP <= 0)
   const monstersDefeatedCount = defeated.length
@@ -841,11 +929,31 @@ export function computeCombatRewards(combat: {
   })
   const creditedFame = calculateFameEarned(creditedLevels)
 
+  const guestRewards: Record<string, GuestReward> = {}
+  for (const credit of combat.killCredits) {
+    if (!credit.featuredPlayerId) continue
+    const monster = combat.monsters.find((m) => m.id === credit.monsterId)
+    if (!monster) continue
+    const share = guestRewards[credit.featuredPlayerId] ?? { fame: 0, exp: 0 }
+    share.fame += Math.floor(calculateMonsterFameValue(monster.level) / 2)
+    share.exp += Math.floor(calculateMonsterExp(monster.level) / 2)
+    guestRewards[credit.featuredPlayerId] = share
+  }
+  const guestFame = Object.values(guestRewards).reduce((sum, r) => sum + r.fame, 0)
+  const guestExp = Object.values(guestRewards).reduce((sum, r) => sum + r.exp, 0)
+
   // Bravo: the crowd cheers every monster the fighter's performance tamed
   const bravoFame = fighterStyles.includes('bravo') ? monstersDefeatedCount * getTunables().bravoFamePerTame : 0
-  const fighterFame = creditedFame + bravoFame
+  const fighterFame = creditedFame - guestFame + bravoFame
 
-  return { totalFameEarned: totalFameEarned + bravoFame, fighterFame, totalExp, monstersDefeatedCount, bravoFame }
+  return {
+    totalFameEarned: totalFameEarned + bravoFame,
+    fighterFame,
+    totalExp: totalExp - guestExp,
+    monstersDefeatedCount,
+    bravoFame,
+    guestRewards,
+  }
 }
 
 function endCombat(state: EngineState, spreadGenre: Genre | null, events: EngineEvent[]): EngineState {
@@ -858,6 +966,11 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
 
   // EXP for every wounded monster; fame per kill credit
   let players = adjustExp(state.players, fighterId, rewards.totalExp)
+  // Featured bards take their half of the monsters their songs tamed
+  players = players.map((p) => {
+    const share = rewards.guestRewards[p.id]
+    return share ? { ...p, fame: p.fame + share.fame, exp: p.exp + share.exp } : p
+  })
   // Clearing every monster on a space earns the victor 1 Inspiration.
   if (success) {
     players = players.map((p) => (p.id === fighterId ? { ...p, inspiration: p.inspiration + 1 } : p))
@@ -1015,25 +1128,7 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
   // Entering the showdown: start it right here so there is no client-side
   // auto-start race — every client just renders the started showdown.
   if (phase === 'finalBoss' && !state.showdownActive) {
-    const playerIds = state.players.map((p) => p.id)
-    showdownFields = {
-      showdownActive: true,
-      showdownComplete: false,
-      showdownTurn: 1,
-      showdownOrder: playerIds,
-      showdownPerformerIdx: 0,
-      showdownResistGenre: null,
-      showdownWeakGenre: null,
-      showdownSongsUsed: [],
-      showdownCurrentFandom: 0,
-      showdownCurrentGenre: null,
-      showdownTurnPerformances: [],
-      showdownHistory: [],
-      showdownFandom: Object.fromEntries(playerIds.map((id) => [id, 0])),
-      showdownBestHit: {},
-      showdownCrits: Object.fromEntries(playerIds.map((id) => [id, 0])),
-      showdownUndo: null,
-    }
+    showdownFields = startShowdownFields(state.players.map((p) => p.id))
   }
 
   // Refill the shop for the first player of the new round.
@@ -1064,6 +1159,88 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
   return next.phase === 'main' ? beginTurn(next, rng) : next
 }
 
+/** Fresh showdown fields: verse 1, everyone at zero fandom, no adaptation yet. */
+function startShowdownFields(playerIds: string[]): Partial<EngineState> {
+  return {
+    showdownActive: true,
+    showdownComplete: false,
+    showdownTurn: 1,
+    showdownOrder: playerIds,
+    showdownPerformerIdx: 0,
+    showdownResistGenre: null,
+    showdownSongsUsed: [],
+    showdownCurrentFandom: 0,
+    showdownCurrentGenre: null,
+    showdownTurnPerformances: [],
+    showdownHistory: [],
+    showdownFandom: Object.fromEntries(playerIds.map((id) => [id, 0])),
+    showdownBestHit: {},
+    showdownCrits: Object.fromEntries(playerIds.map((id) => [id, 0])),
+    showdownUndo: null,
+  }
+}
+
+/**
+ * Playtest jump: start the showdown as if `round` rounds had been played.
+ * Each bard draws one sample of simulated holdings at that round (clamped to
+ * the rounds the simulation covers) — dice keep their element relative to the
+ * bard's own, so a sample fits any bard.
+ */
+function jumpToShowdown(state: EngineState, round: number, rng: Rng, newId: NewId): EngineState {
+  const available = Object.keys(ROUND_PROFILES).map(Number).sort((a, b) => a - b)
+  if (available.length === 0) return state
+  const r = Math.min(Math.max(round, available[0]), available[available.length - 1])
+  const pool = ROUND_PROFILES[r]
+
+  let next: EngineState = { ...state, pendingRewards: {} }
+  for (const player of state.players) {
+    const sample = pool[Math.floor(rng() * pool.length)]
+    const styles = sample.styles.filter((id): id is StyleId => id in STYLES).slice(0, getTunables().maxStyles)
+    next = setPlayerStyles(next, player.id, styles, newId)
+    const base = ALL_GENRES.indexOf(player.starterGenre)
+    next = {
+      ...next,
+      pendingRewards: { ...next.pendingRewards, [player.id]: [] },
+      players: next.players.map((p) => {
+        if (p.id !== player.id) return p
+        const songs = p.songs.map((song, i): Song => {
+          const die = sample.dice[i]
+          return {
+            ...song,
+            used: false,
+            slots: [{ dice: die ? { id: newId('die'), type: die[0], genre: ALL_GENRES[(base + die[1]) % ALL_GENRES.length] } : null }],
+          }
+        })
+        return {
+          ...p,
+          songs,
+          fame: sample.fame,
+          exp: sample.exp,
+          inspiration: sample.inspiration,
+          monstersDefeated: sample.monstersDefeated,
+          movesThisTurn: 0,
+          fightsThisTurn: 0,
+          hasShoppedThisTurn: false,
+          inspirationBoughtThisTurn: 0,
+        }
+      }),
+    }
+  }
+
+  return {
+    ...next,
+    phase: 'finalBoss',
+    pendingPhase: null,
+    finalTurnGranted: false,
+    currentRound: r + 1,
+    currentTurnPlayerIndex: 0,
+    combat: createInitialCombatState(),
+    studio: createInitialStudioState(),
+    moveTrail: [],
+    ...startShowdownFields(state.players.map((p) => p.id)),
+  }
+}
+
 // ============================================================
 // Round-end reinforcements
 // ============================================================
@@ -1082,10 +1259,13 @@ export function roundEndChips(state: EngineState): Genre[] {
 // Showdown
 // ============================================================
 
-/** Roll a song against the adapted boss and derive the performance stats. */
+/**
+ * Roll a performance — every song in it, as one throw — against the adapted
+ * boss and derive the performance stats.
+ */
 function rollShowdownPlay(
   state: EngineState,
-  song: Song,
+  songs: Song[],
   performerId: string,
   base: { currentFandom: number; fandomTotal: number; bestHit: { damage: number } | undefined; crits: number },
   rng: Rng,
@@ -1093,7 +1273,6 @@ function rollShowdownPlay(
 ) {
   const boss = createShowdownBoss({
     resistGenre: state.showdownResistGenre,
-    weakGenre: state.showdownWeakGenre,
   })
   // Styles apply in the showdown too. Each performance is the bard's whole
   // turn, so it is always their first roll and once-per-turn styles are fresh.
@@ -1104,6 +1283,8 @@ function rollShowdownPlay(
     firstRoll: true,
     allElements: holdsAllElements(performer.songs),
   }
+  const song = mergeSongs(songs)
+  const songIds = songs.map((s) => s.id)
   const { rolls } = rollSongWithStyles(song, styleCtx, rng)
   const calc = calculateDamage(song, rolls, boss, { immuneMultiplier: counterpointMultiplier(styleCtx) })
   const fandom = Math.max(0, calc.totalDamage)
@@ -1113,7 +1294,6 @@ function rollShowdownPlay(
   const songGenres = song.slots
     .map((slot) => slot.dice?.genre)
     .filter((g): g is Genre => g !== undefined)
-  const hitWeakness = state.showdownWeakGenre !== null && songGenres.includes(state.showdownWeakGenre)
   const wasResisted = state.showdownResistGenre !== null && songGenres.includes(state.showdownResistGenre)
 
   const bestHit =
@@ -1121,14 +1301,14 @@ function rollShowdownPlay(
       ? { damage: fandom }
       : base.bestHit
 
-  events.push({ type: 'diceRolled', playerId: performerId, songId: song.id, context: 'showdown', rolls })
+  events.push({ type: 'diceRolled', playerId: performerId, songId: song.id, songIds, context: 'showdown', rolls })
   events.push({
     type: 'showdownPlay',
     playerId: performerId,
     songId: song.id,
+    songIds,
     fandom,
     hadCrit: critCount > 0,
-    hitWeakness,
     wasResisted,
     genre,
   })
@@ -1142,10 +1322,12 @@ function rollShowdownPlay(
   }
 }
 
+/** Perform the tapped song's element: every die of that element rolls together. */
 function playShowdownSong(state: EngineState, songId: string, rng: Rng, events: EngineEvent[]): EngineState {
   const performerId = state.showdownOrder[state.showdownPerformerIdx]
   const performer = state.players.find((p) => p.id === performerId)!
-  const song = performer.songs.find((s) => s.id === songId)!
+  const songs = showdownElementSongs(performer.songs, songId)
+  const songIds = songs.map((s) => s.id)
 
   // Snapshot the performer's accumulators before this play, so it can be rerolled
   const base = {
@@ -1154,14 +1336,15 @@ function playShowdownSong(state: EngineState, songId: string, rng: Rng, events: 
     bestHit: state.showdownBestHit[performerId],
     crits: state.showdownCrits[performerId] || 0,
   }
-  const fields = rollShowdownPlay(state, song, performerId, base, rng, events)
+  const fields = rollShowdownPlay(state, songs, performerId, base, rng, events)
 
   return {
     ...state,
     ...fields,
-    showdownSongsUsed: [...state.showdownSongsUsed, songId],
+    showdownSongsUsed: [...state.showdownSongsUsed, ...songIds],
     showdownUndo: {
-      songId,
+      songId: songIds[0],
+      songIds,
       performerId,
       currentFandom: base.currentFandom,
       fandomTotal: base.fandomTotal,
@@ -1175,14 +1358,14 @@ function playShowdownSong(state: EngineState, songId: string, rng: Rng, events: 
 function rerollShowdownSong(state: EngineState, rubato: boolean, rng: Rng, events: EngineEvent[]): EngineState {
   const undo = state.showdownUndo!
   const performer = state.players.find((p) => p.id === undo.performerId)!
-  const song = performer.songs.find((s) => s.id === undo.songId)!
+  const songs = performer.songs.filter((s) => undo.songIds.includes(s.id))
 
   // Spend 1 Inspiration (or Rubato's free reroll), then replay from the
   // snapshot — the snapshot stays put so the performance can be rerolled again.
   const players = rubato ? state.players : adjustInspiration(state.players, undo.performerId, -inspirationSpend())
   const fields = rollShowdownPlay(
     state,
-    song,
+    songs,
     undo.performerId,
     { currentFandom: undo.currentFandom, fandomTotal: undo.fandomTotal, bestHit: undo.bestHit, crits: undo.crits },
     rng,
@@ -1237,7 +1420,6 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
       showdownCurrentFandom: 0,
       showdownCurrentGenre: null,
       showdownResistGenre: adaptation.resistGenre,
-      showdownWeakGenre: adaptation.weakGenre,
       showdownUndo: null,
     }
   }

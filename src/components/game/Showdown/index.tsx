@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore, selectCanPerform } from '@/store'
 import { Song, DiceRoll } from '@/types'
+import type { EngineEvent } from '@/engine/events'
 import { SongCard } from '../Combat/SongCard'
+import { SongGrid } from '../Combat/SongGrid'
 import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
-import { diceBus } from '@/components/dice3d/diceBus'
+import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
 import { rubatoCanReroll } from '@/game-logic/styles/styleEffects'
-import { getPlayableSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
+import { getPlayableSongs, mergeSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
+import { STYLES } from '@/data/styles'
+import { RotateCcw, Sparkles } from 'lucide-react'
 import { readableTextColor } from '@/data/genreTheme'
 
 type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
@@ -16,7 +20,6 @@ interface FandomPopup {
   id: string
   fandom: number
   hadCrit: boolean
-  hitWeakness: boolean
   wasResisted: boolean
 }
 
@@ -27,7 +30,6 @@ export function FinalShowdown() {
   const showdownOrder = useGameStore((state) => state.showdownOrder)
   const showdownPerformerIdx = useGameStore((state) => state.showdownPerformerIdx)
   const showdownResistGenre = useGameStore((state) => state.showdownResistGenre)
-  const showdownWeakGenre = useGameStore((state) => state.showdownWeakGenre)
   const showdownSongsUsed = useGameStore((state) => state.showdownSongsUsed)
   const showdownCurrentFandom = useGameStore((state) => state.showdownCurrentFandom)
   const showdownFandom = useGameStore((state) => state.showdownFandom)
@@ -50,7 +52,8 @@ export function FinalShowdown() {
       showdownHistory.length === 0
     return fresh ? 'intro' : 'perform'
   })
-  const [lastRolls, setLastRolls] = useState<{ song: Song; rolls: DiceRoll[] } | null>(null)
+  // The last performance: every song rolled in it (one element's dice) and the result
+  const [lastRolls, setLastRolls] = useState<{ songIds: string[]; rolls: DiceRoll[] } | null>(null)
   const [popups, setPopups] = useState<FandomPopup[]>([])
   const [adaptRecap, setAdaptRecap] = useState<ShowdownPerformance[]>([])
   const [adaptTurnEnded, setAdaptTurnEnded] = useState(1)
@@ -64,13 +67,12 @@ export function FinalShowdown() {
 
   /** Fandom pops once the 3D dice have landed. */
   const popupSeq = useRef(0)
-  const showFandomPopup = useCallback(async (result: { fandom: number; hadCrit: boolean; hitWeakness: boolean; wasResisted: boolean }) => {
+  const showFandomPopup = useCallback(async (result: { fandom: number; hadCrit: boolean; wasResisted: boolean }) => {
     await diceBus.whenSettled()
     const popup: FandomPopup = {
       id: `fandom-${++popupSeq.current}`,
       fandom: result.fandom,
       hadCrit: result.hadCrit,
-      hitWeakness: result.hitWeakness,
       wasResisted: result.wasResisted,
     }
     setPopups((prev) => [...prev, popup])
@@ -82,9 +84,7 @@ export function FinalShowdown() {
     if (!remoteEntry) return
     for (const event of remoteEntry.events) {
       if (event.type === 'diceRolled' && event.context === 'showdown') {
-        const owner = useGameStore.getState().players.find((p) => p.id === event.playerId)
-        const song = owner?.songs.find((sg) => sg.id === event.songId)
-        if (song) setLastRolls({ song, rolls: event.rolls })
+        setLastRolls({ songIds: event.songIds ?? [event.songId], rolls: event.rolls })
       }
       if (event.type === 'showdownPlay') void showFandomPopup(event)
       if (event.type === 'showdownAdvance') {
@@ -100,6 +100,11 @@ export function FinalShowdown() {
     }
   }, [remoteEntry, showFandomPopup])
 
+  // Fandom, spent songs and roll results stay at their pre-roll values while
+  // the 3D dice are in the air, so the crowd bar only moves once they land.
+  const diceBusy = useDiceTrayBusy()
+  const held = useHeldWhileRolling({ showdownFandom, showdownCurrentFandom, showdownSongsUsed, lastRolls })
+
   const performerId = showdownOrder[showdownPerformerIdx]
   const performer = players.find((p) => p.id === performerId)
 
@@ -111,35 +116,35 @@ export function FinalShowdown() {
   const hasPerformed = showdownSongsUsed.length >= 1
   const performanceDone = hasPerformed || playableSongs.length === 0
 
-  const handlePlaySong = async (song: Song) => {
-    const result = await dispatch({ type: 'PLAY_SHOWDOWN_SONG', songId: song.id })
-    if (!result.ok) return
-    for (const event of result.events) {
-      if (event.type === 'diceRolled') setLastRolls({ song, rolls: event.rolls })
-      if (event.type === 'showdownPlay') void showFandomPopup(event)
+  const showPerformance = (events: EngineEvent[]) => {
+    for (const e of events) {
+      if (e.type === 'diceRolled') setLastRolls({ songIds: e.songIds ?? [e.songId], rolls: e.rolls })
+      if (e.type === 'showdownPlay') void showFandomPopup(e)
     }
   }
 
+  // Tapping a die performs every die of its element together
+  const handlePlaySong = async (song: Song) => {
+    const result = await dispatch({ type: 'PLAY_SHOWDOWN_SONG', songId: song.id })
+    if (result.ok) showPerformance(result.events)
+  }
+
+  const performedSongs: Song[] = performer && lastRolls
+    ? performer.songs.filter((s) => lastRolls.songIds.includes(s.id))
+    : []
+  const canReroll = canPerform && !diceBusy && hasPerformed && performedSongs.length > 0
   const handleReroll = async () => {
-    if (!canPerform || !performer || !lastRolls || performer.inspiration <= 0) return
+    if (!canReroll || !performer || performer.inspiration <= 0) return
     const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG' })
-    if (!result.ok) return
-    for (const event of result.events) {
-      if (event.type === 'diceRolled') setLastRolls({ song: lastRolls.song, rolls: event.rolls })
-      if (event.type === 'showdownPlay') void showFandomPopup(event)
-    }
+    if (result.ok) showPerformance(result.events)
   }
 
   // Rubato: one free reroll of a d4/d8 performance per verse
-  const canRubato = !!performer && !!lastRolls && performer.styles.includes('rubato') && !rubatoUsed && rubatoCanReroll(lastRolls.song)
+  const canRubato = canReroll && !!performer && performer.styles.includes('rubato') && !rubatoUsed && rubatoCanReroll(mergeSongs(performedSongs))
   const handleRubato = async () => {
-    if (!canPerform || !lastRolls || !canRubato) return
+    if (!canRubato) return
     const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG', rubato: true })
-    if (!result.ok) return
-    for (const event of result.events) {
-      if (event.type === 'diceRolled') setLastRolls({ song: lastRolls.song, rolls: event.rolls })
-      if (event.type === 'showdownPlay') void showFandomPopup(event)
-    }
+    if (result.ok) showPerformance(result.events)
   }
 
   const handleFinishPerformance = async () => {
@@ -172,7 +177,6 @@ export function FinalShowdown() {
         performances={adaptRecap}
         players={players}
         resistGenre={showdownResistGenre}
-        weakGenre={showdownWeakGenre}
         onContinue={() => setStage('perform')}
       />
     )
@@ -203,7 +207,7 @@ export function FinalShowdown() {
               className={`font-bold tabular-nums leading-none ${
                 p.wasResisted && p.fandom === 0
                   ? 'text-red-300 text-5xl'
-                  : p.hadCrit || p.hitWeakness
+                  : p.hadCrit
                     ? 'text-gold-300 text-6xl'
                     : 'text-gold-400 text-5xl'
               }`}
@@ -214,9 +218,6 @@ export function FinalShowdown() {
             <div className="text-parchment-300 font-medieval font-bold text-sm mt-1 tracking-wider uppercase" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}>
               ♪ Fandom
             </div>
-            {p.hitWeakness && (
-              <div className="text-green-300 font-medieval font-bold text-xs tracking-widest uppercase">Weakness ×2!</div>
-            )}
             {p.wasResisted && (
               <div className="text-red-300 font-medieval font-bold text-xs tracking-widest uppercase">Immune 0×</div>
             )}
@@ -242,8 +243,7 @@ export function FinalShowdown() {
           <BossStage
             turn={showdownTurn}
             resistGenre={showdownResistGenre}
-            weakGenre={showdownWeakGenre}
-            fandom={showdownFandom}
+            fandom={held.showdownFandom}
             players={players}
           />
         </div>
@@ -261,36 +261,67 @@ export function FinalShowdown() {
                     {performer.name} takes the stage
                   </div>
                   <div className="text-xs text-parchment-500">
-                    Verse {showdownTurn} · {hasPerformed ? 'performance complete' : "tap one song's die to perform"}
+                    Verse {showdownTurn} · {hasPerformed ? 'performance complete' : 'tap a die to perform every die of its element'}
                   </div>
                 </div>
               </div>
 
               <div className="text-right">
                 <div className="text-2xl font-bold text-gold-400 tabular-nums" style={{ textShadow: '0 0 12px rgba(212,168,83,0.3)' }}>
-                  +{showdownCurrentFandom}
+                  +{held.showdownCurrentFandom}
                 </div>
                 <div className="text-[10px] text-parchment-500 uppercase tracking-wider">fandom this verse</div>
               </div>
             </div>
 
-            {/* Songs — the roll animates in-card, with an Inspiration reroll, like the battle phase */}
-            <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1 mb-4">
-              {performer.songs.map((song, idx) => (
-                <SongCard
-                  key={song.id}
-                  song={{ ...song, used: showdownSongsUsed.includes(song.id) }}
-                  onPlay={() => handlePlaySong(song)}
-                  disabled={hasPerformed || !canPerform}
-                  index={idx}
-                  rolls={lastRolls?.song.id === song.id ? lastRolls.rolls : undefined}
-                  onReroll={canPerform && lastRolls?.song.id === song.id ? handleReroll : undefined}
-                  onRubato={canPerform && lastRolls?.song.id === song.id && canRubato ? handleRubato : undefined}
-                  inspiration={performer.inspiration}
-                />
-              ))}
+            {/* Songs — one performance per verse: every die of one element */}
+            <div className="mb-4">
+              <SongGrid count={performer.songs.length}>
+                {performer.songs.map((song, idx) => {
+                  const shownRolls = held.lastRolls?.songIds.includes(song.id) ? held.lastRolls.rolls : undefined
+                  return (
+                    <SongCard
+                      key={song.id}
+                      song={{ ...song, used: held.showdownSongsUsed.includes(song.id) }}
+                      onPlay={() => handlePlaySong(song)}
+                      disabled={hasPerformed || !canPerform || diceBusy}
+                      index={idx}
+                      rolls={shownRolls}
+                    />
+                  )
+                })}
+              </SongGrid>
             </div>
 
+            {/* Rerolls: Inspiration (or Nimble Fingers, free) rerolls the whole performance */}
+            {canPerform && hasPerformed && performedSongs.length > 0 && (
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                {canRubato && (
+                  <button
+                    onClick={handleRubato}
+                    disabled={!canRubato}
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-gold-400/30 bg-gold-400/10 px-5 py-2.5 font-medieval font-bold text-gold-200 transition-colors hover:enabled:bg-gold-400/15 disabled:cursor-not-allowed disabled:opacity-40"
+                    title={`${STYLES.rubato.name}: reroll this d4/d8 performance for free (once per verse)`}
+                  >
+                    <RotateCcw size={17} aria-hidden="true" />
+                    Reroll
+                    <span className="text-xs font-normal text-gold-200/70">{STYLES.rubato.name} · free</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleReroll}
+                  disabled={!canReroll || performer.inspiration <= 0}
+                  className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-violet-300/35 bg-violet-400/10 px-5 py-2.5 font-medieval font-bold text-violet-100 transition-colors hover:enabled:bg-violet-400/15 disabled:cursor-not-allowed disabled:opacity-40"
+                  title={performer.inspiration > 0 ? 'Reroll this performance for 1 Inspiration' : 'Requires Inspiration'}
+                >
+                  <RotateCcw size={17} aria-hidden="true" />
+                  Reroll
+                  <span className="flex items-center gap-1 text-xs font-normal text-violet-200/70">
+                    <Sparkles size={12} aria-hidden="true" /> 1 · {performer.inspiration} left
+                  </span>
+                </button>
+              </div>
+            )}
 
             {/* Finish performance */}
             <div className="flex justify-center pt-2">
@@ -307,7 +338,7 @@ export function FinalShowdown() {
                 </button>
               ) : (
                 <p className="text-base text-parchment-500 italic font-game animate-pulse-slow">
-                  One song, one shot — make it count...
+                  One element, one shot — make it count...
                 </p>
               )}
             </div>
@@ -367,9 +398,9 @@ function ShowdownIntro({ onBegin, playerCount }: { onBegin: () => void; playerCo
         >
           <div className="text-xs font-medieval uppercase tracking-[0.3em] text-gold-500 mb-3 text-center">How the Showdown Works</div>
           <ul className="space-y-2.5 text-sm text-parchment-300">
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Three verses. Each verse, every bard performs <span className="text-gold-300 font-bold">one song</span> against the Silence.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Three verses. Each verse, every bard performs <span className="text-gold-300 font-bold">one element</span> — every die of it rolls together — against the Silence. Spend Inspiration to reroll a performance.</span></li>
             <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Every point of damage earns you <span className="text-gold-300 font-bold">1 fandom</span>.</span></li>
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Between verses it adapts like any monster: it becomes <span className="text-red-300 font-bold">immune (0×)</span> to the element of the strongest attack and <span className="text-green-300 font-bold">weak (2×)</span> to the element of the weakest.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Between verses it adapts: it becomes <span className="text-red-300 font-bold">immune (0×)</span> to the element of the strongest attack. It has no weakness.</span></li>
             <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>After the third verse the Silence shatters — and the bard with the most fans is crowned <span className="text-gold-300 font-bold">Legend of the Realm</span>.</span></li>
           </ul>
         </div>

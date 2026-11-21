@@ -17,16 +17,14 @@ export interface ShowdownPerformance {
 }
 
 /**
- * How the boss adapts between turns. Works exactly like monster
- * strengths/weaknesses: the resisted element deals 0× damage (immune),
- * the weak element deals 2× damage.
+ * How the boss adapts between turns: it is unmoved (0×, like a monster's
+ * immunity) by one element. It has no weakness — no element is doubled.
  */
 export interface BossAdaptation {
   resistGenre: Genre | null
-  weakGenre: Genre | null
 }
 
-export const NO_ADAPTATION: BossAdaptation = { resistGenre: null, weakGenre: null }
+export const NO_ADAPTATION: BossAdaptation = { resistGenre: null }
 
 /**
  * Build the showdown boss with its current elemental adaptation. Genre
@@ -42,7 +40,7 @@ export function createShowdownBoss(adaptation: BossAdaptation = NO_ADAPTATION): 
     // fandom, never by depleting the boss — so it carries no meaningful value.
     currentHP: 0,
     maxHP: 0,
-    vulnerability: adaptation.weakGenre,
+    vulnerability: null,
     resistance: adaptation.resistGenre,
     isBoss: true,
     level: 5,
@@ -81,28 +79,41 @@ export function getDominantGenre(song: Song, rolls: DiceRoll[]): Genre | null {
 }
 
 /**
- * After a turn, the boss builds resistance to the element of the most
- * powerful attack among all players and a weakness to the element of the
- * weakest. If both point at the same element (or there are fewer than two
- * performances), the boss cannot adapt. Ties go to earlier performers.
+ * After a verse, the boss grows unmoved by the element of the most powerful
+ * performance (ties go to earlier performers). It needs at least two
+ * performances with an element to compare, so a solo showdown never adapts.
  */
 export function computeBossAdaptation(performances: ShowdownPerformance[]): BossAdaptation {
   const withGenre = performances.filter((p) => p.genre !== null)
   if (withGenre.length < 2) return NO_ADAPTATION
 
   let strongest = withGenre[0]
-  let weakest = withGenre[0]
   for (const perf of withGenre) {
     if (perf.fandom > strongest.fandom) strongest = perf
-    if (perf.fandom < weakest.fandom) weakest = perf
   }
-
-  if (strongest.genre === weakest.genre) return NO_ADAPTATION
-
-  return { resistGenre: strongest.genre, weakGenre: weakest.genre }
+  return { resistGenre: strongest.genre }
 }
 
 /** Songs a player can actually perform (at least one die slotted). */
 export function getPlayableSongs(songs: Song[]): Song[] {
   return songs.filter((s) => s.slots.some((slot) => slot.dice))
+}
+
+/**
+ * A showdown performance plays every die of one element at once: the tapped
+ * song plus every other playable song whose die shares its element.
+ */
+export function showdownElementSongs(songs: Song[], songId: string): Song[] {
+  const genre = songs.find((s) => s.id === songId)?.slots.find((slot) => slot.dice)?.dice?.genre
+  if (!genre) return []
+  return getPlayableSongs(songs).filter((s) => s.slots.some((slot) => slot.dice?.genre === genre))
+}
+
+/** Several songs rolled as one performance: a single virtual song holding all their dice. */
+export function mergeSongs(songs: Song[]): Song {
+  return {
+    id: songs[0]?.id ?? 'performance',
+    slots: songs.flatMap((s) => s.slots) as unknown as Song['slots'],
+    used: false,
+  }
 }

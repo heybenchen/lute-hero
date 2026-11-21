@@ -13,6 +13,7 @@ import {
 } from '@/data/draftCards'
 import { GENRE_THEME } from '@/data/genreTheme'
 import { StyleShelf, OwnedStyles } from './StyleShelf'
+import { RefreshCw } from 'lucide-react'
 
 interface DraftShopProps {
   playerId: string
@@ -104,13 +105,14 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     dispatch({ type: 'SLOT_DIE_REWARD', rewardId: activeReward.id, songId, slotIndex })
   }
 
+
   return (
     <div className="modal-overlay">
       <div className="modal-content max-w-6xl">
         <div className="p-4 sm:p-6">
           {/* Header */}
           <div className="flex justify-between items-start gap-3 mb-5 sm:mb-6">
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="font-display text-2xl text-gold-400">
                 Studio
               </div>
@@ -125,11 +127,12 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   Watching {player.name}&rsquo;s Studio live
                 </div>
               )}
-              <div className="text-sm text-parchment-400 flex items-center gap-2 mt-1">
+              {/* Inspiration: buy one, or spend one to redraw the elements and styles on offer */}
+              <div className="mt-2 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                 <button
                   onClick={handleBuyInspiration}
                   disabled={!canInteract || player.exp < inspirationCost}
-                  className="text-sm font-medieval font-bold rounded-lg px-3 py-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:-translate-y-0.5 whitespace-nowrap"
+                  className="flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 font-medieval font-bold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 hover:enabled:-translate-y-0.5 sm:px-3"
                   style={{
                     background: 'rgba(176, 124, 255, 0.14)',
                     border: '1px solid rgba(176, 124, 255, 0.45)',
@@ -137,34 +140,36 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   }}
                   title={`Buy 1 Inspiration for ${inspirationCost} EXP (cost rises each purchase this turn)`}
                 >
-                  &#x2728; Buy Inspiration ({inspirationCost} EXP)
+                  Buy &#x2728; <span className="font-normal opacity-80">({inspirationCost} EXP)</span>
                 </button>
-                <span title="Inspiration">&#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span></span>
+                <button
+                  onClick={handleRefreshOffers}
+                  disabled={!canInteract || player.inspiration < inspirationSpend()}
+                  className="btn-secondary flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-sm"
+                  title={player.inspiration >= inspirationSpend()
+                    ? `Spend ${inspirationSpend()} Inspiration to draw new element chips and new style offers`
+                    : 'Requires Inspiration'}
+                >
+                  <RefreshCw size={13} aria-hidden="true" /> Refresh <span className="font-normal opacity-80">(&#x2728;{inspirationSpend()})</span>
+                </button>
+                <span className="ml-auto whitespace-nowrap pl-1 sm:ml-1" title="Inspiration you hold">
+                  &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span>
+                </span>
               </div>
             </div>
-            <div className="flex flex-col items-end justify-between self-stretch gap-3">
-              {canInteract && (
-                <button
-                  onClick={onClose}
-                  className="text-parchment-400 hover:text-parchment-200 transition-colors text-xl leading-none p-1"
-                  title="Close Studio"
-                >
-                  &#x2715;
-                </button>
-              )}
+            {canInteract && (
               <button
-                onClick={handleRefreshOffers}
-                disabled={!canInteract || player.inspiration < inspirationSpend()}
-                className="btn-secondary text-sm py-1.5 px-3 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-                title={player.inspiration >= inspirationSpend() ? 'Draw new element chips and new style offers' : 'Requires Inspiration'}
+                onClick={onClose}
+                className="text-parchment-400 hover:text-parchment-200 transition-colors text-xl leading-none p-1"
+                title="Close Studio"
               >
-                Refresh Elements &amp; Styles (&#x2728; {inspirationSpend()})
+                &#x2715;
               </button>
-            </div>
+            )}
           </div>
 
-          {/* Styles: change how every song plays */}
-          <StyleShelf player={player} canInteract={canInteract} />
+          {/* ===== Setlist: pick an element, then a slot, to add or upgrade a song ===== */}
+          <StudioSection title="Setlist" />
 
           {/* Element chips drawn from the bag */}
           <div className="mb-6">
@@ -186,7 +191,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 No chips on display — draw new ones from the bag
               </div>
             ) : (
-              <div className="flex w-full flex-row gap-3">
+              <div className="grid w-full gap-2 sm:gap-3" style={{ gridTemplateColumns: `repeat(${elementOffers.length}, minmax(0, 1fr))` }}>
                 {elementOffers.map((genre, offerIdx) => {
                   const { emoji, rgb } = GENRE_THEME[genre]
                   const isSelected = selectedOfferIdx === offerIdx
@@ -194,7 +199,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     <button
                       key={`${genre}-${offerIdx}`}
                       disabled={!canInteract}
-                      className={`group relative w-full rounded-lg p-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer' : 'cursor-default'}`}
+                      className={`group relative w-full min-w-0 rounded-lg px-1 py-3 sm:p-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer' : 'cursor-default'}`}
                       style={{
                         background: isSelected
                           ? `linear-gradient(160deg, rgba(${rgb}, 0.22) 0%, rgba(${rgb}, 0.06) 100%)`
@@ -247,7 +252,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 }}
               >
                 {!selectedElement ? (
-                  <span className="text-parchment-400">Choose an element, then click a slot in Your Songs to buy or upgrade a die there.</span>
+                  <span className="text-parchment-400">Choose an element, then click a slot in your setlist to buy or upgrade a die there.</span>
                 ) : player.exp < newD4Cost() ? (
                   <>
                     <GenreBadge genre={selectedElement} className="text-xs" />
@@ -256,7 +261,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 ) : (
                   <>
                     <GenreBadge genre={selectedElement} className="text-xs" />
-                    <span>chosen. Now click a slot in Your Songs:</span>
+                    <span>chosen. Now click a slot in your setlist:</span>
                     <span className="font-bold text-gold-300">an empty slot buys a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP)</span>
                     <span className="text-parchment-500">&middot;</span>
                     <span className="font-bold text-gold-300">a {selectedElement} die upgrades it</span>
@@ -311,11 +316,11 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
             </div>
           )}
 
-          {/* Player's songs */}
-          <div>
+          {/* The bard's setlist: every song they can perform */}
+          <div className="mb-8">
             <div className="flex items-center gap-2 mb-3">
               <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
-                Your Songs
+                Your Setlist
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
@@ -456,10 +461,22 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
             </div>
           </div>
 
-          {/* The bard's styles and what they do, right under the songs they affect */}
+          {/* ===== Styles: change how every song in the setlist plays ===== */}
+          <StudioSection title="Styles" subtitle="Add to your repertoire — each style changes how every song in your setlist plays." />
+          <StyleShelf player={player} canInteract={canInteract} />
           <OwnedStyles player={player} />
         </div>
       </div>
+    </div>
+  )
+}
+
+/** A top-level Studio section: the setlist first, then styles further down. */
+function StudioSection({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="mb-3 border-t border-gold-700/20 pt-4">
+      <div className="font-display text-xl text-gold-300">{title}</div>
+      {subtitle && <p className="text-sm text-parchment-400">{subtitle}</p>}
     </div>
   )
 }

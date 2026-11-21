@@ -42,10 +42,10 @@ describe('createShowdownBoss', () => {
     expect(boss.name).toBe('The Eternal Silence')
   })
 
-  it('carries its adaptation as monster vulnerability/resistance', () => {
-    const boss = createShowdownBoss({ resistGenre: 'Ballad', weakGenre: 'Folk' })
+  it('carries its adaptation as an immunity, never a weakness', () => {
+    const boss = createShowdownBoss({ resistGenre: 'Ballad' })
     expect(boss.resistance).toBe('Ballad')
-    expect(boss.vulnerability).toBe('Folk')
+    expect(boss.vulnerability).toBeNull()
   })
 })
 
@@ -65,61 +65,39 @@ describe('getDominantGenre', () => {
 })
 
 describe('computeBossAdaptation', () => {
-  it('resists the strongest attack element and is weak to the weakest', () => {
+  it('grows unmoved by the strongest performance\'s element', () => {
     const result = computeBossAdaptation([
       perf('p1', 20, 'Ballad'),
       perf('p2', 35, 'Folk'),
       perf('p3', 8, 'Shanty'),
     ])
-    expect(result.resistGenre).toBe('Folk')
-    expect(result.weakGenre).toBe('Shanty')
+    expect(result).toEqual({ resistGenre: 'Folk' })
   })
 
   it('does not adapt in a solo showdown', () => {
-    const result = computeBossAdaptation([perf('p1', 25, 'Ballad')])
-    expect(result.resistGenre).toBeNull()
-    expect(result.weakGenre).toBeNull()
+    expect(computeBossAdaptation([perf('p1', 25, 'Ballad')])).toEqual({ resistGenre: null })
   })
 
   it('does not adapt with no performances', () => {
-    expect(computeBossAdaptation([])).toEqual({ resistGenre: null, weakGenre: null })
+    expect(computeBossAdaptation([])).toEqual({ resistGenre: null })
   })
 
-  it('does not adapt when strongest and weakest share an element', () => {
-    const result = computeBossAdaptation([
-      perf('p1', 30, 'Ballad'),
-      perf('p2', 10, 'Ballad'),
-    ])
-    expect(result.resistGenre).toBeNull()
-    expect(result.weakGenre).toBeNull()
+  it('adapts even when every performance shares an element', () => {
+    const result = computeBossAdaptation([perf('p1', 30, 'Ballad'), perf('p2', 10, 'Ballad')])
+    expect(result.resistGenre).toBe('Ballad')
   })
 
-  it('breaks damage ties by performance order', () => {
+  it('breaks ties by performance order', () => {
     const result = computeBossAdaptation([
       perf('p1', 30, 'Ballad'),
       perf('p2', 30, 'Folk'),
       perf('p3', 10, 'Hymn'),
     ])
     expect(result.resistGenre).toBe('Ballad')
-    expect(result.weakGenre).toBe('Hymn')
   })
 
   it('ignores performances without an element', () => {
-    const result = computeBossAdaptation([
-      perf('p1', 30, 'Ballad'),
-      perf('p2', 5, null),
-    ])
-    expect(result.resistGenre).toBeNull()
-    expect(result.weakGenre).toBeNull()
-  })
-
-  it('handles two players with different damage and elements', () => {
-    const result = computeBossAdaptation([
-      perf('p1', 12, 'Hymn'),
-      perf('p2', 40, 'Shanty'),
-    ])
-    expect(result.resistGenre).toBe('Shanty')
-    expect(result.weakGenre).toBe('Hymn')
+    expect(computeBossAdaptation([perf('p1', 30, 'Ballad'), perf('p2', 5, null)])).toEqual({ resistGenre: null })
   })
 })
 

@@ -7,7 +7,6 @@ interface AdaptBannerProps {
   performances: ShowdownPerformance[]
   players: Player[]
   resistGenre: Genre | null
-  weakGenre: Genre | null
   onContinue: () => void
 }
 
@@ -17,7 +16,6 @@ export function AdaptBanner({
   performances,
   players,
   resistGenre,
-  weakGenre,
   onContinue,
 }: AdaptBannerProps) {
   const byId = new Map(players.map((p) => [p.id, p]))
@@ -88,7 +86,7 @@ export function AdaptBanner({
         {/* Adaptation announcement */}
         <div className="divider-ornate" />
         <div className="mt-5 mb-7 space-y-3">
-          {resistGenre || weakGenre ? (
+          {resistGenre ? (
             <>
               {resistGenre && (
                 <div
@@ -106,25 +104,6 @@ export function AdaptBanner({
                       {GENRE_THEME[resistGenre].emoji} {resistGenre}
                     </span>{' '}
                     dice deal <span className="font-bold text-red-300">no damage</span> next verse.
-                  </span>
-                </div>
-              )}
-              {weakGenre && (
-                <div
-                  className="animate-slide-up rounded-lg px-4 py-3 max-w-md mx-auto text-left"
-                  style={{
-                    animationDelay: '850ms',
-                    animationFillMode: 'both',
-                    background: 'rgba(76, 175, 80, 0.08)',
-                    border: '1px solid rgba(76, 175, 80, 0.35)',
-                  }}
-                >
-                  <span className="text-sm text-parchment-300">
-                    💥 But the faintest note opens a crack —{' '}
-                    <span className="font-bold" style={{ color: GENRE_THEME[weakGenre].color }}>
-                      {GENRE_THEME[weakGenre].emoji} {weakGenre}
-                    </span>{' '}
-                    dice deal <span className="font-bold text-green-300">double damage</span> next verse!
                   </span>
                 </div>
               )}

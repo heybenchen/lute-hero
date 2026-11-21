@@ -225,7 +225,7 @@ describe('actions route', () => {
 
   it('is idempotent per clientActionId', async () => {
     const { gameId } = await startedTwoPlayerGame()
-    const action = { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false }
+    const action = { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 }
     const first = await act(gameId, TOKEN_A, action, 'ca-fixed')
     const dup = await act(gameId, TOKEN_A, action, 'ca-fixed')
     expect(dup.status).toBe(200)
@@ -248,7 +248,7 @@ describe('actions route', () => {
     const { gameId } = await startedTwoPlayerGame()
     // Plant a monster on space 1 and start combat
     let doc = await loadGameDoc(redis, gameId)
-    await act(gameId, TOKEN_A, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1, inspirationTravel: false })
+    await act(gameId, TOKEN_A, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 })
     doc = await loadGameDoc(redis, gameId)
     const space1 = doc!.engineState.spaces.find((s) => s.id === 1)!
     if (space1.monsters.length === 0) {

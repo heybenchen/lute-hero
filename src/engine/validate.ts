@@ -1,6 +1,6 @@
 import { EngineState } from './state.js'
 import { GameAction, ActorSeat } from './actions.js'
-import { getPlayableSongs } from '../game-logic/showdown/showdown.js'
+import { getPlayableSongs, mergeSongs } from '../game-logic/showdown/showdown.js'
 import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
 import { newD4Cost, getUpgradeCost, getInspirationCost, inspirationSpend } from '../data/draftCards.js'
 import { getTunables } from '../data/tunables.js'
@@ -17,6 +17,28 @@ export function maxFightsPerTurn(): number {
 /** Chips of EACH element every bard is dealt at round end. */
 export function roundEndChipsPerElement(): number {
   return getTunables().roundEndChipsPerElement
+}
+
+/**
+ * Can the fighter play this featured song? The guest must share the fight's
+ * space, not have been featured yet this fight, and own a song with a die.
+ */
+function validateFeature(
+  state: EngineState,
+  feature: { guestPlayerId: string; songId: string; targetMonsterId: string }
+): ValidationResult {
+  const combat = state.combat
+  if (!combat.isActive) return illegal('No active combat')
+  const guest = state.players.find((p) => p.id === feature.guestPlayerId)
+  if (!guest || guest.id === combat.playerId) return illegal('Choose another bard to feature')
+  if (guest.position !== combat.spaceId) return illegal('That bard is not on this space')
+  if (combat.featuredPlayerIds.includes(guest.id)) return illegal('That bard has already been featured this fight')
+  const song = guest.songs.find((sg) => sg.id === feature.songId)
+  if (!song?.slots.some((slot) => slot.dice)) return illegal('Choose one of their songs with a die')
+  const target = combat.monsters.find((m) => m.id === feature.targetMonsterId)
+  if (!target) return illegal('Choose a monster to target')
+  if (target.currentHP <= 0) return illegal('That monster is already defeated')
+  return ok
 }
 
 export type ValidationResult =
@@ -89,9 +111,7 @@ export function validateAction(
       if (player.movesThisTurn >= maxMovesPerTurn()) return illegal('No moves left this turn')
       if (action.toSpaceId === player.position) return illegal('Already on that space')
       if (!state.spaces.some((s) => s.id === action.toSpaceId)) return illegal('Unknown space')
-      if (action.inspirationTravel) {
-        if (player.inspiration < inspirationSpend()) return illegal('Not enough Inspiration to travel')
-      } else if (!areSpacesConnected(player.position, action.toSpaceId, state.spaces)) {
+      if (!areSpacesConnected(player.position, action.toSpaceId, state.spaces)) {
         return illegal('Spaces are not connected')
       }
       return ok
@@ -127,6 +147,7 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (!state.combat.isActive) return illegal('No active combat')
+      if (state.combat.featureRequest) return illegal('Waiting for an answer about a featured song')
       // A song whose dice are spent (it damaged without defeating) can't replay.
       if (state.combat.spentSongIds.includes(action.songId)) {
         return illegal('That song\'s dice are spent this combat')
@@ -147,6 +168,7 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (!state.combat.isActive) return illegal('No active combat')
+      if (state.combat.featureRequest) return illegal('Waiting for an answer about a featured song')
       if (!state.combat.undoSnapshot || !state.combat.lastPlayedSongId) {
         return illegal('Nothing to reroll')
       }
@@ -173,12 +195,44 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (!state.combat.isActive) return illegal('No active combat')
+      if (state.combat.featureRequest) return illegal('Waiting for an answer about a featured song')
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
       if (!fighter?.styles.includes('staccato')) return illegal('Rallying Cry is not one of your styles')
       if (state.combat.stylesUsed.includes('staccato')) return illegal('Rallying Cry is already used this turn')
       if (!state.combat.rallyReady) return illegal('Tame a monster first')
       if (!fighter.songs.some((sg) => sg.id === action.songId)) return illegal('Choose one of your own songs')
       if (!state.combat.spentSongIds.includes(action.songId)) return illegal('That song is not spent')
+      return ok
+    }
+
+    case 'PLAY_FEATURED_SONG': {
+      const gate = requireCurrentTurn()
+      if (!gate.ok) return gate
+      // Online the guest must agree first: ask with REQUEST_FEATURE
+      if (isSeat) return forbidden('Ask that bard to feature their song first')
+      if (state.combat.featureRequest) return illegal('Waiting for an answer about a featured song')
+      return validateFeature(state, action)
+    }
+
+    case 'REQUEST_FEATURE': {
+      const gate = requireCurrentTurn()
+      if (!gate.ok) return gate
+      if (state.combat.featureRequest) return illegal('Already waiting for an answer')
+      return validateFeature(state, action)
+    }
+
+    case 'ANSWER_FEATURE': {
+      const request = state.combat.featureRequest
+      if (!state.combat.isActive || !request) return illegal('No featured song to answer')
+      if (action.accept) {
+        // Only the guest can agree to feature their own song
+        if (isSeat && seatPlayerId !== request.guestPlayerId) return forbidden('Only that bard can agree')
+        return validateFeature(state, request)
+      }
+      // Declining: the guest, or the fighter withdrawing the ask
+      if (isSeat && seatPlayerId !== request.guestPlayerId && seatPlayerId !== state.combat.playerId) {
+        return forbidden('Not your request to answer')
+      }
       return ok
     }
 
@@ -391,8 +445,9 @@ export function validateAction(
       if (action.rubato) {
         if (!performer.styles.includes('rubato')) return illegal('Rubato is not one of your styles')
         if (state.showdownUndo.rubatoUsed) return illegal('Rubato is already used this verse')
-        const song = performer.songs.find((sg) => sg.id === state.showdownUndo!.songId)
-        if (!song || !rubatoCanReroll(song)) return illegal('Rubato rerolls only d4 and d8 songs')
+        const undo = state.showdownUndo
+        const songs = performer.songs.filter((sg) => (undo.songIds ?? [undo.songId]).includes(sg.id))
+        if (!songs.length || !rubatoCanReroll(mergeSongs(songs))) return illegal('Rubato rerolls only d4 and d8 songs')
       } else if (performer.inspiration < inspirationSpend()) {
         return illegal('Not enough Inspiration')
       }
@@ -438,6 +493,13 @@ export function validateAction(
     case 'DEBUG_PATCH': {
       if (!isHost) return forbidden('Only the host can use debug mode')
       if (!action.patch || typeof action.patch !== 'object') return illegal('Missing debug patch')
+      return ok
+    }
+
+    case 'DEBUG_JUMP_TO_SHOWDOWN': {
+      if (!isHost) return forbidden('Only the host can use debug mode')
+      if (!Number.isInteger(action.round) || action.round < 1) return illegal('Choose a round of 1 or more')
+      if (state.players.length === 0) return illegal('Start a game first')
       return ok
     }
 

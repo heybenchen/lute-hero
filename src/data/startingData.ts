@@ -1,23 +1,23 @@
 import { Genre, DiceType, Dice, Song } from '../types/index.js';
 
-// Starter dice: two d4s of the bard's chosen element, one in each of the first two songs.
-const starterPair = (genre: Genre): Dice[] => [1, 2].map((n) => ({
-  id: `${genre.toLowerCase()}-starter-${n}`,
-  type: "d4",
+// Starter die: one d8 of the bard's chosen element, in their first song.
+const starterDie = (genre: Genre): Dice[] => [{
+  id: `${genre.toLowerCase()}-starter-1`,
+  type: "d8",
   genre,
-}));
+}];
 
 export const STARTER_DICE: { [key in Genre]: Dice[] } = {
-  Ballad: starterPair("Ballad"),
-  Folk: starterPair("Folk"),
-  Hymn: starterPair("Hymn"),
-  Shanty: starterPair("Shanty"),
+  Ballad: starterDie("Ballad"),
+  Folk: starterDie("Folk"),
+  Hymn: starterDie("Hymn"),
+  Shanty: starterDie("Shanty"),
 };
 
 /** Every bard carries this many songs; each song holds exactly one die. */
 export const SONGS_PER_BARD = 6;
 
-// Create 6 starter songs of one die each: the first two hold the starter d4s.
+// Create 6 starter songs of one die each: the first holds the starter d8.
 export function createStarterSongs(genre: Genre, playerId: string): Song[] {
   const starterDice = STARTER_DICE[genre];
 

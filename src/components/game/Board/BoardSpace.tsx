@@ -8,7 +8,6 @@ interface BoardSpaceProps {
   players: Player[]
   isCurrentPlayer: boolean
   canMoveTo: boolean
-  isTravelTarget?: boolean
   isLinkedToHovered?: boolean
   onClick: () => void
 }
@@ -18,7 +17,6 @@ export function BoardSpace({
   players,
   isCurrentPlayer,
   canMoveTo,
-  isTravelTarget = false,
   isLinkedToHovered = false,
   onClick,
 }: BoardSpaceProps) {
@@ -32,28 +30,26 @@ export function BoardSpace({
   }, {})
   const genreEntries = Object.entries(genreTagCounts) as [Genre, number][]
   const illustration = SPACE_ILLUSTRATIONS[space.id]
-  // Spaces the player can act on this turn (reachable / current / travel target)
-  const isReachable = canMoveTo || isTravelTarget || isCurrentPlayer
+  // Spaces the player can act on this turn (reachable / current)
+  const isReachable = canMoveTo || isCurrentPlayer
 
   return (
     <button
       onClick={onClick}
-      disabled={!canMoveTo && !isTravelTarget}
+      disabled={!canMoveTo}
       className={`
         board-space-tile relative sm:hover:z-40 w-full aspect-square
         flex flex-col justify-between p-1.5 sm:p-2
         transition-all duration-200 ease-out
-        ${canMoveTo || isTravelTarget
+        ${canMoveTo
           ? 'cursor-pointer sm:hover:-translate-y-1.5'
           : 'cursor-default'
         }
-        ${hasMonsters && (canMoveTo || isTravelTarget) ? 'animate-danger-pulse' : ''}
+        ${hasMonsters && canMoveTo ? 'animate-danger-pulse' : ''}
       `}
       style={{
         border: isCurrentPlayer
           ? '2px solid rgba(116, 225, 139, 0.9)'
-          : isTravelTarget
-          ? '2px solid rgba(176, 124, 255, 0.7)'
           : canMoveTo
           ? '2px solid rgba(240, 200, 110, 0.95)'
           : isLinkedToHovered
@@ -61,8 +57,6 @@ export function BoardSpace({
           : '1px solid rgba(107, 73, 35, 0.85)',
         boxShadow: isCurrentPlayer
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px rgba(100, 220, 100, 0.22), 0 4px 8px rgba(0,0,0,0.3)'
-          : isTravelTarget
-          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(176, 124, 255, 0.3), 0 4px 8px rgba(0,0,0,0.3)'
           : canMoveTo
           ? 'inset 0 1px 0 rgba(255,255,255,0.08), 0 0 18px rgba(240, 200, 110, 0.5), 0 4px 8px rgba(0,0,0,0.3)'
           : isLinkedToHovered
@@ -151,7 +145,7 @@ export function BoardSpace({
       </div>
 
       {/* Move indicator glow */}
-      {(canMoveTo || isTravelTarget) && (
+      {canMoveTo && (
         <div
           className="absolute inset-0 pointer-events-none animate-ring-pulse"
         />

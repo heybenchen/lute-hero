@@ -4,7 +4,7 @@ import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getValidMoves } from '@/game-logic/board/graphBuilder'
 import realmMap from '@/imports/board-background.jpg'
 import realmMapMobile from '@/imports/board-background-mobile.jpg'
-import { Footprints, Map, Sparkles, Undo2 } from 'lucide-react'
+import { Footprints, Map, Undo2 } from 'lucide-react'
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)
@@ -17,7 +17,6 @@ export function Board() {
   const studioOpen = useGameStore((state) => state.studio.playerId !== null)
 
   const [hoveredSpaceId, setHoveredSpaceId] = useState<number | null>(null)
-  const [travelMode, setTravelMode] = useState(false)
 
   if (!currentPlayer) return null
 
@@ -25,16 +24,13 @@ export function Board() {
   const canMove = canAct && currentPlayer.movesThisTurn < 2
   const validMoves = canMove ? getValidMoves(currentPlayer.position, spaces) : []
 
-  // Travel spends 1 Inspiration and 1 movement, so it needs a move available
-  const canTravel = currentPlayer.inspiration > 0 && canMove
-  // The last move this turn can be taken back (refunding the move and any
-  // travel Inspiration) until the bard starts a fight.
+  // The last move this turn can be taken back (refunding the move) until the
+  // bard starts a fight.
   const lastStep = moveTrail[moveTrail.length - 1]
   const canUndoMove = canAct && !combatActive && !studioOpen && lastStep?.playerId === currentPlayer.id
   const backtrackSpaceId = canUndoMove ? lastStep.fromSpaceId : null
   const undoMove = () => {
     if (!canUndoMove) return
-    setTravelMode(false)
     dispatch({ type: 'UNDO_MOVE', playerId: currentPlayer.id })
   }
 
@@ -47,22 +43,13 @@ export function Board() {
       return
     }
 
-    // Inspiration travel: hop to any space (not the current one) for 1 Inspiration + 1 move
-    if (travelMode) {
-      if (spaceId === currentPlayer.position || !canMove) return
-      if (currentPlayer.inspiration < 1) return
-      dispatch({ type: 'MOVE', playerId: currentPlayer.id, toSpaceId: spaceId, inspirationTravel: true })
-      setTravelMode(false)
-      return
-    }
-
     if (!canMove) return
 
     const isValidMove = validMoves.some((s) => s.id === spaceId)
     if (!isValidMove) return
 
     // Move to the space; the engine spawns monsters from its tags
-    dispatch({ type: 'MOVE', playerId: currentPlayer.id, toSpaceId: spaceId, inspirationTravel: false })
+    dispatch({ type: 'MOVE', playerId: currentPlayer.id, toSpaceId: spaceId })
   }
 
   return (
@@ -98,22 +85,10 @@ export function Board() {
           <button
             onClick={undoMove}
             className="travel-token"
-            title="Take back your last move (the move and any Inspiration spent are refunded)"
+            title="Take back your last move"
           >
             <Undo2 size={14} aria-hidden="true" />
             <span>Undo move</span>
-          </button>
-        )}
-        {(canTravel || travelMode) && (
-          <button
-            onClick={() => setTravelMode((m) => !m)}
-            disabled={!canTravel && !travelMode}
-            className={`travel-token ${travelMode ? 'travel-token-active' : ''}`}
-            title="Spend 1 Inspiration and 1 move to travel to any space"
-          >
-            <Sparkles size={14} aria-hidden="true" />
-            <span>{travelMode ? 'Cancel' : 'Travel'}</span>
-            {!travelMode && <strong>1</strong>}
           </button>
         )}
         </div>
@@ -139,7 +114,6 @@ export function Board() {
                   players={players}
                   isCurrentPlayer={currentPlayer.position === space.id}
                   canMoveTo={space.id === backtrackSpaceId || validMoves.some((s) => s.id === space.id)}
-                  isTravelTarget={travelMode && space.id !== currentPlayer.position}
                   isLinkedToHovered={
                     hoveredSpace !== null &&
                     hoveredSpace !== undefined &&

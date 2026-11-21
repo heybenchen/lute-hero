@@ -88,15 +88,17 @@
     border: 1px solid rgba(176, 124, 255, 0.4);
   }
 
-  .travel-token strong {
-    @apply flex items-center justify-center rounded-full text-[9px];
-    width: 16px; height: 16px; background: rgba(176, 124, 255, 0.25);
+  /* Songs: two rows on phones, one row from tablet width up (SongGrid sets the counts) */
+  .song-grid {
+    display: grid;
+    gap: 0.375rem;
+    grid-template-columns: repeat(var(--song-cols-mobile, 3), minmax(0, 1fr));
   }
-
-  .travel-token-active {
-    background: rgba(132, 86, 191, 0.3);
-    border-color: rgba(199, 164, 255, 0.85);
-    box-shadow: 0 0 18px rgba(176, 124, 255, 0.24);
+  @media (min-width: 768px) {
+    .song-grid {
+      gap: 0.625rem;
+      grid-template-columns: repeat(var(--song-cols, 6), minmax(0, 1fr));
+    }
   }
 
   .tile-tray {

@@ -107,7 +107,7 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
   return (
     <div className="mb-6">
       <div className="flex items-center gap-3 mb-3">
-        <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">Styles</div>
+        <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">On the shelf</div>
         <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
       </div>
 
@@ -147,8 +147,8 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
 }
 
 /**
- * The bard's own styles with their full effects, shown under Your Songs so
- * it's clear what every song is already getting. Empty slots show how many
+ * The bard's own styles with their full effects, shown under the style shelf
+ * so it's clear what every song in the setlist is already getting. Empty slots show how many
  * more can be learned.
  */
 export function OwnedStyles({ player }: { player: Player }) {
@@ -158,7 +158,7 @@ export function OwnedStyles({ player }: { player: Player }) {
     <div className="mt-6">
       <div className="flex items-center gap-2 mb-3">
         <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">Your Styles</div>
-        <div className="text-xs text-parchment-500">({player.styles.length}/{cap}) — these apply to every song</div>
+        <div className="text-xs text-parchment-500">({player.styles.length}/{cap}) — these apply to every song in your setlist</div>
         <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
