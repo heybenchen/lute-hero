@@ -71,7 +71,7 @@ export interface Tunables {
   // --- Styles (see src/data/styles.ts) ---
   /** Styles a bard can own at once; buying past this replaces one. */
   maxStyles: number
-  /** Styles on offer in the Studio; redrawn after every turn. */
+  /** Number of persistent style offers shown in the Studio. */
   styleOfferCount: number
   /** EXP price of each style. */
   styleCostStaccato: number

@@ -17,11 +17,9 @@ import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game
 import { calculateSingleTargetDamage, calculateDamage } from '../game-logic/combat/damageCalculator.js'
 import {
   calculateFameEarned,
-  calculateMonsterFameValue,
   calculateTotalMonsterExp,
   getNextPhase,
 } from '../game-logic/fame/calculator.js'
-import { calculateCoverFameSplit } from '../game-logic/fame/coverSongFame.js'
 import { createStarterSongs, ALL_DICE_TYPES } from '../data/startingData.js'
 import { createElementalDie, getInspirationCost, getUpgradeCost, newD4Cost, inspirationSpend } from '../data/draftCards.js'
 import { createElementBag, drawFromBag, elementOfferCount } from '../data/elementBag.js'
@@ -169,8 +167,8 @@ function reduce(
     }
 
     case 'PLAY_SONG': {
-      const owner = state.players.find((p) => p.id === action.ownerId)!
-      const song = owner.songs.find((s) => s.id === action.songId)!
+      const fighter = state.players.find((p) => p.id === state.combat.playerId)!
+      const song = fighter.songs.find((s) => s.id === action.songId)!
       const snapshot = {
         monsters: state.combat.monsters,
         songsUsed: state.combat.songsUsed,
@@ -180,16 +178,14 @@ function reduce(
         stylesUsed: state.combat.stylesUsed,
         rallyReady: state.combat.rallyReady,
       }
-      const fighter = state.players.find((p) => p.id === state.combat.playerId)!
-      const combat = performCombatPlay(state.combat, snapshot, song, owner.id, action.targetMonsterId, fighter, rng, events)
-      return { ...state, combat: { ...combat, undoSnapshot: snapshot, lastPlayedSongId: song.id, lastPlayedOwnerId: owner.id } }
+      const combat = performCombatPlay(state.combat, snapshot, song, action.targetMonsterId, fighter, rng, events)
+      return { ...state, combat: { ...combat, undoSnapshot: snapshot, lastPlayedSongId: song.id } }
     }
 
     case 'REROLL_SONG': {
       const fighterId = state.combat.playerId!
-      const ownerId = state.combat.lastPlayedOwnerId!
-      const owner = state.players.find((p) => p.id === ownerId)!
-      const song = owner.songs.find((s) => s.id === state.combat.lastPlayedSongId)!
+      const fighter = state.players.find((p) => p.id === fighterId)!
+      const song = fighter.songs.find((s) => s.id === state.combat.lastPlayedSongId)!
       // Rubato's reroll is free (once per turn); otherwise it costs Inspiration
       const players = action.rubato
         ? state.players
@@ -200,8 +196,8 @@ function reduce(
       // target. The snapshot stays put so the song can be rerolled again.
       const snapshot = state.combat.undoSnapshot!
       const targetId = state.combat.lastTargetMonsterId!
-      const fighter = players.find((p) => p.id === fighterId)!
-      const combat = performCombatPlay(state.combat, snapshot, song, ownerId, targetId, fighter, rng, events)
+      const updatedFighter = players.find((p) => p.id === fighterId)!
+      const combat = performCombatPlay(state.combat, snapshot, song, targetId, updatedFighter, rng, events)
       // The snapshot predates Rubato, so carry its use across the replay
       const rubatoSpent = action.rubato || state.combat.stylesUsed.includes('rubato')
       const stylesUsed = rubatoSpent && !combat.stylesUsed.includes('rubato')
@@ -332,6 +328,7 @@ function reduce(
         elementBag: bag,
         elementDiscard: remaining,
         elementOffers: drawn,
+        styleOffers: drawStyleOffers(styleOfferCount(), [...player.styles, ...state.styleOffers], rng),
         studio: { ...state.studio, selectedOfferIdx: null },
       }
     }
@@ -709,8 +706,8 @@ function setPlayerStyles(state: EngineState, playerId: string, styles: StyleId[]
 }
 
 /**
- * A bard's turn begins: deal a fresh pair of styles they don't already own,
- * and Ispirato tops their Inspiration up to 1.
+ * A bard's turn begins: preserve the shared style shelf and fill only empty
+ * slots, while Ispirato tops their Inspiration up to 1.
  */
 function beginTurn(state: EngineState, rng: Rng): EngineState {
   const player = state.players[state.currentTurnPlayerIndex]
@@ -718,7 +715,14 @@ function beginTurn(state: EngineState, rng: Rng): EngineState {
   const players = player.styles.includes('ispirato') && player.inspiration < 1
     ? state.players.map((p) => (p.id === player.id ? { ...p, inspiration: 1 } : p))
     : state.players
-  return { ...state, players, styleOffers: drawStyleOffers(styleOfferCount(), player.styles, rng) }
+  const missingOffers = Math.max(0, styleOfferCount() - state.styleOffers.length)
+  const styleOffers = missingOffers > 0
+    ? [
+        ...state.styleOffers,
+        ...drawStyleOffers(missingOffers, [...player.styles, ...state.styleOffers], rng),
+      ]
+    : state.styleOffers
+  return { ...state, players, styleOffers }
 }
 
 // ============================================================
@@ -737,17 +741,15 @@ function performCombatPlay(
   combat: EngineCombatState,
   base: CombatSnapshot,
   song: Song,
-  ownerId: string,
   targetMonsterId: string,
   fighter: Player,
   rng: Rng,
   events: EngineEvent[]
 ): EngineCombatState {
-  const isCover = ownerId !== combat.playerId
   const monstersBefore = base.monsters
   const targetBefore = monstersBefore.find((m) => m.id === targetMonsterId)
 
-  // The performing bard's styles shape every song they play, covers included
+  // The performing bard's styles shape every song they play.
   const styleCtx: StyleContext = {
     styles: fighter.styles,
     used: base.stylesUsed,
@@ -769,7 +771,7 @@ function performCombatPlay(
   const defeatedTarget = !!targetBefore && targetBefore.currentHP > 0 && !!targetAfter && targetAfter.currentHP <= 0
 
   const newKillCredits: KillCredit[] = defeatedTarget
-    ? [{ monsterId: targetMonsterId, songOwnerId: ownerId, isCover }]
+    ? [{ monsterId: targetMonsterId }]
     : []
 
   const totalDamageDealt = damageCalculations.reduce((sum, calc) => sum + calc.totalDamage, 0)
@@ -790,7 +792,7 @@ function performCombatPlay(
   // Rallying Cry arms on a tame; the bard spends it by choosing a song (RALLY_SONG)
   const rallyReady = base.rallyReady || (defeatedTarget && staccatoArms(styleCtx))
 
-  events.push({ type: 'diceRolled', playerId: ownerId, songId: song.id, context: 'combat', rolls })
+  events.push({ type: 'diceRolled', playerId: fighter.id, songId: song.id, context: 'combat', rolls })
   events.push({
     type: 'damageDealt',
     calculations: damageCalculations,
@@ -801,7 +803,7 @@ function performCombatPlay(
   return {
     ...combat,
     monsters: updatedMonsters,
-    songsUsed: [...base.songsUsed, { songId: song.id, ownerId, isCover }],
+    songsUsed: [...base.songsUsed, { songId: song.id }],
     spentSongIds,
     killCredits: [...base.killCredits, ...newKillCredits],
     currentSongId: song.id,
@@ -815,14 +817,13 @@ function performCombatPlay(
   }
 }
 
-/** Fame each participant earns from the current combat, by kill credits. */
+/** Rewards the active bard earns from the current combat. */
 export function computeCombatRewards(combat: {
   monsters: Monster[]
   killCredits: KillCredit[]
 }, fighterStyles: StyleId[] = []): {
   totalFameEarned: number
   fighterFame: number
-  coverFameByOwner: Map<string, number>
   totalExp: number
   monstersDefeatedCount: number
   bravoFame: number
@@ -834,35 +835,17 @@ export function computeCombatRewards(combat: {
   const wounded = combat.monsters.filter((m) => m.currentHP < m.maxHP)
   const totalExp = calculateTotalMonsterExp(wounded)
   const totalFameEarned = calculateFameEarned(defeated.map((m) => m.level))
-
-  const fameForKill = (monsterId: string) => {
-    const level = combat.monsters.find((m) => m.id === monsterId)?.level ?? 1
-    return calculateMonsterFameValue(level)
-  }
-
-  let fighterFame = combat.killCredits
-    .filter((kc) => !kc.isCover)
-    .reduce((sum, kc) => sum + fameForKill(kc.monsterId), 0)
-
-  const coverTotals = new Map<string, number>()
-  combat.killCredits
-    .filter((kc) => kc.isCover)
-    .forEach((kc) => {
-      coverTotals.set(kc.songOwnerId, (coverTotals.get(kc.songOwnerId) || 0) + fameForKill(kc.monsterId))
-    })
-
-  const coverFameByOwner = new Map<string, number>()
-  coverTotals.forEach((coverFame, ownerId) => {
-    const splitShare = calculateCoverFameSplit(coverFame)
-    if (splitShare > 0) coverFameByOwner.set(ownerId, splitShare)
-    fighterFame += splitShare // fighter gets the other half of every cover kill
+  const creditedLevels = combat.killCredits.flatMap((credit) => {
+    const monster = combat.monsters.find((m) => m.id === credit.monsterId)
+    return monster ? [monster.level] : []
   })
+  const creditedFame = calculateFameEarned(creditedLevels)
 
   // Bravo: the crowd cheers every monster the fighter's performance tamed
   const bravoFame = fighterStyles.includes('bravo') ? monstersDefeatedCount * getTunables().bravoFamePerTame : 0
-  fighterFame += bravoFame
+  const fighterFame = creditedFame + bravoFame
 
-  return { totalFameEarned: totalFameEarned + bravoFame, fighterFame, coverFameByOwner, totalExp, monstersDefeatedCount, bravoFame }
+  return { totalFameEarned: totalFameEarned + bravoFame, fighterFame, totalExp, monstersDefeatedCount, bravoFame }
 }
 
 function endCombat(state: EngineState, spreadGenre: Genre | null, events: EngineEvent[]): EngineState {
@@ -883,9 +866,6 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
     if (rewards.fighterFame > 0) {
       players = players.map((p) => (p.id === fighterId ? { ...p, fame: p.fame + rewards.fighterFame } : p))
     }
-    rewards.coverFameByOwner.forEach((fame, ownerId) => {
-      players = players.map((p) => (p.id === ownerId ? { ...p, fame: p.fame + fame } : p))
-    })
     players = players.map((p) =>
       p.id === fighterId ? { ...p, monstersDefeated: p.monstersDefeated + rewards.monstersDefeatedCount } : p
     )

@@ -98,8 +98,11 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
         >
           <Swords size={16} aria-hidden="true" />
           <span className="truncate">
-            {compact ? 'Fight' : `Fight ${monsterCount} Monster${monsterCount > 1 ? 's' : ''}`}
-            {!canFight && !compact && ' (No fights left)'}
+            {compact
+              ? 'Fight'
+              : canFight
+                ? `Fight ${monsterCount} Monster${monsterCount > 1 ? 's' : ''}`
+                : 'No fights left'}
           </span>
         </button>
       )}

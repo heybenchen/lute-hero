@@ -285,7 +285,7 @@ describe('combat flow', () => {
       },
     }
     const targetId = state.combat.monsters[0].id
-    const playResult = apply(state, { type: 'PLAY_SONG', songId: state.players[0].songs[0].id, ownerId: 'player-1', targetMonsterId: targetId })
+    const playResult = apply(state, { type: 'PLAY_SONG', songId: state.players[0].songs[0].id, targetMonsterId: targetId })
     state = playResult.state
     expect(playResult.events.some((e) => e.type === 'diceRolled')).toBe(true)
     expect(playResult.events.some((e) => e.type === 'damageDealt')).toBe(true)
@@ -321,6 +321,18 @@ describe('combat flow', () => {
     state = apply(state, { type: 'SELECT_COMBAT_SPREAD', genre: 'Hymn' }).state
     expect(state.combat.selectedSpreadGenre).toBe('Hymn')
     expect(applyAction(state, { type: 'END_COMBAT' }, ctx()).ok).toBe(true)
+  })
+
+  it('rejects songs that do not belong to the active bard', () => {
+    let state = stateWithMonsterAtPlayer()
+    state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    const otherPlayerSong = state.players[1].songs[0].id
+    const targetMonsterId = state.combat.monsters[0].id
+    expect(applyAction(state, {
+      type: 'PLAY_SONG',
+      songId: otherPlayerSong,
+      targetMonsterId,
+    }, ctx()).ok).toBe(false)
   })
 
   it('retreat adjusts tags for defeated and surviving monsters', () => {
@@ -370,7 +382,7 @@ describe('combat flow', () => {
     }
     const songId = state.players[0].songs[0].id
     const targetId = state.combat.monsters[0].id
-    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: targetId }).state
+    state = apply(state, { type: 'PLAY_SONG', songId, targetMonsterId: targetId }).state
     const songsUsedAfterPlay = state.combat.songsUsed.length
     state = apply(state, { type: 'REROLL_SONG' }, ctx(99)).state
     expect(state.combat.songsUsed.length).toBe(songsUsedAfterPlay) // replaced, not stacked
@@ -394,7 +406,7 @@ describe('combat flow', () => {
     const songId = state.players[0].songs[0].id
 
     // Kill the first: the song refreshes (not spent) and is legal again
-    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: 'mon-a' }).state
+    state = apply(state, { type: 'PLAY_SONG', songId, targetMonsterId: 'mon-a' }).state
     expect(state.combat.monsters.find((m) => m.id === 'mon-a')!.currentHP).toBe(0)
     expect(state.combat.spentSongIds).not.toContain(songId)
 
@@ -402,7 +414,7 @@ describe('combat flow', () => {
     expect(applyAction(state, { type: 'REROLL_SONG' }, ctx()).ok).toBe(false)
 
     // …and the replay lands on the second monster
-    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: 'mon-b' }).state
+    state = apply(state, { type: 'PLAY_SONG', songId, targetMonsterId: 'mon-b' }).state
     expect(state.combat.monsters.find((m) => m.id === 'mon-b')!.currentHP).toBe(0)
     expect(state.combat.killCredits).toHaveLength(2)
   })
@@ -417,9 +429,9 @@ describe('combat flow', () => {
     }
     const songId = state.players[0].songs[0].id
     const targetId = state.combat.monsters[0].id
-    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: targetId }).state
+    state = apply(state, { type: 'PLAY_SONG', songId, targetMonsterId: targetId }).state
     expect(state.combat.spentSongIds).toContain(songId)
-    expect(applyAction(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: targetId }, ctx()).ok).toBe(false)
+    expect(applyAction(state, { type: 'PLAY_SONG', songId, targetMonsterId: targetId }, ctx()).ok).toBe(false)
 
     // Now the same song defeats a fresh 1-HP target → dice return, no longer spent
     state = {
@@ -430,7 +442,7 @@ describe('combat flow', () => {
         monsters: state.combat.monsters.map((m) => ({ ...m, currentHP: 1 })),
       },
     }
-    state = apply(state, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId: targetId }).state
+    state = apply(state, { type: 'PLAY_SONG', songId, targetMonsterId: targetId }).state
     expect(state.combat.monsters[0].currentHP).toBe(0)
     expect(state.combat.spentSongIds).not.toContain(songId)
   })
@@ -737,7 +749,6 @@ describe('tunables', () => {
     state = apply(state, {
       type: 'PLAY_SONG',
       songId: state.players[0].songs[0].id,
-      ownerId: 'player-1',
       targetMonsterId: state.combat.monsters[0].id,
     }).state
     state = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' }).state

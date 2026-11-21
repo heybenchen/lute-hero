@@ -79,7 +79,7 @@ function fight(styles: StyleId[], dice: DieSpec[], monsters: Partial<Monster>[])
 }
 
 function play(state: EngineState, song: number, c: ActionCtx, target = 'm1') {
-  return apply(state, { type: 'PLAY_SONG', songId: `player-1-song-${song}`, ownerId: 'player-1', targetMonsterId: target }, c)
+  return apply(state, { type: 'PLAY_SONG', songId: `player-1-song-${song}`, targetMonsterId: target }, c)
 }
 
 const hp = (state: EngineState, id = 'm1') => state.combat.monsters.find((m) => m.id === id)!.currentHP
@@ -324,19 +324,32 @@ describe('Buying styles', () => {
     expect(state.styleOffers).not.toContain('overture')
     expect(ALL_STYLE_IDS).toEqual(expect.arrayContaining(state.styleOffers))
   })
+
+  it('refreshes element and style offers together for 1 Inspiration', () => {
+    const before = studio(['overture'], ['bravo', 'tutti'])
+    const state = apply(before, { type: 'REFRESH_ELEMENT_OFFERS' }).state
+    expect(state.players[0].inspiration).toBe(before.players[0].inspiration - 1)
+    expect(state.elementOffers).toHaveLength(4)
+    expect(state.styleOffers).toHaveLength(2)
+    expect(state.styleOffers).not.toContain('overture')
+    expect(state.styleOffers).not.toContain('bravo')
+    expect(state.styleOffers).not.toContain('tutti')
+  })
 })
 
 describe('Turn starts', () => {
-  it('deals a fresh shelf after every turn, skipping styles the next bard owns', () => {
-    let state = startGame()
-    expect(state.styleOffers).toHaveLength(2)
-    state = { ...state, players: state.players.map((p) => (p.id === 'player-2' ? { ...p, styles: ['bravo', 'coda'] } : p)) }
-    for (let i = 0; i < 20; i++) {
-      const next = apply(state, { type: 'END_TURN' }, seeded(i)).state
-      expect(next.styleOffers).toHaveLength(2)
-      expect(next.styleOffers).not.toContain('bravo')
-      expect(next.styleOffers).not.toContain('coda')
-    }
+  it('keeps a full style shelf unchanged between turns', () => {
+    const state = { ...startGame(), styleOffers: ['bravo', 'coda'] as StyleId[] }
+    const next = apply(state, { type: 'END_TURN' }, seeded()).state
+    expect(next.styleOffers).toEqual(['bravo', 'coda'])
+  })
+
+  it('refills only empty style shelf slots at the end of a turn', () => {
+    const state = { ...startGame(), styleOffers: ['bravo'] as StyleId[] }
+    const next = apply(state, { type: 'END_TURN' }, seeded()).state
+    expect(next.styleOffers).toHaveLength(2)
+    expect(next.styleOffers[0]).toBe('bravo')
+    expect(next.styleOffers[1]).not.toBe('bravo')
   })
 
   it('Ispirato tops Inspiration up to 1 at the start of your turn, without stacking', () => {

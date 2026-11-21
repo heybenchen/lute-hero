@@ -1,6 +1,7 @@
 import { Monster, Genre } from '@/types'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { calculateMonsterExp } from '@/game-logic/fame/calculator'
+import { Crown, Target } from 'lucide-react'
 
 interface MonsterCardProps {
   monster: Monster
@@ -13,11 +14,11 @@ interface MonsterCardProps {
   onSelect?: () => void
 }
 
-const genreAccentColors: Record<Genre, { border: string; glow: string; bg: string }> = {
-  Ballad: { border: 'rgba(232, 32, 64, 0.4)', glow: 'rgba(232, 32, 64, 0.15)', bg: 'rgba(232, 32, 64, 0.16)' },
-  Folk: { border: 'rgba(76, 175, 80, 0.4)', glow: 'rgba(76, 175, 80, 0.15)', bg: 'rgba(76, 175, 80, 0.16)' },
-  Hymn: { border: 'rgba(250, 204, 21, 0.4)', glow: 'rgba(250, 204, 21, 0.15)', bg: 'rgba(250, 204, 21, 0.16)' },
-  Shanty: { border: 'rgba(41, 121, 255, 0.4)', glow: 'rgba(41, 121, 255, 0.15)', bg: 'rgba(41, 121, 255, 0.16)' },
+const genreAccentColors: Record<Genre, { border: string; background: string }> = {
+  Ballad: { border: 'rgba(232, 32, 64, 0.48)', background: 'rgba(232, 32, 64, 0.11)' },
+  Folk: { border: 'rgba(76, 175, 80, 0.48)', background: 'rgba(76, 175, 80, 0.11)' },
+  Hymn: { border: 'rgba(250, 204, 21, 0.48)', background: 'rgba(250, 204, 21, 0.1)' },
+  Shanty: { border: 'rgba(41, 121, 255, 0.48)', background: 'rgba(41, 121, 255, 0.11)' },
 }
 
 export function MonsterCard({ monster, index = 0, fameValue, isSelected = false, onSelect }: MonsterCardProps) {
@@ -38,127 +39,126 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
         onClick={selectable ? onSelect : undefined}
         role={selectable ? 'button' : undefined}
         aria-pressed={selectable ? isSelected : undefined}
-        className={`relative w-full rounded-xl overflow-hidden transition-all duration-500 ${
+        className={`relative h-full w-full overflow-hidden rounded-xl transition-all duration-300 ${
           isDefeated ? 'opacity-30 scale-[0.97] grayscale' : isLowHP ? 'animate-pulse-slow' : ''
         } ${selectable ? 'cursor-pointer hover:-translate-y-0.5' : ''}`}
         style={{
-          background: isDefeated
-            ? 'rgba(30, 24, 18, 0.6)'
-            : accent
-            ? `linear-gradient(160deg, ${accent.bg}, ${accent.bg}), rgba(30, 24, 18, 0.95)`
-            : 'rgba(30, 24, 18, 0.95)',
+          background: accent
+            ? `linear-gradient(145deg, ${accent.background}, rgba(255,255,255,0.02))`
+            : 'rgba(255,255,255,0.025)',
           border: isSelected && !isDefeated
-            ? '2px solid rgba(240, 200, 110, 0.95)'
-            : `1px solid ${isDefeated ? 'rgba(100, 200, 100, 0.2)' : accent ? accent.border : 'rgba(212, 168, 83, 0.2)'}`,
+            ? '2px solid rgba(192, 132, 252, 0.9)'
+            : `2px solid ${isDefeated ? 'rgba(100, 200, 100, 0.2)' : accent?.border ?? 'rgba(212, 168, 83, 0.16)'}`,
           boxShadow: isDefeated
             ? 'none'
             : isSelected
-            ? '0 4px 20px rgba(0,0,0,0.4), 0 0 22px rgba(240, 200, 110, 0.45)'
-            : accent
-            ? `0 4px 20px rgba(0,0,0,0.4), 0 0 25px ${accent.glow}`
-            : '0 4px 20px rgba(0,0,0,0.4)',
+            ? '0 0 0 2px rgba(192, 132, 252, 0.14)'
+            : 'none',
         }}
       >
-        {/* Target badge */}
-        {isSelected && !isDefeated && (
-          <div className="absolute top-2 right-2 z-20 text-[10px] font-bold px-2 py-0.5 rounded-full"
-            style={{ background: 'rgba(240, 200, 110, 0.95)', color: '#1a1410' }}>
-            🎯 TARGET
-          </div>
-        )}
-        {/* Top accent stripe */}
-        {!isDefeated && accent && (
-          <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${accent.border}, transparent)` }} />
-        )}
+        <div className="relative flex h-full flex-col overflow-hidden p-3.5">
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-16 opacity-40"
+            style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.16), transparent 42%)' }}
+          />
 
-        <div className="p-4 sm:p-5">
-          {/* Header — name on its own line so the HP never crowds it */}
-          <div className="mb-3">
-            <div className="font-medieval text-lg font-bold text-gold-400 truncate leading-tight">
-              {monster.name}
-            </div>
-            <div className="flex items-center justify-between gap-2 mt-1.5">
-              <div className="flex items-center gap-2 min-w-0">
+          <div className="relative mb-3 flex min-w-0 items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="truncate font-display text-lg leading-none text-parchment-100 sm:text-xl">
+                  {monster.name}
+                </div>
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-parchment-400">
+                  Lv. {monster.level}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 text-[11px]">
                 {monster.isBoss && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: '#4dd0e1', background: 'rgba(0, 188, 212, 0.1)', border: '1px solid rgba(0, 184, 212, 0.2)' }}>
-                    BOSS
+                  <span className="flex items-center gap-1 font-bold uppercase tracking-wide text-cyan-200">
+                    <Crown size={10} aria-hidden="true" /> Boss
                   </span>
                 )}
-                <span className="text-sm text-parchment-500">Lv.{monster.level}</span>
                 {fameValue !== undefined && fameValue > 0 && (
-                  <span
-                    className="flex items-center gap-1 text-xs font-bold text-gold-400"
-                    title="Fame earned if this monster is defeated"
-                  >
-                    &#x2B50; {fameValue}
+                  <span className="font-bold text-gold-300" title="Fame earned if this monster is defeated">
+                    {fameValue} Fame
                   </span>
                 )}
-                <span
-                  className="text-xs font-bold text-parchment-400"
-                  title="EXP earned from this monster"
-                >
+                <span className="text-parchment-300" title="EXP earned from this monster">
                   {calculateMonsterExp(monster.level)} EXP
                 </span>
               </div>
+            </div>
+            {isSelected && !isDefeated && (
+              <div
+                className="flex h-8 w-8 shrink-0 items-center justify-center text-violet-200 drop-shadow-[0_0_8px_rgba(192,132,252,0.65)]"
+                aria-label="Selected target"
+                title="Selected target"
+              >
+                <Target size={17} aria-hidden="true" />
+              </div>
+            )}
+          </div>
 
-              {/* HP number */}
-              <div className="flex items-baseline gap-0.5 flex-shrink-0">
-                <span className={`text-2xl font-bold leading-none tabular-nums ${
-                  isDefeated ? 'text-green-400/60' : hpPercent > 50 ? 'text-parchment-200' : hpPercent > 25 ? 'text-gold-400' : 'text-red-400'
+          <div className="relative mb-3 border-y border-white/10 py-2.5">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="font-medieval text-[10px] font-bold uppercase tracking-[0.18em] text-parchment-400">Vitality</span>
+              <div className="flex items-baseline gap-1">
+                <span className={`font-display text-2xl leading-none tabular-nums ${
+                  isDefeated ? 'text-green-400/60' : hpPercent > 50 ? 'text-parchment-100' : hpPercent > 25 ? 'text-gold-400' : 'text-red-400'
                 }`}>
                   {Math.max(0, monster.currentHP)}
                 </span>
-                <span className="text-sm text-parchment-500">/{monster.maxHP}</span>
+                <span className="text-xs text-parchment-500">/ {monster.maxHP} HP</span>
               </div>
             </div>
-          </div>
-
-          {/* HP Bar */}
-          <div className="mb-4">
-            <div className="hp-bar h-4 rounded-full">
+            <div className="hp-bar h-2.5 rounded-full">
               <div
                 className="hp-fill rounded-full"
                 style={{
                   width: `${Math.max(0, hpPercent)}%`,
                   background: hpPercent > 50
-                    ? 'linear-gradient(90deg, #2d8c30, #4caf50)'
+                    ? 'linear-gradient(90deg, #2d8c30, #6acb6e)'
                     : hpPercent > 25
-                    ? 'linear-gradient(90deg, #b8922e, #e6c35a)'
-                    : 'linear-gradient(90deg, #c43030, #e85050)',
+                    ? 'linear-gradient(90deg, #b8922e, #f0d36f)'
+                    : 'linear-gradient(90deg, #c43030, #ff6b6b)',
                   boxShadow: hpPercent <= 25 && !isDefeated
-                    ? '0 0 8px rgba(232, 80, 80, 0.4)'
-                    : undefined,
+                    ? '0 0 8px rgba(232, 80, 80, 0.5)'
+                    : '0 0 6px rgba(255,255,255,0.12)',
                 }}
               />
             </div>
           </div>
 
-          {/* Weakness & Immunity */}
-          <div className="flex gap-2 justify-between">
+          <div className="relative mt-auto grid grid-cols-2 divide-x divide-white/10 border-t border-white/10 pt-3">
             {monster.vulnerability && (
-              <div className="flex flex-col items-start gap-1 px-2 py-1.5 rounded-lg flex-1 min-w-0"
-                style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(212, 168, 83, 0.2)' }}
+              <div
+                className="pr-3"
                 title="Weak — takes double damage from this genre"
               >
-                <span className="font-bold text-green-300 text-xs">Weak 2×</span>
-                <GenreBadge genre={monster.vulnerability} className="text-xs px-2 py-0.5 rounded" />
+                <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-green-200/70">Weakness</div>
+                <div className="flex items-center justify-between gap-2">
+                  <GenreBadge genre={monster.vulnerability} className="rounded px-2 py-0.5 text-xs" />
+                  <span className="font-display text-xl leading-none text-green-200">×2</span>
+                </div>
               </div>
             )}
             {monster.resistance && (
-              <div className="flex flex-col items-start gap-1 px-2 py-1.5 rounded-lg flex-1 min-w-0"
-                style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(212, 168, 83, 0.2)' }}
+              <div
+                className="pl-3"
                 title="Immune — takes no damage from this genre"
               >
-                <span className="font-bold text-slate-300 text-xs">Immune 0×</span>
-                <GenreBadge genre={monster.resistance} className="text-xs px-2 py-0.5 rounded" />
+                <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-300/65">Immunity</div>
+                <div className="flex items-center justify-between gap-2">
+                  <GenreBadge genre={monster.resistance} className="rounded px-2 py-0.5 text-xs" />
+                  <span className="font-display text-xl leading-none text-slate-200">×0</span>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Defeated overlay */}
           {isDefeated && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
-              <div className="font-medieval font-bold text-green-400 text-lg tracking-wider"
+            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/45">
+              <div className="rounded-full border border-green-300/30 bg-green-950/70 px-4 py-2 font-medieval text-lg font-bold tracking-wider text-green-300"
                 style={{ textShadow: '0 0 12px rgba(74, 222, 128, 0.5)' }}
               >
                 CONVERTED

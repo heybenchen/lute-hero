@@ -131,15 +131,9 @@ export function validateAction(
       if (state.combat.spentSongIds.includes(action.songId)) {
         return illegal('That song\'s dice are spent this combat')
       }
-      const owner = state.players.find((p) => p.id === action.ownerId)
-      if (!owner) return illegal('Unknown song owner')
-      // Cover songs: the owner must share the space with the fighting player
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
       if (!fighter) return illegal('No fighting player')
-      if (owner.id !== fighter.id && (owner.position !== fighter.position || owner.isEliminated)) {
-        return illegal('Song owner is not at this space')
-      }
-      const song = owner.songs.find((s) => s.id === action.songId)
+      const song = fighter.songs.find((s) => s.id === action.songId)
       if (!song) return illegal('Unknown song')
       if (!song.slots.some((slot) => slot.dice)) return illegal('Song has no dice')
       // Single-target: a live monster must be chosen
@@ -166,8 +160,7 @@ export function validateAction(
       if (action.rubato) {
         if (!fighter.styles.includes('rubato')) return illegal('Rubato is not one of your styles')
         if (state.combat.stylesUsed.includes('rubato')) return illegal('Rubato is already used this turn')
-        const owner = state.players.find((p) => p.id === state.combat.lastPlayedOwnerId)
-        const song = owner?.songs.find((sg) => sg.id === state.combat.lastPlayedSongId)
+        const song = fighter.songs.find((sg) => sg.id === state.combat.lastPlayedSongId)
         if (!song || !rubatoCanReroll(song)) return illegal('Rubato rerolls only d4 and d8 songs')
       } else if (fighter.inspiration < inspirationSpend()) {
         return illegal('Not enough Inspiration')

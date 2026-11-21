@@ -4,7 +4,7 @@ import { getTunables } from './tunables.js'
 /**
  * Play styles: Studio purchases that change how ALL of a bard's songs play.
  * A bard holds at most `maxStyles` (default 2). Two are on offer at a time,
- * redrawn after every turn; Inspiration redraws them on demand.
+ * kept between turns with empty slots refilled; Inspiration redraws them on demand.
  *
  * Every rule is one sentence with a single trigger and no running totals —
  * "once per turn" effects fire automatically the first time they apply

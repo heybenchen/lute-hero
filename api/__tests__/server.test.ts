@@ -281,7 +281,7 @@ describe('actions route', () => {
     doc = await loadGameDoc(redis, gameId)
     const songId = doc!.engineState.players[0].songs[0].id
     const targetMonsterId = doc!.engineState.combat.monsters[0].id
-    const play = await act(gameId, TOKEN_A, { type: 'PLAY_SONG', songId, ownerId: 'player-1', targetMonsterId })
+    const play = await act(gameId, TOKEN_A, { type: 'PLAY_SONG', songId, targetMonsterId })
     expect(play.status).toBe(200)
     const playData = play.json() as { seq: number; events: { type: string }[] }
     expect(playData.events.some((e) => e.type === 'diceRolled')).toBe(true)

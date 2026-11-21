@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Trust the system CA bundle used by the Figma workspace network.
+if [[ -z "${NODE_EXTRA_CA_CERTS:-}" && -r /etc/ssl/certs/ca-certificates.crt ]]; then
+  export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+fi
+
 exec pnpm install --frozen-lockfile
