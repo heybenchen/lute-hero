@@ -2,7 +2,7 @@ import { Song, SongSlot, DiceRoll } from '@/types'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { GENRE_THEME } from '@/data/genreTheme'
 import { STYLES } from '@/data/styles'
-import { RotateCcw } from 'lucide-react'
+import { Ban, RotateCcw } from 'lucide-react'
 
 interface SongCardProps {
   song: Song
@@ -102,7 +102,7 @@ export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, o
             onClick={playable ? onPlay : undefined}
             disabled={!playable}
             aria-label={playable ? `Perform song ${index + 1}: ${song.slots.flatMap(({ dice }) => dice ? [`${dice.genre} ${dice.type}`] : []).join(', ')}${resisted ? ', 0 damage to this target' : ''}` : undefined}
-            className={`flex w-full flex-col rounded-md transition-all duration-200 ${
+            className={`relative flex w-full flex-col rounded-md transition-all duration-200 ${
               playable ? 'cursor-pointer hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-400' : 'cursor-default'
             } ${onRubato || onRally ? 'mb-2.5' : ''}`}
           >
@@ -115,7 +115,7 @@ export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, o
                 />
               ))}
             </span>
-            {resisted && <span className="mt-1 text-xs font-bold text-parchment-200">Resisted · 0 damage</span>}
+            {resisted && <Ban aria-hidden="true" size={16} strokeWidth={2.5} className="pointer-events-none absolute right-1 top-1 rounded-full bg-wood-900 text-parchment-100" />}
           </button>
 
           {/* Rallying Cry: bring this spent song back */}
