@@ -146,11 +146,15 @@ export const diceBus = {
 export function announceDiceEvents(events: EngineEvent[], players: Pick<Player, 'songs'>[]) {
   for (const event of events) {
     if (event.type !== 'diceRolled') continue
-    const song = players.flatMap((p) => p.songs).find((s) => s.id === event.songId)
-    if (!song) continue
+    // A showdown performance rolls every die of one element across several
+    // songs (`songIds`); a combat play rolls a single song.
+    const songIds = event.songIds ?? [event.songId]
+    const songs = players.flatMap((p) => p.songs).filter((s) => songIds.includes(s.id))
+    if (songs.length === 0) continue
+    const slots = songs.flatMap((s) => s.slots)
     const dice: TrayDie[] = []
     for (const roll of event.rolls) {
-      const die = song.slots.find((slot) => slot.dice?.id === roll.diceId)?.dice
+      const die = slots.find((slot) => slot.dice?.id === roll.diceId)?.dice
       if (!die) continue
       dice.push({ dieId: die.id, type: die.type, genre: die.genre, values: [roll.value, ...roll.cascadeRolls] })
     }
