@@ -89,13 +89,13 @@ export type GameAction =
   | { type: 'CLOSE_STUDIO' }
   | { type: 'SELECT_STUDIO_OFFER'; offerIndex: number | null }
   | { type: 'SELECT_STUDIO_REWARD'; rewardId: string | null }
-  | { type: 'BUY_DIE'; offerIndex: number }
+  | { type: 'BUY_DIE'; offerIndex: number; destination?: { songId: string; previousDieId: string | null; genre: Genre } }
   | { type: 'UPGRADE_DIE'; offerIndex: number; diceId: string }
   | { type: 'REFRESH_ELEMENT_OFFERS' }
   | { type: 'SLOT_DIE_REWARD'; rewardId: string; songId: string; slotIndex: number }
   | { type: 'BUY_INSPIRATION' }
   /** Buy an offered style; at the cap, `replaceStyleId` names the one to give up. */
-  | { type: 'BUY_STYLE'; offerIndex: number; replaceStyleId?: StyleId }
+  | { type: 'BUY_STYLE'; offerIndex: number; expectedStyleId?: StyleId; replaceStyleId?: StyleId }
   | { type: 'REFRESH_STYLE_OFFERS' }
   | { type: 'PLAY_SHOWDOWN_SONG'; songId: string }
   | { type: 'REROLL_SHOWDOWN_SONG'; rubato?: boolean }

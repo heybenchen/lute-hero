@@ -218,7 +218,7 @@ export function GameView() {
       <MobileTurnBar />
 
       {/* Combat modal overlay */}
-      <CombatModal />
+      {combatActive && <CombatModal />}
 
       {/* Shared Studio surface: spectators watch the active player's choices live. */}
       {studioPlayerId && (

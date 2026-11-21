@@ -1,13 +1,12 @@
 import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
 import { GENRE_THEME, playerTokenLabel, readableTextColor } from '@/data/genreTheme'
 import { SPACE_ILLUSTRATIONS } from '@/data/boardIllustrations'
-import { Footprints, Skull } from 'lucide-react'
+import { Footprints } from 'lucide-react'
 
 interface BoardSpaceProps {
   space: BoardSpaceType
   players: Player[]
   isCurrentPlayer: boolean
-  inspecting: boolean
   canMoveTo: boolean
   isLinkedToHovered?: boolean
   onClick: () => void
@@ -18,7 +17,6 @@ export function BoardSpace({
   players,
   isCurrentPlayer,
   canMoveTo,
-  inspecting,
   isLinkedToHovered = false,
   onClick,
 }: BoardSpaceProps) {
@@ -38,8 +36,8 @@ export function BoardSpace({
   return (
     <button
       onClick={onClick}
-      disabled={!inspecting && !canMoveTo}
-      aria-label={`${inspecting ? 'Inspect' : 'Move to'} ${space.name}, ${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}, ${space.genreTags.join(', ') || 'no element tags'}`}
+      disabled={!canMoveTo}
+      aria-label={`Move to ${space.name}, ${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}, ${space.genreTags.join(', ') || 'no element tags'}`}
       className={`
         board-space-tile relative sm:hover:z-40 w-full aspect-square
         flex flex-col justify-between p-1.5 sm:p-2
@@ -91,12 +89,6 @@ export function BoardSpace({
           {/* Clamp an inner span: on the padded plate a third line peeks through the padding */}
           <span className="line-clamp-2">{space.name}</span>
         </div>
-        {hasMonsters && (
-          <div className="threat-counter" title={`${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}`}>
-            <Skull size={10} strokeWidth={2.4} aria-hidden="true" />
-            <span>{space.monsters.length}</span>
-          </div>
-        )}
       </div>
 
       {canMoveTo && <Footprints size={12} aria-hidden="true" className="absolute bottom-1 left-1 z-20 text-gold-300" />}

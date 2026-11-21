@@ -6,7 +6,10 @@ import { SongCard } from './SongCard'
 import { SongGrid } from './SongGrid'
 import { Mic2 } from 'lucide-react'
 
+import { songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
+
 interface FeaturedSongsProps {
+  target?: Monster
   fighter: Player
   /** Other bards standing on the fight's space. */
   guests: Player[]
@@ -31,6 +34,7 @@ interface FeaturedSongsProps {
  * Fame and EXP with the bard who lent it. Online, the guest must agree.
  */
 export function FeaturedSongs({
+  target,
   fighter,
   guests,
   featuredPlayerIds,
@@ -93,6 +97,7 @@ export function FeaturedSongs({
                     <SongCard
                       key={song.id}
                       song={{ ...song, used: featured && currentSongId !== song.id }}
+                      resisted={!!target && !songsCanStillDamage([song], [target])}
                       onPlay={() => onFeature(guest.id, song.id)}
                       disabled={!canFeature || featured}
                       index={idx}

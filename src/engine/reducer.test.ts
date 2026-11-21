@@ -553,6 +553,26 @@ describe('shop actions', () => {
     expect(state.studio.playerId).toBeNull()
   })
 
+  it.each([ctx(), seatCtx('player-1')])('atomically replaces a chosen die only in a full setlist', (actor) => {
+    const state = openStudio(startTwoPlayerGame())
+    const player = state.players[0]
+    player.exp = 12
+    const first = player.songs[0]
+    const die = first.slots[0].dice!
+    const genre = state.elementOffers[0]
+    const action: GameAction = { type: 'BUY_DIE', offerIndex: 0,
+      destination: { songId: first.id, previousDieId: die.id, genre } }
+    expect(applyAction(state, action, actor).ok).toBe(false)
+    for (const song of player.songs.slice(1)) song.slots[0].dice = { ...die, id: song.id }
+    const next = apply(state, action, actor).state
+    expect(next.players[0].songs[0].slots[0].dice).toMatchObject({ genre, type: 'd4' })
+    expect(next.players[0].songs.slice(1)).toEqual(player.songs.slice(1))
+    expect(next.players[0].exp).toBe(11)
+    expect(next.elementOffers).toEqual(state.elementOffers.slice(1))
+    expect(next.pendingRewards).toEqual(state.pendingRewards)
+    expect(applyAction(next, action, actor).ok).toBe(false)
+  })
+
   it('BUY_DIE deducts EXP, consumes the chip, and queues a die reward', () => {
     let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }

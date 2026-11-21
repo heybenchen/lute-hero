@@ -320,6 +320,13 @@ export function validateAction(
       if (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length) {
         return illegal('No such element chip')
       }
+      if (action.destination !== undefined) {
+        const destination = action.destination
+        const slot = player.songs.find((song) => song.id === destination?.songId)?.slots[0]
+        if (!slot || state.elementOffers[action.offerIndex] !== destination.genre ||
+          (slot.dice?.id ?? null) !== destination.previousDieId) return illegal('The selected die or offer changed')
+        if (slot.dice && player.songs.some((song) => !song.slots[0].dice)) return illegal('Use an empty slot first')
+      }
       if (player.exp < newD4Cost()) return illegal('Not enough EXP')
       return ok
     }
@@ -398,7 +405,7 @@ export function validateAction(
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       const styleId = state.styleOffers[action.offerIndex]
-      if (!styleId) return illegal('No such style on offer')
+      if (!styleId || (action.expectedStyleId && action.expectedStyleId !== styleId)) return illegal('No such style on offer')
       if (player.styles.includes(styleId)) return illegal('You already play in that style')
       if (player.exp < styleCost(styleId)) return illegal('Not enough EXP')
       if (player.styles.length >= maxStyles()) {

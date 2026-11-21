@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useGameStore, selectCanAct, selectMyPlayerId } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import { MonsterCard } from './MonsterCard'
@@ -119,11 +119,13 @@ export function CombatModal() {
     }
   }, [])
 
+  const lastRemoteEntry = useRef(remoteEntry)
   // Spectators animate other players' songs from the SSE event stream. Not
   // cancelled when the next entry arrives: a spectator still watching this
   // throw must get its popups even if the next action lands meanwhile.
   useEffect(() => {
-    if (!remoteEntry || !isActive) return
+    if (!remoteEntry || lastRemoteEntry.current === remoteEntry || !isActive) return
+    lastRemoteEntry.current = remoteEntry
     void showDamageEvents(remoteEntry.events)
   }, [remoteEntry, isActive, showDamageEvents])
 
@@ -216,12 +218,14 @@ export function CombatModal() {
   // against every living monster, retreating gives nothing up — no confirm.
   // (Featured songs roll without styles, so Dissonance doesn't soften theirs.)
   const remainingSongs = playableSongs.filter((s) => !isSongSpent(s.id))
+  const target = monsters.find((monster) => monster.id === selectedTargetId)
+  const damageOptions = {
+    immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false }),
+  }
   const retreatForfeitsDamage =
     canContinue &&
     !allMonstersDefeated &&
-    (songsCanStillDamage(remainingSongs, monsters, {
-      immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false }),
-    }) || songsCanStillDamage(featurableSongs, monsters))
+    (songsCanStillDamage(remainingSongs, monsters, damageOptions) || songsCanStillDamage(featurableSongs, monsters))
 
   const handleRetreatClick = () => {
     if (retreatForfeitsDamage && !confirmingRetreat) {
@@ -411,6 +415,7 @@ export function CombatModal() {
                   <SongCard
                     key={song.id}
                     song={{ ...song, used: isSongSpent(song.id) }}
+                    resisted={!!target && !songsCanStillDamage([song], [target], damageOptions)}
                     onPlay={() => handlePlaySong(song.id)}
                     disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
                     index={idx}
@@ -425,6 +430,7 @@ export function CombatModal() {
 
           {!allMonstersDefeated && (
             <FeaturedSongs
+              target={target}
               fighter={player}
               guests={guests}
               featuredPlayerIds={featuredPlayerIds}

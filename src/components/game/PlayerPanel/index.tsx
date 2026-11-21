@@ -118,7 +118,11 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
             <span className="truncate">Studio <span className="opacity-60">({currentPlayer.exp}{compact ? '' : ' EXP'})</span></span>
           </button>
           <button
-            onClick={() => dispatch({ type: 'END_TURN' })}
+            onClick={() => {
+              if (currentPlayer.exp > 0 && !currentPlayer.hasShoppedThisTurn &&
+                !window.confirm(`You have ${currentPlayer.exp} EXP and haven’t visited the Studio this turn. End your turn anyway?`)) return
+              dispatch({ type: 'END_TURN' })
+            }}
             disabled={canFight}
             title={canFight ? 'Fight the monster here before ending your turn' : undefined}
             className={`btn-primary ${size} flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed`}
@@ -248,7 +252,7 @@ export function PlayerPanel() {
         </div>
       </section>
 
-      <section className="song-rack-module">
+      <section className="song-rack-module order-first lg:order-none">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="module-label mb-0">Setlist</div>
           <span className="text-[9px] text-parchment-500">{equippedSongs.length} {equippedSongs.length === 1 ? 'song' : 'songs'}</span>
