@@ -1,17 +1,23 @@
 import { Genre, DiceType, Dice, Song } from '../types/index.js';
 
-// Starter dice: a single d8 of the bard's chosen element.
+// Starter dice: two d4s of the bard's chosen element, one in each of the first two songs.
+const starterPair = (genre: Genre): Dice[] => [1, 2].map((n) => ({
+  id: `${genre.toLowerCase()}-starter-${n}`,
+  type: "d4",
+  genre,
+}));
+
 export const STARTER_DICE: { [key in Genre]: Dice[] } = {
-  Ballad: [{ id: "ballad-starter-1", type: "d8", genre: "Ballad" }],
-  Folk: [{ id: "folk-starter-1", type: "d8", genre: "Folk" }],
-  Hymn: [{ id: "hymn-starter-1", type: "d8", genre: "Hymn" }],
-  Shanty: [{ id: "shanty-starter-1", type: "d8", genre: "Shanty" }],
+  Ballad: starterPair("Ballad"),
+  Folk: starterPair("Folk"),
+  Hymn: starterPair("Hymn"),
+  Shanty: starterPair("Shanty"),
 };
 
 /** Every bard carries this many songs; each song holds exactly one die. */
 export const SONGS_PER_BARD = 6;
 
-// Create 6 starter songs of one die each: the first holds the starter d8.
+// Create 6 starter songs of one die each: the first two hold the starter d4s.
 export function createStarterSongs(genre: Genre, playerId: string): Song[] {
   const starterDice = STARTER_DICE[genre];
 
@@ -35,5 +41,5 @@ export const ALL_DICE_TYPES: DiceType[] = ["d4", "d8", "d12", "d20"];
 
 // Fame thresholds for phase transitions
 export const FAME_THRESHOLDS = {
-  finalBoss: 150, // Any single player reaching this triggers the final boss
+  finalBoss: 200, // Any single player reaching this triggers the final boss
 };

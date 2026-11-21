@@ -42,7 +42,7 @@ import {
   holdsAllElements,
   counterpointMultiplier,
   fermataHolds,
-  staccatoRefreshes,
+  staccatoArms,
   ONCE_PER_TURN,
 } from '../game-logic/styles/styleEffects.js'
 
@@ -178,6 +178,7 @@ function reduce(
         killCredits: state.combat.killCredits,
         totalDamage: state.combat.totalDamage,
         stylesUsed: state.combat.stylesUsed,
+        rallyReady: state.combat.rallyReady,
       }
       const fighter = state.players.find((p) => p.id === state.combat.playerId)!
       const combat = performCombatPlay(state.combat, snapshot, song, owner.id, action.targetMonsterId, fighter, rng, events)
@@ -208,6 +209,27 @@ function reduce(
         : combat.stylesUsed
       const styleNotes = action.rubato ? [STYLES.rubato.name, ...combat.styleNotes] : combat.styleNotes
       return { ...state, players, combat: { ...combat, stylesUsed, styleNotes } }
+    }
+
+    case 'RALLY_SONG': {
+      // Rallying Cry: refresh the chosen spent song. Also clear it from the
+      // reroll snapshot, so rerolling an earlier play can't re-spend it.
+      const unspend = (ids: string[]) => ids.filter((id) => id !== action.songId)
+      const stylesUsed = [...state.combat.stylesUsed, 'staccato' as const]
+      const snapshot = state.combat.undoSnapshot
+      return {
+        ...state,
+        combat: {
+          ...state.combat,
+          spentSongIds: unspend(state.combat.spentSongIds),
+          stylesUsed,
+          rallyReady: false,
+          styleNotes: [STYLES.staccato.name],
+          undoSnapshot: snapshot
+            ? { ...snapshot, spentSongIds: unspend(snapshot.spentSongIds), stylesUsed, rallyReady: false }
+            : snapshot,
+        },
+      }
     }
 
     case 'SELECT_COMBAT_SPREAD':
@@ -757,14 +779,6 @@ function performCombatPlay(
   let spentSongIds: string[]
   if (defeatedTarget) {
     spentSongIds = base.spentSongIds.filter((id) => id !== song.id)
-    // Staccato (Rallying Cry): any tame refreshes the bard's spent d4 songs
-    if (staccatoRefreshes(styleCtx)) {
-      const d4Songs = new Set(fighter.songs.filter((sg) => sg.slots.some((sl) => sl.dice?.type === 'd4')).map((sg) => sg.id))
-      if (spentSongIds.some((id) => d4Songs.has(id))) {
-        spentSongIds = spentSongIds.filter((id) => !d4Songs.has(id))
-        triggered.push('staccato')
-      }
-    }
   } else if (fermataHolds(song, styleCtx)) {
     spentSongIds = base.spentSongIds.filter((id) => id !== song.id)
     triggered.push('fermata')
@@ -773,6 +787,8 @@ function performCombatPlay(
   }
 
   const onceUsed = triggered.filter((id) => ONCE_PER_TURN.includes(id) && !base.stylesUsed.includes(id))
+  // Rallying Cry arms on a tame; the bard spends it by choosing a song (RALLY_SONG)
+  const rallyReady = base.rallyReady || (defeatedTarget && staccatoArms(styleCtx))
 
   events.push({ type: 'diceRolled', playerId: ownerId, songId: song.id, context: 'combat', rolls })
   events.push({
@@ -795,6 +811,7 @@ function performCombatPlay(
     lastDamageCalculations: damageCalculations,
     stylesUsed: [...base.stylesUsed, ...onceUsed],
     styleNotes: [...new Set(triggered)].map((id) => STYLES[id].name),
+    rallyReady,
   }
 }
 

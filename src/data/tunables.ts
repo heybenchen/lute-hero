@@ -101,7 +101,7 @@ export interface Tunables {
 }
 
 export const DEFAULT_TUNABLES: Tunables = {
-  fameFinalBossThreshold: 150,
+  fameFinalBossThreshold: 200,
   monsterFameByLevel: [5, 10, 25, 50, 75],
   monsterExpPerLevel: 1,
 
@@ -154,7 +154,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   tuttiBonus: 4,
   ostinatoCritFace: 3,
   counterpointMultiplier: 0.5,
-  bravoFamePerTame: 1,
+  bravoFamePerTame: 5,
 }
 
 // ============================================================

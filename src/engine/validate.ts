@@ -176,6 +176,19 @@ export function validateAction(
       return ok
     }
 
+    case 'RALLY_SONG': {
+      const gate = requireCurrentTurn()
+      if (!gate.ok) return gate
+      if (!state.combat.isActive) return illegal('No active combat')
+      const fighter = state.players.find((p) => p.id === state.combat.playerId)
+      if (!fighter?.styles.includes('staccato')) return illegal('Rallying Cry is not one of your styles')
+      if (state.combat.stylesUsed.includes('staccato')) return illegal('Rallying Cry is already used this turn')
+      if (!state.combat.rallyReady) return illegal('Tame a monster first')
+      if (!fighter.songs.some((sg) => sg.id === action.songId)) return illegal('Choose one of your own songs')
+      if (!state.combat.spentSongIds.includes(action.songId)) return illegal('That song is not spent')
+      return ok
+    }
+
     case 'SELECT_COMBAT_SPREAD': {
       const gate = requireCurrentTurn()
       if (gate.ok === false) return gate

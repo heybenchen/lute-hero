@@ -261,7 +261,7 @@ export function FinalShowdown() {
                     {performer.name} takes the stage
                   </div>
                   <div className="text-xs text-parchment-500">
-                    Verse {showdownTurn} · {hasPerformed ? 'performance complete' : 'choose one song to perform'}
+                    Verse {showdownTurn} · {hasPerformed ? 'performance complete' : "tap one song's die to perform"}
                   </div>
                 </div>
               </div>

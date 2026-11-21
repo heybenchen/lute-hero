@@ -111,8 +111,8 @@ export function fermataHolds(song: Song, ctx: StyleContext): boolean {
   return available(ctx, 'fermata') && song.slots.some((s) => s.dice?.type === 'd12' || s.dice?.type === 'd20')
 }
 
-/** Staccato (Rallying Cry): any song that tames refreshes your d4 songs, once per turn. */
-export function staccatoRefreshes(ctx: StyleContext): boolean {
+/** Staccato (Rallying Cry): a tame lets the bard refresh one spent song of their choice, once per turn. */
+export function staccatoArms(ctx: StyleContext): boolean {
   return available(ctx, 'staccato')
 }
 

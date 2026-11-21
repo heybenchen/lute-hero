@@ -27,8 +27,8 @@ export const STYLES: Record<StyleId, StyleDef> = {
   staccato: {
     id: 'staccato',
     name: 'Rallying Cry',
-    flavor: 'One victory, and the whole band takes heart.',
-    rule: 'Once per turn, when any of your songs tames a monster, refresh all your d4 songs.',
+    flavor: 'One victory, and a weary song finds its voice again.',
+    rule: 'Once per turn, after one of your songs tames a monster, refresh a spent song of your choice.',
   },
   coda: {
     id: 'coda',
