@@ -4,7 +4,6 @@ import { createInitialEngineState, EngineState } from './state'
 import { GameAction } from './actions'
 import { mulberry32 } from './rng'
 import { Dice, Song } from '../types'
-import { ROUND_PROFILES } from '../data/roundProfiles'
 
 const ctx = (seed = 3): ActionCtx => ({ rng: mulberry32(seed), actor: { kind: 'hotseat' } })
 function apply(state: EngineState, action: GameAction, c: ActionCtx = ctx()) {
@@ -63,38 +62,52 @@ describe('showdown performances', () => {
   })
 })
 
-describe('DEBUG_JUMP_TO_SHOWDOWN', () => {
-  const fresh = () => apply(createInitialEngineState(), {
-    type: 'START_GAME',
-    playerConfigs: [{ name: 'Alba', starterGenre: 'Ballad' }, { name: 'Bryn', starterGenre: 'Folk' }, { name: 'Cleo', starterGenre: 'Hymn' }],
-  }).state
+describe('DEBUG_SIMULATE', () => {
+  const fresh = () => {
+    const started = apply(createInitialEngineState(), {
+      type: 'START_GAME',
+      playerConfigs: [{ name: 'Alba', starterGenre: 'Ballad' }, { name: 'Bryn', starterGenre: 'Folk' }, { name: 'Cleo', starterGenre: 'Hymn' }],
+    }).state
+    // A playtest tweak that the simulation must keep
+    return { ...started, tunables: { ...started.tunables, newD4Cost: 2 } }
+  }
+  const dice = (s: EngineState) => s.players.flatMap((p) => p.songs.flatMap((sg) => sg.slots.map((slot) => slot.dice))).filter(Boolean)
 
-  it('starts the showdown with holdings drawn from that round\'s simulated samples', () => {
-    const state = apply(fresh(), { type: 'DEBUG_JUMP_TO_SHOWDOWN', round: 9 }, ctx(5)).state
+  it('plays the table forward to the start of the next round, keeping bards and tunables', () => {
+    const before = fresh()
+    const state = apply(before, { type: 'DEBUG_SIMULATE', round: 6, showdown: false }, ctx(5)).state
+    expect(state.phase).toBe('main')
+    expect(state.currentRound).toBe(7)
+    expect(state.currentTurnPlayerIndex).toBe(0)
+    expect(state.showdownActive).toBe(false)
+    expect(state.players.map((p) => [p.id, p.name, p.starterGenre])).toEqual(before.players.map((p) => [p.id, p.name, p.starterGenre]))
+    expect(state.tunables.newD4Cost).toBe(2)
+    // Six rounds of real play: bards have bought dice, earned Fame, and the board moved on
+    expect(dice(state).length).toBeGreaterThan(dice(before).length)
+    expect(state.players.some((p) => p.fame > 0)).toBe(true)
+    expect(state.spaces.map((sp) => sp.genreTags.join())).not.toEqual(before.spaces.map((sp) => sp.genreTags.join()))
+    // ...and the game simply continues from there
+    expect(applyAction(state, { type: 'END_TURN' }, ctx()).ok).toBe(true)
+  })
+
+  it('can start the showdown from the simulated state', () => {
+    const state = apply(fresh(), { type: 'DEBUG_SIMULATE', round: 8, showdown: true }, ctx(9)).state
     expect(state.phase).toBe('finalBoss')
     expect(state.showdownActive).toBe(true)
     expect(state.showdownTurn).toBe(1)
-    expect(state.currentRound).toBe(10)
-    const pool = ROUND_PROFILES[9]
-    for (const p of state.players) {
-      const dice = p.songs.flatMap((s) => s.slots.map((slot) => slot.dice)).filter((d) => d !== null)
-      // Some sample from round 9 matches this bard exactly
-      const match = pool.some((snap) =>
-        snap.fame === p.fame && snap.exp === p.exp && snap.inspiration === p.inspiration &&
-        snap.dice.length === dice.length && snap.dice.every(([type], i) => dice[i]!.type === type)
-      )
-      expect(match).toBe(true)
-      expect(p.styles.length).toBeLessThanOrEqual(2)
-      // Coda's extra song exists exactly when the bard plays in that style
-      expect(p.songs.length).toBe(p.styles.includes('coda') ? 7 : 6)
-    }
+    expect(state.combat.isActive).toBe(false)
+    expect(state.players.every((p) => p.songs.some((sg) => sg.slots.some((slot) => slot.dice)))).toBe(true)
   })
 
-  it('clamps to the simulated rounds and is host-only online', () => {
-    const state = apply(fresh(), { type: 'DEBUG_JUMP_TO_SHOWDOWN', round: 99 }).state
-    const last = Math.max(...Object.keys(ROUND_PROFILES).map(Number))
-    expect(state.currentRound).toBe(last + 1)
+  it('stops at the furthest round a bot game reaches before the showdown', () => {
+    const state = apply(fresh(), { type: 'DEBUG_SIMULATE', round: 30, showdown: false }, ctx(2)).state
+    expect(state.phase).toBe('main')
+    expect(state.currentRound).toBeGreaterThan(5)
+    expect(state.currentRound).toBeLessThanOrEqual(31)
+  })
+
+  it('is host-only online', () => {
     const seat: ActionCtx = { rng: mulberry32(1), actor: { kind: 'seat', playerId: 'player-2', isHost: false } }
-    expect(applyAction(fresh(), { type: 'DEBUG_JUMP_TO_SHOWDOWN', round: 5 }, seat).ok).toBe(false)
+    expect(applyAction(fresh(), { type: 'DEBUG_SIMULATE', round: 5, showdown: false }, seat).ok).toBe(false)
   })
 })

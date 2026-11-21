@@ -496,7 +496,7 @@ export function validateAction(
       return ok
     }
 
-    case 'DEBUG_JUMP_TO_SHOWDOWN': {
+    case 'DEBUG_SIMULATE': {
       if (!isHost) return forbidden('Only the host can use debug mode')
       if (!Number.isInteger(action.round) || action.round < 1) return illegal('Choose a round of 1 or more')
       if (state.players.length === 0) return illegal('Start a game first')
