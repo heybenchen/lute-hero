@@ -32,7 +32,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
   },
   coda: {
     id: 'coda',
-    name: 'Encore',
+    name: 'Extra Verse',
     flavor: 'The crowd demands one more.',
     rule: 'Gain a 7th song slot.',
   },
@@ -68,13 +68,13 @@ export const STYLES: Record<StyleId, StyleDef> = {
   },
   counterpoint: {
     id: 'counterpoint',
-    name: 'Piercing Note',
-    flavor: 'A tone that slips past any ward.',
+    name: 'Dissonance',
+    flavor: 'A clashing chord that no ward can fully block.',
     rule: 'Once per turn, a roll against an immune target deals half damage instead of none.',
   },
   tutti: {
     id: 'tutti',
-    name: 'Elemental Harmony',
+    name: 'Harmony',
     flavor: 'Fire, earth, wind and wave, singing as one.',
     rule: 'If your songs hold all four elements, +4 to your first roll each turn (can\'t crit).',
   },
@@ -86,8 +86,8 @@ export const STYLES: Record<StyleId, StyleDef> = {
   },
   bravo: {
     id: 'bravo',
-    name: 'Tavern Tales',
-    flavor: 'Every beast you tame becomes a story worth retelling.',
+    name: 'Crowd Favorite',
+    flavor: 'Every beast you tame wins you more admirers.',
     rule: '+1 Fame for every monster you tame.',
   },
   ispirato: {
