@@ -130,10 +130,10 @@ describe('Fortissimo', () => {
 })
 
 describe('Overture and Tutti', () => {
-  it('Overture adds +2 to the first roll of the turn only, and never crits', () => {
+  it('Overture adds its bonus to the first roll of the turn only, and never crits', () => {
     const state = fight(['overture'], [['d4', 'Hymn'], ['d4', 'Hymn']], [{}])
     const first = play(state, 1, faces([3, 4])).state
-    expect(first.combat.rolls[0]).toMatchObject({ value: 3, bonus: 2, isCrit: false })
+    expect(first.combat.rolls[0]).toMatchObject({ value: 3, bonus: DEFAULT_TUNABLES.overtureBonus, isCrit: false })
     const second = play(first, 2, faces([3, 4])).state
     expect(second.combat.rolls[0].bonus).toBeUndefined()
   })
