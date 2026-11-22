@@ -37,7 +37,7 @@ These are now the game's defaults. Power is measured the same way (style held fr
 
 | Style | What it does now | Win % | Tunables |
 |---|---|---|---|
-| **Crowd Favorite** | +5 Fame for every Lv3+ monster you tame | **40.5** (style-lab spec run: 43.5) | `bravoFamePerTame: 5`, `bravoMinLevel: 3` |
+| **Crowd Favorite** | +10 Fame for every Lv3+ monster you tame (was +5 at 40.5%; price 2 → 3) | **48.8** held; bought at 2 / 3 / 4 EXP: 42.5 / 36.5 / 35.8 | `bravoFamePerTame: 10`, `bravoMinLevel: 3`, `styleCostBravo: 3` |
 | **Rallying Cry** | Once per turn, after a tame, refresh a spent d4 or d8 song of your choice | **47.0** | `staccatoMaxFaces: 8` |
 | **Harmony** | If your setlist holds all four elements, +3 to your first roll each turn (added on top of the face; can't crit) | **46.5** | `tuttiBonus: 3` |
 | **War Drums** | All your dice crit one number lower (a d4 on a 3, a d20 on a 19); bonus dice still need the top face | **42.3** | `ostinatoMaxFaces: 20` (price unchanged at 2) |

@@ -31,7 +31,7 @@ A reference for every style in the Studio: what it does, what it costs, which tu
 | **Dissonance** | `counterpoint` | 2 | Once per turn, a roll against an immune target deals full damage. | `counterpointMultiplier` (1) | 48.5 |
 | **Harmony** | `tutti` | 4 | If your setlist holds all four elements, +3 to your first roll each turn (can't crit). | `tuttiBonus` (3), `tuttiElements` (4) | 46.5 |
 | **Fanfare** | `overture` | 3 | +2 to your first roll each turn (can't crit). | `overtureBonus` (2) | 43.7 |
-| **Crowd Favorite** | `bravo` | 2 | +5 Fame for every Lv3+ monster you tame. | `bravoFamePerTame` (5), `bravoMinLevel` (3) | 40.5 |
+| **Crowd Favorite** | `bravo` | 3 | +10 Fame for every Lv3+ monster you tame. | `bravoFamePerTame` (10), `bravoMinLevel` (3) | 48.8 |
 | **Muse's Favor** | `ispirato` | 3 | Gain 1 Inspiration at the start of each turn. | `ispiratoPerTurn` (1), `ispiratoMin` (1, the floor it tops up to) | 42.3 |
 
 Before the rebalance, Lingering Note held d12 and d20 songs for free (61.0%) and Dissonance dealt half damage (40.7%). Every original style now lands at 40.5–48.5%.
@@ -55,7 +55,7 @@ These keep kebab-case ids. Their effects are data-defined specs that `studioSpec
 
 ## How prices were set
 
-`BUY=n npx tsx scripts/style-audit.ts` makes the tested bard pay n EXP for the style the first turn they can afford it. Buying mid-game spends EXP that would have gone into dice, so the gain is smaller than holding the style from round 1. The yardstick is the current styles at their current prices, which land at **34–38%**: Rallying Cry @2 35.2 · Fanfare @3 34.5 · Dragon's Roar @4 33.8 · Harmony @4 34.2 · Crowd Favorite @2 38.3. Each new price was picked to land in that range, taking the cheaper option when two prices fall within noise (about ±2.7 points).
+`BUY=n npx tsx scripts/style-audit.ts` makes the tested bard pay n EXP for the style the first turn they can afford it. Buying mid-game spends EXP that would have gone into dice, so the gain is smaller than holding the style from round 1. The yardstick is the current styles at their current prices, which land at **34–38%**: Rallying Cry @2 35.2 · Fanfare @3 34.5 · Dragon's Roar @4 33.8 · Harmony @4 34.2 · Crowd Favorite (+10 Fame at Lv3+) @2 42.5, @3 36.5, @4 35.8, so it is priced at 3. Each new price was picked to land in that range, taking the cheaper option when two prices fall within noise (about ±2.7 points).
 
 | Style | Bought at 2 | at 3 | at 4 | Price |
 |---|---|---|---|---|
