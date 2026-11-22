@@ -178,14 +178,14 @@ describe('Staccato (Rallying Cry)', () => {
 
   it('lets you refresh one spent song of your choice after a tame, once per turn', () => {
     const dice: DieSpec[] = [['d8', 'Hymn'], ['d4', 'Hymn'], ['d20', 'Hymn']]
-    let state = fight(['staccato'], dice, [{ currentHP: 50, maxHP: 50 }, { currentHP: 5, maxHP: 5 }, { currentHP: 50, maxHP: 50 }])
+    let state = fight(['staccato'], dice, [{ currentHP: 5, maxHP: 5 }, { currentHP: 50, maxHP: 50 }])
     state = play(state, 1, faces([1, 8]), 'm1').state
     state = play(state, 2, faces([1, 4]), 'm1').state
     expect(spent(state, 1) && spent(state, 2)).toBe(true)
     // Nothing tamed yet: Rallying Cry isn't ready
     expect(rally(state, 1).ok).toBe(false)
 
-    state = play(state, 3, faces([10, 20]), 'm2').state // the d20 tames
+    state = play(state, 3, faces([10, 20]), 'm1').state // the d20 tames the wounded target
     expect(state.combat.rallyReady).toBe(true)
     const rallied = rally(state, 1)
     expect(rallied.ok).toBe(true)
@@ -196,7 +196,7 @@ describe('Staccato (Rallying Cry)', () => {
     expect(state.combat.styleNotes).toContain(STYLES.staccato.name)
 
     // Once per turn
-    state = play(state, 1, faces([1, 8]), 'm3').state
+    state = play(state, 1, faces([1, 8]), 'm2').state
     expect(rally(state, 1).ok).toBe(false)
   })
 

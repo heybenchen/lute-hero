@@ -852,6 +852,9 @@ function performCombatPlay(
     killCredits: [...base.killCredits, ...newKillCredits],
     currentSongId: song.id,
     lastTargetMonsterId: targetMonsterId,
+    lockedTargetMonsterId: defeatedTarget
+      ? null
+      : totalDamageDealt > 0 ? targetMonsterId : combat.lockedTargetMonsterId,
     rolls,
     totalDamage: base.totalDamage + totalDamageDealt,
     lastDamageCalculations: damageCalculations,
@@ -901,6 +904,9 @@ function playFeaturedSong(state: EngineState, feature: FeatureRequest, rng: Rng,
       featuredPlayerIds: [...combat.featuredPlayerIds, guest.id],
       currentSongId: song.id,
       lastTargetMonsterId: feature.targetMonsterId,
+      lockedTargetMonsterId: defeatedTarget
+        ? null
+        : damage > 0 ? feature.targetMonsterId : combat.lockedTargetMonsterId,
       rolls,
       totalDamage: combat.totalDamage + damage,
       lastDamageCalculations: damageCalculations,
