@@ -44,7 +44,7 @@ These are now the game's defaults. Power is measured the same way (style held fr
 | **Nimble Fingers** | Twice per turn, reroll any song for free | **45.2** (once per turn: 39.0) | `rubatoMaxFaces: 20`, `rubatoUsesPerTurn: 2` |
 | **Muse's Favor** | Gain 1 Inspiration at the start of each turn | **42.3** | `ispiratoPerTurn: 1` |
 
-War Drums variants (300 games): d4s only 36.7 · d4s only with bonus dice chaining on a 3 or 4, uncapped 34.5 (35.0 bought at 2 EXP) · same chaining on d4s and d8s 55.8. Chaining is a new tunable, `ostinatoChainFace` (default 4, the top face).
+War Drums variants (300 games): d4s only 36.7 · d4s only with bonus dice chaining on a 3 or 4, uncapped 34.5 (35.0 bought at 2 EXP). Chaining is a new tunable, `ostinatoChainFace` (default 4 = top face only; lower values chain that many numbers below the top, scaled by die size like the crit face).
 
 Lingering Note (d20 songs only, 1 Inspiration per use: **47.7**) and Dissonance followed in later commits. Dissonance went to ¾ damage (**42.8**) first and then full damage (**48.5**). Also tried: Lingering Note on any die for 1 Inspiration 50.3, for 2 Inspiration 38.2.
 

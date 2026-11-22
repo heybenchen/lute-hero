@@ -36,7 +36,7 @@ A reference for every style in the Studio: what it does, what it costs, which tu
 
 Before the rebalance, Lingering Note held d12 and d20 songs for free (61.0%) and Dissonance dealt half damage (40.7%). Every original style now lands at 40.5–48.5%.
 
-Alternatives tried: War Drums on d4s only 36.7%, and on d4s only with bonus dice chaining on a 3 or 4 (`ostinatoMaxFaces: 4`, `ostinatoChainFace: 3`, no cascade cap) 34.5%, no better, because bard's d4s get upgraded away (fandom falls from 72 to 64); the same chaining on d8s too is 55.8%, far too strong; Lingering Note on any die for 1 Inspiration 50.3% (slightly strong), for 2 Inspiration 38.2% (too weak); Dissonance at ¾ damage 42.8%.
+Alternatives tried: War Drums on d4s only 36.7%, and on d4s only with bonus dice chaining on a 3 or 4 (`ostinatoMaxFaces: 4`, `ostinatoChainFace: 3`, no cascade cap) 34.5%, no better, because bard's d4s get upgraded away (fandom falls from 72 to 64); Lingering Note on any die for 1 Inspiration 50.3% (slightly strong), for 2 Inspiration 38.2% (too weak); Dissonance at ¾ damage 42.8%.
 
 ### Promoted from the style lab
 

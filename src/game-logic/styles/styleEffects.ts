@@ -88,7 +88,8 @@ export function builtinRollOptions(dice: Dice, ctx: StyleContext, isFirstDie: bo
   if (has(ctx, 'ostinato') && max <= t.ostinatoMaxFaces) {
     opts.critFace = ostinatoCritFace(max)
     if (t.ostinatoCascadeBonus) opts.cascadeBonus = t.ostinatoCascadeBonus
-    if (t.ostinatoChainFace < max) opts.cascadeFace = t.ostinatoChainFace
+    // Like the crit face, the chain face sits (4 - ostinatoChainFace) numbers below the top
+    if (t.ostinatoChainFace < 4) opts.cascadeFace = Math.max(2, max - (4 - t.ostinatoChainFace))
   }
   return opts
 }
