@@ -97,6 +97,47 @@ describe('featured songs', () => {
     expect(applyAction(state, feature('m1'), hotseat()).ok).toBe(false)
   })
 
+  it('locks all song types to a wounded monster until it is defeated or the bard retreats', () => {
+    let state = sharedFight([monster('m1', 14), monster('m2', 14)])
+    const play = (targetMonsterId: string): GameAction => ({
+      type: 'PLAY_SONG', songId: 'player-1-song-1', targetMonsterId,
+    })
+    // The bard rolls 2 to wound the first monster.
+    state = apply(state, play('m1'), { ...hotseat(), rng: () => 0.125 }).state
+    const request = (targetMonsterId: string): GameAction => ({
+      type: 'REQUEST_FEATURE', guestPlayerId: 'player-2', songId: 'player-2-song-1', targetMonsterId,
+    })
+    expect(applyAction(state, feature('m2'), hotseat())).toMatchObject({ ok: false, code: 'illegal' })
+    expect(applyAction(state, request('m2'), seat('player-1'))).toMatchObject({ ok: false, code: 'illegal' })
+    const retreated = apply(state, { type: 'END_COMBAT' }).state
+    expect(retreated.combat.isActive).toBe(false)
+    expect(retreated.combat.lockedTargetMonsterId).toBeNull()
+    expect(retreated.players[0].exp - state.players[0].exp).toBe(2)
+
+    // The featured d20 rolls 16 and finishes the locked target.
+    state = apply(state, request('m1'), seat('player-1')).state
+    state = apply(state, { type: 'ANSWER_FEATURE', accept: true }, { ...seat('player-2'), rng: () => 0.75 }).state
+    expect(state.combat.monsters[0].currentHP).toBe(0)
+    expect(state.combat.lockedTargetMonsterId).toBeNull()
+  })
+
+  it("a featured wound locks the bard's own songs to that target", () => {
+    let state = sharedFight([monster('m1', 14), monster('m2', 14)])
+    state = apply(state, feature('m1'), { ...hotseat(), rng: () => 0.05 }).state
+    const play = (targetMonsterId: string): GameAction => ({
+      type: 'PLAY_SONG', songId: 'player-1-song-1', targetMonsterId,
+    })
+    expect(applyAction(state, play('m2'), hotseat())).toMatchObject({
+      ok: false,
+      message: 'Finish the wounded monster or retreat',
+    })
+    // The bard rolls an 8 and a 7 on the crit to finish the locked target.
+    const rolls = [0.875, 0.75]
+    state = apply(state, play('m1'), { ...hotseat(), rng: () => rolls.shift() ?? 0 }).state
+    expect(state.combat.monsters[0].currentHP).toBe(0)
+    expect(applyAction(state, play('m2'), hotseat()).ok).toBe(true)
+  })
+
   it('needs the guest on the same space', () => {
     const state = sharedFight([monster('m1', 5)], 6)
     expect(applyAction(state, feature('m1'), hotseat()).ok).toBe(false)

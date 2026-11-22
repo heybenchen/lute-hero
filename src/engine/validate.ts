@@ -1,4 +1,4 @@
-import { EngineState } from './state.js'
+import { EngineCombatState, EngineState } from './state.js'
 import { GameAction, ActorSeat } from './actions.js'
 import { getPlayableSongs, mergeSongs } from '../game-logic/showdown/showdown.js'
 import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
@@ -35,9 +35,17 @@ function validateFeature(
   if (combat.featuredPlayerIds.includes(guest.id)) return illegal('That bard has already been featured this fight')
   const song = guest.songs.find((sg) => sg.id === feature.songId)
   if (!song?.slots.some((slot) => slot.dice)) return illegal('Choose one of their songs with a die')
-  const target = combat.monsters.find((m) => m.id === feature.targetMonsterId)
+  return validateCombatTarget(combat, feature.targetMonsterId)
+}
+
+function validateCombatTarget(combat: EngineCombatState, targetId: string | null): ValidationResult {
+  const target = combat.monsters.find((m) => m.id === targetId)
   if (!target) return illegal('Choose a monster to target')
   if (target.currentHP <= 0) return illegal('That monster is already defeated')
+  const lockedTarget = combat.monsters.find((m) => m.id === combat.lockedTargetMonsterId)
+  if (lockedTarget && lockedTarget.currentHP > 0 && lockedTarget.id !== target.id) {
+    return illegal('Finish the wounded monster or retreat')
+  }
   return ok
 }
 
@@ -157,11 +165,7 @@ export function validateAction(
       const song = fighter.songs.find((s) => s.id === action.songId)
       if (!song) return illegal('Unknown song')
       if (!song.slots.some((slot) => slot.dice)) return illegal('Song has no dice')
-      // Single-target: a live monster must be chosen
-      const target = state.combat.monsters.find((m) => m.id === action.targetMonsterId)
-      if (!target) return illegal('Choose a monster to target')
-      if (target.currentHP <= 0) return illegal('That monster is already defeated')
-      return ok
+      return validateCombatTarget(state.combat, action.targetMonsterId)
     }
 
     case 'REROLL_SONG': {
@@ -187,8 +191,7 @@ export function validateAction(
       } else if (fighter.inspiration < inspirationSpend()) {
         return illegal('Not enough Inspiration')
       }
-      if (state.combat.monsters.every((m) => m.currentHP <= 0)) return illegal('All monsters defeated')
-      return ok
+      return validateCombatTarget(state.combat, state.combat.lastTargetMonsterId)
     }
 
     case 'RALLY_SONG': {

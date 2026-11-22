@@ -284,7 +284,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
           <Section title="🎲 Combat">
             <List items={[
-              <>Pick <Hl>one monster</Hl> to target, then a song — songs hit a <Hl>single</Hl> target, not all.</>,
+              <>Pick <Hl>one monster</Hl> to target, then play a song. Once you <Hl>wound</Hl> it, defeat it before switching targets, or retreat.</>,
               <>Defeat the target and you get that song's <Hl>dice back</Hl> to play it again; only wounding it <Hl>spends</Hl> the song for the fight.</>,
               <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for bonus damage.</>,
               <>Clear <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> and radiate an element.</>,

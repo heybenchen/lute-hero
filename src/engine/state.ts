@@ -38,6 +38,8 @@ export interface EngineCombatState {
   currentSongId: string | null
   /** Monster the last song targeted (single-target combat). */
   lastTargetMonsterId: string | null
+  /** Wounded monster the fighter must finish before switching targets. */
+  lockedTargetMonsterId: string | null
   rolls: DiceRoll[]
   totalDamage: number
   lastDamageCalculations: DamageCalculation[]
@@ -190,6 +192,7 @@ export function createInitialCombatState(): EngineCombatState {
     killCredits: [],
     currentSongId: null,
     lastTargetMonsterId: null,
+    lockedTargetMonsterId: null,
     rolls: [],
     totalDamage: 0,
     lastDamageCalculations: [],
@@ -300,6 +303,10 @@ export function normalizeEngineState(state: EngineState): EngineState {
   }
   const migrateSongIds = (ids: string[] = []): string[] =>
     [...new Set(ids.flatMap((id) => [id, ...splitSongIds.get(id) ?? []]))]
+  // Older saves could have several wounded monsters. Prefer the last one
+  // targeted if it is still wounded, then fall back to the first survivor.
+  const wounded = state.combat?.monsters?.filter((m) => m.currentHP > 0 && m.currentHP < m.maxHP) ?? []
+  const legacyTarget = wounded.find((m) => m.id === state.combat?.lastTargetMonsterId) ?? wounded[0]
   return {
     ...state,
     players,
@@ -308,6 +315,9 @@ export function normalizeEngineState(state: EngineState): EngineState {
     combat: {
       ...createInitialCombatState(),
       ...state.combat,
+      lockedTargetMonsterId: state.combat?.lockedTargetMonsterId === undefined
+        ? legacyTarget?.id ?? null
+        : state.combat.lockedTargetMonsterId,
       spentSongIds: migrateSongIds(state.combat?.spentSongIds),
       undoSnapshot: state.combat?.undoSnapshot ? {
         ...state.combat.undoSnapshot,

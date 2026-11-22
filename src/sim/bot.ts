@@ -139,6 +139,8 @@ export class Bot {
       const fighter = this.me
       const alive = combat.monsters.filter((m) => m.currentHP > 0)
       if (alive.length === 0) break
+      const lockedTarget = alive.find((m) => m.id === combat.lockedTargetMonsterId)
+      const targets = lockedTarget ? [lockedTarget] : alive
 
       // Rallying Cry: refresh the best spent song
       if (combat.rallyReady && fighter.styles.includes('staccato') && !combat.stylesUsed.includes('staccato')) {
@@ -149,7 +151,7 @@ export class Bot {
       }
 
       const ready = fighter.songs.filter((s) => songDie(s) && !combat.spentSongIds.includes(s.id))
-      const pick = this.tuned(() => bestPlay(ready, alive))
+      const pick = this.tuned(() => bestPlay(ready, targets))
       if (pick) {
         const hpBefore = alive.find((m) => m.id === pick.monster.id)!.currentHP
         if (!this.act({ type: 'PLAY_SONG', songId: pick.song.id, targetMonsterId: pick.monster.id })) break
@@ -164,7 +166,7 @@ export class Bot {
       let featured = false
       for (const guest of guests) {
         const songs = guest.songs.filter((s) => songDie(s))
-        const guestPick = this.tuned(() => bestPlay(songs, alive))
+        const guestPick = this.tuned(() => bestPlay(songs, targets))
         if (!guestPick) continue
         featured = this.act({
           type: 'PLAY_FEATURED_SONG',
