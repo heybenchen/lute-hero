@@ -1,0 +1,864 @@
+/**
+ * A strong simulation bard. It plays full games through the real engine like
+ * the baseline `Bot`, but every decision is driven by exact odds (`odds.ts`):
+ *
+ *  - Fights: each play is the song/target pair with the best value —
+ *    P(tame) × the monster's worth, plus the chip damage and wound EXP a miss
+ *    still earns, minus what losing the song costs for the rest of the fight.
+ *    A tame hands the die back, so likely kills are free; Lingering Note makes
+ *    a big die's miss free, Nimble Fingers / Inspiration rerolls are priced in.
+ *    Featured songs are free but split a tame with a rival, so they are used
+ *    to chip. Leftover songs wound untouched monsters for EXP.
+ *  - Moving: to the reachable space with the best expected fight, looking two
+ *    turns ahead when nothing is in reach.
+ *  - Shopping: every option (new d4, upgrade, style, Inspiration) is scored by
+ *    how much it raises the bard's expected Fame per fight against the monsters
+ *    actually on the board, per EXP spent. Styles that change rolls are scored
+ *    through the exact odds; the rest by audit-derived values scaled to the
+ *    bard's dice, with combinations (e.g. Master's Touch + Dragon's Roar on
+ *    d20s) falling out naturally.
+ *  - Inspiration: priced by stage — rerolls early, banked for the showdown late.
+ *  - Showdown: picks each verse's element by expected fandom minus the cost of
+ *    the boss growing immune to it next verse, and spends leftover Inspiration
+ *    on rerolls of below-par performances.
+ *
+ * Shared code only, relative imports (it runs inside the reducer for
+ * DEBUG_SIMULATE, on the server too).
+ */
+import { applyAction, ActionCtx } from '../engine/reducer.js'
+import { EngineState } from '../engine/state.js'
+import { GameAction } from '../engine/actions.js'
+import { Dice, DiceType, Genre, Monster, Player, Rng, Song, StyleId } from '../types/index.js'
+import { getGenreMultiplier } from '../game-logic/combat/damageCalculator.js'
+import { monsterSpawnHp } from '../game-logic/combat/monsterSpawner.js'
+import { calculateMonsterExp, calculateMonsterFameValue } from '../game-logic/fame/calculator.js'
+import { getValidMoves } from '../game-logic/board/graphBuilder.js'
+import { holdsAllElements } from '../game-logic/styles/styleEffects.js'
+import { getTunables, withTunables } from '../data/tunables.js'
+import { getUpgradeCost, newD4Cost, getInspirationCost, inspirationSpend } from '../data/draftCards.js'
+import { styleCost, maxStyles } from '../data/styles.js'
+import { DICE_UPGRADE_PATH } from '../data/startingData.js'
+import { ALL_GENRES } from '../data/genreTheme.js'
+import { Dist, rollDist, killChance, expectedDamage, expectedChipOnMiss, mean, convolve, sample } from './odds.js'
+
+const BIG: DiceType[] = ['d12', 'd20']
+const SMALL: DiceType[] = ['d4', 'd8']
+
+/** Tunable knobs of the policy (found by the tournament harness). */
+export interface SmartParams {
+  /** Fame-equivalent value of one Inspiration before the endgame. */
+  inspirationValue: number
+  /** Inspiration banked for the showdown once the fame gate is near. */
+  showdownReserve: number
+  /** Weight of EXP relative to Fame in fight decisions. */
+  expWeight: number
+  /** Share of a song's expected damage counted as the cost of spending it. */
+  songCost: number
+  /** Credit for chip damage a miss leaves behind (fraction of its pro-rata value). */
+  chipCredit: number
+  /** Penalty per point of Fame a featured tame hands a rival. */
+  rivalFame: number
+  /** Minimum value per EXP for a purchase to be worth making now. */
+  buyThreshold: number
+  /** Share of purchase value judged against tomorrow's tougher board (monsters a level up). */
+  futureWeight: number
+  /** Scale on the audit-derived worth of styles the odds can't see. */
+  priorScale: number
+  /** Plan showdown verses ahead (vs the greedy-with-penalty pick). */
+  showdownLookahead: boolean
+  /** Rollouts per top fight candidate (0 = pure heuristic). */
+  fightRollouts: number
+  /** How many top-scoring candidates the rollouts compare. */
+  rolloutCandidates: number
+  /**
+   * How styles are valued when shopping: 'odds' runs roll-changing styles
+   * through the exact odds (plus audit priors for the rest); 'measured' uses
+   * the smart-bot style audit for every style, scaled by fit with the dice.
+   */
+  styleValuation: 'odds' | 'measured'
+}
+
+export const DEFAULT_SMART_PARAMS: SmartParams = {
+  inspirationValue: 6,
+  showdownReserve: 3,
+  expWeight: 2,
+  songCost: 0.6,
+  chipCredit: 0.6,
+  rivalFame: 0.5,
+  buyThreshold: 0.3,
+  futureWeight: 0,
+  priorScale: 1,
+  showdownLookahead: true,
+  fightRollouts: 0,
+  rolloutCandidates: 3,
+  styleValuation: 'odds',
+}
+
+/**
+ * Fame-per-turn worth of styles whose effect the odds can't see, from the
+ * style audit (fame share over the baseline × typical Fame per turn), before
+ * scaling by how well they fit the bard's dice.
+ */
+/**
+ * Fame per turn each style adds under smart play, from the smart-bot style
+ * audit (scripts/style-audit.ts: final Fame share over the no-style baseline
+ * × ~32 Fame per turn). Used by the 'measured' style valuation.
+ */
+const STYLE_MEASURED: Record<StyleId, number> = {
+  bravo: 5.8, fermata: 4.8, staccato: 3.5, tutti: 2.6, fortissimo: 1.9, overture: 1.9,
+  coda: 1.6, counterpoint: 1.6, virtuoso: 1.0, ostinato: 1.0, rubato: 0.3, ispirato: 0,
+}
+
+const STYLE_PRIOR: Partial<Record<StyleId, number>> = {
+  staccato: 3.2,
+  fermata: 3.5,
+  bravo: 0, // computed from expected tames
+  rubato: 1.2,
+  coda: 1.0,
+  counterpoint: 0.4,
+  ispirato: 0.6,
+}
+
+function songDie(song: Song): Dice | null {
+  return song.slots.find((s) => s.dice)?.dice ?? null
+}
+
+interface Candidate {
+  song: Song
+  monster: Monster
+  featuredFrom?: string
+  score: number
+  pk: number
+}
+
+export class SmartBot {
+  state: EngineState
+  private ctx: ActionCtx
+  private p: SmartParams
+  private refreshedThisTurn = false
+
+  constructor(state: EngineState, rng: Rng, params: Partial<SmartParams> = {}) {
+    this.state = state
+    this.ctx = { rng, actor: { kind: 'hotseat' } }
+    this.p = { ...DEFAULT_SMART_PARAMS, ...params }
+  }
+
+  act(action: GameAction): boolean {
+    const result = applyAction(this.state, action, this.ctx)
+    if (!result.ok) return false
+    this.state = result.state
+    return true
+  }
+
+  private get me(): Player {
+    return this.state.players[this.state.currentTurnPlayerIndex]
+  }
+
+  private t<T>(fn: () => T): T {
+    return withTunables(this.state.tunables, fn)
+  }
+
+  takeTurn(): void {
+    const playerId = this.me.id
+    this.t(() => {
+      this.move()
+      this.fight()
+      this.shop()
+    })
+    if (this.state.phase === 'main' && this.state.players[this.state.currentTurnPlayerIndex]?.id === playerId) {
+      this.act({ type: 'END_TURN' })
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Odds
+  // ------------------------------------------------------------------
+
+  /** Roll distribution of one die for this bard right now. */
+  private dist(die: Dice, styles: StyleId[], opts: { firstRoll: boolean; advantage: boolean; allElements: boolean }): Dist {
+    const t = getTunables()
+    let flat = 0
+    if (opts.firstRoll) {
+      if (styles.includes('overture')) flat += t.overtureBonus
+      if (styles.includes('tutti') && opts.allElements) flat += t.tuttiBonus
+    }
+    return rollDist(die.type, {
+      advantage: opts.advantage && BIG.includes(die.type) && styles.includes('virtuoso'),
+      critBonus: die.type === 'd20' && styles.includes('fortissimo') ? t.fortissimoBonus : 0,
+      critFace: die.type === 'd4' && styles.includes('ostinato') ? t.ostinatoCritFace : undefined,
+      flat,
+      maxCascades: t.maxCritCascades,
+    })
+  }
+
+  private multiplier(die: Dice, m: Monster, counterpoint: boolean): number {
+    const mult = getGenreMultiplier(die.genre, m)
+    if (mult === 0 && counterpoint && m.resistance === die.genre) return getTunables().counterpointMultiplier
+    return mult
+  }
+
+  private monsterWorth(m: Monster, includeExp: boolean): number {
+    return calculateMonsterFameValue(m.level) + (includeExp ? this.p.expWeight * calculateMonsterExp(m.level) : 0)
+  }
+
+  /** Near the fame gate the showdown is coming: Inspiration is worth banking. */
+  private endgame(): boolean {
+    const gate = getTunables().fameFinalBossThreshold
+    return !!this.state.pendingPhase || Math.max(...this.state.players.map((p) => p.fame)) >= gate * 0.65
+  }
+
+  private spareInspiration(player: Player): number {
+    return Math.max(0, player.inspiration - (this.endgame() ? this.p.showdownReserve : 0))
+  }
+
+  // ------------------------------------------------------------------
+  // Fight
+  // ------------------------------------------------------------------
+
+  private fight(): void {
+    const me = this.me
+    const space = this.state.spaces.find((s) => s.id === me.position)!
+    if (space.monsters.length === 0) return
+    if (this.estimateFight(space.monsters, me, this.guestsAt(space.id, me.id).length) <= 0) return
+    if (!this.act({ type: 'START_COMBAT', playerId: me.id })) return
+
+    for (let guard = 0; guard < 60 && this.state.combat.isActive; guard++) {
+      const combat = this.state.combat
+      const fighter = this.me
+      const alive = combat.monsters.filter((m) => m.currentHP > 0)
+      if (alive.length === 0) break
+
+      // Rallying Cry: bring back the spent song worth the most against what's left
+      if (combat.rallyReady && fighter.styles.includes('staccato') && !combat.stylesUsed.includes('staccato')) {
+        const spent = fighter.songs.filter((s) => combat.spentSongIds.includes(s.id) && songDie(s))
+        if (spent.length > 0) {
+          const best = spent
+            .map((s) => ({ s, v: Math.max(...alive.map((m) => this.playValue(s, m, fighter, alive).score)) }))
+            .sort((a, b) => b.v - a.v)[0]
+          if (this.act({ type: 'RALLY_SONG', songId: best.s.id })) continue
+        }
+      }
+
+      const pick = this.bestCandidate(fighter, alive)
+      if (!pick) break
+      const hpBefore = pick.monster.currentHP
+      const ok = pick.featuredFrom
+        ? this.act({ type: 'PLAY_FEATURED_SONG', guestPlayerId: pick.featuredFrom, songId: pick.song.id, targetMonsterId: pick.monster.id })
+        : this.act({ type: 'PLAY_SONG', songId: pick.song.id, targetMonsterId: pick.monster.id })
+      if (!ok) break
+      if (!pick.featuredFrom) this.considerReroll(pick, hpBefore)
+    }
+
+    this.act({ type: 'END_COMBAT', spreadGenre: this.spreadChoice(this.me) })
+  }
+
+  private guestsAt(spaceId: number, fighterId: string): Player[] {
+    return this.state.players.filter((p) => p.id !== fighterId && p.position === spaceId)
+  }
+
+  private bestCandidate(fighter: Player, alive: Monster[]): Candidate | null {
+    const combat = this.state.combat
+    let best: Candidate | null = null
+    const own: Candidate[] = []
+    const consider = (c: Candidate) => {
+      if (c.score > -Infinity && (!best || c.score > best.score)) best = c
+      if (!c.featuredFrom && c.score > -Infinity) own.push(c)
+    }
+    for (const song of fighter.songs) {
+      if (!songDie(song) || combat.spentSongIds.includes(song.id)) continue
+      for (const m of alive) {
+        const v = this.playValue(song, m, fighter, alive)
+        if (v.dmgPossible) consider({ song, monster: m, score: v.score, pk: v.pk })
+      }
+    }
+    // Featured songs: free, but a tame splits the monster with a rival
+    for (const guest of this.state.players) {
+      if (guest.id === fighter.id || guest.position !== combat.spaceId || combat.featuredPlayerIds.includes(guest.id)) continue
+      for (const song of guest.songs) {
+        const die = songDie(song)
+        if (!die) continue
+        for (const m of alive) {
+          const mult = getGenreMultiplier(die.genre, m)
+          if (mult <= 0) continue
+          const d = rollDist(die.type, { maxCascades: getTunables().maxCritCascades })
+          const pk = killChance(d, mult, m.currentHP)
+          const fame = calculateMonsterFameValue(m.level)
+          const guestShare = Math.floor(fame / 2)
+          const unit = this.monsterWorth(m, true) / Math.max(1, m.maxHP)
+          const chip = expectedChipOnMiss(d, mult, m.currentHP) * unit * this.p.chipCredit
+          // Featured plays cost nothing, so their value is pure upside, but
+          // they should come after own plays that could take the full prize.
+          const score = pk * (fame - guestShare - this.p.rivalFame * guestShare) + (1 - pk) * chip - 0.01
+          consider({ song, monster: m, featuredFrom: guest.id, score, pk })
+        }
+      }
+    }
+    // Look ahead: compare the top own plays by simulating the rest of the fight
+    const chosen = best as Candidate | null
+    if (this.p.fightRollouts > 0 && chosen && !chosen.featuredFrom && own.length > 1) {
+      const top = own.sort((a, b) => b.score - a.score).slice(0, this.p.rolloutCandidates)
+      let bestMean = -Infinity
+      let pick = chosen
+      for (const c of top) {
+        let sum = 0
+        for (let i = 0; i < this.p.fightRollouts; i++) sum += this.rollout(fighter, alive, c)
+        const m = sum / this.p.fightRollouts
+        if (m > bestMean) {
+          bestMean = m
+          pick = c
+        }
+      }
+      return pick
+    }
+    return chosen
+  }
+
+  /**
+   * One random play-out of the rest of this fight starting with `first`:
+   * dice are drawn from their exact distributions, later plays follow the
+   * greedy score. Returns the Fame (+ weighted EXP) the fight yields.
+   */
+  private rollout(fighter: Player, alive: Monster[], first: Candidate): number {
+    const combat = this.state.combat
+    const rng = this.ctx.rng
+    const styles = fighter.styles
+    const used = new Set(combat.stylesUsed)
+    const allEl = holdsAllElements(fighter.songs)
+    const ms = alive.map((m) => ({ m, hp: m.currentHP, touched: m.currentHP < m.maxHP }))
+    const ready = new Set(fighter.songs.filter((s) => songDie(s) && !combat.spentSongIds.includes(s.id)).map((s) => s.id))
+    let firstRoll = combat.songsUsed.length === 0
+    const bravo = styles.includes('bravo') ? getTunables().bravoFamePerTame : 0
+    let value = 0
+    const play = (song: Song, target: (typeof ms)[number]) => {
+      const die = songDie(song)!
+      const counter = styles.includes('counterpoint') && !used.has('counterpoint')
+      let mult = getGenreMultiplier(die.genre, target.m)
+      if (mult === 0 && counter && target.m.resistance === die.genre) {
+        mult = getTunables().counterpointMultiplier
+        used.add('counterpoint')
+      }
+      const adv = styles.includes('virtuoso') && !used.has('virtuoso') && BIG.includes(die.type)
+      if (adv) used.add('virtuoso')
+      const d = this.dist(die, styles, { firstRoll, advantage: adv, allElements: allEl })
+      firstRoll = false
+      let dmg = Math.floor(sample(d, rng) * mult)
+      if (dmg < target.hp && styles.includes('rubato') && !used.has('rubato') && SMALL.includes(die.type)) {
+        used.add('rubato')
+        dmg = Math.floor(sample(d, rng) * mult)
+      }
+      if (dmg > 0) target.touched = true
+      if (dmg >= target.hp) {
+        target.hp = 0
+        value += calculateMonsterFameValue(target.m.level) + bravo
+        return
+      }
+      target.hp -= dmg
+      if (styles.includes('fermata') && !used.has('fermata') && BIG.includes(die.type)) used.add('fermata')
+      else ready.delete(song.id)
+    }
+    play(first.song, ms.find((x) => x.m.id === first.monster.id)!)
+    for (let guard = 0; guard < 20; guard++) {
+      const live = ms.filter((x) => x.hp > 0)
+      if (live.length === 0) break
+      let bestScore = -Infinity
+      let bestPlay: { song: Song; target: (typeof ms)[number] } | null = null
+      const totalHp = live.reduce((s, x) => s + x.hp, 0)
+      const totalWorth = live.reduce((s, x) => s + calculateMonsterFameValue(x.m.level), 0)
+      for (const song of fighter.songs) {
+        if (!ready.has(song.id)) continue
+        const die = songDie(song)!
+        const d = this.dist(die, styles, { firstRoll, advantage: styles.includes('virtuoso') && !used.has('virtuoso'), allElements: allEl })
+        for (const x of live) {
+          const mult = getGenreMultiplier(die.genre, x.m)
+          if (mult <= 0) continue
+          const pk = killChance(d, mult, x.hp)
+          const worth = calculateMonsterFameValue(x.m.level)
+          const sc = pk * worth - (1 - pk) * this.p.songCost * mean(d) * (totalWorth / Math.max(1, totalHp)) +
+            (1 - pk) * Math.min(expectedChipOnMiss(d, mult, x.hp), x.hp - 1) * (worth / x.hp) * this.p.chipCredit
+          if (sc > bestScore) {
+            bestScore = sc
+            bestPlay = { song, target: x }
+          }
+        }
+      }
+      if (!bestPlay) break
+      play(bestPlay.song, bestPlay.target)
+    }
+    // Wound EXP: every monster charmed at least once pays out
+    for (const x of ms) if (x.touched || x.hp <= 0) value += this.p.expWeight * calculateMonsterExp(x.m.level)
+    return value
+  }
+
+  /** Value of playing `song` at `m` now, plus whether it can deal any charm at all. */
+  private playValue(song: Song, m: Monster, fighter: Player, alive: Monster[]): { score: number; pk: number; dmgPossible: boolean } {
+    const combat = this.state.combat
+    const die = songDie(song)!
+    const used = combat.stylesUsed
+    const has = (id: StyleId) => fighter.styles.includes(id)
+    const avail = (id: StyleId) => has(id) && !used.includes(id)
+    const counterpoint = avail('counterpoint')
+    const mult = this.multiplier(die, m, counterpoint)
+    if (mult <= 0) return { score: -Infinity, pk: 0, dmgPossible: false }
+
+    const d = this.dist(die, fighter.styles, {
+      firstRoll: combat.songsUsed.length === 0,
+      advantage: avail('virtuoso'),
+      allElements: holdsAllElements(fighter.songs),
+    })
+    let pk = killChance(d, mult, m.currentHP)
+    const untouched = m.currentHP >= m.maxHP
+    const worth = this.monsterWorth(m, untouched)
+
+    // Rerolls that would follow a miss
+    const freeReroll = avail('rubato') && SMALL.includes(die.type)
+    if (freeReroll) pk = 1 - (1 - pk) ** 2
+    let inspirationSpend = 0
+    if (this.spareInspiration(fighter) >= 1 && pk * worth > this.p.inspirationValue * 1.5) {
+      inspirationSpend = (1 - pk) * this.p.inspirationValue
+      pk = 1 - (1 - pk) ** 2
+    }
+
+    const lingering = avail('fermata') && BIG.includes(die.type)
+    const totalWorth = alive.reduce((s, x) => s + this.monsterWorth(x, x.currentHP >= x.maxHP), 0)
+    const totalHp = alive.reduce((s, x) => s + x.currentHP, 0)
+    const unitAll = totalWorth / Math.max(1, totalHp)
+    const unitHere = worth / Math.max(1, m.currentHP)
+    const missCost = lingering ? 0 : this.p.songCost * mean(d) * unitAll
+    const chip = Math.min(expectedChipOnMiss(d, mult, m.currentHP), m.currentHP - 1) * unitHere * this.p.chipCredit
+    // A miss on an untouched monster still wounds it: its EXP is paid even on a retreat
+    const woundExp = untouched ? this.p.expWeight * calculateMonsterExp(m.level) * 0.5 : 0
+    const bravo = has('bravo') ? getTunables().bravoFamePerTame : 0
+    const score = pk * (worth + bravo) + (1 - pk) * (chip + woundExp - missCost) - inspirationSpend
+    return { score, pk, dmgPossible: expectedDamage(d, mult) > 0 }
+  }
+
+  /** After a miss (the song is spent and the target stands): reroll if it pays. */
+  private considerReroll(pick: Candidate, hpBefore: number): void {
+    for (let i = 0; i < 4; i++) {
+      const combat = this.state.combat
+      const target = combat.monsters.find((m) => m.id === pick.monster.id)
+      const lastId = combat.lastPlayedSongId
+      if (!target || target.currentHP <= 0 || !lastId || !combat.spentSongIds.includes(lastId)) return
+      const fighter = this.me
+      const die = songDie(pick.song)!
+      const mult = this.multiplier(die, { ...target, currentHP: hpBefore }, false) || getGenreMultiplier(die.genre, target)
+      const d = this.dist(die, fighter.styles, { firstRoll: false, advantage: false, allElements: holdsAllElements(fighter.songs) })
+      const pk = killChance(d, mult, hpBefore)
+      const worth = this.monsterWorth(target, false) + (fighter.styles.includes('bravo') ? getTunables().bravoFamePerTame : 0)
+      const canFree = fighter.styles.includes('rubato') && !combat.stylesUsed.includes('rubato') && SMALL.includes(die.type)
+      if (canFree && pk > 0.05 && this.act({ type: 'REROLL_SONG', rubato: true })) continue
+      if (this.spareInspiration(fighter) >= 1 && pk * worth > this.p.inspirationValue && this.act({ type: 'REROLL_SONG' })) continue
+      return
+    }
+  }
+
+  /** Spread the element this bard's dice hit hardest, so new monsters near it adore its songs. */
+  private spreadChoice(player: Player): Genre {
+    const weight = new Map<Genre, number>()
+    for (const song of player.songs) {
+      const die = songDie(song)
+      if (die) weight.set(die.genre, (weight.get(die.genre) ?? 0) + mean(this.dist(die, player.styles, { firstRoll: false, advantage: false, allElements: false })))
+    }
+    let best: Genre = player.starterGenre
+    for (const [g, w] of weight) if (w > (weight.get(best) ?? 0)) best = g
+    return best
+  }
+
+  /**
+   * Expected value of fighting these monsters with this setlist: for each
+   * monster, the best single song's tame chance (a tame returns the die, so
+   * the same song can chain), with chip-assisted kills and wound EXP for the
+   * rest. Used for moving and for valuing purchases.
+   */
+  estimateFight(monsters: Monster[], player: Player, guests = 0, styles: StyleId[] = player.styles, songs: Song[] = player.songs): number {
+    if (monsters.length === 0) return 0
+    const dice = songs.map(songDie).filter((d): d is Dice => !!d)
+    if (dice.length === 0) return 0
+    const allEl = holdsAllElements(songs)
+    const t = getTunables()
+    let total = 0
+    let tames = 0
+    for (const m of monsters) {
+      let best = 0
+      let chipSum = 0
+      let hits = false
+      for (const die of dice) {
+        const mult = getGenreMultiplier(die.genre, m)
+        if (mult <= 0) continue
+        hits = true
+        const d = this.dist(die, styles, { firstRoll: false, advantage: styles.includes('virtuoso'), allElements: allEl })
+        let pk = killChance(d, mult, m.currentHP)
+        if (styles.includes('rubato') && SMALL.includes(die.type)) pk = 1 - (1 - pk) ** 2
+        if (styles.includes('fermata') && BIG.includes(die.type)) pk = 1 - (1 - pk) ** 1.6
+        best = Math.max(best, pk)
+        chipSum += expectedDamage(d, mult, m.currentHP)
+      }
+      if (!hits) continue
+      const chipKill = chipSum >= m.currentHP ? 0.55 : chipSum / m.currentHP * 0.3
+      const pTame = best + (1 - best) * chipKill
+      tames += pTame
+      total += pTame * calculateMonsterFameValue(m.level) + this.p.expWeight * calculateMonsterExp(m.level) * 0.9
+    }
+    if (styles.includes('bravo')) total += tames * t.bravoFamePerTame
+    if (styles.includes('staccato')) total += Math.min(1, tames) * (STYLE_PRIOR.staccato ?? 0)
+    if (guests > 0) total *= 1.05
+    return total
+  }
+
+  // ------------------------------------------------------------------
+  // Movement
+  // ------------------------------------------------------------------
+
+  private move(): void {
+    const me = this.me
+    const maxMoves = getTunables().maxMovesPerTurn
+    const reach = this.reachable(me.position, maxMoves)
+    const valueAt = (id: number) => {
+      const space = this.state.spaces.find((s) => s.id === id)!
+      return this.estimateFight(space.monsters, me, this.guestsAt(id, me.id).length)
+    }
+    let best = me.position
+    let bestScore = valueAt(me.position)
+    for (const id of reach.keys()) {
+      const v = valueAt(id)
+      if (v > bestScore + 0.01) {
+        best = id
+        bestScore = v
+      }
+    }
+    // Nothing worth fighting in reach: head for the best space two turns out
+    if (bestScore < 1) {
+      const far = this.reachable(me.position, maxMoves * 2)
+      let target = -1
+      let targetScore = bestScore
+      for (const id of far.keys()) {
+        const v = valueAt(id) * 0.8
+        if (v > targetScore) {
+          target = id
+          targetScore = v
+        }
+      }
+      if (target >= 0) {
+        const path = far.get(target)!
+        for (const step of path.slice(0, maxMoves)) if (!this.act({ type: 'MOVE', playerId: me.id, toSpaceId: step })) break
+        return
+      }
+    }
+    for (const step of reach.get(best) ?? []) if (!this.act({ type: 'MOVE', playerId: me.id, toSpaceId: step })) break
+  }
+
+  private reachable(from: number, steps: number): Map<number, number[]> {
+    const reach = new Map<number, number[]>([[from, []]])
+    let frontier = [from]
+    for (let d = 0; d < steps; d++) {
+      const next: number[] = []
+      for (const f of frontier) {
+        for (const to of getValidMoves(f, this.state.spaces)) {
+          if (reach.has(to.id)) continue
+          reach.set(to.id, [...reach.get(f)!, to.id])
+          next.push(to.id)
+        }
+      }
+      frontier = next
+    }
+    return reach
+  }
+
+  // ------------------------------------------------------------------
+  // Studio
+  // ------------------------------------------------------------------
+
+  /** How strong this setlist is against everything on the board (expected value per fight, summed). */
+  private boardStrength(player: Player, songs: Song[], styles: StyleId[]): number {
+    if (this.p.styleValuation === 'measured') return this.boardStrengthMeasured(player, songs, styles)
+    let total = 0
+    const fw = this.p.futureWeight
+    for (const space of this.state.spaces) {
+      if (space.monsters.length === 0) continue
+      total += (1 - fw) * this.estimateFight(space.monsters, player, 0, styles, songs)
+      if (fw > 0) total += fw * this.estimateFight(this.grownMonsters(space.monsters), player, 0, styles, songs)
+    }
+    // Styles the odds can't see, scaled to how well they fit the dice
+    const dice = songs.map(songDie).filter((d): d is Dice => !!d)
+    const big = dice.filter((d) => BIG.includes(d.type)).length
+    const small = dice.filter((d) => SMALL.includes(d.type)).length
+    const fit: Partial<Record<StyleId, number>> = {
+      fermata: Math.min(1, big / 2),
+      rubato: Math.min(1, small / 3),
+      coda: songs.length >= 7 ? 1 : 0,
+      counterpoint: 1,
+      ispirato: player.inspiration < 1 ? 1 : 0.3,
+    }
+    // Spread over the board's spaces so priors and odds share one scale
+    const spaces = Math.max(1, this.state.spaces.filter((s) => s.monsters.length > 0).length)
+    for (const s of styles) {
+      const prior = STYLE_PRIOR[s]
+      if (prior) total += prior * this.p.priorScale * (fit[s] ?? 1) * spaces * 0.25
+    }
+    return total
+  }
+
+  /** Board strength with every style valued from the audit, scaled by fit. */
+  private boardStrengthMeasured(player: Player, songs: Song[], styles: StyleId[]): number {
+    let total = 0
+    for (const space of this.state.spaces) {
+      if (space.monsters.length > 0) total += this.estimateFight(space.monsters, player, 0, [], songs)
+    }
+    const dice = songs.map(songDie).filter((d): d is Dice => !!d)
+    const count = (types: DiceType[]) => dice.filter((d) => types.includes(d.type)).length
+    const elements = new Set(dice.map((d) => d.genre)).size
+    const fit: Record<StyleId, number> = {
+      bravo: 1, staccato: 1, overture: 1, counterpoint: 1, coda: 1,
+      fermata: Math.min(1, count(BIG) / 2),
+      virtuoso: Math.min(1, count(BIG) / 2),
+      fortissimo: Math.min(1, count(['d20']) / 2),
+      ostinato: Math.min(1, count(['d4']) / 3),
+      rubato: Math.min(1, count(SMALL) / 3),
+      tutti: elements >= 4 ? 1 : elements === 3 ? 0.5 : 0.1,
+      ispirato: player.inspiration < 1 ? 1 : 0.3,
+    }
+    const spaces = Math.max(1, this.state.spaces.filter((s) => s.monsters.length > 0).length)
+    for (const st of styles) total += STYLE_MEASURED[st] * fit[st] * this.p.priorScale * spaces * 0.25
+    return total
+  }
+
+  /** The same monsters a level up (capped): what this board grows into. */
+  private grownMonsters(monsters: Monster[]): Monster[] {
+    const key = monsters.map((m) => m.id).join(',')
+    const hit = this.grownCache.get(key)
+    if (hit) return hit
+    const cap = getTunables().maxMonsterLevel
+    const grown = monsters.map((m) => {
+      const level = Math.min(cap, m.level + 1)
+      const hp = monsterSpawnHp(level)
+      return { ...m, level, maxHP: hp, currentHP: hp }
+    })
+    this.grownCache.set(key, grown)
+    return grown
+  }
+  private grownCache = new Map<string, Monster[]>()
+
+  private shop(): void {
+    const me = this.me
+    if (!this.act({ type: 'OPEN_STUDIO', playerId: me.id })) return
+    this.refreshedThisTurn = false
+    for (let guard = 0; guard < 30; guard++) if (!this.shopStep()) break
+    this.act({ type: 'CLOSE_STUDIO' })
+  }
+
+  private shopStep(): boolean {
+    const me = this.me
+    // Place any bought die first
+    const reward = (this.state.pendingRewards[me.id] ?? []).find((r) => r.kind === 'die')
+    const emptySong = me.songs.find((s) => !songDie(s))
+    if (reward && emptySong) return this.act({ type: 'SLOT_DIE_REWARD', rewardId: reward.id, songId: emptySong.id, slotIndex: 0 })
+
+    const base = this.boardStrength(me, me.songs, me.styles)
+    const options: { value: number; cost: number; action: GameAction }[] = []
+    const offers = this.state.elementOffers
+
+    // New d4 into an empty song
+    if (emptySong && !reward && me.exp >= newD4Cost()) {
+      const seen = new Set<Genre>()
+      offers.forEach((g, idx) => {
+        if (seen.has(g)) return
+        seen.add(g)
+        const songs = me.songs.map((s) => (s.id === emptySong.id ? { ...s, slots: [{ dice: { id: 'x', type: 'd4' as DiceType, genre: g } }] as Song['slots'] } : s))
+        options.push({ value: this.boardStrength(me, songs, me.styles) - base, cost: newD4Cost(), action: { type: 'BUY_DIE', offerIndex: idx } })
+      })
+    }
+
+    // Upgrades on a matching chip
+    for (const song of me.songs) {
+      const die = songDie(song)
+      if (!die) continue
+      const cost = getUpgradeCost(die.type)
+      const next = DICE_UPGRADE_PATH[die.type]
+      const idx = offers.indexOf(die.genre)
+      if (cost === null || !next || idx === -1 || me.exp < cost) continue
+      const songs = me.songs.map((s) => (s.id === song.id ? { ...s, slots: [{ dice: { ...die, type: next } }] as Song['slots'] } : s))
+      options.push({ value: this.boardStrength(me, songs, me.styles) - base, cost, action: { type: 'UPGRADE_DIE', offerIndex: idx, diceId: die.id } })
+    }
+
+    // Styles (replacing the weakest one at the cap)
+    this.state.styleOffers.forEach((id, offerIndex) => {
+      if (me.styles.includes(id)) return
+      const cost = styleCost(id)
+      if (me.exp < cost) return
+      if (me.styles.length < maxStyles()) {
+        const songs = id === 'coda' ? [...me.songs, { id: 'coda-x', used: false, slots: [{ dice: null }] as Song['slots'] }] : me.songs
+        options.push({ value: this.boardStrength(me, songs, [...me.styles, id]) - base, cost, action: { type: 'BUY_STYLE', offerIndex } })
+      } else {
+        let bestDrop: StyleId | null = null
+        let bestValue = 0
+        for (const drop of me.styles) {
+          const styles = [...me.styles.filter((s) => s !== drop), id]
+          const v = this.boardStrength(me, me.songs, styles) - base
+          if (v > bestValue) {
+            bestValue = v
+            bestDrop = drop
+          }
+        }
+        // Swapping throws away what the old style cost: demand a clear gain
+        if (bestDrop) options.push({ value: bestValue * 0.7, cost, action: { type: 'BUY_STYLE', offerIndex, replaceStyleId: bestDrop } })
+      }
+    })
+
+    // Rank by value per EXP; a future-proof bias for big upgrades (they keep paying)
+    const ranked = options
+      .map((o) => ({ ...o, ratio: o.value / Math.max(1, o.cost) }))
+      .filter((o) => o.ratio > this.p.buyThreshold)
+      .sort((a, b) => b.ratio - a.ratio)
+    for (const o of ranked) if (this.act(o.action)) return true
+
+    // Nothing good on the shelf and EXP to spend: redraw with spare Inspiration
+    const cheapest = Math.min(...me.songs.map(songDie).filter((d): d is Dice => !!d).map((d) => getUpgradeCost(d.type) ?? Infinity), newD4Cost() + (emptySong ? 0 : 99))
+    if (!this.refreshedThisTurn && this.spareInspiration(me) >= 1 + inspirationSpend() && me.exp >= Math.max(4, cheapest * 2)) {
+      this.refreshedThisTurn = true
+      if (this.act({ type: 'REFRESH_ELEMENT_OFFERS' })) return true
+    }
+
+    // Bank leftover EXP as Inspiration (it rerolls fights now and the showdown later)
+    const inspCost = getInspirationCost(me.inspirationBoughtThisTurn)
+    const want = this.endgame() ? this.p.showdownReserve + 2 : 2
+    if (me.inspiration < want && me.exp >= inspCost) {
+      // Keep enough EXP for the next upgrade if one is close
+      const keep = this.endgame() ? 0 : Math.min(4, cheapest)
+      if (me.exp - inspCost >= keep) return this.act({ type: 'BUY_INSPIRATION' })
+    }
+    return false
+  }
+
+  // ------------------------------------------------------------------
+  // Final Showdown
+  // ------------------------------------------------------------------
+
+  /** Distribution of performing one element (every die of it rolls together). */
+  private performanceDist(player: Player, genre: Genre): Dist | null {
+    const dice = player.songs.map(songDie).filter((d): d is Dice => !!d && d.genre === genre)
+    if (dice.length === 0) return null
+    const allEl = holdsAllElements(player.songs)
+    let acc: Dist | null = null
+    dice.forEach((die, i) => {
+      const d = this.dist(die, player.styles, { firstRoll: i === 0, advantage: i === dice.findIndex((x) => BIG.includes(x.type)), allElements: allEl })
+      acc = acc ? convolve(acc, d) : d
+    })
+    return acc
+  }
+
+  /** Play the current showdown performer's verse: element choice, rerolls, finish. */
+  playShowdownTurn(): void {
+    this.t(() => {
+      const s = this.state
+      const performer = s.players.find((p) => p.id === s.showdownOrder[s.showdownPerformerIdx])!
+      const resist = s.showdownResistGenre
+      const versesLeft = getTunables().showdownTurns - s.showdownTurn
+      const options = ALL_GENRES.map((g) => ({ g, d: this.performanceDist(performer, g) }))
+        .filter((o): o is { g: Genre; d: Dist } => !!o.d)
+        .map((o) => ({ ...o, ev: o.g === resist ? 0 : mean(o.d) }))
+      if (options.length === 0) {
+        this.act({ type: 'FINISH_SHOWDOWN_PERFORMANCE' })
+        return
+      }
+      // Rivals' best expected performance this verse, to judge whether ours will be the strongest
+      const rivalBest = Math.max(0, ...s.players.filter((p) => p.id !== performer.id).flatMap((p) =>
+        ALL_GENRES.filter((g) => g !== resist).map((g) => {
+          const d = this.performanceDist(p, g)
+          return d ? mean(d) : 0
+        })
+      ))
+      if (this.p.showdownLookahead && versesLeft > 0) {
+        const planned = this.planShowdown(performer, options.map((o) => o.g))
+        if (planned) {
+          const songId = performer.songs.find((sg) => songDie(sg)?.genre === planned)!.id
+          const ev = options.find((o) => o.g === planned)!.ev
+          if (this.act({ type: 'PLAY_SHOWDOWN_SONG', songId })) this.rerollShowdown(performer.id, ev, versesLeft)
+          this.act({ type: 'FINISH_SHOWDOWN_PERFORMANCE' })
+          return
+        }
+      }
+      const scored = options.map((o) => {
+        let penalty = 0
+        if (versesLeft > 0 && o.ev > 0) {
+          const pStrongest = Math.min(1, Math.max(0, 0.5 + (o.ev - rivalBest) / Math.max(1, rivalBest)))
+          const nextAll = Math.max(0, ...options.filter((x) => x.g !== o.g).map((x) => mean(x.d)), o.ev)
+          const nextWithout = Math.max(0, ...options.filter((x) => x.g !== o.g).map((x) => mean(x.d)))
+          penalty = pStrongest * (nextAll - nextWithout) * 0.6
+        }
+        return { ...o, score: o.ev - penalty }
+      }).sort((a, b) => b.score - a.score)
+      const pick = scored[0]
+      const songId = performer.songs.find((sg) => songDie(sg)?.genre === pick.g)!.id
+      if (!this.act({ type: 'PLAY_SHOWDOWN_SONG', songId })) return
+
+      this.rerollShowdown(performer.id, pick.ev, versesLeft)
+      this.act({ type: 'FINISH_SHOWDOWN_PERFORMANCE' })
+    })
+  }
+
+  /** Reroll below-par performances: Inspiration is worth nothing after the showdown. */
+  private rerollShowdown(performerId: string, par: number, versesLeft: number): void {
+    for (let i = 0; i < 6; i++) {
+      const now = this.state
+      const me = now.players.find((p) => p.id === performerId)!
+      const got = now.showdownCurrentFandom
+      if (got >= par * (versesLeft === 0 ? 1 : 0.85)) return
+      const hasFree = me.styles.includes('rubato') && !now.showdownUndo?.rubatoUsed &&
+        me.songs.some((sg) => (now.showdownUndo?.songIds ?? []).includes(sg.id) && SMALL.includes(songDie(sg)?.type ?? 'd20'))
+      if (hasFree && this.act({ type: 'REROLL_SHOWDOWN_SONG', rubato: true })) continue
+      // Spread spare Inspiration over the verses still to come
+      const budget = versesLeft === 0 ? me.inspiration : Math.floor(me.inspiration / (versesLeft + 1)) || (me.inspiration > versesLeft ? 1 : 0)
+      if (budget >= 1 && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
+      return
+    }
+  }
+
+  /**
+   * Plan the rest of the showdown: try every sequence of elements for this
+   * bard's remaining verses, assume the rivals each play their best open
+   * element, and let the boss grow immune to the strongest expected
+   * performance each verse. Returns the element that starts the best plan.
+   */
+  private planShowdown(performer: Player, mine: Genre[]): Genre | null {
+    const s = this.state
+    const verses = getTunables().showdownTurns - s.showdownTurn + 1
+    const evOf = (p: Player) => {
+      const m = new Map<Genre, number>()
+      for (const g of ALL_GENRES) {
+        const d = this.performanceDist(p, g)
+        if (d) m.set(g, mean(d))
+      }
+      return m
+    }
+    const myEv = evOf(performer)
+    // Performers still to play this verse, and everyone in later verses
+    const order = s.showdownOrder
+    const rivals = s.players.filter((p) => p.id !== performer.id).map((p) => ({ p, ev: evOf(p), idx: order.indexOf(p.id) }))
+    const meIdx = order.indexOf(performer.id)
+    const alreadyThisVerse = s.showdownTurnPerformances
+    let best: { g: Genre; total: number } | null = null
+    const recurse = (verse: number, resist: Genre | null, seq: Genre[], total: number) => {
+      if (verse === verses) {
+        if (!best || total > best.total) best = { g: seq[0], total }
+        return
+      }
+      for (const g of mine) {
+        const ev = g === resist ? 0 : myEv.get(g) ?? 0
+        // Strongest performance of this verse decides next verse's immunity
+        let strongest = { ev, g: g as Genre | null }
+        if (verse === 0) {
+          for (const done of alreadyThisVerse) if (done.fandom > strongest.ev) strongest = { ev: done.fandom, g: done.genre }
+        }
+        for (const r of rivals) {
+          if (verse === 0 && r.idx < meIdx) continue // already played this verse
+          let rb = { ev: 0, g: null as Genre | null }
+          for (const [rg, rev] of r.ev) if (rg !== resist && rev > rb.ev) rb = { ev: rev, g: rg }
+          if (rb.ev > strongest.ev) strongest = rb
+        }
+        recurse(verse + 1, strongest.g, [...seq, g], total + ev)
+      }
+    }
+    recurse(0, s.showdownResistGenre, [], 0)
+    return (best as { g: Genre; total: number } | null)?.g ?? null
+  }
+}

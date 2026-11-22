@@ -1,5 +1,5 @@
 /**
- * Style power audit: for each style, one bard holds only that style from
+ * Style power audit: for each style (or pair), one bard holds only that from
  * round 1 while the others hold none (style prices are set out of reach), over
  * many 3-bard bot games played through the real engine and the Final Showdown.
  * The tested bard sits in a random seat and every style uses the same seeds,
@@ -7,6 +7,11 @@
  *
  *   npx tsx scripts/style-audit.ts [games=400]
  *   STYLES=bravo,fermata TUNE='{"bravoFamePerTame":2}' npx tsx scripts/style-audit.ts
+ *   STYLES=fortissimo+virtuoso npx tsx scripts/style-audit.ts      # a pair held together
+ *   PAIRS=1 npx tsx scripts/style-audit.ts 200                      # every pair
+ *
+ * Every seat is played by the smart bot (src/sim/smartBot.ts); BOT=baseline
+ * uses the simple greedy bot instead.
  *
  * Columns: win share, final Fame vs the table average, board Fame (before the
  * showdown) vs average, showdown fandom, tames, rounds played.
@@ -14,6 +19,7 @@
 import { applyAction, ActionCtx } from '../src/engine/reducer.js'
 import { createInitialEngineState, EngineState } from '../src/engine/state.js'
 import { Bot, expectedDieValue } from '../src/sim/bot.js'
+import { SmartBot } from '../src/sim/smartBot.js'
 import { mulberry32 } from '../src/engine/rng.js'
 import { ALL_GENRES } from '../src/data/genreTheme.js'
 import { ALL_STYLE_IDS } from '../src/data/styles.js'
@@ -29,8 +35,17 @@ function act(s: EngineState, a: Parameters<typeof applyAction>[1], ctx: ActionCt
   return r.state
 }
 
-function playShowdown(s: EngineState, ctx: ActionCtx): EngineState {
+/** Bots for every seat: the smart bot by default, the baseline with BOT=baseline. */
+const USE_BASELINE = process.env.BOT === 'baseline'
+
+function playShowdown(s: EngineState, ctx: ActionCtx, smart: SmartBot): EngineState {
   for (let guard = 0; guard < 50 && s.showdownActive && !s.showdownComplete; guard++) {
+    if (!USE_BASELINE) {
+      smart.state = s
+      smart.playShowdownTurn()
+      s = smart.state
+      continue
+    }
     const performer = s.players.find((p) => p.id === s.showdownOrder[s.showdownPerformerIdx])!
     const byGenre = new Map<Genre, { total: number; songId: string }>()
     for (const song of performer.songs) {
@@ -49,7 +64,7 @@ function playShowdown(s: EngineState, ctx: ActionCtx): EngineState {
   return s
 }
 
-function game(style: StyleId | null, seed: number) {
+function game(styles: StyleId[], seed: number) {
   const rng = mulberry32(seed)
   const ctx: ActionCtx = { rng, actor: { kind: 'hotseat' } }
   const genres = [...ALL_GENRES].sort(() => rng() - 0.5).slice(0, PLAYERS)
@@ -59,11 +74,12 @@ function game(style: StyleId | null, seed: number) {
   // The tested bard sits in a random seat, so seat order doesn't skew results
   const seat = Math.floor(rng() * PLAYERS)
   const pid = s.players[seat].id
-  if (style) s = act(s, { type: 'DEBUG_PATCH', patch: { players: { [pid]: { styles: [style] } } } }, ctx)
-  const bot = new Bot(s, rng)
+  if (styles.length) s = act(s, { type: 'DEBUG_PATCH', patch: { players: { [pid]: { styles } } } }, ctx)
+  const bot = USE_BASELINE ? new Bot(s, rng) : new SmartBot(s, rng)
+  const smart = bot instanceof SmartBot ? bot : new SmartBot(s, rng)
   for (let t = 0; t < 40 * PLAYERS && bot.state.phase === 'main'; t++) bot.takeTurn()
   const boardFame = bot.state.players.map((p) => p.fame)
-  const end = playShowdown(bot.state, ctx)
+  const end = playShowdown(bot.state, ctx, smart)
   const final = end.players.map((p) => p.fame)
   const max = Math.max(...final)
   const winners = final.filter((f) => f === max).length
@@ -78,14 +94,22 @@ function game(style: StyleId | null, seed: number) {
 }
 
 const rows: string[] = []
-const only = process.env.STYLES?.split(',').map((id) => (id === 'none' ? null : (id as StyleId)))
-for (const style of (only ?? [null, ...ALL_STYLE_IDS]) as (StyleId | null)[]) {
+// STYLES=a,b,c tests each; a+b tests a pair held together; PAIRS=1 tests every pair
+// PAIRS=1 runs every pair; PAIRS=2/4 runs the 2nd quarter of them (for parallel runs)
+const [slice, slices] = (process.env.PAIRS ?? '1/1').split('/').map(Number)
+const pairs = process.env.PAIRS
+  ? ALL_STYLE_IDS.flatMap((a, i) => ALL_STYLE_IDS.slice(i + 1).map((b) => [a, b]))
+      .filter((_, i) => slices > 1 ? i % slices === slice - 1 : true)
+  : null
+const cases: StyleId[][] = pairs ?? (process.env.STYLES?.split(',').map((c) => (c === 'none' ? [] : (c.split('+') as StyleId[])))
+  ?? [[], ...ALL_STYLE_IDS.map((id) => [id])])
+for (const styles of cases) {
   const acc = { win: 0, finalShare: 0, boardShare: 0, fandom: 0, tames: 0, rounds: 0 }
   for (let g = 0; g < GAMES; g++) {
-    const r = game(style, 7000 + g) // same seeds per style: paired comparison
+    const r = game(styles, 7000 + g) // same seeds per case: paired comparison
     for (const k of Object.keys(acc) as (keyof typeof acc)[]) acc[k] += r[k]
   }
   const f = (k: keyof typeof acc, d = 2) => (acc[k] / GAMES).toFixed(d)
-  rows.push(`${((style ?? 'none') + (process.env.TUNE ?? '')).padEnd(13)} win ${(100 * acc.win / GAMES).toFixed(1).padStart(5)}%  fame×avg ${f('finalShare')}  board×avg ${f('boardShare')}  fandom ${f('fandom', 1).padStart(5)}  tames ${f('tames', 1)}  rounds ${f('rounds', 1)}`)
+  rows.push(`${((styles.join('+') || 'none') + (process.env.TUNE ?? '')).padEnd(24)} win ${(100 * acc.win / GAMES).toFixed(1).padStart(5)}%  fame×avg ${f('finalShare')}  board×avg ${f('boardShare')}  fandom ${f('fandom', 1).padStart(5)}  tames ${f('tames', 1)}  rounds ${f('rounds', 1)}`)
   console.log(rows[rows.length - 1])
 }

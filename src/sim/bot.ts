@@ -1,9 +1,10 @@
 /**
- * A heuristic bard that plays full games through the real engine
- * (`applyAction`), used to measure what bards realistically own at each round
- * (`scripts/sim-round-profiles.ts` → `src/data/roundProfiles.ts`).
+ * The BASELINE simulation bard: a simple greedy player kept as the yardstick
+ * the smart bot (`smartBot.ts`) is measured against (`scripts/bot-tournament.ts`).
+ * `simulateGame` / `simulateRounds` below — used by the playtest Simulate tab
+ * and `scripts/sim-round-profiles.ts` — play with the smart bot.
  *
- * The policy is a sensible-player greedy, not an optimal one:
+ * The baseline policy is a sensible-player greedy, not an optimal one:
  *  - Move (up to the move limit) to the reachable space whose monsters its
  *    dice can best tame, weighting Fame by how likely the kill is.
  *  - Fight it: each play is the song/target pair most likely to land a kill
@@ -28,6 +29,7 @@ import { getTunables, withTunables } from '../data/tunables.js'
 import { getUpgradeCost, newD4Cost, getInspirationCost } from '../data/draftCards.js'
 import { styleCost, maxStyles } from '../data/styles.js'
 import { ALL_GENRES } from '../data/genreTheme.js'
+import { SmartBot } from './smartBot.js'
 
 const FACES: Record<DiceType, number> = { d4: 4, d8: 8, d12: 12, d20: 20 }
 
@@ -339,7 +341,7 @@ export function simulateGame(
     { rng, actor: { kind: 'hotseat' } }
   )
   if (!started.ok) throw new Error(started.message)
-  const bot = new Bot(started.state, rng)
+  const bot = new SmartBot(started.state, rng)
 
   let round = bot.state.currentRound
   for (let turns = 0; turns < maxRounds * playerCount + playerCount; turns++) {
@@ -373,7 +375,7 @@ export function simulateRounds(
   rounds: number,
   rng: Rng
 ): { state: EngineState; completed: number } {
-  const bot = new Bot(start, rng)
+  const bot = new SmartBot(start, rng)
   let best = { state: start, completed: 0 }
   let round = start.currentRound
   const playerCount = Math.max(1, start.players.length)

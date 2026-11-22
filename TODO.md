@@ -15,6 +15,7 @@
 (none)
 
 ## Completed
+- Smart simulation bot (`src/sim/smartBot.ts` + exact odds in `src/sim/odds.ts`): kill-probability fight play, staged Inspiration/reroll use, showdown planning around the boss's immunity, board-aware shopping incl. style combinations. Beats the old greedy bot 86% head-to-head (76% of seats vs two baselines, 62% vs three). Now powers the playtest Simulate tab and round stats; `scripts/bot-tournament.ts` pits bots; the style audit uses smart bots and tests pairs (best pair: Lingering Note + Crowd Favorite 89% vs a 32% baseline).
 - The mobile map is followed by the setlist, active bard, and score track, in that order.
 
 - Studio styles are placed by selecting an offer and a repertoire slot. Full setlists can replace a die with a purchased d4. Combat flags immune songs against the current target and scopes damage popups to each fight. Ending a turn with unspent EXP prompts if the Studio was never opened.
