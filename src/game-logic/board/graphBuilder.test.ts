@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dealBalancedGenreTags, createBoardGraph, scatterChipsRandomly, capGenreTags, ensureStarterChips } from './graphBuilder'
+import { dealBalancedGenreTags, createBoardGraph, scatterChipsRandomly, capGenreTags, ensureStarterChips, getReachableMoves, getValidMoves } from './graphBuilder'
 import { mulberry32 } from '../../engine/rng'
 import { ALL_GENRES } from '../../data/genreTheme'
 import { Genre } from '../../types'
@@ -139,5 +139,46 @@ describe('ensureStarterChips', () => {
     const fixed = ensureStarterChips(empty, needs, mulberry32(1))
     expect(fixed[0]).toEqual(['Ballad'])
     expect(fixed[15]).toEqual(['Shanty'])
+  })
+})
+
+describe('getReachableMoves', () => {
+  const board = createBoardGraph()
+
+  it('with one move left is exactly the neighbours', () => {
+    for (const space of board) {
+      const reach = getReachableMoves(space.id, board, 1)
+      expect(reach.map((r) => r.space.id).sort()).toEqual(getValidMoves(space.id, board).map((s) => s.id).sort())
+      expect(reach.every((r) => r.steps === 1 && r.path.length === 1)).toBe(true)
+    }
+  })
+
+  it('with two moves left adds the spaces two steps away, once each, never the start', () => {
+    for (const space of board) {
+      const reach = getReachableMoves(space.id, board, 2)
+      const ids = reach.map((r) => r.space.id)
+      expect(new Set(ids).size).toBe(ids.length)
+      expect(ids).not.toContain(space.id)
+      const near = new Set(getValidMoves(space.id, board).map((s) => s.id))
+      for (const r of reach) {
+        expect(r.steps).toBe(near.has(r.space.id) ? 1 : 2)
+        // The path is a real walk that ends on the space
+        let at = space.id
+        for (const step of r.path) {
+          expect(board.find((s) => s.id === at)!.connections).toContain(step)
+          at = step
+        }
+        expect(at).toBe(r.space.id)
+        expect(r.path).toHaveLength(r.steps)
+      }
+      expect(reach.length).toBeGreaterThan(near.size)
+    }
+  })
+
+  it('reaches nothing without moves left, and lists nearer spaces first', () => {
+    expect(getReachableMoves(0, board, 0)).toEqual([])
+    expect(getReachableMoves(999, board, 2)).toEqual([])
+    const steps = getReachableMoves(5, board, 3).map((r) => r.steps)
+    expect(steps).toEqual([...steps].sort((a, b) => a - b))
   })
 })

@@ -305,6 +305,48 @@ export function getValidMoves(
     .filter((s): s is BoardSpace => s !== undefined)
 }
 
+/** A space a bard can reach this turn, how many moves it costs and the way there. */
+export interface ReachableSpace {
+  space: BoardSpace
+  /** Moves the trip costs (1 = next door). */
+  steps: number
+  /** The spaces to step through, in order, ending on this one. */
+  path: number[]
+}
+
+/**
+ * Every space reachable within `maxSteps` moves (never the start), nearest
+ * first, each with its shortest path. Ties between equal paths go to the
+ * route through the lower-numbered space, so the choice is stable.
+ */
+export function getReachableMoves(
+  startSpaceId: number,
+  board: BoardSpace[],
+  maxSteps: number
+): ReachableSpace[] {
+  const byId = new Map(board.map((s) => [s.id, s]))
+  if (!byId.has(startSpaceId) || maxSteps < 1) return []
+  const seen = new Set<number>([startSpaceId])
+  const out: ReachableSpace[] = []
+  let frontier: { id: number; path: number[] }[] = [{ id: startSpaceId, path: [] }]
+  for (let steps = 1; steps <= maxSteps; steps++) {
+    const next: { id: number; path: number[] }[] = []
+    for (const { id, path } of frontier) {
+      const neighbours = [...(byId.get(id)?.connections ?? [])].sort((a, b) => a - b)
+      for (const to of neighbours) {
+        const space = byId.get(to)
+        if (!space || seen.has(to)) continue
+        seen.add(to)
+        const toPath = [...path, to]
+        out.push({ space, steps, path: toPath })
+        next.push({ id: to, path: toPath })
+      }
+    }
+    frontier = next
+  }
+  return out
+}
+
 /**
  * Check if two spaces are connected
  */

@@ -8,6 +8,8 @@ interface BoardSpaceProps {
   players: Player[]
   isCurrentPlayer: boolean
   canMoveTo: boolean
+  /** Moves it costs to get here (1 = next door); shown as a badge when more than 1. */
+  moveCost?: number
   isLinkedToHovered?: boolean
   onClick: () => void
 }
@@ -17,6 +19,7 @@ export function BoardSpace({
   players,
   isCurrentPlayer,
   canMoveTo,
+  moveCost = 1,
   isLinkedToHovered = false,
   onClick,
 }: BoardSpaceProps) {
@@ -37,7 +40,7 @@ export function BoardSpace({
     <button
       onClick={onClick}
       disabled={!canMoveTo}
-      aria-label={`Move to ${space.name}, ${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}, ${space.genreTags.join(', ') || 'no element tags'}`}
+      aria-label={`Move to ${space.name}${canMoveTo && moveCost > 1 ? ` (${moveCost} moves)` : ''}, ${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}, ${space.genreTags.join(', ') || 'no element tags'}`}
       className={`
         board-space-tile relative sm:hover:z-40 w-full aspect-square
         flex flex-col justify-between p-1.5 sm:p-2
@@ -91,7 +94,12 @@ export function BoardSpace({
         </div>
       </div>
 
-      {canMoveTo && <Footprints size={12} aria-hidden="true" className="absolute bottom-1 left-1 z-20 text-gold-300" />}
+      {canMoveTo && (
+        <span className="absolute bottom-1 left-1 z-20 flex items-center gap-0.5 text-gold-300">
+          <Footprints size={12} aria-hidden="true" />
+          {moveCost > 1 && <span className="text-[10px] font-bold leading-none" aria-hidden="true">{moveCost}</span>}
+        </span>
+      )}
       {/* Player tokens */}
       <div className="relative z-20 flex-1 min-h-0 flex items-center justify-center pointer-events-none">
         {playersHere.length > 0 && (
