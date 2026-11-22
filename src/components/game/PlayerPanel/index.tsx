@@ -1,4 +1,5 @@
 import { useGameStore, selectCurrentPlayer, selectCanAct, selectIsHost } from '@/store'
+import { movesFor } from '@/engine/economy'
 import { SongCard } from '../SongCard'
 import { playerTokenLabel, readableTextColor } from '@/data/genreTheme'
 import {
@@ -153,7 +154,7 @@ function BardToken({ name, color, className = '' }: { name: string; color: strin
 export function MobileTurnBar() {
   const { currentPlayer } = useTurnState()
   if (!currentPlayer) return null
-  const movesLeft = Math.max(0, 2 - currentPlayer.movesThisTurn)
+  const movesLeft = Math.max(0, movesFor(currentPlayer) - currentPlayer.movesThisTurn)
 
   return (
     <div className="mobile-turn-bar lg:hidden fixed inset-x-0 bottom-0 z-30 px-2.5 pt-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
@@ -165,7 +166,7 @@ export function MobileTurnBar() {
           <span className="flex items-center gap-1" title="EXP"><Sparkles size={13} className="text-gold-400" aria-hidden="true" />{currentPlayer.exp}</span>
           <span className="flex items-center gap-1" title="Inspiration"><Lightbulb size={13} className="text-gold-400" aria-hidden="true" />{currentPlayer.inspiration}</span>
           <span className="flex items-center gap-1" title={`${movesLeft} move${movesLeft === 1 ? '' : 's'} left`}>
-            {[0, 1].map((move) => <i key={move} className={`turn-pip ${move >= currentPlayer.movesThisTurn ? 'turn-pip-ready' : ''}`} />)}
+            {Array.from({ length: movesFor(currentPlayer) }, (_, move) => <i key={move} className={`turn-pip ${move >= currentPlayer.movesThisTurn ? 'turn-pip-ready' : ''}`} />)}
           </span>
         </div>
       </div>
@@ -268,7 +269,7 @@ export function PlayerPanel() {
         <div className="turn-counter">
           <span className="flex items-center gap-1.5"><CircleDot size={12} /> Movement</span>
           <div className="flex gap-1">
-            {[0, 1].map((move) => <i key={move} className={`turn-pip ${move >= currentPlayer.movesThisTurn ? 'turn-pip-ready' : ''}`} />)}
+            {Array.from({ length: movesFor(currentPlayer) }, (_, move) => <i key={move} className={`turn-pip ${move >= currentPlayer.movesThisTurn ? 'turn-pip-ready' : ''}`} />)}
           </div>
         </div>
         <div className="turn-counter">

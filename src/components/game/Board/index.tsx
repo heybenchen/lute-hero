@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useGameStore, selectCurrentPlayer, selectCanAct } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
-import { getValidMoves } from '@/game-logic/board/graphBuilder'
+import { getReachableMoves } from '@/game-logic/board/graphBuilder'
+import { movesFor } from '@/engine/economy'
 import realmMap from '@/imports/board-background.jpg'
 import realmMapMobile from '@/imports/board-background-mobile.jpg'
-import { Footprints, Map, Undo2 } from 'lucide-react'
+import { Footprints, Map as MapIcon, Undo2 } from 'lucide-react'
 
 export function Board() {
   const spaces = useGameStore((state) => state.spaces)
@@ -17,12 +18,16 @@ export function Board() {
   const studioOpen = useGameStore((state) => state.studio.playerId !== null)
 
   const [hoveredSpaceId, setHoveredSpaceId] = useState<number | null>(null)
+  // True while a multi-step trip is being taken, so a second click can't start another
+  const [travelling, setTravelling] = useState(false)
 
   if (!currentPlayer) return null
 
-  // Allow moves if it's this client's turn and moves remain
-  const canMove = canAct && currentPlayer.movesThisTurn < 2
-  const validMoves = canMove ? getValidMoves(currentPlayer.position, spaces) : []
+  // Every space within the moves the bard has left (not just the next door ones)
+  const movesLeft = Math.max(0, movesFor(currentPlayer) - currentPlayer.movesThisTurn)
+  const canMove = canAct && movesLeft > 0 && !travelling
+  const reachable = canMove ? getReachableMoves(currentPlayer.position, spaces, movesLeft) : []
+  const reachableById = new Map(reachable.map((r) => [r.space.id, r]))
 
   // The last move this turn can be taken back (refunding the move) until the
   // bard starts a fight.
@@ -36,7 +41,7 @@ export function Board() {
 
   const hoveredSpace = hoveredSpaceId !== null ? spaces.find((s) => s.id === hoveredSpaceId) : null
 
-  const handleSpaceClick = (spaceId: number) => {
+  const handleSpaceClick = async (spaceId: number) => {
     // Stepping back onto the space you just came from takes the move back
     if (spaceId === backtrackSpaceId) {
       undoMove()
@@ -45,11 +50,20 @@ export function Board() {
 
     if (!canMove) return
 
-    const isValidMove = validMoves.some((s) => s.id === spaceId)
-    if (!isValidMove) return
+    const trip = reachableById.get(spaceId)
+    if (!trip) return
 
-    // Move to the space; the engine spawns monsters from its tags
-    dispatch({ type: 'MOVE', playerId: currentPlayer.id, toSpaceId: spaceId })
+    // One engine MOVE per step (each spends a move and spawns that space's monsters),
+    // waiting for each to land; stop if one is refused.
+    setTravelling(true)
+    try {
+      for (const toSpaceId of trip.path) {
+        const result = await dispatch({ type: 'MOVE', playerId: currentPlayer.id, toSpaceId })
+        if (!result.ok) break
+      }
+    } finally {
+      setTravelling(false)
+    }
   }
 
   return (
@@ -69,13 +83,13 @@ export function Board() {
       <div className="relative z-20 flex items-center justify-between gap-3 px-3 py-2 sm:px-5 sm:py-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="board-title-icon">
-            <Map size={18} aria-hidden="true" />
+            <MapIcon size={18} aria-hidden="true" />
           </div>
           <div className="min-w-0">
             <div className="font-medieval font-bold text-sm sm:text-base text-parchment-100">The Resonant Realm</div>
             <div className="flex items-center gap-1.5 text-[10px] text-parchment-500">
               <Footprints size={11} aria-hidden="true" />
-              {Math.max(0, 2 - currentPlayer.movesThisTurn)} moves remaining
+              {movesLeft} move{movesLeft === 1 ? '' : 's'} remaining
             </div>
           </div>
         </div>
@@ -113,7 +127,8 @@ export function Board() {
                   space={space}
                   players={players}
                   isCurrentPlayer={currentPlayer.position === space.id}
-                  canMoveTo={space.id === backtrackSpaceId || validMoves.some((s) => s.id === space.id)}
+                  canMoveTo={space.id === backtrackSpaceId || reachableById.has(space.id)}
+                  moveCost={space.id === backtrackSpaceId ? 1 : reachableById.get(space.id)?.steps ?? 1}
                   isLinkedToHovered={
                     hoveredSpace !== null &&
                     hoveredSpace !== undefined &&
@@ -129,7 +144,7 @@ export function Board() {
 
       <div className="relative z-20 hidden sm:flex items-center justify-center gap-4 px-4 py-2 text-[9px] uppercase tracking-[0.16em] text-parchment-500">
         <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-current" /> Your tile</span>
-        <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-move" /> In range</span>
+        <span className="flex items-center gap-1.5"><i className="legend-swatch legend-swatch-move" /> In range (a number shows the moves it costs)</span>
       </div>
     </div>
   )
