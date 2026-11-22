@@ -28,13 +28,15 @@ A reference for every style in the Studio: what it does, what it costs, which tu
 | **Master's Touch** | `virtuoso` | 4 | Once per turn, your first d12 or d20 roll is rolled twice; keep the higher. | `virtuosoMinFaces` (12) | 41.5 |
 | **Dragon's Roar** | `fortissimo` | 4 | +2 to every d20 roll. A d20 that reaches 20 this way crits. | `fortissimoBonus` (2) | 46.2 |
 | **Lingering Note** | `fermata` | 4 | Once per turn, a d20 song that doesn't tame its target isn't spent, for 1 Inspiration. Without the Inspiration, the song is spent as usual. | `fermataMinFaces` (20), `fermataInspirationCost` (1) | 47.7 |
-| **Dissonance** | `counterpoint` | 2 | Once per turn, a roll against an immune target deals ¾ damage instead of none. | `counterpointMultiplier` (0.75) | 42.8 |
+| **Dissonance** | `counterpoint` | 2 | Once per turn, a roll against an immune target deals full damage. | `counterpointMultiplier` (1) | 48.5 |
 | **Harmony** | `tutti` | 4 | If your setlist holds all four elements, +3 to your first roll each turn (can't crit). | `tuttiBonus` (3), `tuttiElements` (4) | 46.5 |
 | **Fanfare** | `overture` | 3 | +2 to your first roll each turn (can't crit). | `overtureBonus` (2) | 43.7 |
 | **Crowd Favorite** | `bravo` | 2 | +5 Fame for every Lv3+ monster you tame. | `bravoFamePerTame` (5), `bravoMinLevel` (3) | 40.5 |
 | **Muse's Favor** | `ispirato` | 3 | Gain 1 Inspiration at the start of each turn. | `ispiratoPerTurn` (1), `ispiratoMin` (1, the floor it tops up to) | 42.3 |
 
-Before the rebalance, Lingering Note held d12 and d20 songs for free (61.0%) and Dissonance dealt half damage (40.7%). Every original style now lands at 40.5–47.7%.
+Before the rebalance, Lingering Note held d12 and d20 songs for free (61.0%) and Dissonance dealt half damage (40.7%). Every original style now lands at 40.5–48.5%.
+
+Alternatives tried: Lingering Note on any die for 1 Inspiration 50.3% (slightly strong), for 2 Inspiration 38.2% (too weak); Dissonance at ¾ damage 42.8%.
 
 ### Promoted from the style lab
 

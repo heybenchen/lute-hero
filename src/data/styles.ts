@@ -71,7 +71,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'counterpoint',
     name: 'Dissonance',
     flavor: 'A clashing chord that no ward can fully block.',
-    rule: 'Once per turn, a roll against an immune target deals half damage instead of none.',
+    rule: 'Once per turn, a roll against an immune target deals full damage.',
   },
   tutti: {
     id: 'tutti',

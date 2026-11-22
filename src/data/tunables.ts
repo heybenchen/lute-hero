@@ -206,7 +206,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   overtureBonus: 2,
   tuttiBonus: 3,
   ostinatoCritFace: 3,
-  counterpointMultiplier: 0.75,
+  counterpointMultiplier: 1,
   bravoFamePerTame: 5,
   fermataMinFaces: 20,
   staccatoMaxFaces: 8,
