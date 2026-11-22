@@ -23,7 +23,7 @@ A reference for every style in the Studio: what it does, what it costs, which tu
 |---|---|---|---|---|---|
 | **Rallying Cry** | `staccato` | 2 | Once per turn, after one of your songs tames a monster, refresh a spent d4 or d8 song of your choice. | `staccatoMaxFaces` (8) | 47.0 |
 | **Extra Verse** | `coda` | 1 | Gain a 7th song slot. Losing the style returns that song's die as an unclaimed reward. | — | 41.5 |
-| **War Drums** | `ostinato` | 2 | All your dice crit one number lower (a d4 on a 3, a d20 on a 19). Bonus dice from a crit still need the top face to keep chaining. | `ostinatoCritFace` (3), `ostinatoMaxFaces` (20), `ostinatoCascadeBonus` (0) | 42.3 |
+| **War Drums** | `ostinato` | 2 | All your dice crit one number lower (a d4 on a 3, a d20 on a 19). Bonus dice from a crit still need the top face to keep chaining. | `ostinatoCritFace` (3), `ostinatoMaxFaces` (20), `ostinatoCascadeBonus` (0), `ostinatoChainFace` (4 = top face only) | 42.3 |
 | **Nimble Fingers** | `rubato` | 2 | Twice per turn, reroll any song for free. | `rubatoMaxFaces` (20), `rubatoUsesPerTurn` (2) | 45.2 |
 | **Master's Touch** | `virtuoso` | 4 | Once per turn, your first d12 or d20 roll is rolled twice; keep the higher. | `virtuosoMinFaces` (12) | 41.5 |
 | **Dragon's Roar** | `fortissimo` | 4 | +2 to every d20 roll. A d20 that reaches 20 this way crits. | `fortissimoBonus` (2) | 46.2 |
@@ -36,7 +36,7 @@ A reference for every style in the Studio: what it does, what it costs, which tu
 
 Before the rebalance, Lingering Note held d12 and d20 songs for free (61.0%) and Dissonance dealt half damage (40.7%). Every original style now lands at 40.5–48.5%.
 
-Alternatives tried: Lingering Note on any die for 1 Inspiration 50.3% (slightly strong), for 2 Inspiration 38.2% (too weak); Dissonance at ¾ damage 42.8%.
+Alternatives tried: War Drums on d4s only 36.7%, and on d4s only with bonus dice chaining on a 3 or 4 (`ostinatoMaxFaces: 4`, `ostinatoChainFace: 3`, no cascade cap) 34.5%, no better, because bard's d4s get upgraded away (fandom falls from 72 to 64); the same chaining on d8s too is 55.8%, far too strong; Lingering Note on any die for 1 Inspiration 50.3% (slightly strong), for 2 Inspiration 38.2% (too weak); Dissonance at ¾ damage 42.8%.
 
 ### Promoted from the style lab
 

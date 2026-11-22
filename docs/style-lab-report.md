@@ -44,6 +44,8 @@ These are now the game's defaults. Power is measured the same way (style held fr
 | **Nimble Fingers** | Twice per turn, reroll any song for free | **45.2** (once per turn: 39.0) | `rubatoMaxFaces: 20`, `rubatoUsesPerTurn: 2` |
 | **Muse's Favor** | Gain 1 Inspiration at the start of each turn | **42.3** | `ispiratoPerTurn: 1` |
 
+War Drums variants (300 games): d4s only 36.7 · d4s only with bonus dice chaining on a 3 or 4, uncapped 34.5 (35.0 bought at 2 EXP) · same chaining on d4s and d8s 55.8. Chaining is a new tunable, `ostinatoChainFace` (default 4, the top face).
+
 Lingering Note (d20 songs only, 1 Inspiration per use: **47.7**) and Dissonance followed in later commits. Dissonance went to ¾ damage (**42.8**) first and then full damage (**48.5**). Also tried: Lingering Note on any die for 1 Inspiration 50.3, for 2 Inspiration 38.2.
 
 Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs, 300 games): every tame 64.2 · Lv2+ 50.8 (built-in run: 51.0) · **Lv3+ 43.5** (built-in run: 40.5) · first tame each turn 41.3 · clearing a space 40.8 · weak-element tames 51.3 · one-song tames of untouched monsters 50.7 · +10 for Lv3+ 48.8 · +10 for Lv4+ 34.8 · +10 on clear 50.5 · +10 once per turn 62.3.

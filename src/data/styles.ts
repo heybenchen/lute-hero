@@ -216,7 +216,10 @@ export function styleRule(id: StyleId): string {
       const lower = 4 - t.ostinatoCritFace
       const by = lower === 1 ? 'one number' : `${lower} numbers`
       const which = t.ostinatoMaxFaces >= 20 ? 'All your dice' : `Your ${dieRange(4, t.ostinatoMaxFaces)} dice`
-      const extra = t.ostinatoCascadeBonus ? `; their bonus dice add +${t.ostinatoCascadeBonus}` : ' (bonus dice still need the top face)'
+      const chain = t.ostinatoChainFace < 4
+        ? ` (bonus dice keep chaining on a ${t.ostinatoChainFace} or higher)`
+        : ' (bonus dice still need the top face)'
+      const extra = t.ostinatoCascadeBonus ? `; their bonus dice add +${t.ostinatoCascadeBonus}` : chain
       return `${which} crit ${by} lower${extra}.`
     }
     case 'bravo': return t.bravoMinLevel > 1

@@ -205,6 +205,8 @@ export interface GenericRollOptions {
   noCrit?: boolean
   times?: number
   maxCascades: number
+  /** Bonus dice chain on this face or higher (default: the die's top face). */
+  cascadeFace?: number
 }
 
 // ------------------------------------------------------------------
@@ -323,7 +325,8 @@ export function rollWithOptions(die: Dice, opts: GenericRollOptions, rng: Rng): 
   if (isCrit) {
     let r = rollDie(die.type, rng)
     cascadeRolls.push(r)
-    while (r === n && cascadeRolls.length < opts.maxCascades) {
+    const chainFace = Math.max(2, Math.min(n, opts.cascadeFace ?? n))
+    while (r >= chainFace && cascadeRolls.length < opts.maxCascades) {
       r = rollDie(die.type, rng)
       cascadeRolls.push(r)
     }

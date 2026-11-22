@@ -49,6 +49,8 @@ describe('generic roll options: engine roll matches the exact distribution', () 
     ['d20', { flipAtMost: 5 }],
     ['d12', { floor: 5 }],
     ['d8', { cascadeBonus: 2, critFace: 7 }],
+    ['d4', { critFace: 3, cascadeFace: 3 }],
+    ['d8', { critFace: 7, cascadeFace: 6, cascadeBonus: 1 }],
     ['d20', { noCrit: true, flat: 3 }],
     ['d12', { times: 1.5, advantage: true }],
     ['d4', { rerollAtMost: 1, critBonus: 1, flat: 1, times: 2 }],

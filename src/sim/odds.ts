@@ -30,21 +30,25 @@ const cascadeCache = new Map<string, Dist>()
  * Sum of the cascade rolls that follow a crit (first cascade roll included),
  * each bonus die adding `perDie` on top of its face.
  */
-function cascadeDist(faces: number, maxCascades: number, perDie = 0): Dist {
-  const key = `${faces}:${maxCascades}:${perDie}`
+function cascadeDist(faces: number, maxCascades: number, perDie = 0, chainFace = faces): Dist {
+  const key = `${faces}:${maxCascades}:${perDie}:${chainFace}`
   const hit = cascadeCache.get(key)
   if (hit) return hit
   // depth d: rolling the d-th cascade die (1-based); stop at the cap
+  const levels = new Map<number, Dist>()
   const build = (depth: number): Dist => {
+    const cached = levels.get(depth)
+    if (cached) return cached
     const out: Dist = new Map()
     for (let r = 1; r <= faces; r++) {
       const p = 1 / faces
-      if (r === faces && depth < maxCascades) {
+      if (r >= chainFace && depth < maxCascades) {
         for (const [rest, q] of build(depth + 1)) add(out, r + perDie + rest, p * q)
       } else {
         add(out, r + perDie, p)
       }
     }
+    levels.set(depth, out)
     return out
   }
   const dist = prune(build(1))
@@ -108,7 +112,7 @@ export function rollDist(type: DiceType, opts: RollOptions): Dist {
   for (const [v, pv] of face) {
     const base = v + bonus + flat
     if (!opts.noCrit && v + bonus >= critFace) {
-      for (const [c, q] of cascadeDist(n, opts.maxCascades, opts.cascadeBonus ?? 0)) add(out, finish(base + c), pv * q)
+      for (const [c, q] of cascadeDist(n, opts.maxCascades, opts.cascadeBonus ?? 0, Math.max(2, Math.min(n, opts.cascadeFace ?? n)))) add(out, finish(base + c), pv * q)
     } else {
       add(out, finish(base), pv)
     }

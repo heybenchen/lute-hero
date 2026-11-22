@@ -121,6 +121,8 @@ export interface Tunables {
   rubatoUsesPerTurn: number
   /** War Drums: extra charm per crit bonus die from a die it affects. */
   ostinatoCascadeBonus: number
+  /** War Drums: bonus dice chain on this face or higher (4 = a d4's top face only). */
+  ostinatoChainFace: number
   /** Crowd Favorite: only tames of monsters at this level or higher pay its Fame. */
   bravoMinLevel: number
 
@@ -219,6 +221,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   ostinatoMaxFaces: 20,
   rubatoUsesPerTurn: 2,
   ostinatoCascadeBonus: 0,
+  ostinatoChainFace: 4,
   bravoMinLevel: 3,
 
   styleCostHometownHero: 2,
@@ -334,6 +337,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'ostinatoMaxFaces', label: 'War Drums: largest die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
   { key: 'rubatoUsesPerTurn', label: 'Nimble Fingers: rerolls per turn', group: 'Styles', min: 1, max: 3, step: 1 },
   { key: 'ostinatoCascadeBonus', label: 'War Drums: bonus per crit die', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'ostinatoChainFace', label: 'War Drums: bonus dice chain from', group: 'Styles', min: 2, max: 20, step: 1 },
   { key: 'bravoMinLevel', label: 'Crowd Favorite: lowest paying level', group: 'Styles', min: 1, max: 5, step: 1 },
   { key: 'styleCostHometownHero', label: 'Hometown Hero cost', group: 'Styles', min: 0, max: 30, step: 1 },
   { key: 'styleCostSmallEnsemble', label: 'Small Ensemble cost', group: 'Styles', min: 0, max: 30, step: 1 },
