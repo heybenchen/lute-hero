@@ -22,7 +22,7 @@ Measured with `scripts/inspiration-value.ts` (one bard starts with a bonus, smar
 - Inspiration is useful but **saturates around six**: three are worth about two EXP, ten barely more than six. EXP keeps compounding.
 - Per bard per game (normal games): about 5.4 earned (clears plus Muse's Favor), 3.6 bought for 5.3 EXP, spent 2.3 on fight rerolls, 1.2 on shelf refreshes and 2.3 on showdown rerolls; 5.2 held when the showdown starts and 3.2 left at the end.
 - That leftover is saturation, not a bot leak. Optimal stopping for showdown rerolls, a showdown reserve of 0 or 6, and buying up to 4 or 6 Inspiration all landed within noise of the control (+0 to +1.3). Lowering the fight-reroll value from 6 to 4 or raising it to 8 was worse (−2.3, −1.5), so 6 is about right.
-- The price step (`inspirationCostStep`, 1 now) makes no difference to bot play: the control wins 36.3% with a rising price and 36.4% with a flat price. Bots buy about 0.4 Inspiration a turn, so the step rarely binds.
+- The price step (`inspirationCostStep`, now 0, so Inspiration always costs 1 EXP; it was 1) made no difference to bot play: the control wins 36.3% with a rising price and 36.4% with a flat price. Bots buy about 0.4 Inspiration a turn, so the step rarely binds.
 
 ## Correction: realistic timing
 

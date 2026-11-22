@@ -640,15 +640,23 @@ describe('shop actions', () => {
     expect(state.players[0].hasShoppedThisTurn).toBe(false)
   })
 
-  it('BUY_INSPIRATION escalates within a turn and END_TURN resets it', () => {
+  it('BUY_INSPIRATION costs a flat 1 EXP however many are bought in a turn', () => {
     let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 100 } : p)) }
     state = apply(state, { type: 'BUY_INSPIRATION' }).state // 1
-    state = apply(state, { type: 'BUY_INSPIRATION' }).state // 2
-    expect(state.players[0].exp).toBe(97)
+    state = apply(state, { type: 'BUY_INSPIRATION' }).state // 1
+    expect(state.players[0].exp).toBe(98)
     // Players start with 1 Inspiration, so two purchases bring it to 3
     expect(state.players[0].inspiration).toBe(3)
     expect(applyAction({ ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 0 } : p)) }, { type: 'BUY_INSPIRATION' }, ctx()).ok).toBe(false)
+  })
+
+  it('BUY_INSPIRATION escalates within a turn when a cost step is set', () => {
+    let state = openStudio(startTwoPlayerGame())
+    state = { ...state, tunables: { ...state.tunables, inspirationCostStep: 1 }, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 100 } : p)) }
+    state = apply(state, { type: 'BUY_INSPIRATION' }).state // 1
+    state = apply(state, { type: 'BUY_INSPIRATION' }).state // 2
+    expect(state.players[0].exp).toBe(97)
   })
 
   it('UPGRADE_DIE requires a matching element chip', () => {

@@ -10,8 +10,9 @@ export function newD4Cost(): number {
 }
 
 /**
- * Inspiration cost for the next token this turn: a base price that escalates by
- * a fixed step for each token already bought.
+ * Inspiration cost for the next token this turn: the base price (1 EXP), plus
+ * `inspirationCostStep` for each token already bought this turn (0 by default,
+ * so it is always the base price).
  */
 export function getInspirationCost(boughtThisTurn: number): number {
   const { inspirationBaseCost, inspirationCostStep } = getTunables();

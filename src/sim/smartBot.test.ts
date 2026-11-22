@@ -30,7 +30,8 @@ describe('smart bot', () => {
   it('out-scores the baseline bot head to head', () => {
     let smartFame = 0
     let baseFame = 0
-    for (let g = 0; g < 16; g++) {
+    // 40 games: the true margin is about 1.2x, and 16 games was too noisy to hold a 1.15x bar
+    for (let g = 0; g < 40; g++) {
       const { state, ctx } = start(100 + g)
       const smartSeat = g % 2 // alternate who goes first
       const smart = new SmartBot(state, ctx.rng)

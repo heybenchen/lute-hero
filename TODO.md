@@ -15,6 +15,7 @@
 (none)
 
 ## Completed
+- Inspiration now always costs 1 EXP (`inspirationCostStep` 1 → 0): simulations showed the rising price made no difference to bot play (`docs/style-lab-report.md`, "Inspiration: how much is it worth?"). The step is still a tunable.
 - Re-balanced all styles with a realistic style audit: bots buy styles in round 5 at real prices and rivals shop for styles too (`OPP=1 ROUND=5`). Price cuts for Fanfare, Harmony, Hometown Hero, Dissonance, Nimble Fingers, Chain Reaction, Master's Touch (also d8s), Dragon's Roar, Double Time, Lingering Note and Jam Session; price rises for Crowd Favorite and Small Ensemble; Muse's Favor is +3 Inspiration a turn for 1 EXP.
 - Finished the style rebalance: Lingering Note holds only d20 songs and costs 1 Inspiration per use (61.0% → 47.7%), and Dissonance deals full damage to an immune target once per turn (40.7% → 48.5%).
 - Added `songStyles.md`, the reference for every Studio style (rule, price, tunables, file locations, win %), with KEEP IN SYNC notes in the style code.
