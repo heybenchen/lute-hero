@@ -6,6 +6,8 @@
 
 ## Medium Priority
 
+- Decide whether to ship the simulated style rebalance as the new defaults (`docs/style-lab-report.md`), and which style-lab styles to promote into the Studio.
+
 - Rebalance styles from the audit: Crowd Favorite 5→2 Fame/tame and Dragon's Roar +2→+1 (both sim to ~45%); limit Lingering Note to d20s and re-price Rallying Cry; rework Harmony (per-element bonus), Dissonance and Muse's Favor; consider the 12 proposed new styles (Session Player, Crescendo, Glass Cannon, Signature Sound, Tough Crowd, Wanderer, Word of Mouth, Duet, Busker, Showstopper, Underdog, Encore Act).
 
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
@@ -15,6 +17,7 @@
 (none)
 
 ## Completed
+- Style rebalance computed with smart-bot simulations (all 12 styles land at 41.5–47.7% vs a 31.8% no-style baseline; values in `docs/style-lab-report.md`, every one a tunable — defaults not yet switched). Style lab: data-defined style toolkit in the engine + odds + smart bot; 100 experimental styles in 10 themed batches simulated (20 balanced, 12 slightly strong, 13 slightly weak, 21 too strong, 34 too weak).
 - Smart simulation bot (`src/sim/smartBot.ts` + exact odds in `src/sim/odds.ts`): kill-probability fight play, staged Inspiration/reroll use, showdown planning around the boss's immunity, board-aware shopping incl. style combinations. Beats the old greedy bot 86% head-to-head (76% of seats vs two baselines, 62% vs three). Now powers the playtest Simulate tab and round stats; `scripts/bot-tournament.ts` pits bots; the style audit uses smart bots and tests pairs (best pair: Lingering Note + Crowd Favorite 89% vs a 32% baseline).
 - The mobile map is followed by the setlist, active bard, and score track, in that order.
 

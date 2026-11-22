@@ -1,4 +1,4 @@
-import { Song, Monster, DiceRoll, Genre, DamageCalculation, DieContribution, Rng } from '../../types/index.js';
+import { Song, Monster, Dice, DiceRoll, Genre, DamageCalculation, DieContribution, Rng } from '../../types/index.js';
 import { rollDiceWithCrit } from "../dice/roller.js";
 import { getTunables } from "../../data/tunables.js";
 
@@ -61,6 +61,7 @@ export function calculateDamage(
     const bonus = roll.bonus ?? 0;
     if (dice) {
       let multiplier = getGenreMultiplier(dice.genre, monster);
+      if (opts.multiplierFor) multiplier = opts.multiplierFor(dice, monster, multiplier);
       // Counterpoint: an immune hit lands at a reduced multiplier instead
       if (opts.immuneMultiplier !== undefined && monster.resistance === dice.genre && multiplier < opts.immuneMultiplier) {
         multiplier = opts.immuneMultiplier;
@@ -95,6 +96,8 @@ export function calculateDamage(
 export interface DamageOptions {
   /** Counterpoint: multiplier to use instead of immunity's (if higher). */
   immuneMultiplier?: number;
+  /** Data-defined styles: adjust a die's element multiplier against a monster. */
+  multiplierFor?: (dice: Dice, monster: Monster, base: number) => number;
 }
 
 /**

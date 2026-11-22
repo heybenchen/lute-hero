@@ -98,6 +98,28 @@ export interface Tunables {
   counterpointMultiplier: number
   /** Bravo: extra Fame per monster tamed. */
   bravoFamePerTame: number
+  /** Lingering Note: smallest die (faces) whose missed song isn't spent. */
+  fermataMinFaces: number
+  /** Rallying Cry: largest die (faces) a refreshed song may hold. */
+  staccatoMaxFaces: number
+  /** Nimble Fingers: largest die (faces) the free reroll works on. */
+  rubatoMaxFaces: number
+  /** Master's Touch: smallest die (faces) that rolls twice. */
+  virtuosoMinFaces: number
+  /** Harmony: distinct elements the setlist must hold. */
+  tuttiElements: number
+  /** Muse's Favor: Inspiration topped up to at the start of each turn. */
+  ispiratoMin: number
+  /** Muse's Favor: Inspiration gained at the start of each turn (after the floor). */
+  ispiratoPerTurn: number
+  /** Lingering Note: Inspiration paid to keep a missed song (0 = free). */
+  fermataInspirationCost: number
+  /** War Drums: largest die (faces) whose crit face drops by the same amount as a d4's. */
+  ostinatoMaxFaces: number
+  /** Nimble Fingers: free rerolls per turn. */
+  rubatoUsesPerTurn: number
+  /** War Drums: extra charm per crit bonus die from a die it affects. */
+  ostinatoCascadeBonus: number
 }
 
 export const DEFAULT_TUNABLES: Tunables = {
@@ -155,6 +177,17 @@ export const DEFAULT_TUNABLES: Tunables = {
   ostinatoCritFace: 3,
   counterpointMultiplier: 0.5,
   bravoFamePerTame: 5,
+  fermataMinFaces: 12,
+  staccatoMaxFaces: 20,
+  rubatoMaxFaces: 8,
+  virtuosoMinFaces: 12,
+  tuttiElements: 4,
+  ispiratoMin: 1,
+  ispiratoPerTurn: 0,
+  fermataInspirationCost: 0,
+  ostinatoMaxFaces: 4,
+  rubatoUsesPerTurn: 1,
+  ostinatoCascadeBonus: 0,
 }
 
 // ============================================================
@@ -239,6 +272,17 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'ostinatoCritFace', label: 'War Drums: d4 crits from', group: 'Styles', min: 1, max: 4, step: 1 },
   { key: 'counterpointMultiplier', label: 'Dissonance: immune ×', group: 'Styles', min: 0, max: 2, step: 0.25 },
   { key: 'bravoFamePerTame', label: 'Crowd Favorite: Fame per tame', group: 'Styles', min: 0, max: 20, step: 1 },
+  { key: 'fermataMinFaces', label: 'Lingering Note: smallest die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
+  { key: 'staccatoMaxFaces', label: 'Rallying Cry: largest refreshed die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
+  { key: 'rubatoMaxFaces', label: 'Nimble Fingers: largest die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
+  { key: 'virtuosoMinFaces', label: "Master's Touch: smallest die (faces)", group: 'Styles', min: 4, max: 20, step: 4 },
+  { key: 'tuttiElements', label: 'Harmony: elements needed', group: 'Styles', min: 1, max: 4, step: 1 },
+  { key: 'ispiratoMin', label: "Muse's Favor: Inspiration floor", group: 'Styles', min: 0, max: 5, step: 1 },
+  { key: 'ispiratoPerTurn', label: "Muse's Favor: Inspiration per turn", group: 'Styles', min: 0, max: 3, step: 1 },
+  { key: 'fermataInspirationCost', label: 'Lingering Note: Inspiration per use', group: 'Styles', min: 0, max: 3, step: 1 },
+  { key: 'ostinatoMaxFaces', label: 'War Drums: largest die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
+  { key: 'rubatoUsesPerTurn', label: 'Nimble Fingers: rerolls per turn', group: 'Styles', min: 1, max: 3, step: 1 },
+  { key: 'ostinatoCascadeBonus', label: 'War Drums: bonus per crit die', group: 'Styles', min: 0, max: 10, step: 1 },
 ]
 
 const LEVEL_COUNT = 5

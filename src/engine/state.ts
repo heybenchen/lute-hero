@@ -14,6 +14,7 @@ import {
   StyleId,
 } from '../types/index.js'
 import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
+import type { SpecReward } from '../game-logic/styles/specs.js'
 import { SONGS_PER_BARD } from '../data/startingData.js'
 import { playerColorFor } from '../data/genreTheme.js'
 import { Tunables, DEFAULT_TUNABLES, normalizeTunables } from '../data/tunables.js'
@@ -50,6 +51,9 @@ export interface EngineCombatState {
     totalDamage: number
     stylesUsed: StyleId[]
     rallyReady: boolean
+    specFired?: string[]
+    playLog?: Genre[]
+    specRewards?: SpecReward
   } | null
   /**
    * "Once per turn" styles already spent this turn. A bard fights at most once
@@ -67,6 +71,14 @@ export interface EngineCombatState {
   lastPlayedSongId: string | null
   /** Shared victory choice so spectators see the element being considered. */
   selectedSpreadGenre: Genre | null
+  /** Data-defined styles: once-per-turn ones that fired this turn. */
+  specFired: string[]
+  /** Elements of the songs played this fight, in order (combo conditions). */
+  playLog: Genre[]
+  /** Fame/EXP/Inspiration data-defined styles earned this fight, paid at its end. */
+  specRewards: SpecReward
+  /** Inspiration rerolls taken for free this turn (data-defined styles). */
+  freeRerollsUsed: number
   /** Bards on the space whose featured song has been played this fight (one each). */
   featuredPlayerIds: string[]
   /** Online: the fighter's pending ask to feature another bard's song. */
@@ -177,6 +189,8 @@ export interface ShowdownUndo {
   songsUsed: string[]
   /** Rubato's free reroll has been used on this performance. */
   rubatoUsed?: boolean
+  /** Style-lab free Inspiration rerolls used on this performance. */
+  freeRerollsUsed?: number
 }
 
 export function createInitialCombatState(): EngineCombatState {
@@ -201,6 +215,10 @@ export function createInitialCombatState(): EngineCombatState {
     rallyReady: false,
     featuredPlayerIds: [],
     featureRequest: null,
+    specFired: [],
+    playLog: [],
+    specRewards: {},
+    freeRerollsUsed: 0,
   }
 }
 

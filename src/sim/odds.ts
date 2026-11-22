@@ -14,29 +14,24 @@
  * song tames that monster?" thousands of times per game cheaply.
  */
 import { DiceType } from '../types/index.js'
+import { GenericRollOptions, effectiveCritFace } from '../game-logic/styles/specs.js'
 
 const FACES: Record<DiceType, number> = { d4: 4, d8: 8, d12: 12, d20: 20 }
 
 /** A discrete distribution: total → probability. */
 export type Dist = Map<number, number>
 
-export interface RollOptions {
-  /** Master's Touch: roll twice, keep the higher. */
-  advantage?: boolean
-  /** Dragon's Roar bonus on a d20 (can reach the crit face). */
-  critBonus?: number
-  /** War Drums: the face a d4 crits from. */
-  critFace?: number
-  /** Fanfare / Harmony: flat bonus that never crits. */
-  flat?: number
-  maxCascades: number
-}
+/** Same options the engine's generic roll takes (built-in styles and specs reduce to these). */
+export type RollOptions = GenericRollOptions
 
 const cascadeCache = new Map<string, Dist>()
 
-/** Sum of the cascade rolls that follow a crit (first cascade roll included). */
-function cascadeDist(faces: number, maxCascades: number): Dist {
-  const key = `${faces}:${maxCascades}`
+/**
+ * Sum of the cascade rolls that follow a crit (first cascade roll included),
+ * each bonus die adding `perDie` on top of its face.
+ */
+function cascadeDist(faces: number, maxCascades: number, perDie = 0): Dist {
+  const key = `${faces}:${maxCascades}:${perDie}`
   const hit = cascadeCache.get(key)
   if (hit) return hit
   // depth d: rolling the d-th cascade die (1-based); stop at the cap
@@ -45,9 +40,9 @@ function cascadeDist(faces: number, maxCascades: number): Dist {
     for (let r = 1; r <= faces; r++) {
       const p = 1 / faces
       if (r === faces && depth < maxCascades) {
-        for (const [rest, q] of build(depth + 1)) add(out, r + rest, p * q)
+        for (const [rest, q] of build(depth + 1)) add(out, r + perDie + rest, p * q)
       } else {
-        add(out, r, p)
+        add(out, r + perDie, p)
       }
     }
     return out
@@ -59,23 +54,63 @@ function cascadeDist(faces: number, maxCascades: number): Dist {
 
 const rollCache = new Map<string, Dist>()
 
-/** Distribution of a die's pre-multiplier total (value + bonuses + cascade). */
+/**
+ * Distribution of a die's pre-multiplier total, mirroring `rollWithOptions`
+ * (game-logic/styles/specs.ts) step by step: advantage/disadvantage → reroll
+ * of a low face → flip → floor → crit check → cascade → flat → ×times.
+ */
 export function rollDist(type: DiceType, opts: RollOptions): Dist {
-  const key = `${type}:${opts.advantage ? 1 : 0}:${opts.critBonus ?? 0}:${opts.critFace ?? 0}:${opts.flat ?? 0}:${opts.maxCascades}`
+  const key = `${type}|${JSON.stringify(opts)}`
   const hit = rollCache.get(key)
   if (hit) return hit
   const n = FACES[type]
-  const critFace = Math.min(n, opts.critFace ?? n)
+  // 1. The face
+  let face = new Map<number, number>()
+  const adv = !!opts.advantage && !opts.disadvantage
+  const dis = !!opts.disadvantage && !opts.advantage
+  for (let v = 1; v <= n; v++) {
+    const p = adv ? (2 * v - 1) / (n * n) : dis ? (2 * (n - v) + 1) / (n * n) : 1 / n
+    face.set(v, p)
+  }
+  if (opts.rerollAtMost) {
+    const k = opts.rerollAtMost
+    let low = 0
+    for (const [v, p] of face) if (v <= k) low += p
+    const next = new Map<number, number>()
+    for (const [v, p] of face) if (v > k) next.set(v, p)
+    for (let v = 1; v <= n; v++) next.set(v, (next.get(v) ?? 0) + low / n)
+    face = next
+  }
+  if (opts.flipAtMost) {
+    const next = new Map<number, number>()
+    for (const [v, p] of face) {
+      const w = v <= opts.flipAtMost ? n + 1 - v : v
+      next.set(w, (next.get(w) ?? 0) + p)
+    }
+    face = next
+  }
+  if (opts.floor) {
+    const fl = Math.min(n, opts.floor)
+    const next = new Map<number, number>()
+    for (const [v, p] of face) {
+      const w = Math.max(v, fl)
+      next.set(w, (next.get(w) ?? 0) + p)
+    }
+    face = next
+  }
+  // 2. Crits, bonuses, ×times
+  const critFace = effectiveCritFace(type, opts)
   const bonus = opts.critBonus ?? 0
   const flat = opts.flat ?? 0
+  const times = opts.times ?? 1
+  const finish = (pre: number) => pre + (times !== 1 ? Math.round(pre * (times - 1)) : 0)
   const out: Dist = new Map()
-  for (let v = 1; v <= n; v++) {
-    const pv = opts.advantage ? (2 * v - 1) / (n * n) : 1 / n
+  for (const [v, pv] of face) {
     const base = v + bonus + flat
-    if (v + bonus >= critFace) {
-      for (const [c, q] of cascadeDist(n, opts.maxCascades)) add(out, base + c, pv * q)
+    if (!opts.noCrit && v + bonus >= critFace) {
+      for (const [c, q] of cascadeDist(n, opts.maxCascades, opts.cascadeBonus ?? 0)) add(out, finish(base + c), pv * q)
     } else {
-      add(out, base, pv)
+      add(out, finish(base), pv)
     }
   }
   const dist = prune(out)

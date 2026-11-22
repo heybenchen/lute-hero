@@ -119,15 +119,42 @@ export function styleCost(id: StyleId): number {
   }
 }
 
+/** "d12 or d20", "d4 or d8", "any", … for a die-size range given in faces. */
+function dieRange(minFaces: number, maxFaces: number): string {
+  const dice = (['d4', 'd8', 'd12', 'd20'] as const).filter((d) => {
+    const f = Number(d.slice(1))
+    return f >= minFaces && f <= maxFaces
+  })
+  if (dice.length === 4) return 'any'
+  if (dice.length === 0) return 'no'
+  return dice.length === 1 ? dice[0] : `${dice.slice(0, -1).join(', ')} or ${dice[dice.length - 1]}`
+}
+
 /** Live rule text with the current tunable numbers filled in. */
 export function styleRule(id: StyleId): string {
   const t = getTunables()
   switch (id) {
     case 'fortissimo': return `+${t.fortissimoBonus} to every d20 roll. A d20 that reaches 20 this way crits.`
     case 'overture': return `+${t.overtureBonus} to your first roll each turn (can't crit).`
-    case 'tutti': return `If your setlist holds all four elements, +${t.tuttiBonus} to your first roll each turn (can't crit).`
-    case 'ostinato': return `Your d4s crit on a ${t.ostinatoCritFace} or higher (bonus dice still need a 4).`
+    case 'tutti': return t.tuttiElements >= 4
+      ? `If your setlist holds all four elements, +${t.tuttiBonus} to your first roll each turn (can't crit).`
+      : `If your setlist holds at least ${t.tuttiElements} elements, +${t.tuttiBonus} to your first roll each turn (can't crit).`
+    case 'ostinato': {
+      const reach = t.ostinatoMaxFaces <= 4 ? 'Your d4s crit' : `Your d4s crit on a ${t.ostinatoCritFace} or higher and your bigger dice up to d${t.ostinatoMaxFaces} crit as many faces lower`
+      if (t.ostinatoMaxFaces > 4) return `${reach}${t.ostinatoCascadeBonus ? `; their crit dice add +${t.ostinatoCascadeBonus}` : ''}.`
+      return `${reach} on a ${t.ostinatoCritFace} or higher${t.ostinatoCascadeBonus ? `, and their crit dice add +${t.ostinatoCascadeBonus}` : ' (bonus dice still need a 4)'}.`
+    }
     case 'bravo': return `+${t.bravoFamePerTame} Fame for every monster you tame.`
+    case 'fermata': return `Once per turn, a ${dieRange(t.fermataMinFaces, 20)} song that doesn't tame its target isn't spent.`
+    case 'staccato': return t.staccatoMaxFaces >= 20
+      ? 'Once per turn, after one of your songs tames a monster, refresh a spent song of your choice.'
+      : `Once per turn, after one of your songs tames a monster, refresh a spent ${dieRange(4, t.staccatoMaxFaces)} song of your choice.`
+    case 'rubato': return `Once per turn, reroll a ${dieRange(4, t.rubatoMaxFaces)} song for free.`
+    case 'virtuoso': return `Once per turn, your first ${dieRange(t.virtuosoMinFaces, 20)} roll is rolled twice; keep the higher.`
+    case 'counterpoint': return t.counterpointMultiplier >= 1
+      ? 'Once per turn, a roll against an immune target deals full damage.'
+      : 'Once per turn, a roll against an immune target deals half damage instead of none.'
+    case 'ispirato': return `Start each turn with at least ${t.ispiratoMin} Inspiration.`
     default: return STYLES[id].rule
   }
 }

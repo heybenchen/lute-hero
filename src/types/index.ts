@@ -131,6 +131,8 @@ export interface Player {
   inspiration: number; // Inspiration tokens held (spend to reroll or refresh the shop)
   inspirationBoughtThisTurn: number; // Escalates the buy cost; resets each turn
   styles: StyleId[]; // Owned play styles (capped by tunables.maxStyles)
+  /** Data-defined styles under test (style lab only; see game-logic/styles/specs.ts). */
+  specStyles?: string[];
 }
 
 // ============================================
