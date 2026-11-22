@@ -6,6 +6,8 @@
 
 ## Medium Priority
 
+- Rebalance styles against the realistic-timing audit (`songStyles.md`): Master's Touch, Nimble Fingers, Muse's Favor, Fanfare, Harmony, Hometown Hero, Dissonance and Chain Reaction sit at 29–35% against a 31.8% no-style baseline (mostly price; Master's Touch and Muse's Favor also need power).
+
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
 
 ## Low Priority

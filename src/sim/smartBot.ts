@@ -730,10 +730,22 @@ export class SmartBot {
   }
   private grownCache = new Map<string, Monster[]>()
 
+  /**
+   * Style audits: from `fromRound` on, this bot buys `id` (if it is on the
+   * shelf) as soon as it can afford it, before anything else in the Studio,
+   * paying the real price out of its real EXP.
+   */
+  forcedStyle?: { id: StyleId; fromRound: number }
+
   private shop(): void {
     const me = this.me
     if (!this.act({ type: 'OPEN_STUDIO', playerId: me.id })) return
     this.refreshedThisTurn = false
+    const forced = this.forcedStyle
+    if (forced && this.state.currentRound + 1 >= forced.fromRound && !me.styles.includes(forced.id)) {
+      const offerIndex = this.state.styleOffers.indexOf(forced.id)
+      if (offerIndex >= 0 && canAfford(me, styleCost(forced.id))) this.act({ type: 'BUY_STYLE', offerIndex })
+    }
     for (let guard = 0; guard < 30; guard++) if (!this.shopStep()) break
     this.act({ type: 'CLOSE_STUDIO' })
   }

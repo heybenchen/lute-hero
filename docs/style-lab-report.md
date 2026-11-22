@@ -6,6 +6,10 @@ Generated from `scripts/style-lab.ts`: each style was held alone from round 1 by
 
 Verdicts: Too strong > 52% · Slightly strong 48–52% · Balanced 42–48% · Slightly weak 38–42% · Too weak < 38%.
 
+## Correction: realistic timing
+
+Every win rate below this section holds the style from round 1 for free. That is not how styles are bought: bots (and players) cannot afford one before round 4 to 6, because EXP goes into dice upgrades. `scripts/style-timing.ts` measured it: first style bought in round 5 (middle half rounds 4–6), second in round 7, in games lasting about 9.7 rounds. `ROUND=5 scripts/style-audit.ts` models that. The tested bard buys at the real price from round 5 on, ahead of dice. The results for the 20 Studio styles are in `songStyles.md` (the table and the price and power sweeps). Headlines: the spread is 28.7–42.5% (no-style baseline 31.8), expensive styles lose the most (Master's Touch 41.5 → 28.7, Nimble Fingers 45.2 → 29.2, Muse's Favor 42.3 → 29.7, Rallying Cry 47.0 → 36.2) and cheap roll-bonus styles hold up (Studio Regular 42.5, Double Time 42.5, Small Ensemble 41.3). Treat the "held from round 1" numbers below as superseded. They are history.
+
 ## Rebalance of the existing 12 styles
 
 Same method (300 games each, smart bots; no-style baseline 31.8%). Every change is a tunable in the playtest console's **Values → Styles** group, so it can be tried live. (These were the first proposals; what shipped is in the next section.)
