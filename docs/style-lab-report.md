@@ -6,6 +6,24 @@ Generated from `scripts/style-lab.ts`: each style was held alone from round 1 by
 
 Verdicts: Too strong > 52% · Slightly strong 48–52% · Balanced 42–48% · Slightly weak 38–42% · Too weak < 38%.
 
+## Inspiration: how much is it worth?
+
+Measured with `scripts/inspiration-value.ts` (one bard starts with a bonus, smart bots everywhere, 600 paired games per row; the no-bonus seat wins 36.2%), `scripts/inspiration-audit.ts` (where it goes) and head-to-head bot variants (`scripts/bot-tournament.ts`, one varied bot against two default bots, where the control — an unchanged variant — wins 36.3%).
+
+| Starting bonus | Win % | Gain over none |
+|---|---|---|
+| +3 Inspiration | 40.3 | +4.1 |
+| +6 Inspiration | 43.5 | +7.3 |
+| +10 Inspiration | 44.2 | +8.0 |
+| +2 EXP | 40.6 | +4.4 |
+| +4 EXP | 49.2 | +13.0 |
+| +6 EXP | 58.0 | +21.8 |
+
+- Inspiration is useful but **saturates around six**: three are worth about two EXP, ten barely more than six. EXP keeps compounding.
+- Per bard per game (normal games): about 5.4 earned (clears plus Muse's Favor), 3.6 bought for 5.3 EXP, spent 2.3 on fight rerolls, 1.2 on shelf refreshes and 2.3 on showdown rerolls; 5.2 held when the showdown starts and 3.2 left at the end.
+- That leftover is saturation, not a bot leak. Optimal stopping for showdown rerolls, a showdown reserve of 0 or 6, and buying up to 4 or 6 Inspiration all landed within noise of the control (+0 to +1.3). Lowering the fight-reroll value from 6 to 4 or raising it to 8 was worse (−2.3, −1.5), so 6 is about right.
+- The price step (`inspirationCostStep`, 1 now) makes no difference to bot play: the control wins 36.3% with a rising price and 36.4% with a flat price. Bots buy about 0.4 Inspiration a turn, so the step rarely binds.
+
 ## Correction: realistic timing
 
 Every win rate below this section holds the style from round 1 for free. That is not how styles are bought: bots (and players) cannot afford one before round 4 to 6, because EXP goes into dice upgrades. `scripts/style-timing.ts` measured it: first style bought in round 5 (middle half rounds 4–6), second in round 7, in games lasting about 9.7 rounds. `ROUND=5 scripts/style-audit.ts` models that. The tested bard buys at the real price from round 5 on, ahead of dice. The results for the 20 Studio styles are in `songStyles.md`, which now judges styles with rivals who shop for styles too (`OPP=1`), where a balanced style wins about a third of games. Headlines: the spread is 28.7–42.5% (no-style baseline 31.8), expensive styles lose the most (Master's Touch 41.5 → 28.7, Nimble Fingers 45.2 → 29.2, Muse's Favor 42.3 → 29.7, Rallying Cry 47.0 → 36.2) and cheap roll-bonus styles hold up (Studio Regular 42.5, Double Time 42.5, Small Ensemble 41.3). Treat the "held from round 1" numbers below as superseded. They are history.

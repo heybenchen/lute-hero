@@ -80,6 +80,14 @@ export interface SmartParams {
    * the smart-bot style audit for every style, scaled by fit with the dice.
    */
   styleValuation: 'odds' | 'measured'
+  /**
+   * When to stop rerolling a showdown performance: 'par' (reroll while below the
+   * expected performance) or 'optimal' (optimal stopping on the exact distribution:
+   * reroll when the roll is below the value of rerolling with the rerolls left).
+   */
+  showdownStop: 'par' | 'optimal'
+  /** Inspiration to keep stocked by buying it with leftover EXP (before the endgame reserve). */
+  inspirationTarget: number
 }
 
 export const DEFAULT_SMART_PARAMS: SmartParams = {
@@ -96,6 +104,8 @@ export const DEFAULT_SMART_PARAMS: SmartParams = {
   fightRollouts: 0,
   rolloutCandidates: 3,
   styleValuation: 'odds',
+  showdownStop: 'par',
+  inspirationTarget: 2,
 }
 
 /**
@@ -828,7 +838,7 @@ export class SmartBot {
 
     // Bank leftover EXP as Inspiration (it rerolls fights now and the showdown later)
     const inspCost = inspirationCostFor(me)
-    const want = this.endgame() ? this.p.showdownReserve + 2 : 2
+    const want = this.endgame() ? this.p.showdownReserve + this.p.inspirationTarget : this.p.inspirationTarget
     if (me.inspiration < want && me.exp >= inspCost) {
       // Keep enough EXP for the next upgrade if one is close
       const keep = this.endgame() ? 0 : Math.min(4, cheapest)
@@ -921,17 +931,42 @@ export class SmartBot {
       // An encore paid per unspent Inspiration makes rerolls cost real fans
       const perInsp = mySpecs.reduce((t, sp) => t + (sp.showdownEnd?.perInspiration ?? 0), 0)
       const freeLeft = inspirationRules(mySpecs).freePerTurn > (now.showdownUndo?.freeRerollsUsed ?? 0)
-      if (got >= par * (versesLeft === 0 ? 1 : 0.85)) return
+      // Spread spare Inspiration over the verses still to come
+      const budget = versesLeft === 0 ? me.inspiration : Math.floor(me.inspiration / (versesLeft + 1)) || (me.inspiration > versesLeft ? 1 : 0)
+      if (this.p.showdownStop === 'optimal') {
+        const hasFreeRubato = me.styles.includes('rubato') && !now.showdownUndo?.rubatoUsed
+        const rerolls = budget + (freeLeft ? 1 : 0) + (hasFreeRubato ? 1 : 0)
+        const dist = this.currentPerformanceDist(me)
+        if (rerolls < 1 || !dist || got >= this.stopThreshold(dist, rerolls)) return
+      } else if (got >= par * (versesLeft === 0 ? 1 : 0.85)) return
       if (freeLeft && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
       if (perInsp > 0 && par - got < perInsp * 2) return
       const hasFree = me.styles.includes('rubato') && !now.showdownUndo?.rubatoUsed &&
         me.songs.some((sg) => (now.showdownUndo?.songIds ?? []).includes(sg.id) && (songDie(sg) ? isRubatoDie(songDie(sg)!) : false))
       if (hasFree && this.act({ type: 'REROLL_SHOWDOWN_SONG', rubato: true })) continue
-      // Spread spare Inspiration over the verses still to come
-      const budget = versesLeft === 0 ? me.inspiration : Math.floor(me.inspiration / (versesLeft + 1)) || (me.inspiration > versesLeft ? 1 : 0)
       if (budget >= 1 && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
       return
     }
+  }
+
+  /** The distribution of the performance on the table (every die of the performed element). */
+  private currentPerformanceDist(me: Player): Dist | null {
+    const genre = this.state.showdownCurrentGenre
+    return genre ? this.performanceDist(me, genre) : null
+  }
+
+  /**
+   * Optimal stopping with `k` rerolls left: keep a roll at or above this value. With one reroll it is
+   * the mean; each extra reroll raises it to E[max(X, previous)].
+   */
+  private stopThreshold(d: Dist, k: number): number {
+    let t = mean(d)
+    for (let j = 2; j <= k; j++) {
+      let e = 0
+      for (const [x, p] of d) e += p * Math.max(x, t)
+      t = e
+    }
+    return t
   }
 
   /**
