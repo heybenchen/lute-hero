@@ -6,6 +6,8 @@
 
 ## Medium Priority
 
+- Rebalance styles from the audit: Crowd Favorite 5→2 Fame/tame and Dragon's Roar +2→+1 (both sim to ~45%); limit Lingering Note to d20s and re-price Rallying Cry; rework Harmony (per-element bonus), Dissonance and Muse's Favor; consider the 12 proposed new styles (Session Player, Crescendo, Glass Cannon, Signature Sound, Tough Crowd, Wanderer, Word of Mouth, Duet, Busker, Showstopper, Underdog, Encore Act).
+
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
 
 ## Low Priority
@@ -13,6 +15,7 @@
 (none)
 
 ## Completed
+- Smart simulation bot (`src/sim/smartBot.ts` + exact odds in `src/sim/odds.ts`): kill-probability fight play, staged Inspiration/reroll use, showdown planning around the boss's immunity, board-aware shopping incl. style combinations. Beats the old greedy bot 86% head-to-head (76% of seats vs two baselines, 62% vs three). Now powers the playtest Simulate tab and round stats; `scripts/bot-tournament.ts` pits bots; the style audit uses smart bots and tests pairs (best pair: Lingering Note + Crowd Favorite 89% vs a 32% baseline).
 - The mobile map is followed by the setlist, active bard, and score track, in that order.
 
 - Studio styles are placed by selecting an offer and a repertoire slot. Full setlists can replace a die with a purchased d4. Combat flags immune songs against the current target and scopes damage popups to each fight. Ending a turn with unspent EXP prompts if the Studio was never opened.

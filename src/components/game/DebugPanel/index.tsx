@@ -19,7 +19,7 @@ import { ALL_DICE_TYPES } from '@/data/startingData'
 import type { Genre, GamePhase, DiceType, Player, StyleId } from '@/types'
 import { ALL_STYLE_IDS, STYLES, styleRule } from '@/data/styles'
 
-type Tab = 'values' | 'players' | 'board' | 'presets'
+type Tab = 'values' | 'players' | 'board' | 'simulate' | 'presets'
 
 /**
  * Playtesting console. Every balance number, every player's stats, the board's
@@ -86,11 +86,11 @@ export function DebugPanel() {
 
       {/* Tabs */}
       <div className="flex gap-1 px-3 py-2 flex-shrink-0" style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.12)' }}>
-        {(['values', 'players', 'board', 'presets'] as Tab[]).map((t) => (
+        {(['values', 'players', 'board', 'simulate', 'presets'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className="flex-1 px-2 py-1.5 rounded-lg text-xs font-medieval font-bold capitalize transition-all"
+            className="flex-1 min-w-0 truncate px-1 py-1.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-medieval font-bold capitalize transition-all"
             style={{
               background: tab === t ? 'rgba(212, 168, 83, 0.22)' : 'rgba(61, 48, 32, 0.35)',
               border: `1px solid rgba(212, 168, 83, ${tab === t ? 0.55 : 0.15})`,
@@ -106,6 +106,7 @@ export function DebugPanel() {
         {tab === 'values' && <ValuesTab />}
         {tab === 'players' && <PlayersTab />}
         {tab === 'board' && <BoardTab />}
+        {tab === 'simulate' && <SimulateTab />}
         {tab === 'presets' && <PresetsTab />}
       </div>
     </div>
@@ -341,7 +342,6 @@ function PlayersTab() {
         </div>
       )}
 
-      <SimulateGame playerCount={players.length} />
 
       {players.map((player) => (
         <div key={player.id} className="mt-4 rounded-lg p-2.5"
@@ -523,48 +523,87 @@ function DiceEditor({ player }: { player: Player }) {
 }
 
 /**
- * Bots replay this table (same bards, elements and tunables) from a fresh
- * deal through round N — every turn is real engine play, so the board, dice,
- * styles, Fame, EXP and Inspiration are realistic and consistent. Then either
- * keep playing from the next round or start the Final Showdown there.
+ * Simulate tab: bots replay this table (same bards, elements and tunables)
+ * from a fresh deal through round N — every turn is real engine play, so the
+ * board, dice, styles, Fame, EXP and Inspiration are realistic and consistent.
+ * Then either keep playing from the next round or start the Final Showdown.
+ * The round is picked with a large-target stepper so it works on phones.
  */
-function SimulateGame({ playerCount }: { playerCount: number }) {
+function SimulateTab() {
   const dispatch = useGameStore((state) => state.dispatch)
+  const playerCount = useGameStore((state) => state.players.length)
   const stats = SHOWDOWN_ROUND_STATS[playerCount] ?? SHOWDOWN_ROUND_STATS[3]
   const [round, setRound] = useState(() => stats?.median ?? 8)
+  const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
 
-  const simulate = async (showdown: boolean) => {
-    setNote(null)
-    const result = await dispatch({ type: 'DEBUG_SIMULATE', round, showdown })
-    if (!result.ok) return setNote(result.error ?? 'Simulation failed')
-    const reached = useGameStore.getState().currentRound - 1
-    if (reached < round) {
-      setNote(`The bots reached the showdown early, so this stops after round ${reached}, the furthest any simulated game got.`)
-    }
+  if (playerCount === 0) {
+    return <p className="text-xs text-parchment-500">No game running — start one first.</p>
   }
 
+  const clamp = (v: number) => Math.min(MAX_SIMULATED_ROUND, Math.max(1, v))
+  const simulate = async (showdown: boolean) => {
+    setNote(null)
+    setBusy(true)
+    // Let the "Simulating…" state paint before the (synchronous, 1–2 s) bot run
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    const result = await dispatch({ type: 'DEBUG_SIMULATE', round, showdown })
+    setBusy(false)
+    if (!result.ok) return setNote(result.error ?? 'Simulation failed')
+    const reached = useGameStore.getState().currentRound - 1
+    setNote(reached < round
+      ? `The bots reached the showdown early, so this stopped after round ${reached}, the furthest any simulated game got.`
+      : showdown ? `Showdown started after round ${reached}.` : `Now at the start of round ${reached + 1}.`)
+  }
+
+  const stepButton = (label: string, delta: number) => (
+    <button
+      onClick={() => setRound((r) => clamp(r + delta))}
+      disabled={busy || clamp(round + delta) === round}
+      aria-label={delta < 0 ? 'One round fewer' : 'One round more'}
+      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-3xl font-bold text-gold-200 transition-colors active:scale-95 disabled:opacity-30"
+      style={{ background: 'rgba(61, 48, 32, 0.6)', border: '1px solid rgba(212, 168, 83, 0.35)', touchAction: 'manipulation' }}
+    >
+      {label}
+    </button>
+  )
+
   return (
-    <div className="mt-3 rounded-lg p-2.5" style={{ background: 'rgba(80, 40, 140, 0.12)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-      <div className="text-[11px] font-bold text-purple-200">Simulate the game</div>
-      <NumberRow
-        label="Through round"
-        value={round}
-        min={1}
-        max={MAX_SIMULATED_ROUND}
-        step={1}
-        help="Bots play this table from a fresh deal until that many rounds are done."
-        onChange={(v) => setRound(Math.min(MAX_SIMULATED_ROUND, Math.max(1, Math.round(v))))}
-      />
-      <p className="mb-1.5 text-[10px] text-parchment-500">
-        Bots play every turn of this table (same bards, elements and values) from a fresh deal, so the board, dice, styles, Fame, EXP and Inspiration all come from real play.
-        {stats && ` ${playerCount}-bard games usually reach the showdown after round ${stats.p10}–${stats.p90} (median ${stats.median}).`}
+    <div>
+      <SectionTitle>Simulate the game</SectionTitle>
+      <p className="mb-3 text-xs leading-snug text-parchment-400">
+        Bots play every turn of this table — same bards, elements and values — from a fresh deal, so the board, dice, styles, Fame, EXP and Inspiration all come from real play.
       </p>
-      <div className="flex flex-wrap gap-1.5">
-        <MiniButton onClick={() => void simulate(false)}>Play on from round {round + 1}</MiniButton>
-        <MiniButton onClick={() => void simulate(true)}>Showdown after round {round}</MiniButton>
+
+      <div className="mb-1 text-center text-[11px] uppercase tracking-wider text-parchment-500">Through round</div>
+      <div className="mb-2 flex items-center justify-center gap-4">
+        {stepButton('−', -1)}
+        <div className="w-16 text-center font-display text-4xl tabular-nums text-gold-300" aria-live="polite">{round}</div>
+        {stepButton('+', 1)}
       </div>
-      {note && <p className="mt-1.5 text-[10px] text-amber-300">{note}</p>}
+      {stats && (
+        <p className="mb-3 text-center text-[11px] text-parchment-500">
+          {playerCount}-bard games usually reach the showdown after round {stats.p10}–{stats.p90} (median {stats.median}).
+        </p>
+      )}
+
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={() => void simulate(false)}
+          disabled={busy}
+          className="btn-secondary min-h-12 w-full text-sm disabled:opacity-50"
+        >
+          {busy ? 'Simulating…' : `Play on from round ${round + 1}`}
+        </button>
+        <button
+          onClick={() => void simulate(true)}
+          disabled={busy}
+          className="btn-primary min-h-12 w-full text-sm disabled:opacity-50"
+        >
+          {busy ? 'Simulating…' : `Showdown after round ${round}`}
+        </button>
+      </div>
+      {note && <p className="mt-2 text-xs text-amber-300">{note}</p>}
     </div>
   )
 }
