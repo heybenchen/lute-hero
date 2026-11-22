@@ -69,6 +69,7 @@ export interface Tunables {
   showdownTurns: number
 
   // --- Styles (see src/data/styles.ts) ---
+  // KEEP IN SYNC: songStyles.md (repo root) documents every style's rule, price, tunables and simulated strength. When you change style logic, rule text, a price or a style tunable's default, or add or remove a style, update songStyles.md in the same change.
   /** Styles a bard can own at once; buying past this replaces one. */
   maxStyles: number
   /** Number of persistent style offers shown in the Studio. */
@@ -188,6 +189,7 @@ export const DEFAULT_TUNABLES: Tunables = {
 
   maxStyles: 2,
   styleOfferCount: 2,
+  // Style defaults: changing any of these means updating songStyles.md
   styleCostStaccato: 2,
   styleCostCoda: 1,
   styleCostOstinato: 2,

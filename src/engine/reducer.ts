@@ -786,6 +786,7 @@ function setPlayerStyles(state: EngineState, playerId: string, styles: StyleId[]
  * A bard's turn begins: preserve the shared style shelf and fill only empty
  * slots, while Ispirato tops their Inspiration up to 1.
  */
+// Muse's Favor and turn-start style rewards live here; keep songStyles.md in sync with any change.
 function beginTurn(state: EngineState, rng: Rng): EngineState {
   const player = state.players[state.currentTurnPlayerIndex]
   if (!player) return state
@@ -1065,6 +1066,7 @@ export interface GuestReward {
  * bard's; a monster tamed by a featured song splits its Fame and EXP with that
  * guest (`guestRewards`), the fighter keeping the larger half of an odd split.
  */
+// Crowd Favorite's Fame is paid here; keep songStyles.md in sync with any change.
 export function computeCombatRewards(combat: {
   monsters: Monster[]
   killCredits: KillCredit[]

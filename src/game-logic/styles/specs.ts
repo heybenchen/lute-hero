@@ -1,3 +1,4 @@
+// KEEP IN SYNC: songStyles.md (repo root) documents every style's rule, price, tunables and simulated strength. When you change style logic, rule text, a price or a style tunable's default, or add or remove a style, update songStyles.md in the same change.
 /**
  * Data-defined styles ("style specs"): a small toolkit for designing and
  * simulating new styles without writing engine code for each one.

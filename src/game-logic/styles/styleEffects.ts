@@ -1,3 +1,4 @@
+// KEEP IN SYNC: songStyles.md (repo root) documents every style's rule, price, tunables and simulated strength. When you change style logic, rule text, a price or a style tunable's default, or add or remove a style, update songStyles.md in the same change.
 import { Dice, DiceRoll, Genre, Rng, Song, StyleId } from '../../types/index.js'
 import { getMaxValue } from '../dice/roller.js'
 import { GenericRollOptions, PlayContext, StyleSpec, applySpecRollModifiers, effectiveCritFace, rollWithOptions } from './specs.js'

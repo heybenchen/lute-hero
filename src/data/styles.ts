@@ -1,3 +1,4 @@
+// KEEP IN SYNC: songStyles.md (repo root) documents every style's rule, price, tunables and simulated strength. When you change style logic, rule text, a price or a style tunable's default, or add or remove a style, update songStyles.md in the same change.
 import { StyleId } from '../types/index.js'
 import { getTunables } from './tunables.js'
 
@@ -191,6 +192,17 @@ function dieRange(minFaces: number, maxFaces: number): string {
   return dice.length === 1 ? dice[0] : `${dice.slice(0, -1).join(', ')} or ${dice[dice.length - 1]}`
 }
 
+/** "d4s and d8s", "d12s and d20s", "all your dice", … for a die-size range given in faces. */
+function diePlural(minFaces: number, maxFaces: number): string {
+  const dice = (['d4', 'd8', 'd12', 'd20'] as const).filter((d) => {
+    const f = Number(d.slice(1))
+    return f >= minFaces && f <= maxFaces
+  }).map((d) => `${d}s`)
+  if (dice.length === 4) return 'all your dice'
+  if (dice.length === 0) return 'none of your dice'
+  return `your ${dice.length === 1 ? dice[0] : `${dice.slice(0, -1).join(', ')} and ${dice[dice.length - 1]}`}`
+}
+
 /** Live rule text with the current tunable numbers filled in. */
 export function styleRule(id: StyleId): string {
   const t = getTunables()
@@ -229,7 +241,10 @@ export function styleRule(id: StyleId): string {
       return t.ispiratoMin > t.ispiratoPerTurn ? `${gain} (and start it with at least ${t.ispiratoMin}).` : `${gain}.`
     }
     case 'hometown-hero': return `Dice of your starting element get +${t.hometownHeroBonus} (can crit).`
-    case 'small-ensemble': return `Your ${dieRange(4, t.smallEnsembleMaxFaces)} dice roll twice; keep the higher.`
+    case 'small-ensemble': {
+      const which = diePlural(4, t.smallEnsembleMaxFaces)
+      return `${which[0].toUpperCase()}${which.slice(1)} roll twice; keep the higher.`
+    }
     case 'studio-regular': return `Upgrades cost ${t.studioRegularDiscount} less EXP.`
     case 'inspired-play': return `+${t.inspiredPlayBonus} to every die while you hold ${t.inspiredPlayMin}+ Inspiration (can't crit).`
     case 'chain-reaction': return `+${t.chainReactionBonus} per same-element song played in a row before this one (max +${t.chainReactionCap}, can't crit).`

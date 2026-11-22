@@ -3,6 +3,7 @@
  * data-defined styles the player holds (style lab). With no specs these are
  * exactly the tunable values.
  */
+// KEEP IN SYNC: songStyles.md (repo root) documents every style's rule, price, tunables and simulated strength. When you change style logic, rule text, a price or a style tunable's default, or add or remove a style, update songStyles.md in the same change.
 import { Dice, Player } from '../types/index.js'
 import { newD4Cost, getUpgradeCost, getInspirationCost } from '../data/draftCards.js'
 import { getTunables } from '../data/tunables.js'
