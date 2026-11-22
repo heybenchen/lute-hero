@@ -165,18 +165,27 @@ describe('Virtuoso', () => {
 // ------------------------------------------------------------------
 
 describe('Fermata', () => {
-  it('keeps a big die song unspent once per turn when it fails to tame', () => {
-    const state = fight(['fermata'], [['d20', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
+  it('keeps a d20 song unspent once per turn when it fails to tame, for Inspiration', () => {
+    let state = fight(['fermata'], [['d20', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 2 } : p)) }
     const first = play(state, 1, faces([5, 20])).state
     expect(spent(first, 1)).toBe(false)
+    expect(first.players[0].inspiration).toBe(2 - DEFAULT_TUNABLES.fermataInspirationCost)
     expect(first.combat.styleNotes).toContain(STYLES.fermata.name)
     const second = play(first, 1, faces([5, 20])).state
     expect(spent(second, 1)).toBe(true)
   })
 
-  it('does not hold small dice', () => {
-    const state = fight(['fermata'], [['d8', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
-    expect(spent(play(state, 1, faces([5, 8])).state, 1)).toBe(true)
+  it('does not hold dice below its size limit', () => {
+    let state = fight(['fermata'], [['d12', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 2 } : p)) }
+    expect(spent(play(state, 1, faces([5, 12])).state, 1)).toBe(true)
+  })
+
+  it('does not hold a song without the Inspiration to pay for it', () => {
+    let state = fight(['fermata'], [['d20', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 0 } : p)) }
+    expect(spent(play(state, 1, faces([5, 20])).state, 1)).toBe(true)
   })
 })
 
@@ -228,13 +237,13 @@ describe('Staccato (Rallying Cry)', () => {
 })
 
 describe('Counterpoint', () => {
-  it('turns the first immune hit each turn into half damage', () => {
+  it('turns the first immune hit each turn into partial damage', () => {
     const state = fight(['counterpoint'], [['d8', 'Hymn'], ['d8', 'Hymn']], [{ resistance: 'Hymn' }])
-    const first = play(state, 1, faces([6, 8])).state
-    expect(hp(first)).toBe(50 - 3)
+    const first = play(state, 1, faces([4, 8])).state
+    expect(hp(first)).toBe(50 - Math.floor(4 * DEFAULT_TUNABLES.counterpointMultiplier))
     expect(first.combat.styleNotes).toContain(STYLES.counterpoint.name)
-    const second = play(first, 2, faces([6, 8])).state
-    expect(hp(second)).toBe(47)
+    const second = play(first, 2, faces([4, 8])).state
+    expect(hp(second)).toBe(hp(first))
   })
 })
 

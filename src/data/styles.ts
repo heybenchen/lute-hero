@@ -222,7 +222,10 @@ export function styleRule(id: StyleId): string {
     case 'bravo': return t.bravoMinLevel > 1
       ? `+${t.bravoFamePerTame} Fame for every Lv${t.bravoMinLevel}+ monster you tame.`
       : `+${t.bravoFamePerTame} Fame for every monster you tame.`
-    case 'fermata': return `Once per turn, a ${dieRange(t.fermataMinFaces, 20)} song that doesn't tame its target isn't spent.`
+    case 'fermata': {
+      const pay = t.fermataInspirationCost > 0 ? `, for ${t.fermataInspirationCost} Inspiration` : ''
+      return `Once per turn, a ${dieRange(t.fermataMinFaces, 20)} song that doesn't tame its target isn't spent${pay}.`
+    }
     case 'staccato': return t.staccatoMaxFaces >= 20
       ? 'Once per turn, after one of your songs tames a monster, refresh a spent song of your choice.'
       : `Once per turn, after one of your songs tames a monster, refresh a spent ${dieRange(4, t.staccatoMaxFaces)} song of your choice.`
@@ -232,9 +235,13 @@ export function styleRule(id: StyleId): string {
       return `${times} per turn, reroll ${which} for free.`
     }
     case 'virtuoso': return `Once per turn, your first ${dieRange(t.virtuosoMinFaces, 20)} roll is rolled twice; keep the higher.`
-    case 'counterpoint': return t.counterpointMultiplier >= 1
-      ? 'Once per turn, a roll against an immune target deals full damage.'
-      : 'Once per turn, a roll against an immune target deals half damage instead of none.'
+    case 'counterpoint': {
+      const m = t.counterpointMultiplier
+      const share = m >= 1 ? 'full' : m === 0.75 ? '¾' : m === 0.5 ? 'half' : m === 0.25 ? '¼' : `${Math.round(m * 100)}%`
+      return m >= 1
+        ? 'Once per turn, a roll against an immune target deals full damage.'
+        : `Once per turn, a roll against an immune target deals ${share} damage instead of none.`
+    }
     case 'ispirato': {
       if (t.ispiratoPerTurn <= 0) return `Start each turn with at least ${t.ispiratoMin} Inspiration.`
       const gain = `Gain ${t.ispiratoPerTurn} Inspiration at the start of each turn`

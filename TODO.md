@@ -6,8 +6,6 @@
 
 ## Medium Priority
 
-- Decide on the remaining rebalance proposals: Lingering Note (d20s only, 1 Inspiration per use) and Dissonance (¾ damage). Both are tunables, see `docs/style-lab-report.md`.
-
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
 
 ## Low Priority
@@ -15,6 +13,7 @@
 (none)
 
 ## Completed
+- Finished the style rebalance: Lingering Note holds only d20 songs and costs 1 Inspiration per use (61.0% → 47.7%), and Dissonance deals ¾ damage to immune targets (40.7% → 42.8%).
 - Added `songStyles.md`, the reference for every Studio style (rule, price, tunables, file locations, win %), with KEEP IN SYNC notes in the style code.
 - Shipped the style rebalance: Crowd Favorite is +5 Fame per Lv3+ tame (`bravoMinLevel`), Rallying Cry refreshes d4/d8 songs, Harmony is +3, War Drums makes every die crit one number lower, Nimble Fingers rerolls any song twice per turn, and Muse's Favor gains 1 Inspiration each turn. Eight style-lab styles joined the Studio (Hometown Hero, Small Ensemble, Studio Regular, Inspired Play, Double Time, Chain Reaction, Swarm Singer, Jam Session), built as tunable specs. All of them simulate at 42–48% held vs a 31.8% baseline, and prices come from a buy-when-affordable sweep (`BUY=n`).
 - Style rebalance computed with smart-bot simulations (all 12 styles land at 41.5–47.7% vs a 31.8% no-style baseline; values in `docs/style-lab-report.md`, every one a tunable — defaults not yet switched). Style lab: data-defined style toolkit in the engine + odds + smart bot; 100 experimental styles in 10 themed batches simulated (20 balanced, 12 slightly strong, 13 slightly weak, 21 too strong, 34 too weak).
