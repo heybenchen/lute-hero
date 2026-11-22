@@ -13,66 +13,92 @@ A reference for every style in the Studio: what it does, what it costs, which tu
 - "Can't crit": the bonus is added on top of the die after it is rolled. It never changes the face, so it can't make a die crit. "Can crit": the bonus counts toward the face, so it can reach the crit face.
 - Featured songs (borrowed from another bard) roll without styles.
 
-## The styles
+## How strength is measured
 
-**Price** is the default in EXP.
+Run `OPP=1 ROUND=5 STYLES=<id> npx tsx scripts/style-audit.ts 600`. It plays 3-bard games with smart bots in every seat, through the real engine and the Final Showdown:
 
-**Win % (real timing)** is how often a bard wins a simulated 3-bard game against two bards with no styles, when the style is bought the way it really is bought: it is on their shelf from **round 5** (the median round in which bots buy their first style; the middle half buy in rounds 4–6, a second style in round 7, and nobody has spare EXP before then) and they pay its **real price** from their EXP, ahead of dice upgrades. Smart bots in every seat, 300 games each. **A bard with no style wins 31.8%.** Read it as: below about 35% the style is barely worth its price, 37–44% is healthy, above 44% is strong.
+- **Real timing.** Bots buy their first style in **round 5** (middle half rounds 4–6) and a second in round 7. Nobody has spare EXP earlier, because everything goes into dice upgrades (`npx tsx scripts/style-timing.ts` measures this). The tested bard gets the style on their shelf from round 5 and buys it at its **real price** the first turn they can afford it, ahead of dice upgrades, so the EXP cost is really paid.
+- **Shopping rivals.** The other two bards shop for styles like anyone (real prices, whatever the smart bot values). So a style is judged against what bots naturally buy.
+- **What "balanced" means.** Three seats means a third of games (**33.3%**). A balanced style is as good as the typical choice, so it wins about a third. The no-style row (everyone shopping naturally) wins 35.2% in the final run, because the tested seat is a random one. At 600 games one result carries about ±2 points of noise, so only differences over about 4 points mean anything. The goal is every style within 4 points of the middle (roughly 29–38%).
 
-**Win % (held from R1)** is the older, flattering measure (style owned from round 1 for free). It is kept for reference only. It overstates every style, and reorders them: expensive styles looked fine and cheap, simple ones looked weak.
+Earlier rounds of this work judged styles with rivals who had no styles, or with the style owned from round 1. Both flatter every style and rank them differently. Those numbers are history, not guidance.
+
+## All styles (current values)
+
+**Price** is the default in EXP; **was** is the price before the latest rebalance. **Win %** is the tested bard's win rate against two shopping rivals (parity is 33.3%), 600 games, from round 5.
 
 ### Original styles
 
-| Style | id | Price | What it does | Tunables | Win % (real timing) | Win % (held from R1) |
-|---|---|---|---|---|---|---|
-| **Rallying Cry** | `staccato` | 2 | Once per turn, after one of your songs tames a monster, refresh a spent d4 or d8 song of your choice. | `staccatoMaxFaces` (8) | 36.2 | 47.0 |
-| **Extra Verse** | `coda` | 1 | Gain a 7th song slot. Losing the style returns that song's die as an unclaimed reward. | — | 40.0 | 41.5 |
-| **War Drums** | `ostinato` | 2 | All your dice crit one number lower (a d4 on a 3, a d20 on a 19). Bonus dice from a crit still need the top face to keep chaining. | `ostinatoCritFace` (3), `ostinatoMaxFaces` (20), `ostinatoCascadeBonus` (0), `ostinatoChainFace` (4 = top face only) | 38.2 | 42.3 |
-| **Nimble Fingers** | `rubato` | 2 | Twice per turn, reroll any song for free. | `rubatoMaxFaces` (20), `rubatoUsesPerTurn` (2) | 29.2 | 45.2 |
-| **Master's Touch** | `virtuoso` | 4 | Once per turn, your first d12 or d20 roll is rolled twice; keep the higher. | `virtuosoMinFaces` (12) | 28.7 | 41.5 |
-| **Dragon's Roar** | `fortissimo` | 4 | +2 to every d20 roll. A d20 that reaches 20 this way crits. | `fortissimoBonus` (2) | 38.0 | 46.2 |
-| **Lingering Note** | `fermata` | 4 | Once per turn, a d20 song that doesn't tame its target isn't spent, for 1 Inspiration. Without the Inspiration, the song is spent as usual. | `fermataMinFaces` (20), `fermataInspirationCost` (1) | 37.5 | 47.7 |
-| **Dissonance** | `counterpoint` | 2 | Once per turn, a roll against an immune target deals full damage. | `counterpointMultiplier` (1) | 33.7 | 48.5 |
-| **Harmony** | `tutti` | 4 | If your setlist holds all four elements, +3 to your first roll each turn (can't crit). | `tuttiBonus` (3), `tuttiElements` (4) | 32.7 | 46.5 |
-| **Fanfare** | `overture` | 3 | +2 to your first roll each turn (can't crit). | `overtureBonus` (2) | 32.2 | 43.7 |
-| **Crowd Favorite** | `bravo` | 3 | +10 Fame for every Lv3+ monster you tame. | `bravoFamePerTame` (10), `bravoMinLevel` (3) | 39.2 | 48.8 |
-| **Muse's Favor** | `ispirato` | 3 | Gain 1 Inspiration at the start of each turn. | `ispiratoPerTurn` (1), `ispiratoMin` (1, the floor it tops up to) | 29.7 | 42.3 |
-
-Before the rebalance, Lingering Note held d12 and d20 songs for free and Dissonance dealt half damage. The "held from R1" column is how the rebalance was first judged; the real-timing column is the one to use now (see below).
-
-Alternatives tried (all measured held from round 1, so read them against that column): War Drums with bonus dice also chaining one number lower on all dice (`ostinatoChainFace: 3`) 50.0%, slightly strong, so not shipped; War Drums on d4s only 36.7%, and on d4s only with bonus dice chaining on a 3 or 4 (`ostinatoMaxFaces: 4`, `ostinatoChainFace: 3`, no cascade cap) 34.5%, no better, because bard's d4s get upgraded away (fandom falls from 72 to 64); Lingering Note on any die for 1 Inspiration 50.3% (slightly strong), for 2 Inspiration 38.2% (too weak); Dissonance at ¾ damage 42.8%.
+| Style | id | Price (was) | What it does | Tunables | Win % |
+|---|---|---|---|---|---|
+| **Rallying Cry** | `staccato` | 2 (2) | Once per turn, after one of your songs tames a monster, refresh a spent d4 or d8 song of your choice. | `staccatoMaxFaces` (8) | 32.4 |
+| **Extra Verse** | `coda` | 1 (1) | Gain a 7th song slot. Losing the style returns that song's die as an unclaimed reward. | — | 30.1 |
+| **War Drums** | `ostinato` | 2 (2) | All your dice crit one number lower (a d4 on a 3, a d20 on a 19). Bonus dice from a crit still need the top face to keep chaining. | `ostinatoCritFace` (3), `ostinatoMaxFaces` (20), `ostinatoCascadeBonus` (0), `ostinatoChainFace` (4 = top face only) | 34.3 |
+| **Nimble Fingers** | `rubato` | 1 (2) | Twice per turn, reroll any song for free. | `rubatoMaxFaces` (20), `rubatoUsesPerTurn` (2) | 28.8 |
+| **Master's Touch** | `virtuoso` | 2 (4) | Once per turn, your first d8, d12 or d20 roll is rolled twice; keep the higher. | `virtuosoMinFaces` (8, was 12) | 31.6 |
+| **Dragon's Roar** | `fortissimo` | 2 (4) | +2 to every d20 roll. A d20 that reaches 20 this way crits. | `fortissimoBonus` (2) | 33.6 |
+| **Lingering Note** | `fermata` | 3 (4) | Once per turn, a d20 song that doesn't tame its target isn't spent, for 1 Inspiration. Without the Inspiration, the song is spent as usual. | `fermataMinFaces` (20), `fermataInspirationCost` (1) | 34.5 |
+| **Dissonance** | `counterpoint` | 1 (2) | Once per turn, a roll against an immune target deals full damage. | `counterpointMultiplier` (1) | 31.9 |
+| **Harmony** | `tutti` | 2 (4) | If your setlist holds all four elements, +3 to your first roll each turn (can't crit). | `tuttiBonus` (3), `tuttiElements` (4) | 30.3 |
+| **Fanfare** | `overture` | 2 (3) | +2 to your first roll each turn (can't crit). | `overtureBonus` (2) | 32.8 |
+| **Crowd Favorite** | `bravo` | 4 (3) | +10 Fame for every Lv3+ monster you tame. | `bravoFamePerTame` (10), `bravoMinLevel` (3) | 32.9 |
+| **Muse's Favor** | `ispirato` | 1 (3) | Gain 3 Inspiration at the start of each turn. | `ispiratoPerTurn` (3, was 1), `ispiratoMin` (1, the floor it tops up to) | 36.8 |
 
 ### Promoted from the style lab
 
 These keep kebab-case ids. Their effects are data-defined specs that `studioSpec()` builds from the live tunables.
 
-| Style | id | Price | What it does | Tunables | Win % (real timing) | Win % (held from R1) |
-|---|---|---|---|---|---|---|
-| **Hometown Hero** | `hometown-hero` | 2 | Dice of your starting element get +1 (can crit). | `hometownHeroBonus` (1) | 32.7 | 45.8 |
-| **Small Ensemble** | `small-ensemble` | 3 | Your d4s and d8s roll twice; keep the higher. | `smallEnsembleMaxFaces` (8) | 41.3 | 46.5 |
-| **Studio Regular** | `studio-regular` | 2 | Upgrades cost 1 less EXP. | `studioRegularDiscount` (1) | 42.5 | 48.2 |
-| **Inspired Play** | `inspired-play` | 3 | +2 to every die while you hold 3+ Inspiration (can't crit). | `inspiredPlayBonus` (2), `inspiredPlayMin` (3) | 40.3 | 47.8 |
-| **Double Time** | `double-time` | 3 | Once per turn, a die rolls twice; keep the higher. It always applies to the first die you roll that turn. | — | 42.5 | 43.2 |
-| **Chain Reaction** | `chain-reaction` | 3 | +2 per same-element song played in a row before this one (max +6, can't crit). | `chainReactionBonus` (2), `chainReactionCap` (6) | 35.0 | 47.8 |
-| **Swarm Singer** | `swarm-singer` | 2 | +2 to every die in fights with 3+ monsters (can't crit). | `swarmSingerBonus` (2), `swarmSingerMin` (3) | 40.5 | 44.7 |
-| **Jam Session** | `jam-session` | 3 | +2 to every die while you share a space with another bard (can't crit). | `jamSessionBonus` (2) | 37.3 | 47.5 |
-
-## How the simulation models buying
-
-`ROUND=5 STYLES=<id> npx tsx scripts/style-audit.ts 300` puts the style on the tested bard's shelf from round 5 on and makes them buy it at its real price the first turn they can afford it, ahead of dice upgrades, so the EXP cost is really paid. The other bards never see it. Round 5 comes from `npx tsx scripts/style-timing.ts`, which plays normal games with styles on sale and reports when bots buy: first style median round 5 (middle half 4–6), second style round 7; nearly every bard buys one; they hold about 0.4 EXP at the start of a round-5 turn and ~0 earlier, because everything is spent on dice every turn. `BUY=n` (an older mode) and no mode at all (style held from round 1) are kept for comparison but should not be used to set prices.
-
-### Price and power sweeps at real timing (300 games, from round 5)
-
-| Style | Price 1 | Price 2 | Price 3 | Price 4 | Notes |
+| Style | id | Price (was) | What it does | Tunables | Win % |
 |---|---|---|---|---|---|
-| Master's Touch | 35.0 | 31.0 | 35.3 | 28.7 (now) | A price cut alone does not fix it. With `virtuosoMinFaces: 8` (also d8s): 38.5 at 2 EXP, 35.2 at 3 EXP |
-| Nimble Fingers | 37.2 | 29.2 (now) | | | |
-| Muse's Favor | 33.5 | 32.3 | 29.7 (now) | | Two Inspiration a turn (`ispiratoPerTurn: 2`): 34.5 at 3 EXP, 34.0 at 2 EXP |
-| Fanfare | 41.7 | 37.0 | 32.2 (now) | | |
-| Harmony | 40.2 | 38.3 | | 32.7 (now) | |
-| Hometown Hero | 40.3 | 32.7 (now) | | | |
-| Dissonance | 40.3 | 33.7 (now) | | | |
-| Chain Reaction | | 38.7 | 35.0 (now) | | |
+| **Hometown Hero** | `hometown-hero` | 1 (2) | Dice of your starting element get +1 (can crit). | `hometownHeroBonus` (1) | 34.3 |
+| **Small Ensemble** | `small-ensemble` | 4 (3) | Your d4s and d8s roll twice; keep the higher. | `smallEnsembleMaxFaces` (8) | 37.7 |
+| **Studio Regular** | `studio-regular` | 2 (2) | Upgrades cost 1 less EXP. | `studioRegularDiscount` (1) | 36.8 |
+| **Inspired Play** | `inspired-play` | 3 (3) | +2 to every die while you hold 3+ Inspiration (can't crit). | `inspiredPlayBonus` (2), `inspiredPlayMin` (3) | 37.6 |
+| **Double Time** | `double-time` | 2 (3) | Once per turn, a die rolls twice; keep the higher. It always applies to the first die you roll that turn. | — | 31.7 |
+| **Chain Reaction** | `chain-reaction` | 2 (3) | +2 per same-element song played in a row before this one (max +6, can't crit). | `chainReactionBonus` (2), `chainReactionCap` (6) | 31.5 |
+| **Swarm Singer** | `swarm-singer` | 2 (2) | +2 to every die in fights with 3+ monsters (can't crit). | `swarmSingerBonus` (2), `swarmSingerMin` (3) | 33.9 |
+| **Jam Session** | `jam-session` | 2 (3) | +2 to every die while you share a space with another bard (can't crit). | `jamSessionBonus` (2) | 31.0 |
+
+All 20 land between **28.8% and 37.7%**; the middle of the pack is about 33%.
+
+## What the latest rebalance changed
+
+Applied together after the realistic-timing re-test, then tuned against shopping rivals:
+
+| Style | Change | Why |
+|---|---|---|
+| Fanfare | 3 → 2 EXP | Unaffordable for what it did |
+| Harmony | 4 → 2 EXP | Same |
+| Hometown Hero | 2 → 1 EXP | Same |
+| Dissonance | 2 → 1 EXP | Same |
+| Nimble Fingers | 2 → 1 EXP | Same |
+| Chain Reaction | 3 → 2 EXP | Same |
+| Master's Touch | 4 → 2 EXP, and d8s too (`virtuosoMinFaces` 12 → 8) | A price cut alone left it at 35% unopposed; covering d8s fixed it |
+| Muse's Favor | 3 → 1 EXP, and +3 Inspiration a turn (was +1) | +1 a turn was the weakest style at any price |
+| Dragon's Roar | 4 → 2 EXP | Weak against shopping rivals |
+| Lingering Note | 4 → 3 EXP | Slightly weak once rivals have styles |
+| Double Time | 3 → 2 EXP | Same |
+| Crowd Favorite | 3 → 4 EXP | Strong against shopping rivals (41.3% at 3) |
+| Small Ensemble | 3 → 4 EXP | Strong against shopping rivals (about 39% at 3) |
+| Jam Session | 3 → 2 EXP | Situational (needs another bard on your space) |
+
+Earlier in the same work, before the timing correction: Crowd Favorite became +10 Fame at Lv3+, Lingering Note became d20-only for 1 Inspiration, Dissonance became full damage once per turn, Nimble Fingers got two rerolls and covers any die, Rallying Cry refreshes d4/d8 songs, Harmony became +3, War Drums makes every die crit one number lower, and Muse's Favor started gaining Inspiration every turn.
+
+## Sweeps against shopping rivals
+
+Win % (400 games, from round 5) at different prices. Parity is 33.3%.
+
+| Style | Prices tried → win % |
+|---|---|
+| Crowd Favorite | 3 → 41.3 · 4 → 35.6 · 5 → 37.4 |
+| Double Time | 3 → 29.0 · 2 → 32.3 |
+| Dragon's Roar | 4 → 28.9 · 3 → 31.9 · 2 → 34.9 |
+| Lingering Note | 4 → 30.0 · 3 → 35.8 · 2 → 39.3 |
+| Muse's Favor | +2/turn at 1 EXP → 31.0 (400 games) · +3/turn at 1 EXP → 34.5 |
+| Small Ensemble (600 games) | 4 → 37.7 · 5 → 31.7 |
+| Jam Session (600 games) | 1 → 33.0 · 2 → 31.0 |
+
+Alternatives tried earlier, mostly measured with rivals that held no styles, so read them as rough: War Drums with bonus dice chaining one lower on all dice 50.0% held from round 1 (not shipped); War Drums on d4s only 36.7%, and d4s only with chaining 34.5%; Lingering Note on any die for 1 Inspiration 50.3%, for 2 Inspiration 38.2%; Dissonance at ¾ damage 42.8%.
 
 ## Where the logic lives
 
@@ -92,19 +118,17 @@ These keep kebab-case ids. Their effects are data-defined specs that `studioSpec
 ## Re-running the numbers
 
 ```bash
-ROUND=5 STYLES=jam-session npx tsx scripts/style-audit.ts 300
+OPP=1 ROUND=5 STYLES=jam-session npx tsx scripts/style-audit.ts 600
+```
+
+```bash
+OPP=1 ROUND=5 STYLES=virtuoso TUNE='{"styleCostVirtuoso":3}' npx tsx scripts/style-audit.ts 600
 ```
 
 ```bash
 npx tsx scripts/style-timing.ts 200
 ```
 
-```bash
-ROUND=5 STYLES=bravo TUNE='{"bravoMinLevel":2}' npx tsx scripts/style-audit.ts 300
-```
+Add `none` to `STYLES` for the all-shopping baseline. Drop `OPP=1` for the easier "rivals hold no styles" test.
 
-```bash
-ROUND=5 STYLES=virtuoso TUNE='{"styleCostVirtuoso":2}' npx tsx scripts/style-audit.ts 300
-```
-
-The 100 experimental styles that haven't been promoted, and the full rebalance history, are in [`docs/style-lab-report.md`](docs/style-lab-report.md).
+The 100 experimental styles that haven't been promoted, and the older rebalance history, are in [`docs/style-lab-report.md`](docs/style-lab-report.md).

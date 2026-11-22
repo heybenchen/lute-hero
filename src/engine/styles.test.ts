@@ -386,7 +386,7 @@ describe('Turn starts', () => {
     let state = startGame()
     state = { ...state, players: state.players.map((p) => (p.id === 'player-2' ? { ...p, styles: ['ispirato'], inspiration: 0 } : p)) }
     state = apply(state, { type: 'END_TURN' }).state
-    expect(state.players[1].inspiration).toBe(1)
+    expect(state.players[1].inspiration).toBe(DEFAULT_TUNABLES.ispiratoPerTurn)
 
     state = { ...state, players: state.players.map((p) => (p.id === 'player-2' ? { ...p, inspiration: 3 } : p)) }
     state = apply(state, { type: 'END_TURN' }).state // round ends → player-1

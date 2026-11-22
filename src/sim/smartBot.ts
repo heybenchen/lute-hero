@@ -744,7 +744,11 @@ export class SmartBot {
     const forced = this.forcedStyle
     if (forced && this.state.currentRound + 1 >= forced.fromRound && !me.styles.includes(forced.id)) {
       const offerIndex = this.state.styleOffers.indexOf(forced.id)
-      if (offerIndex >= 0 && canAfford(me, styleCost(forced.id))) this.act({ type: 'BUY_STYLE', offerIndex })
+      if (offerIndex >= 0 && canAfford(me, styleCost(forced.id))) {
+        // At the style cap the first owned style makes room
+        const replaceStyleId = me.styles.length >= maxStyles() ? me.styles[0] : undefined
+        this.act({ type: 'BUY_STYLE', offerIndex, ...(replaceStyleId ? { replaceStyleId } : {}) })
+      }
     }
     for (let guard = 0; guard < 30; guard++) if (!this.shopStep()) break
     this.act({ type: 'CLOSE_STUDIO' })
