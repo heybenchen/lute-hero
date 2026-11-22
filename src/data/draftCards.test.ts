@@ -7,6 +7,7 @@ import {
   createElementalDie,
   getInspirationCost,
 } from './draftCards'
+import { withTunables } from './tunables'
 
 describe('Elemental Dice Shop', () => {
   describe('costs', () => {
@@ -20,11 +21,17 @@ describe('Elemental Dice Shop', () => {
       expect(upgradeCostFor('d20')).toBe(4)
     })
 
-    it('should escalate inspiration cost by 1 EXP per purchase this turn', () => {
+    it('should cost a flat 1 EXP per Inspiration however many are bought this turn', () => {
       expect(getInspirationCost(0)).toBe(1)
-      expect(getInspirationCost(1)).toBe(2)
-      expect(getInspirationCost(2)).toBe(3)
-      expect(getInspirationCost(3)).toBe(4)
+      expect(getInspirationCost(1)).toBe(1)
+      expect(getInspirationCost(3)).toBe(1)
+    })
+
+    it('should escalate when a cost step is set', () => {
+      withTunables({ inspirationCostStep: 1 }, () => {
+        expect(getInspirationCost(0)).toBe(1)
+        expect(getInspirationCost(2)).toBe(3)
+      })
     })
   })
 

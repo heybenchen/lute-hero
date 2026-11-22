@@ -2,10 +2,13 @@ import { EngineCombatState, EngineState } from './state.js'
 import { GameAction, ActorSeat } from './actions.js'
 import { getPlayableSongs, mergeSongs } from '../game-logic/showdown/showdown.js'
 import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
-import { newD4Cost, getUpgradeCost, getInspirationCost, inspirationSpend } from '../data/draftCards.js'
+import { inspirationSpend } from '../data/draftCards.js'
 import { getTunables } from '../data/tunables.js'
+import { inspirationRules } from '../game-logic/styles/specs.js'
+import { specsOf } from '../data/styleSpecs.js'
+import { canAfford, d4CostFor, inspirationCostFor, movesFor, upgradeCostFor } from './economy.js'
 import { styleCost, maxStyles } from '../data/styles.js'
-import { rubatoCanReroll } from '../game-logic/styles/styleEffects.js'
+import { rubatoCanReroll, rubatoUsesLeft, staccatoCanRefresh } from '../game-logic/styles/styleEffects.js'
 
 export function maxMovesPerTurn(): number {
   return getTunables().maxMovesPerTurn
@@ -116,7 +119,7 @@ export function validateAction(
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player) return illegal('Unknown player')
       if (player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
-      if (player.movesThisTurn >= maxMovesPerTurn()) return illegal('No moves left this turn')
+      if (player.movesThisTurn >= movesFor(player)) return illegal('No moves left this turn')
       if (action.toSpaceId === player.position) return illegal('Already on that space')
       if (!state.spaces.some((s) => s.id === action.toSpaceId)) return illegal('Unknown space')
       if (!areSpacesConnected(player.position, action.toSpaceId, state.spaces)) {
@@ -185,10 +188,13 @@ export function validateAction(
       if (!fighter) return illegal('No fighter')
       if (action.rubato) {
         if (!fighter.styles.includes('rubato')) return illegal('Rubato is not one of your styles')
-        if (state.combat.stylesUsed.includes('rubato')) return illegal('Rubato is already used this turn')
+        if (rubatoUsesLeft(state.combat.stylesUsed) <= 0) return illegal('Nimble Fingers is used up this turn')
         const song = fighter.songs.find((sg) => sg.id === state.combat.lastPlayedSongId)
-        if (!song || !rubatoCanReroll(song)) return illegal('Rubato rerolls only d4 and d8 songs')
-      } else if (fighter.inspiration < inspirationSpend()) {
+        if (!song || !rubatoCanReroll(song)) return illegal("Nimble Fingers can't reroll a die that large")
+      } else if (
+        fighter.inspiration < inspirationSpend() &&
+        state.combat.freeRerollsUsed >= inspirationRules(specsOf(fighter)).freePerTurn
+      ) {
         return illegal('Not enough Inspiration')
       }
       return validateCombatTarget(state.combat, state.combat.lastTargetMonsterId)
@@ -205,6 +211,8 @@ export function validateAction(
       if (!state.combat.rallyReady) return illegal('Tame a monster first')
       if (!fighter.songs.some((sg) => sg.id === action.songId)) return illegal('Choose one of your own songs')
       if (!state.combat.spentSongIds.includes(action.songId)) return illegal('That song is not spent')
+      const rallied = fighter.songs.find((sg) => sg.id === action.songId)
+      if (!rallied || !staccatoCanRefresh(rallied)) return illegal('Rallying Cry cannot refresh a die that large')
       return ok
     }
 
@@ -330,7 +338,7 @@ export function validateAction(
           (slot.dice?.id ?? null) !== destination.previousDieId) return illegal('The selected die or offer changed')
         if (slot.dice && player.songs.some((song) => !song.slots[0].dice)) return illegal('Use an empty slot first')
       }
-      if (player.exp < newD4Cost()) return illegal('Not enough EXP')
+      if (!canAfford(player, d4CostFor(player))) return illegal('Not enough EXP')
       return ok
     }
 
@@ -352,9 +360,9 @@ export function validateAction(
       if (die.genre !== state.elementOffers[action.offerIndex]) {
         return illegal('Die element does not match the chip')
       }
-      const cost = getUpgradeCost(die.type)
+      const cost = upgradeCostFor(player, die)
       if (cost === null) return illegal('Die is already at max tier')
-      if (player.exp < cost) return illegal('Not enough EXP')
+      if (!canAfford(player, cost)) return illegal('Not enough EXP')
       return ok
     }
 
@@ -395,7 +403,7 @@ export function validateAction(
       if (studioGate.ok === false) return studioGate
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
-      const cost = getInspirationCost(player.inspirationBoughtThisTurn)
+      const cost = inspirationCostFor(player)
       if (player.exp < cost) return illegal('Not enough EXP')
       return ok
     }
@@ -410,7 +418,7 @@ export function validateAction(
       const styleId = state.styleOffers[action.offerIndex]
       if (!styleId || (action.expectedStyleId && action.expectedStyleId !== styleId)) return illegal('No such style on offer')
       if (player.styles.includes(styleId)) return illegal('You already play in that style')
-      if (player.exp < styleCost(styleId)) return illegal('Not enough EXP')
+      if (!canAfford(player, styleCost(styleId))) return illegal('Not enough EXP')
       if (player.styles.length >= maxStyles()) {
         if (!action.replaceStyleId || !player.styles.includes(action.replaceStyleId)) {
           return illegal(`You can hold ${maxStyles()} styles — choose one to replace`)
@@ -457,8 +465,11 @@ export function validateAction(
         if (state.showdownUndo.rubatoUsed) return illegal('Rubato is already used this verse')
         const undo = state.showdownUndo
         const songs = performer.songs.filter((sg) => (undo.songIds ?? [undo.songId]).includes(sg.id))
-        if (!songs.length || !rubatoCanReroll(mergeSongs(songs))) return illegal('Rubato rerolls only d4 and d8 songs')
-      } else if (performer.inspiration < inspirationSpend()) {
+        if (!songs.length || !rubatoCanReroll(mergeSongs(songs))) return illegal("Nimble Fingers can't reroll a die that large")
+      } else if (
+        performer.inspiration < inspirationSpend() &&
+        (state.showdownUndo.freeRerollsUsed ?? 0) >= inspirationRules(specsOf(performer)).freePerTurn
+      ) {
         return illegal('Not enough Inspiration')
       }
       return ok

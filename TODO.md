@@ -6,7 +6,7 @@
 
 ## Medium Priority
 
-- Rebalance styles from the audit: Crowd Favorite 5→2 Fame/tame and Dragon's Roar +2→+1 (both sim to ~45%); limit Lingering Note to d20s and re-price Rallying Cry; rework Harmony (per-element bonus), Dissonance and Muse's Favor; consider the 12 proposed new styles (Session Player, Crescendo, Glass Cannon, Signature Sound, Tough Crowd, Wanderer, Word of Mouth, Duet, Busker, Showstopper, Underdog, Encore Act).
+- Styles are balanced against shopping rivals (see `songStyles.md`): all 20 win 28.8–37.7% against a 33.3% parity. Possible follow-ups: test style pairs at real timing (`PAIRS=1`), and a wider-than-3-seat table.
 
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
 
@@ -15,7 +15,12 @@
 (none)
 
 ## Completed
-
+- Inspiration now always costs 1 EXP (`inspirationCostStep` 1 → 0): simulations showed the rising price made no difference to bot play (`docs/style-lab-report.md`, "Inspiration: how much is it worth?"). The step is still a tunable.
+- Re-balanced all styles with a realistic style audit: bots buy styles in round 5 at real prices and rivals shop for styles too (`OPP=1 ROUND=5`). Price cuts for Fanfare, Harmony, Hometown Hero, Dissonance, Nimble Fingers, Chain Reaction, Master's Touch (also d8s), Dragon's Roar, Double Time, Lingering Note and Jam Session; price rises for Crowd Favorite and Small Ensemble; Muse's Favor is +3 Inspiration a turn for 1 EXP.
+- Finished the style rebalance: Lingering Note holds only d20 songs and costs 1 Inspiration per use (61.0% → 47.7%), and Dissonance deals full damage to an immune target once per turn (40.7% → 48.5%).
+- Added `songStyles.md`, the reference for every Studio style (rule, price, tunables, file locations, win %), with KEEP IN SYNC notes in the style code.
+- Shipped the style rebalance: Crowd Favorite is +10 Fame per Lv3+ tame (now 4 EXP) (`bravoMinLevel`), Rallying Cry refreshes d4/d8 songs, Harmony is +3, War Drums makes every die crit one number lower, Nimble Fingers rerolls any song twice per turn, and Muse's Favor gains 1 Inspiration each turn. Eight style-lab styles joined the Studio (Hometown Hero, Small Ensemble, Studio Regular, Inspired Play, Double Time, Chain Reaction, Swarm Singer, Jam Session), built as tunable specs. All of them simulate at 42–48% held vs a 31.8% baseline, and prices come from a buy-when-affordable sweep (`BUY=n`).
+- Style rebalance computed with smart-bot simulations (all 12 styles land at 41.5–47.7% vs a 31.8% no-style baseline; values in `docs/style-lab-report.md`, every one a tunable — defaults not yet switched). Style lab: data-defined style toolkit in the engine + odds + smart bot; 100 experimental styles in 10 themed batches simulated (20 balanced, 12 slightly strong, 13 slightly weak, 21 too strong, 34 too weak).
 - Staged the Final Showdown with Three.js lute strings, elemental impacts, verse absorption, a shattering finale, rolled-dice staff, and a winner highlight drawn from actual verse history.
 
 - Wounding a monster locks the combat target until it is defeated or the bard retreats. The rule applies to the bard’s own songs, featured songs, and simulation bots.

@@ -8,7 +8,7 @@ import { DEFAULT_TUNABLES, withTunables } from '../data/tunables'
 /** Monte Carlo of the real engine roll vs the exact distribution. */
 function compare(type: DiceType, styles: StyleId[], firstRoll: boolean, opts: Parameters<typeof rollDist>[1]) {
   const song: Song = { id: 's', used: false, slots: [{ dice: { id: 'd', type, genre: 'Ballad' } }] }
-  const ctx: StyleContext = { styles, used: [], firstRoll, allElements: true }
+  const ctx: StyleContext = { styles, used: [], firstRoll, allElements: true, elementCount: 4 }
   const rng = mulberry32(17)
   const N = 120_000
   const counts = new Map<number, number>()
@@ -40,4 +40,42 @@ describe('exact roll distributions match the engine', () => {
   it('War Drums on a d4', () => compare('d4', ['ostinato'], false, { critFace: DEFAULT_TUNABLES.ostinatoCritFace, maxCascades: m }))
   it('Fanfare + Harmony flat bonus on the first roll', () =>
     compare('d8', ['overture', 'tutti'], true, { flat: DEFAULT_TUNABLES.overtureBonus + DEFAULT_TUNABLES.tuttiBonus, maxCascades: m }))
+})
+
+describe('generic roll options: engine roll matches the exact distribution', () => {
+  const cases: [DiceType, Omit<import('../game-logic/styles/specs').GenericRollOptions, 'maxCascades'>][] = [
+    ['d12', { disadvantage: true }],
+    ['d8', { rerollAtMost: 3 }],
+    ['d20', { flipAtMost: 5 }],
+    ['d12', { floor: 5 }],
+    ['d8', { cascadeBonus: 2, critFace: 7 }],
+    ['d4', { critFace: 3, cascadeFace: 3 }],
+    ['d8', { critFace: 7, cascadeFace: 6, cascadeBonus: 1 }],
+    ['d20', { noCrit: true, flat: 3 }],
+    ['d12', { times: 1.5, advantage: true }],
+    ['d4', { rerollAtMost: 1, critBonus: 1, flat: 1, times: 2 }],
+  ]
+  for (const [type, extra] of cases) {
+    it(`${type} ${JSON.stringify(extra)}`, async () => {
+      const { rollWithOptions } = await import('../game-logic/styles/specs')
+      const opts = { ...extra, maxCascades: DEFAULT_TUNABLES.maxCritCascades }
+      const rng = mulberry32(99)
+      const N = 120_000
+      const counts = new Map<number, number>()
+      for (let i = 0; i < N; i++) {
+        const r = rollWithOptions({ id: 'd', type, genre: 'Folk' }, opts, rng)
+        const total = r.value + (r.bonus ?? 0) + r.critBonus
+        counts.set(total, (counts.get(total) ?? 0) + 1)
+      }
+      const dist = rollDist(type, opts)
+      let mc = 0
+      for (const [t, c] of counts) mc += (t * c) / N
+      expect(mean(dist)).toBeCloseTo(mc, 0)
+      for (const hp of [4, 8, 12, 18, 25]) {
+        let p = 0
+        for (const [t, c] of counts) if (t >= hp) p += c / N
+        expect(Math.abs(killChance(dist, 1, hp) - p)).toBeLessThan(0.01)
+      }
+    })
+  }
 })

@@ -9,12 +9,12 @@ import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateMonsterFameValue } from '@/game-logic/fame/calculator'
 import { computeCombatRewards } from '@/engine/reducer'
-import { Monster, Song } from '@/types'
+import { Monster, Song, StyleId } from '@/types'
 import type { EngineEvent } from '@/engine/events'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
 import { STYLES } from '@/data/styles'
-import { counterpointMultiplier, rubatoCanReroll } from '@/game-logic/styles/styleEffects'
+import { counterpointMultiplier, rubatoCanReroll, rubatoUsesLeft, staccatoCanRefresh } from '@/game-logic/styles/styleEffects'
 import { songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
 import { Flag, RotateCcw, Sparkles, Target } from 'lucide-react'
@@ -46,6 +46,7 @@ export function CombatModal() {
       lockedTargetMonsterId: state.lockedTargetMonsterId,
       players: state.players,
       stylesUsed: state.stylesUsed,
+      specFired: state.specFired,
       styleNotes: state.styleNotes,
       rallyReady: state.rallyReady,
       featuredPlayerIds: state.featuredPlayerIds,
@@ -63,6 +64,7 @@ export function CombatModal() {
     lockedTargetMonsterId,
     players,
     stylesUsed,
+    specFired,
     styleNotes,
     rallyReady,
     featuredPlayerIds,
@@ -191,7 +193,7 @@ export function CombatModal() {
   const hasSpentOwnSong = player.songs.some((sg) => isSongSpent(sg.id))
 
   const canRubato = (song: Song) =>
-    player.styles.includes('rubato') && !stylesUsed.includes('rubato') && rubatoCanReroll(song)
+    player.styles.includes('rubato') && rubatoUsesLeft(stylesUsed) > 0 && rubatoCanReroll(song)
   const canNimbleReroll = canPaidReroll && !!lastPlayedSong && canRubato(lastPlayedSong)
 
   const handleRubato = async () => {
@@ -222,7 +224,7 @@ export function CombatModal() {
   const target = monsters.find((monster) => monster.id === selectedTargetId)
   const availableTargets = lockedTarget ? [lockedTarget] : monsters
   const damageOptions = {
-    immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false }),
+    immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false, elementCount: 0 }),
   }
   const retreatForfeitsDamage =
     canContinue &&
@@ -422,11 +424,11 @@ export function CombatModal() {
                     disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
                     index={idx}
                     rolls={currentSongId === song.id ? rolls : undefined}
-                    onRally={canRally && isSongSpent(song.id) ? () => handleRally(song.id) : undefined}
+                    onRally={canRally && isSongSpent(song.id) && staccatoCanRefresh(song) ? () => handleRally(song.id) : undefined}
                   />
                 ))}
               </SongGrid>
-              <CombatStyles player={player} usedStyleIds={stylesUsed} />
+              <CombatStyles player={player} usedStyleIds={[...stylesUsed, ...((specFired ?? []) as StyleId[])]} />
             </section>
           )}
 

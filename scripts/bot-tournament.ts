@@ -23,6 +23,8 @@ const GAMES = Number(process.argv[2] ?? 300)
 const LINEUP = (process.argv[3] ?? 'SBB').split('') as ('S' | 'V' | 'B' | 'X')[]
 const PARAMS: Partial<SmartParams> = JSON.parse(process.env.PARAMS ?? '{}')
 const VS: Partial<SmartParams> = JSON.parse(process.env.VS ?? '{}')
+/** Tunable overrides for every seat, e.g. TUNE='{"inspirationCostStep":0}'. */
+const TUNE = JSON.parse(process.env.TUNE ?? '{}')
 
 /** The baseline's showdown: the element with the highest expected total, no rerolls. */
 function baselineShowdownTurn(s: EngineState, ctx: ActionCtx): EngineState {
@@ -52,7 +54,8 @@ function game(seed: number) {
   const n = LINEUP.length
   const genres = [...ALL_GENRES].sort(() => rng() - 0.5).slice(0, n)
   const seats = [...LINEUP].sort(() => rng() - 0.5)
-  const started = applyAction(createInitialEngineState(), { type: 'START_GAME', playerConfigs: genres.map((g, i) => ({ name: `P${i}`, starterGenre: g })) }, ctx)
+  const init = createInitialEngineState()
+  const started = applyAction({ ...init, tunables: { ...init.tunables, ...TUNE } }, { type: 'START_GAME', playerConfigs: genres.map((g, i) => ({ name: `P${i}`, starterGenre: g })) }, ctx)
   if (!started.ok) throw new Error(started.message)
   let s = started.state
   const smart = new SmartBot(s, rng, PARAMS)

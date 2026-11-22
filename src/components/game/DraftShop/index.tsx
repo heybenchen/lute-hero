@@ -12,6 +12,7 @@ import {
   inspirationSpend,
 } from '@/data/draftCards'
 import { GENRE_THEME } from '@/data/genreTheme'
+import { getTunables } from '@/data/tunables'
 import { StyleShelf } from './StyleShelf'
 import { RefreshCw } from 'lucide-react'
 
@@ -118,7 +119,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     border: '1px solid rgba(176, 124, 255, 0.45)',
                     color: '#d9c2ff',
                   }}
-                  title={`Buy 1 Inspiration for ${inspirationCost} EXP (cost rises each purchase this turn)`}
+                  title={`Buy 1 Inspiration for ${inspirationCost} EXP${getTunables().inspirationCostStep > 0 ? ' (cost rises each purchase this turn)' : ''}`}
                 >
                   Buy &#x2728; <span className="font-normal opacity-80">({inspirationCost} EXP)</span>
                 </button>

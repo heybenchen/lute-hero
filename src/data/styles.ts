@@ -1,3 +1,4 @@
+// KEEP IN SYNC: songStyles.md (repo root) documents every style's rule, price, tunables and simulated strength. When you change style logic, rule text, a price or a style tunable's default, or add or remove a style, update songStyles.md in the same change.
 import { StyleId } from '../types/index.js'
 import { getTunables } from './tunables.js'
 
@@ -70,7 +71,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'counterpoint',
     name: 'Dissonance',
     flavor: 'A clashing chord that no ward can fully block.',
-    rule: 'Once per turn, a roll against an immune target deals half damage instead of none.',
+    rule: 'Once per turn, a roll against an immune target deals full damage.',
   },
   tutti: {
     id: 'tutti',
@@ -96,6 +97,54 @@ export const STYLES: Record<StyleId, StyleDef> = {
     flavor: 'Inspiration never leaves you for long.',
     rule: 'Start each turn with at least 1 Inspiration.',
   },
+  'hometown-hero': {
+    id: 'hometown-hero',
+    name: 'Hometown Hero',
+    flavor: 'The songs of home never miss a beat.',
+    rule: 'Dice of your starting element get +1 (can crit).',
+  },
+  'small-ensemble': {
+    id: 'small-ensemble',
+    name: 'Small Ensemble',
+    flavor: 'Two humble players, one clear voice.',
+    rule: 'Your d4s and d8s roll twice; keep the higher.',
+  },
+  'studio-regular': {
+    id: 'studio-regular',
+    name: 'Studio Regular',
+    flavor: 'The luthier knows your name, and your tab.',
+    rule: 'Upgrades cost 1 less EXP.',
+  },
+  'inspired-play': {
+    id: 'inspired-play',
+    name: 'Inspired Play',
+    flavor: 'A head full of ideas makes every note ring truer.',
+    rule: '+2 to every die while you hold 3+ Inspiration.',
+  },
+  'double-time': {
+    id: 'double-time',
+    name: 'Double Time',
+    flavor: 'Twice as fast, and somehow twice as sure.',
+    rule: 'Once per turn, a die rolls twice; keep the higher.',
+  },
+  'chain-reaction': {
+    id: 'chain-reaction',
+    name: 'Chain Reaction',
+    flavor: 'One verse sparks the next, and the next.',
+    rule: '+2 per same-element song played in a row before this one (max +6).',
+  },
+  'swarm-singer': {
+    id: 'swarm-singer',
+    name: 'Swarm Singer',
+    flavor: 'The bigger the crowd, the louder the song.',
+    rule: '+2 to every die in fights with 3+ monsters.',
+  },
+  'jam-session': {
+    id: 'jam-session',
+    name: 'Jam Session',
+    flavor: 'Music is better with friends.',
+    rule: '+2 to every die while you share a space with another bard.',
+  },
 }
 
 export const ALL_STYLE_IDS = Object.keys(STYLES) as StyleId[]
@@ -116,7 +165,42 @@ export function styleCost(id: StyleId): number {
     case 'overture': return t.styleCostOverture
     case 'bravo': return t.styleCostBravo
     case 'ispirato': return t.styleCostIspirato
+    case 'hometown-hero': return t.styleCostHometownHero
+    case 'small-ensemble': return t.styleCostSmallEnsemble
+    case 'studio-regular': return t.styleCostStudioRegular
+    case 'inspired-play': return t.styleCostInspiredPlay
+    case 'double-time': return t.styleCostDoubleTime
+    case 'chain-reaction': return t.styleCostChainReaction
+    case 'swarm-singer': return t.styleCostSwarmSinger
+    case 'jam-session': return t.styleCostJamSession
   }
+}
+
+/** The tunable key holding a style's price ('styleCostHometownHero', …). */
+export function styleCostKey(id: StyleId): string {
+  return 'styleCost' + id.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join('')
+}
+
+/** "d12 or d20", "d4 or d8", "any", … for a die-size range given in faces. */
+function dieRange(minFaces: number, maxFaces: number): string {
+  const dice = (['d4', 'd8', 'd12', 'd20'] as const).filter((d) => {
+    const f = Number(d.slice(1))
+    return f >= minFaces && f <= maxFaces
+  })
+  if (dice.length === 4) return 'any'
+  if (dice.length === 0) return 'no'
+  return dice.length === 1 ? dice[0] : `${dice.slice(0, -1).join(', ')} or ${dice[dice.length - 1]}`
+}
+
+/** "d4s and d8s", "d12s and d20s", "all your dice", … for a die-size range given in faces. */
+function diePlural(minFaces: number, maxFaces: number): string {
+  const dice = (['d4', 'd8', 'd12', 'd20'] as const).filter((d) => {
+    const f = Number(d.slice(1))
+    return f >= minFaces && f <= maxFaces
+  }).map((d) => `${d}s`)
+  if (dice.length === 4) return 'all your dice'
+  if (dice.length === 0) return 'none of your dice'
+  return `your ${dice.length === 1 ? dice[0] : `${dice.slice(0, -1).join(', ')} and ${dice[dice.length - 1]}`}`
 }
 
 /** Live rule text with the current tunable numbers filled in. */
@@ -125,9 +209,57 @@ export function styleRule(id: StyleId): string {
   switch (id) {
     case 'fortissimo': return `+${t.fortissimoBonus} to every d20 roll. A d20 that reaches 20 this way crits.`
     case 'overture': return `+${t.overtureBonus} to your first roll each turn (can't crit).`
-    case 'tutti': return `If your setlist holds all four elements, +${t.tuttiBonus} to your first roll each turn (can't crit).`
-    case 'ostinato': return `Your d4s crit on a ${t.ostinatoCritFace} or higher (bonus dice still need a 4).`
-    case 'bravo': return `+${t.bravoFamePerTame} Fame for every monster you tame.`
+    case 'tutti': return t.tuttiElements >= 4
+      ? `If your setlist holds all four elements, +${t.tuttiBonus} to your first roll each turn (can't crit).`
+      : `If your setlist holds at least ${t.tuttiElements} elements, +${t.tuttiBonus} to your first roll each turn (can't crit).`
+    case 'ostinato': {
+      const lower = 4 - t.ostinatoCritFace
+      const by = lower === 1 ? 'one number' : `${lower} numbers`
+      const which = t.ostinatoMaxFaces >= 20 ? 'All your dice' : `Your ${dieRange(4, t.ostinatoMaxFaces)} dice`
+      const chain = t.ostinatoChainFace < 4
+        ? ` (bonus dice keep chaining${t.ostinatoChainFace === 3 ? ' one number lower' : ' on lower numbers'})`
+        : ' (bonus dice still need the top face)'
+      const extra = t.ostinatoCascadeBonus ? `; their bonus dice add +${t.ostinatoCascadeBonus}` : chain
+      return `${which} crit ${by} lower${extra}.`
+    }
+    case 'bravo': return t.bravoMinLevel > 1
+      ? `+${t.bravoFamePerTame} Fame for every Lv${t.bravoMinLevel}+ monster you tame.`
+      : `+${t.bravoFamePerTame} Fame for every monster you tame.`
+    case 'fermata': {
+      const pay = t.fermataInspirationCost > 0 ? `, for ${t.fermataInspirationCost} Inspiration` : ''
+      return `Once per turn, a ${dieRange(t.fermataMinFaces, 20)} song that doesn't tame its target isn't spent${pay}.`
+    }
+    case 'staccato': return t.staccatoMaxFaces >= 20
+      ? 'Once per turn, after one of your songs tames a monster, refresh a spent song of your choice.'
+      : `Once per turn, after one of your songs tames a monster, refresh a spent ${dieRange(4, t.staccatoMaxFaces)} song of your choice.`
+    case 'rubato': {
+      const times = t.rubatoUsesPerTurn === 1 ? 'Once' : t.rubatoUsesPerTurn === 2 ? 'Twice' : `${t.rubatoUsesPerTurn} times`
+      const which = t.rubatoMaxFaces >= 20 ? 'any song' : `a ${dieRange(4, t.rubatoMaxFaces)} song`
+      return `${times} per turn, reroll ${which} for free.`
+    }
+    case 'virtuoso': return `Once per turn, your first ${dieRange(t.virtuosoMinFaces, 20)} roll is rolled twice; keep the higher.`
+    case 'counterpoint': {
+      const m = t.counterpointMultiplier
+      const share = m >= 1 ? 'full' : m === 0.75 ? '¾' : m === 0.5 ? 'half' : m === 0.25 ? '¼' : `${Math.round(m * 100)}%`
+      return m >= 1
+        ? 'Once per turn, a roll against an immune target deals full damage.'
+        : `Once per turn, a roll against an immune target deals ${share} damage instead of none.`
+    }
+    case 'ispirato': {
+      if (t.ispiratoPerTurn <= 0) return `Start each turn with at least ${t.ispiratoMin} Inspiration.`
+      const gain = `Gain ${t.ispiratoPerTurn} Inspiration at the start of each turn`
+      return t.ispiratoMin > t.ispiratoPerTurn ? `${gain} (and start it with at least ${t.ispiratoMin}).` : `${gain}.`
+    }
+    case 'hometown-hero': return `Dice of your starting element get +${t.hometownHeroBonus} (can crit).`
+    case 'small-ensemble': {
+      const which = diePlural(4, t.smallEnsembleMaxFaces)
+      return `${which[0].toUpperCase()}${which.slice(1)} roll twice; keep the higher.`
+    }
+    case 'studio-regular': return `Upgrades cost ${t.studioRegularDiscount} less EXP.`
+    case 'inspired-play': return `+${t.inspiredPlayBonus} to every die while you hold ${t.inspiredPlayMin}+ Inspiration (can't crit).`
+    case 'chain-reaction': return `+${t.chainReactionBonus} per same-element song played in a row before this one (max +${t.chainReactionCap}, can't crit).`
+    case 'swarm-singer': return `+${t.swarmSingerBonus} to every die in fights with ${t.swarmSingerMin}+ monsters (can't crit).`
+    case 'jam-session': return `+${t.jamSessionBonus} to every die while you share a space with another bard (can't crit).`
     default: return STYLES[id].rule
   }
 }
