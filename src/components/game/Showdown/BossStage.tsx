@@ -1,8 +1,10 @@
+import { ChordStage, type ChordStrike } from './ChordStage'
 import { Genre, Player } from '@/types'
 import { showdownTurns } from '@/game-logic/showdown/showdown'
 import { GENRE_THEME } from '@/data/genreTheme'
 
 interface BossStageProps {
+  strike?: ChordStrike
   turn: number
   resistGenre: Genre | null
   fandom: Record<string, number>
@@ -12,7 +14,7 @@ interface BossStageProps {
 }
 
 /** The Eternal Silence — a void orb that grows more unstable each turn. */
-export function BossStage({ turn, resistGenre, fandom, players, defeated }: BossStageProps) {
+export function BossStage({ turn, resistGenre, fandom, players, defeated, strike }: BossStageProps) {
   const totalFandom = players.reduce((sum, p) => sum + (fandom[p.id] || 0), 0)
 
   return (
@@ -46,38 +48,7 @@ export function BossStage({ turn, resistGenre, fandom, players, defeated }: Boss
         {defeated ? 'The Silence Falls' : `Verse ${turn} of ${showdownTurns()}`}
       </div>
 
-      {/* Boss orb */}
-      <div className={`relative mb-4 ${defeated ? 'animate-boss-shatter' : turn >= 3 ? 'animate-boss-unstable' : ''}`}>
-        {/* Outer aura */}
-        <div
-          className="absolute -inset-8 rounded-full animate-boss-aura pointer-events-none"
-          style={{
-            background: `radial-gradient(circle, rgba(124, 58, 237, ${0.12 + turn * 0.06}) 0%, transparent 70%)`,
-          }}
-        />
-        {/* Rotating rune ring */}
-        <div
-          className="absolute -inset-3 rounded-full animate-rune-spin pointer-events-none"
-          style={{ border: '1px dashed rgba(168, 85, 247, 0.35)' }}
-        />
-        <div
-          className="w-28 h-28 sm:w-36 sm:h-36 rounded-full flex items-center justify-center relative overflow-hidden"
-          style={{
-            background: 'radial-gradient(circle at 38% 32%, #2e1065 0%, #0c0316 55%, #000 100%)',
-            border: '2px solid rgba(147, 51, 234, 0.5)',
-            boxShadow: `0 0 ${25 + turn * 15}px rgba(124, 58, 237, ${0.25 + turn * 0.12}), inset 0 0 30px rgba(0,0,0,0.9)`,
-          }}
-        >
-          <span
-            className="text-4xl sm:text-5xl select-none animate-boss-breathe"
-            style={{ filter: 'grayscale(1) brightness(0.5) drop-shadow(0 0 10px rgba(168, 85, 247, 0.6))' }}
-          >
-            🎵
-          </span>
-          {/* Void swallow effect over the note */}
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(circle, transparent 30%, rgba(0,0,0,0.75) 75%)' }} />
-        </div>
-      </div>
+      <ChordStage verse={turn} element={resistGenre} strike={strike} />
 
       <div
         className="font-display text-2xl sm:text-3xl text-purple-200 mb-1 text-center"

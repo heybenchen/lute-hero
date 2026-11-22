@@ -1,3 +1,4 @@
+import { ChordStage } from './ChordStage'
 import { Genre, Player } from '@/types'
 import { ShowdownPerformance } from '@/game-logic/showdown/showdown'
 import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
@@ -34,9 +35,10 @@ export function AdaptBanner({
           Verse {turnEnded} Complete
         </div>
         <div className="font-display text-3xl sm:text-4xl text-gold-400 mb-6" style={{ textShadow: '0 0 20px rgba(212,168,83,0.3)' }}>
-          The Silence Listens...
+          {resistGenre ? `The Silence steals ${resistGenre}` : 'The Silence listens'}
         </div>
 
+        <ChordStage verse={turnEnded + 1} element={resistGenre} absorb />
         {/* Verse recap */}
         <div className="space-y-2 mb-7 max-w-md mx-auto">
           {ranked.map((perf, idx) => {
@@ -110,7 +112,7 @@ export function AdaptBanner({
             </>
           ) : (
             <div className="text-sm text-parchment-400 italic animate-slide-up" style={{ animationDelay: '600ms', animationFillMode: 'both' }}>
-              The performances rang too alike — the Silence cannot adapt.
+              The Silence needs two performances to steal a chord. Every element can deal damage next verse.
             </div>
           )}
         </div>

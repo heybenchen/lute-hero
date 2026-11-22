@@ -1,3 +1,4 @@
+import { ChordStage, type ChordStrike } from './ChordStage'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore, selectCanPerform } from '@/store'
 import { Song, DiceRoll } from '@/types'
@@ -16,11 +17,8 @@ import { readableTextColor } from '@/data/genreTheme'
 
 type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
 
-interface FandomPopup {
-  id: string
+interface FandomPopup extends ChordStrike {
   fandom: number
-  hadCrit: boolean
-  wasResisted: boolean
 }
 
 export function FinalShowdown() {
@@ -67,10 +65,11 @@ export function FinalShowdown() {
 
   /** Fandom pops once the 3D dice have landed. */
   const popupSeq = useRef(0)
-  const showFandomPopup = useCallback(async (result: { fandom: number; hadCrit: boolean; wasResisted: boolean }) => {
+  const showFandomPopup = useCallback(async (result: Extract<EngineEvent, { type: 'showdownPlay' }>) => {
     await diceBus.whenSettled()
     const popup: FandomPopup = {
       id: `fandom-${++popupSeq.current}`,
+      genre: result.genre,
       fandom: result.fandom,
       hadCrit: result.hadCrit,
       wasResisted: result.wasResisted,
@@ -191,6 +190,7 @@ export function FinalShowdown() {
       <WinnerSpotlight
         players={players}
         showdownFandom={showdownFandom}
+        history={showdownHistory}
         onContinue={() => dispatch({ type: 'ADVANCE_TO_SUMMARY' })}
       />
     )
@@ -200,7 +200,7 @@ export function FinalShowdown() {
   return (
     <div className="min-h-[100dvh] relative overflow-x-hidden" style={{ background: 'radial-gradient(ellipse at 50% -10%, #1e1033 0%, #0d0a07 55%)' }}>
       {/* Fandom popups */}
-      <div className="pointer-events-none fixed inset-0 z-[60] overflow-hidden">
+      <div aria-live="polite" className="pointer-events-none fixed inset-0 z-[60] overflow-hidden">
         {popups.map((p) => (
           <div key={p.id} className="absolute left-1/2 top-[38%] -translate-x-1/2 animate-fandom-pop text-center">
             <div
@@ -216,7 +216,7 @@ export function FinalShowdown() {
               +{p.fandom}
             </div>
             <div className="text-parchment-300 font-medieval font-bold text-sm mt-1 tracking-wider uppercase" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}>
-              ♪ Fandom
+              {p.fandom === 1 ? 'fan won' : 'fans won'} · {p.fandom} damage
             </div>
             {p.wasResisted && (
               <div className="text-red-300 font-medieval font-bold text-xs tracking-widest uppercase">Immune 0×</div>
@@ -241,11 +241,22 @@ export function FinalShowdown() {
 
         <div className="card-ornate p-4 sm:p-8 mb-4" style={{ background: 'rgba(20, 14, 28, 0.75)' }}>
           <BossStage
+            strike={popups[popups.length - 1]}
             turn={showdownTurn}
             resistGenre={showdownResistGenre}
             fandom={held.showdownFandom}
             players={players}
           />
+          {held.lastRolls && (
+            <div aria-label="Performance dice" className="relative isolate flex flex-wrap justify-center gap-2 mx-auto mt-4 py-2 max-w-lg">
+              <div aria-hidden="true" className="absolute inset-x-0 top-1/2 -translate-y-1/2 -z-10 h-[25px]" style={{ background: 'repeating-linear-gradient(transparent 0 5px, #766449 5px 6px)' }} />
+              {held.lastRolls.rolls.map((roll, i) => (
+                <span key={i} className="rounded-md border border-gold-500 bg-wood-900 px-2 py-1 text-gold-300 font-bold tabular-nums">
+                  {roll.value}{roll.cascadeRolls.map((value, index) => <small key={index}> + {value}</small>)}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Performer panel */}
@@ -331,6 +342,7 @@ export function FinalShowdown() {
                 </p>
               ) : performanceDone ? (
                 <button
+                  disabled={diceBusy}
                   onClick={handleFinishPerformance}
                   className="btn-primary text-base px-10 py-3 animate-fade-in w-full max-w-md"
                 >
@@ -449,19 +461,7 @@ function ShowdownFinale({
       </div>
 
       <div className="relative z-10 text-center px-4">
-        {/* The orb, shattering */}
-        <div className="relative inline-block mb-8">
-          <div
-            className="w-36 h-36 sm:w-44 sm:h-44 rounded-full flex items-center justify-center mx-auto animate-boss-shatter"
-            style={{
-              background: 'radial-gradient(circle at 38% 32%, #2e1065 0%, #0c0316 55%, #000 100%)',
-              border: '2px solid rgba(147, 51, 234, 0.5)',
-              boxShadow: '0 0 60px rgba(124, 58, 237, 0.5)',
-            }}
-          >
-            <span className="text-6xl select-none" style={{ filter: 'grayscale(1) brightness(0.5)' }}>🎵</span>
-          </div>
-        </div>
+        <ChordStage verse={3} finale />
 
         <h1
           className="font-display text-4xl sm:text-6xl text-gold-300 mb-4 animate-scale-in"
