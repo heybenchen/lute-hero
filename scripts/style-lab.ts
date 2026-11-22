@@ -16,13 +16,13 @@ import { createInitialEngineState, EngineState } from '../src/engine/state.js'
 import { SmartBot } from '../src/sim/smartBot.js'
 import { mulberry32 } from '../src/engine/rng.js'
 import { ALL_GENRES } from '../src/data/genreTheme.js'
-import { ALL_STYLE_IDS } from '../src/data/styles.js'
+import { ALL_STYLE_IDS, styleCostKey } from '../src/data/styles.js'
 import { STYLE_SPEC_BATCHES } from '../src/data/styleSpecBatches.js'
 import { STYLE_SPECS } from '../src/data/styleSpecs.js'
 
 const GAMES = Number(process.argv[2] ?? 300)
 const PLAYERS = 3
-const NO_BUY = Object.fromEntries(ALL_STYLE_IDS.map((id) => [`styleCost${id[0].toUpperCase()}${id.slice(1)}`, 99]))
+const NO_BUY = Object.fromEntries(ALL_STYLE_IDS.map((id) => [styleCostKey(id), 99]))
 
 function game(specId: string | null, seed: number) {
   const rng = mulberry32(seed)

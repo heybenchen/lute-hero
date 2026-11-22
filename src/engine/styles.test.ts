@@ -4,7 +4,9 @@ import { createInitialEngineState, EngineState } from './state'
 import { GameAction } from './actions'
 import { mulberry32 } from './rng'
 import { DiceType, Genre, Monster, Song, StyleId } from '../types'
-import { ALL_STYLE_IDS, STYLES, styleCost } from '../data/styles'
+import { ALL_STYLE_IDS, STYLES, styleCost, styleRule } from '../data/styles'
+import { upgradeCostFor } from './economy'
+import { DEFAULT_TUNABLES } from '../data/tunables'
 
 // ------------------------------------------------------------------
 // Helpers
@@ -98,6 +100,12 @@ describe('Ostinato', () => {
     expect(after.combat.styleNotes).toContain(STYLES.ostinato.name)
   })
 
+  it('makes every die crit one number lower (a d20 on a 19)', () => {
+    const state = fight(['ostinato'], [['d20', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
+    const { state: after } = play(state, 1, faces([19, 20], [5, 20]))
+    expect(after.combat.rolls[0]).toMatchObject({ value: 19, isCrit: true, cascadeRolls: [5] })
+  })
+
   it('leaves a 3 as a plain roll without the style', () => {
     const state = fight([], [['d4', 'Hymn']], [{}])
     const { state: after } = play(state, 1, faces([3, 4]))
@@ -130,10 +138,10 @@ describe('Overture and Tutti', () => {
     expect(second.combat.rolls[0].bonus).toBeUndefined()
   })
 
-  it('Tutti adds +4 only when your songs hold all four elements', () => {
+  it('Tutti adds its bonus (on top of the face, never a crit) only when your songs hold all four elements', () => {
     const allFour: DieSpec[] = [['d4', 'Ballad'], ['d4', 'Folk'], ['d4', 'Hymn'], ['d4', 'Shanty']]
     const withAll = play(fight(['tutti'], allFour, [{}]), 1, faces([2, 4])).state
-    expect(withAll.combat.rolls[0].bonus).toBe(4)
+    expect(withAll.combat.rolls[0]).toMatchObject({ value: 2, bonus: DEFAULT_TUNABLES.tuttiBonus, isCrit: false })
 
     const missingOne = play(fight(['tutti'], allFour.slice(0, 3), [{}]), 1, faces([2, 4])).state
     expect(missingOne.combat.rolls[0].bonus).toBeUndefined()
@@ -231,8 +239,9 @@ describe('Counterpoint', () => {
 })
 
 describe('Rubato', () => {
-  it('rerolls a spent d4/d8 song for free, once per turn', () => {
+  it('rerolls a spent song for free, up to its uses per turn', () => {
     let state = fight(['rubato'], [['d8', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
+    state = { ...state, tunables: { ...state.tunables, rubatoUsesPerTurn: 1 } }
     const inspiration = state.players[0].inspiration
     state = play(state, 1, faces([2, 8])).state
     state = apply(state, { type: 'REROLL_SONG', rubato: true }, faces([7, 8])).state
@@ -244,20 +253,32 @@ describe('Rubato', () => {
     expect(state.combat.stylesUsed).toContain('rubato')
   })
 
-  it('cannot reroll big dice', () => {
+  it('works on any die by default', () => {
+    let state = fight(['rubato'], [['d20', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
+    state = play(state, 1, faces([2, 20])).state
+    expect(applyAction(state, { type: 'REROLL_SONG', rubato: true }, seeded()).ok).toBe(true)
+  })
+
+  it('cannot reroll dice above its size limit', () => {
     let state = fight(['rubato'], [['d12', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
+    state = { ...state, tunables: { ...state.tunables, rubatoMaxFaces: 8 } }
     state = play(state, 1, faces([2, 12])).state
     expect(applyAction(state, { type: 'REROLL_SONG', rubato: true }, seeded()).ok).toBe(false)
   })
 })
 
 describe('Bravo', () => {
-  it('adds Fame for every monster tamed', () => {
-    let state = fight(['bravo'], [['d20', 'Hymn']], [{ currentHP: 1, maxHP: 1 }])
+  it('adds Fame for every monster tamed at or above its level gate', () => {
+    const gate = DEFAULT_TUNABLES.bravoMinLevel
+    let low = fight(['bravo'], [['d20', 'Hymn']], [{ currentHP: 1, maxHP: 1, level: gate - 1 }])
+    low = play(low, 1, faces([10, 20])).state
+    expect(computeCombatRewards(low.combat, ['bravo']).bravoFame).toBe(0)
+
+    let state = fight(['bravo'], [['d20', 'Hymn']], [{ currentHP: 1, maxHP: 1, level: gate }])
     state = play(state, 1, faces([10, 20])).state
     const plain = computeCombatRewards(state.combat)
     const cheered = computeCombatRewards(state.combat, ['bravo'])
-    expect(cheered.fighterFame - plain.fighterFame).toBe(5)
+    expect(cheered.fighterFame - plain.fighterFame).toBe(DEFAULT_TUNABLES.bravoFamePerTame)
     const fame = state.players[0].fame
     state = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' }).state
     expect(state.players[0].fame - fame).toBe(cheered.fighterFame)
@@ -352,7 +373,7 @@ describe('Turn starts', () => {
     expect(next.styleOffers[1]).not.toBe('bravo')
   })
 
-  it('Ispirato tops Inspiration up to 1 at the start of your turn, without stacking', () => {
+  it("Muse's Favor gains Inspiration at the start of your turn", () => {
     let state = startGame()
     state = { ...state, players: state.players.map((p) => (p.id === 'player-2' ? { ...p, styles: ['ispirato'], inspiration: 0 } : p)) }
     state = apply(state, { type: 'END_TURN' }).state
@@ -361,6 +382,59 @@ describe('Turn starts', () => {
     state = { ...state, players: state.players.map((p) => (p.id === 'player-2' ? { ...p, inspiration: 3 } : p)) }
     state = apply(state, { type: 'END_TURN' }).state // round ends → player-1
     state = apply(state, { type: 'END_TURN' }).state // player-2 again
-    expect(state.players[1].inspiration).toBe(3)
+    expect(state.players[1].inspiration).toBe(3 + DEFAULT_TUNABLES.ispiratoPerTurn)
+  })
+})
+
+// ------------------------------------------------------------------
+// Studio styles built from the style lab (data-defined specs)
+// ------------------------------------------------------------------
+
+describe('Studio spec styles', () => {
+  it('Hometown Hero adds its bonus to the starting element, and it can crit', () => {
+    let state = fight(['hometown-hero'], [['d4', 'Hymn']], [{}])
+    state = { ...state, players: state.players.map((p) => (p.id === 'player-1' ? { ...p, starterGenre: 'Hymn' } : p)) }
+    const { state: after } = play(state, 1, faces([3, 4], [1, 4]))
+    expect(after.combat.rolls[0].isCrit).toBe(true)
+    expect(after.combat.styleNotes).toContain(STYLES['hometown-hero'].name)
+  })
+
+  it('Small Ensemble rolls a d4 twice and keeps the higher', () => {
+    const state = fight(['small-ensemble'], [['d4', 'Hymn']], [{}])
+    const { state: after } = play(state, 1, faces([1, 4], [3, 4]))
+    expect(after.combat.rolls[0].value).toBe(3)
+  })
+
+  it('Double Time helps only the first die of the turn', () => {
+    const state = fight(['double-time'], [['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
+    const first = play(state, 1, faces([1, 8], [6, 8])).state
+    expect(first.combat.rolls[0].value).toBe(6)
+    expect(first.combat.specFired).toContain('double-time')
+    const second = play(first, 2, faces([1, 8], [6, 8])).state
+    expect(second.combat.rolls[0].value).toBe(1)
+  })
+
+  it('Jam Session adds its bonus only while another bard shares the space', () => {
+    const alone = play(fight(['jam-session'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([2, 8])).state
+    expect(alone.combat.rolls[0].bonus).toBeUndefined()
+    let state = fight(['jam-session'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
+    const here = state.players[0].position
+    state = { ...state, players: state.players.map((p) => (p.id === 'player-2' ? { ...p, position: here } : p)) }
+    const together = play(state, 1, faces([2, 8])).state
+    expect(together.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.jamSessionBonus)
+  })
+
+  it('Studio Regular makes upgrades cheaper', () => {
+    let state = startGame()
+    const before = upgradeCostFor(state.players[0], { id: 'x', type: 'd4', genre: 'Hymn' })!
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, styles: ['studio-regular'] } : p)) }
+    expect(upgradeCostFor(state.players[0], { id: 'x', type: 'd4', genre: 'Hymn' })).toBe(before - DEFAULT_TUNABLES.studioRegularDiscount)
+  })
+
+  it('every Studio style has a price and live rule text', () => {
+    for (const id of ALL_STYLE_IDS) {
+      expect(styleCost(id)).toBeGreaterThanOrEqual(0)
+      expect(styleRule(id).length).toBeGreaterThan(10)
+    }
   })
 })

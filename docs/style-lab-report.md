@@ -8,7 +8,7 @@ Verdicts: Too strong > 52% · Slightly strong 48–52% · Balanced 42–48% · S
 
 ## Rebalance of the existing 12 styles
 
-Same method (300 games each, smart bots; no-style baseline 31.8%). Every change is a tunable in the playtest console's **Values → Styles** group, so it can be tried live; shipped defaults are unchanged until chosen.
+Same method (300 games each, smart bots; no-style baseline 31.8%). Every change is a tunable in the playtest console's **Values → Styles** group, so it can be tried live. (These were the first proposals; what shipped is in the next section.)
 
 | Style | Today | Win % today | Proposed | Win % proposed | Tunables |
 |---|---|---|---|---|---|
@@ -28,6 +28,40 @@ Same method (300 games each, smart bots; no-style baseline 31.8%). Every change 
 Rejected alternatives (same runs): Lingering Note d20-only but free 55.0 · Rallying Cry d4–d12 46.5 · Harmony +2 40.0 · Dragon's Roar +1 38.7 · Dissonance full damage 48.2 · War Drums crit on 2+ 34.2, reaching d8/d12 36.5–37.0, "+1 to d4s and d8s (can crit)" 49.5 · Nimble Fingers any die once 39.7, d4–d8 twice 41.0 · Muse's Favor floor of 2/3 36.7/35.0 · Master's Touch on d8s too 41.2.
 
 With the rebalance, the twelve styles span 41.5–47.7% — all within noise (±2.8 points) of the band.
+
+## Shipped defaults and the eight promoted styles
+
+These are now the game's defaults. Power is measured the same way (style held from round 1, 300 games, smart bots); **no-style baseline 31.8%**.
+
+### Existing styles that changed
+
+| Style | What it does now | Win % | Tunables |
+|---|---|---|---|
+| **Crowd Favorite** | +5 Fame for every Lv3+ monster you tame | **40.5** (style-lab spec run: 43.5) | `bravoFamePerTame: 5`, `bravoMinLevel: 3` |
+| **Rallying Cry** | Once per turn, after a tame, refresh a spent d4 or d8 song of your choice | **47.0** | `staccatoMaxFaces: 8` |
+| **Harmony** | If your setlist holds all four elements, +3 to your first roll each turn (added on top of the face; can't crit) | **46.5** | `tuttiBonus: 3` |
+| **War Drums** | All your dice crit one number lower (a d4 on a 3, a d20 on a 19); bonus dice still need the top face | **42.3** | `ostinatoMaxFaces: 20` (price unchanged at 2) |
+| **Nimble Fingers** | Twice per turn, reroll any song for free | **45.2** (once per turn: 39.0) | `rubatoMaxFaces: 20`, `rubatoUsesPerTurn: 2` |
+| **Muse's Favor** | Gain 1 Inspiration at the start of each turn | **42.3** | `ispiratoPerTurn: 1` |
+
+Lingering Note and Dissonance keep their old values. Their proposed changes are still available as tunables.
+
+Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs, 300 games): every tame 64.2 · Lv2+ 50.8 (built-in run: 51.0) · **Lv3+ 43.5** (built-in run: 40.5) · first tame each turn 41.3 · clearing a space 40.8 · weak-element tames 51.3 · one-song tames of untouched monsters 50.7 · +10 for Lv3+ 48.8 · +10 for Lv4+ 34.8 · +10 on clear 50.5 · +10 once per turn 62.3.
+
+### Promoted from the style lab
+
+| Style | What it does | Win % (held) | Price | Win % bought at 2 / 3 / 4 EXP |
+|---|---|---|---|---|
+| **Hometown Hero** | Dice of your starting element get +1 (can crit) | **45.8** | 2 | 34.2 / 33.5 / 33.5 |
+| **Small Ensemble** | Your d4s and d8s roll twice; keep the higher | **46.5** | 3 | 34.5 / 35.2 / 34.5 |
+| **Studio Regular** | Upgrades cost 1 less EXP | **48.2** | 2 | 37.5 / 31.2 / 32.8 |
+| **Inspired Play** | +2 to every die while you hold 3+ Inspiration (can't crit) | **47.8** | 3 | 41.2 / 35.8 / 33.8 |
+| **Double Time** | Once per turn, a die rolls twice; keep the higher | **43.2** | 3 | 40.3 / 38.5 / 33.5 |
+| **Chain Reaction** | +2 per same-element song played in a row before this one (max +6, can't crit) | **47.8** | 3 | 38.5 / 34.3 / 34.5 |
+| **Swarm Singer** | +2 to every die in fights with 3+ monsters (can't crit) | **44.7** | 2 | 36.2 / 32.8 / 32.2 |
+| **Jam Session** | +2 to every die while you share a space with another bard (can't crit) | **47.5** | 3 | 39.2 / 35.2 / 33.3 |
+
+**How prices were set** (`BUY=n scripts/style-audit.ts`): the tested bard pays n EXP for the style the first turn they can afford it, and the other bards hold no styles. Buying mid-game spends EXP that would have gone into dice, so the gain is smaller than holding the style from round 1. The current well-priced styles at their current prices are the yardstick: Rallying Cry @2 35.2 · Fanfare @3 34.5 · Dragon's Roar @4 33.8 · Harmony @4 34.2 · Crowd Favorite @2 38.3 · War Drums @2 / 3 / 4 34.2 / 34.8 / 33.7. Each new style takes the price that lands it in that 34–38% range. Where several prices fall within noise (±2.7 points), it takes the cheaper one.
 
 ## 100 new styles
 

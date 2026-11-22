@@ -51,7 +51,16 @@ export type StyleId =
   | "tutti"
   | "overture"
   | "bravo"
-  | "ispirato";
+  | "ispirato"
+  // Studio styles promoted from the style lab (effects are data-defined specs)
+  | "hometown-hero"
+  | "small-ensemble"
+  | "studio-regular"
+  | "inspired-play"
+  | "double-time"
+  | "chain-reaction"
+  | "swarm-singer"
+  | "jam-session";
 
 export interface SongSlot {
   dice: Dice | null;

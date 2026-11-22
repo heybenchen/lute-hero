@@ -32,6 +32,8 @@ export interface StyledRolls {
   triggered: StyleId[]
   /** Once-per-turn data-defined styles that fired. */
   specFired: string[]
+  /** Data-defined styles that changed at least one die of this roll. */
+  specApplied: string[]
 }
 
 const has = (ctx: StyleContext, id: StyleId) => ctx.styles.includes(id)
@@ -89,7 +91,7 @@ export function builtinRollOptions(dice: Dice, ctx: StyleContext, isFirstDie: bo
   return opts
 }
 
-function rollStyledDie(dice: Dice, ctx: StyleContext, isFirstDie: boolean, dieIndex: number, triggered: StyleId[], specFired: string[], rng: Rng): DiceRoll {
+function rollStyledDie(dice: Dice, ctx: StyleContext, isFirstDie: boolean, dieIndex: number, triggered: StyleId[], specFired: string[], specApplied: string[], rng: Rng): DiceRoll {
   const max = getMaxValue(dice.type)
   let opts = builtinRollOptions(dice, ctx, isFirstDie, triggered)
   // Data-defined styles stack their modifiers on top
@@ -98,6 +100,7 @@ function rollStyledDie(dice: Dice, ctx: StyleContext, isFirstDie: boolean, dieIn
     const applied = applySpecRollModifiers(ctx.specs, dice, play, opts)
     opts = applied.opts
     specFired.push(...applied.fired)
+    specApplied.push(...applied.applied)
   }
   const roll = rollWithOptions(dice, opts, rng)
   const critFace = effectiveCritFace(dice.type, opts)
@@ -109,16 +112,17 @@ function rollStyledDie(dice: Dice, ctx: StyleContext, isFirstDie: boolean, dieIn
 export function rollSongWithStyles(song: Song, ctx: StyleContext, rng: Rng): StyledRolls {
   const triggered: StyleId[] = []
   const specFired: string[] = []
+  const specApplied: string[] = []
   const rolls: DiceRoll[] = []
   let first = true
   let index = 0
   for (const slot of song.slots) {
     if (!slot.dice) continue
-    rolls.push(rollStyledDie(slot.dice, ctx, first, index, triggered, specFired, rng))
+    rolls.push(rollStyledDie(slot.dice, ctx, first, index, triggered, specFired, specApplied, rng))
     first = false
     index++
   }
-  return { rolls, triggered: [...new Set(triggered)], specFired: [...new Set(specFired)] }
+  return { rolls, triggered: [...new Set(triggered)], specFired: [...new Set(specFired)], specApplied: [...new Set(specApplied)] }
 }
 
 /** Counterpoint softens the first immune hit each turn; returns the multiplier to use, if any. */
@@ -136,6 +140,12 @@ export function fermataHolds(song: Song, ctx: StyleContext): boolean {
 /** War Drums: the crit face for a die with this many faces (a d4 crits from `ostinatoCritFace`). */
 export function ostinatoCritFace(faces: number): number {
   return Math.max(2, faces - (4 - getTunables().ostinatoCritFace))
+}
+
+/** Crowd Favorite's Fame for taming a monster of this level (0 below its level gate). */
+export function bravoFameFor(level: number): number {
+  const t = getTunables()
+  return level >= t.bravoMinLevel ? t.bravoFamePerTame : 0
 }
 
 /** Free Nimble Fingers rerolls still available this turn. */

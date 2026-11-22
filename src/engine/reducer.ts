@@ -52,6 +52,7 @@ import {
   fermataHolds,
   staccatoArms,
   ONCE_PER_TURN,
+  bravoFameFor,
 } from '../game-logic/styles/styleEffects.js'
 
 export { roundEndChipsPerElement } from './validate.js'
@@ -791,7 +792,7 @@ function beginTurn(state: EngineState, rng: Rng): EngineState {
   const floor = getTunables().ispiratoMin
   const gain = getTunables().ispiratoPerTurn
   const players = player.styles.includes('ispirato') && (player.inspiration < floor || gain > 0)
-    ? state.players.map((p) => (p.id === player.id ? { ...p, inspiration: Math.max(p.inspiration, floor) + gain } : p))
+    ? state.players.map((p) => (p.id === player.id ? { ...p, inspiration: Math.max(p.inspiration + gain, floor) } : p))
     : state.players
   const withSpecs = applyTurnStartSpecs(players, player.id)
   const missingOffers = Math.max(0, styleOfferCount() - state.styleOffers.length)
@@ -873,7 +874,7 @@ function performCombatPlay(
     inspiration: fighter.inspiration,
     ...(play ? { specs, play } : {}),
   }
-  const { rolls, triggered, specFired } = rollSongWithStyles(song, styleCtx, rng)
+  const { rolls, triggered, specFired, specApplied } = rollSongWithStyles(song, styleCtx, rng)
   const immuneMultiplier = counterpointMultiplier(styleCtx)
   const { damageCalculations, updatedMonsters } = calculateSingleTargetDamage(
     song,
@@ -949,7 +950,11 @@ function performCombatPlay(
     totalDamage: base.totalDamage + totalDamageDealt,
     lastDamageCalculations: damageCalculations,
     stylesUsed: [...base.stylesUsed, ...onceUsed],
-    styleNotes: [...new Set(triggered)].map((id) => STYLES[id].name),
+    styleNotes: [
+      ...[...new Set(triggered)].map((id) => STYLES[id].name),
+      // Studio styles built from specs (lab-only specs have no Studio card)
+      ...specApplied.flatMap((id) => (id in STYLES ? [STYLES[id as StyleId].name] : [])),
+    ],
     rallyReady,
     specFired: [...new Set([...(base.specFired ?? []), ...firedNow])],
     playLog: die ? [...(base.playLog ?? []), die.genre] : base.playLog ?? [],
@@ -1098,7 +1103,7 @@ export function computeCombatRewards(combat: {
   const guestExp = Object.values(guestRewards).reduce((sum, r) => sum + r.exp, 0)
 
   // Bravo: the crowd cheers every monster the fighter's performance tamed
-  const bravoFame = fighterStyles.includes('bravo') ? monstersDefeatedCount * getTunables().bravoFamePerTame : 0
+  const bravoFame = defeated.reduce((sum, m) => sum + (fighterStyles.includes('bravo') ? bravoFameFor(m.level) : 0), 0)
   const fighterFame = creditedFame - guestFame + bravoFame
 
   return {

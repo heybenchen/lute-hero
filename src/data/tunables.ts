@@ -120,6 +120,35 @@ export interface Tunables {
   rubatoUsesPerTurn: number
   /** War Drums: extra charm per crit bonus die from a die it affects. */
   ostinatoCascadeBonus: number
+  /** Crowd Favorite: only tames of monsters at this level or higher pay its Fame. */
+  bravoMinLevel: number
+
+  // --- Studio styles built from the style lab ---
+  styleCostHometownHero: number
+  styleCostSmallEnsemble: number
+  styleCostStudioRegular: number
+  styleCostInspiredPlay: number
+  styleCostDoubleTime: number
+  styleCostChainReaction: number
+  styleCostSwarmSinger: number
+  styleCostJamSession: number
+  /** Hometown Hero: bonus (can crit) to dice of the bard's starting element. */
+  hometownHeroBonus: number
+  /** Small Ensemble: largest die (faces) that rolls twice and keeps the higher. */
+  smallEnsembleMaxFaces: number
+  /** Studio Regular: EXP off every upgrade. */
+  studioRegularDiscount: number
+  /** Inspired Play: bonus to every die while holding enough Inspiration. */
+  inspiredPlayBonus: number
+  inspiredPlayMin: number
+  /** Chain Reaction: bonus per same-element song played in a row before this one, and its cap. */
+  chainReactionBonus: number
+  chainReactionCap: number
+  /** Swarm Singer: bonus to every die in fights with enough monsters. */
+  swarmSingerBonus: number
+  swarmSingerMin: number
+  /** Jam Session: bonus to every die while sharing a space with another bard. */
+  jamSessionBonus: number
 }
 
 export const DEFAULT_TUNABLES: Tunables = {
@@ -173,21 +202,41 @@ export const DEFAULT_TUNABLES: Tunables = {
   styleCostIspirato: 3,
   fortissimoBonus: 2,
   overtureBonus: 2,
-  tuttiBonus: 4,
+  tuttiBonus: 3,
   ostinatoCritFace: 3,
   counterpointMultiplier: 0.5,
   bravoFamePerTame: 5,
   fermataMinFaces: 12,
-  staccatoMaxFaces: 20,
-  rubatoMaxFaces: 8,
+  staccatoMaxFaces: 8,
+  rubatoMaxFaces: 20,
   virtuosoMinFaces: 12,
   tuttiElements: 4,
   ispiratoMin: 1,
-  ispiratoPerTurn: 0,
+  ispiratoPerTurn: 1,
   fermataInspirationCost: 0,
-  ostinatoMaxFaces: 4,
-  rubatoUsesPerTurn: 1,
+  ostinatoMaxFaces: 20,
+  rubatoUsesPerTurn: 2,
   ostinatoCascadeBonus: 0,
+  bravoMinLevel: 3,
+
+  styleCostHometownHero: 2,
+  styleCostSmallEnsemble: 3,
+  styleCostStudioRegular: 2,
+  styleCostInspiredPlay: 3,
+  styleCostDoubleTime: 3,
+  styleCostChainReaction: 3,
+  styleCostSwarmSinger: 2,
+  styleCostJamSession: 3,
+  hometownHeroBonus: 1,
+  smallEnsembleMaxFaces: 8,
+  studioRegularDiscount: 1,
+  inspiredPlayBonus: 2,
+  inspiredPlayMin: 3,
+  chainReactionBonus: 2,
+  chainReactionCap: 6,
+  swarmSingerBonus: 2,
+  swarmSingerMin: 3,
+  jamSessionBonus: 2,
 }
 
 // ============================================================
@@ -283,6 +332,25 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'ostinatoMaxFaces', label: 'War Drums: largest die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
   { key: 'rubatoUsesPerTurn', label: 'Nimble Fingers: rerolls per turn', group: 'Styles', min: 1, max: 3, step: 1 },
   { key: 'ostinatoCascadeBonus', label: 'War Drums: bonus per crit die', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'bravoMinLevel', label: 'Crowd Favorite: lowest paying level', group: 'Styles', min: 1, max: 5, step: 1 },
+  { key: 'styleCostHometownHero', label: 'Hometown Hero cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostSmallEnsemble', label: 'Small Ensemble cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostStudioRegular', label: 'Studio Regular cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostInspiredPlay', label: 'Inspired Play cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostDoubleTime', label: 'Double Time cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostChainReaction', label: 'Chain Reaction cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostSwarmSinger', label: 'Swarm Singer cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostJamSession', label: 'Jam Session cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'hometownHeroBonus', label: 'Hometown Hero: starting-element bonus', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'smallEnsembleMaxFaces', label: 'Small Ensemble: largest die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
+  { key: 'studioRegularDiscount', label: 'Studio Regular: EXP off upgrades', group: 'Styles', min: 0, max: 5, step: 1 },
+  { key: 'inspiredPlayBonus', label: 'Inspired Play: bonus per die', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'inspiredPlayMin', label: 'Inspired Play: Inspiration needed', group: 'Styles', min: 1, max: 10, step: 1 },
+  { key: 'chainReactionBonus', label: 'Chain Reaction: bonus per link', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'chainReactionCap', label: 'Chain Reaction: bonus cap', group: 'Styles', min: 0, max: 20, step: 1 },
+  { key: 'swarmSingerBonus', label: 'Swarm Singer: bonus per die', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'swarmSingerMin', label: 'Swarm Singer: monsters needed', group: 'Styles', min: 2, max: 6, step: 1 },
+  { key: 'jamSessionBonus', label: 'Jam Session: bonus per die', group: 'Styles', min: 0, max: 10, step: 1 },
 ]
 
 const LEVEL_COUNT = 5

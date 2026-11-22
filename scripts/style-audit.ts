@@ -9,6 +9,7 @@
  *   STYLES=bravo,fermata TUNE='{"bravoFamePerTame":2}' npx tsx scripts/style-audit.ts
  *   STYLES=fortissimo+virtuoso npx tsx scripts/style-audit.ts      # a pair held together
  *   PAIRS=1 npx tsx scripts/style-audit.ts 200                      # every pair
+ *   BUY=3 STYLES=ostinato npx tsx scripts/style-audit.ts             # pay 3 EXP for it, as soon as affordable
  *
  * Every seat is played by the smart bot (src/sim/smartBot.ts); BOT=baseline
  * uses the simple greedy bot instead.
@@ -22,12 +23,12 @@ import { Bot, expectedDieValue } from '../src/sim/bot.js'
 import { SmartBot } from '../src/sim/smartBot.js'
 import { mulberry32 } from '../src/engine/rng.js'
 import { ALL_GENRES } from '../src/data/genreTheme.js'
-import { ALL_STYLE_IDS } from '../src/data/styles.js'
+import { ALL_STYLE_IDS, styleCostKey } from '../src/data/styles.js'
 import type { StyleId, Genre } from '../src/types/index.js'
 
 const GAMES = Number(process.argv[2] ?? 400)
 const PLAYERS = 3
-const NO_BUY = { ...Object.fromEntries(ALL_STYLE_IDS.map((id) => [`styleCost${id[0].toUpperCase()}${id.slice(1)}`, 99])), ...JSON.parse(process.env.TUNE ?? '{}') }
+const NO_BUY = { ...Object.fromEntries(ALL_STYLE_IDS.map((id) => [styleCostKey(id), 99])), ...JSON.parse(process.env.TUNE ?? '{}') }
 
 function act(s: EngineState, a: Parameters<typeof applyAction>[1], ctx: ActionCtx): EngineState {
   const r = applyAction(s, a, ctx)
@@ -37,6 +38,8 @@ function act(s: EngineState, a: Parameters<typeof applyAction>[1], ctx: ActionCt
 
 /** Bots for every seat: the smart bot by default, the baseline with BOT=baseline. */
 const USE_BASELINE = process.env.BOT === 'baseline'
+/** BUY=n: instead of holding the style from round 1, the bard pays n EXP for it at the start of the first turn they can afford it. */
+const BUY = process.env.BUY !== undefined ? Number(process.env.BUY) : null
 
 function playShowdown(s: EngineState, ctx: ActionCtx, smart: SmartBot): EngineState {
   for (let guard = 0; guard < 50 && s.showdownActive && !s.showdownComplete; guard++) {
@@ -74,10 +77,18 @@ function game(styles: StyleId[], seed: number) {
   // The tested bard sits in a random seat, so seat order doesn't skew results
   const seat = Math.floor(rng() * PLAYERS)
   const pid = s.players[seat].id
-  if (styles.length) s = act(s, { type: 'DEBUG_PATCH', patch: { players: { [pid]: { styles } } } }, ctx)
+  if (styles.length && BUY === null) s = act(s, { type: 'DEBUG_PATCH', patch: { players: { [pid]: { styles } } } }, ctx)
   const bot = USE_BASELINE ? new Bot(s, rng) : new SmartBot(s, rng)
   const smart = bot instanceof SmartBot ? bot : new SmartBot(s, rng)
-  for (let t = 0; t < 40 * PLAYERS && bot.state.phase === 'main'; t++) bot.takeTurn()
+  let bought = BUY === null || styles.length === 0
+  for (let t = 0; t < 40 * PLAYERS && bot.state.phase === 'main'; t++) {
+    const me = bot.state.players[seat]
+    if (!bought && bot.state.currentTurnPlayerIndex === seat && me.exp >= BUY!) {
+      bot.state = act(bot.state, { type: 'DEBUG_PATCH', patch: { players: { [pid]: { styles, exp: me.exp - BUY! } } } }, ctx)
+      bought = true
+    }
+    bot.takeTurn()
+  }
   const boardFame = bot.state.players.map((p) => p.fame)
   const end = playShowdown(bot.state, ctx, smart)
   const final = end.players.map((p) => p.fame)
@@ -110,6 +121,6 @@ for (const styles of cases) {
     for (const k of Object.keys(acc) as (keyof typeof acc)[]) acc[k] += r[k]
   }
   const f = (k: keyof typeof acc, d = 2) => (acc[k] / GAMES).toFixed(d)
-  rows.push(`${((styles.join('+') || 'none') + (process.env.TUNE ?? '')).padEnd(24)} win ${(100 * acc.win / GAMES).toFixed(1).padStart(5)}%  fame×avg ${f('finalShare')}  board×avg ${f('boardShare')}  fandom ${f('fandom', 1).padStart(5)}  tames ${f('tames', 1)}  rounds ${f('rounds', 1)}`)
+  rows.push(`${((styles.join('+') || 'none') + (process.env.TUNE ?? '') + (BUY !== null ? ` @${BUY}` : '')).padEnd(24)} win ${(100 * acc.win / GAMES).toFixed(1).padStart(5)}%  fame×avg ${f('finalShare')}  board×avg ${f('boardShare')}  fandom ${f('fandom', 1).padStart(5)}  tames ${f('tames', 1)}  rounds ${f('rounds', 1)}`)
   console.log(rows[rows.length - 1])
 }

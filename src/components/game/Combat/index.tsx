@@ -9,7 +9,7 @@ import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateMonsterFameValue } from '@/game-logic/fame/calculator'
 import { computeCombatRewards } from '@/engine/reducer'
-import { Monster, Song } from '@/types'
+import { Monster, Song, StyleId } from '@/types'
 import type { EngineEvent } from '@/engine/events'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
@@ -45,6 +45,7 @@ export function CombatModal() {
       lastTargetMonsterId: state.lastTargetMonsterId,
       players: state.players,
       stylesUsed: state.stylesUsed,
+      specFired: state.specFired,
       styleNotes: state.styleNotes,
       rallyReady: state.rallyReady,
       featuredPlayerIds: state.featuredPlayerIds,
@@ -61,6 +62,7 @@ export function CombatModal() {
     lastTargetMonsterId,
     players,
     stylesUsed,
+    specFired,
     styleNotes,
     rallyReady,
     featuredPlayerIds,
@@ -424,7 +426,7 @@ export function CombatModal() {
                   />
                 ))}
               </SongGrid>
-              <CombatStyles player={player} usedStyleIds={stylesUsed} />
+              <CombatStyles player={player} usedStyleIds={[...stylesUsed, ...((specFired ?? []) as StyleId[])]} />
             </section>
           )}
 

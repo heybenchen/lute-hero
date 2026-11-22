@@ -33,12 +33,12 @@ import { getGenreMultiplier } from '../game-logic/combat/damageCalculator.js'
 import { monsterSpawnHp } from '../game-logic/combat/monsterSpawner.js'
 import { calculateMonsterExp, calculateMonsterFameValue } from '../game-logic/fame/calculator.js'
 import { getValidMoves } from '../game-logic/board/graphBuilder.js'
-import { StyleContext, builtinRollOptions, elementCount, rubatoUsesLeft, staccatoCanRefresh } from '../game-logic/styles/styleEffects.js'
+import { StyleContext, bravoFameFor, builtinRollOptions, elementCount, rubatoUsesLeft, staccatoCanRefresh } from '../game-logic/styles/styleEffects.js'
 import { getMaxValue } from '../game-logic/dice/roller.js'
 import { getTunables, withTunables } from '../data/tunables.js'
 import { inspirationSpend } from '../data/draftCards.js'
 import { canAfford, d4CostFor, inspirationCostFor, movesFor, upgradeCostFor } from '../engine/economy.js'
-import { specsOf } from '../data/styleSpecs.js'
+import { specsOf, specsForStyles } from '../data/styleSpecs.js'
 import { PlayContext, SpecReward, StyleSpec, applySpecRollModifiers, conditionHolds, inspirationRules, specMultiplier } from '../game-logic/styles/specs.js'
 import { styleCost, maxStyles } from '../data/styles.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
@@ -111,6 +111,9 @@ export const DEFAULT_SMART_PARAMS: SmartParams = {
 const STYLE_MEASURED: Record<StyleId, number> = {
   bravo: 5.8, fermata: 4.8, staccato: 3.5, tutti: 2.6, fortissimo: 1.9, overture: 1.9,
   coda: 1.6, counterpoint: 1.6, virtuoso: 1.0, ostinato: 1.0, rubato: 0.3, ispirato: 0,
+  // Studio styles from the style lab: approximate, from their style-lab win rates
+  'hometown-hero': 2.3, 'small-ensemble': 2.8, 'studio-regular': 2.4, 'inspired-play': 2.4,
+  'double-time': 2.1, 'chain-reaction': 2.4, 'swarm-singer': 1.9, 'jam-session': 2.4,
 }
 
 const STYLE_PRIOR: Partial<Record<StyleId, number>> = {
@@ -121,6 +124,8 @@ const STYLE_PRIOR: Partial<Record<StyleId, number>> = {
   coda: 1.0,
   counterpoint: 0.4,
   ispirato: 0.6,
+  // Economy the odds can't see: cheaper upgrades keep paying all game
+  'studio-regular': 1.2,
 }
 
 /** Style reach checks, following the tunable die-size limits. */
@@ -234,14 +239,14 @@ export class SmartBot {
   }
 
   /** A typical play context when estimating fights ahead of time. */
-  private neutralCtx(player: Player, target: Monster): PlayContext {
+  private neutralCtx(player: Player, target: Monster, specs: StyleSpec[] = specsOf(player), monstersInFight = 2, sharingSpace = false): PlayContext {
     const fames = this.state.players.map((p) => p.fame)
     return {
       showdown: false, playIndex: 1, lastElement: null, comboCount: 0, elementsPlayed: [], target,
-      sharingSpace: false, trailingFame: player.fame <= Math.min(...fames), leadingFame: player.fame >= Math.max(...fames),
-      inspiration: player.inspiration, starter: player.starterGenre, monstersInFight: 2,
+      sharingSpace, trailingFame: player.fame <= Math.min(...fames), leadingFame: player.fame >= Math.max(...fames),
+      inspiration: player.inspiration, starter: player.starterGenre, monstersInFight,
       // Plan without once-per-turn effects: they help one die a fight, not every one
-      used: specsOf(player).map((sp) => sp.id),
+      used: specs.map((sp) => sp.id),
     }
   }
 
@@ -390,7 +395,8 @@ export class SmartBot {
     const canPayLingering = fighter.inspiration >= getTunables().fermataInspirationCost
     const ready = new Set(fighter.songs.filter((s) => songDie(s) && !combat.spentSongIds.includes(s.id)).map((s) => s.id))
     let firstRoll = combat.songsUsed.length === 0
-    const bravo = styles.includes('bravo') ? getTunables().bravoFamePerTame : 0
+    const bravo = (level: number) => (styles.includes('bravo') ? bravoFameFor(level) : 0)
+    const specs = specsOf(fighter)
     let value = 0
     const play = (song: Song, target: (typeof ms)[number]) => {
       const die = songDie(song)!
@@ -402,7 +408,7 @@ export class SmartBot {
       }
       const adv = styles.includes('virtuoso') && !used.has('virtuoso') && isVirtuosoDie(die)
       if (adv) used.add('virtuoso')
-      const d = this.dist(die, styles, { firstRoll, advantage: adv, allElements: allEl })
+      const d = this.dist(die, styles, { firstRoll, advantage: adv, allElements: allEl }, specs, specs.length ? this.playCtx(fighter, target.m, die) : undefined)
       firstRoll = false
       let dmg = Math.floor(sample(d, rng) * mult)
       if (dmg < target.hp && styles.includes('rubato') && rubatoLeft > 0 && isRubatoDie(die)) {
@@ -412,7 +418,7 @@ export class SmartBot {
       if (dmg > 0) target.touched = true
       if (dmg >= target.hp) {
         target.hp = 0
-        value += calculateMonsterFameValue(target.m.level) + bravo
+        value += calculateMonsterFameValue(target.m.level) + bravo(target.m.level)
         return
       }
       target.hp -= dmg
@@ -506,7 +512,7 @@ export class SmartBot {
     const chip = Math.min(expectedChipOnMiss(d, mult, m.currentHP), m.currentHP - 1) * unitHere * this.p.chipCredit
     // A miss on an untouched monster still wounds it: its EXP is paid even on a retreat
     const woundExp = untouched ? this.p.expWeight * calculateMonsterExp(m.level) * 0.5 : 0
-    const bravo = has('bravo') ? getTunables().bravoFamePerTame : 0
+    const bravo = has('bravo') ? bravoFameFor(m.level) : 0
     const score = pk * (worth + bravo) + (1 - pk) * (chip + woundExp + missReward - missCost) - inspirationSpend
     return { score, pk, dmgPossible: expectedDamage(d, mult) > 0 }
   }
@@ -523,7 +529,7 @@ export class SmartBot {
       const mult = this.multiplier(die, { ...target, currentHP: hpBefore }, false) || getGenreMultiplier(die.genre, target)
       const d = this.dist(die, fighter.styles, { firstRoll: false, advantage: false, allElements: hasHarmony(fighter.songs) })
       const pk = killChance(d, mult, hpBefore)
-      const worth = this.monsterWorth(target, false) + (fighter.styles.includes('bravo') ? getTunables().bravoFamePerTame : 0)
+      const worth = this.monsterWorth(target, false) + (fighter.styles.includes('bravo') ? bravoFameFor(target.level) : 0)
       const canFree = fighter.styles.includes('rubato') && rubatoUsesLeft(combat.stylesUsed) > 0 && isRubatoDie(die)
       if (canFree && pk > 0.05 && this.act({ type: 'REROLL_SONG', rubato: true })) continue
       const freeLeft = inspirationRules(specsOf(fighter)).freePerTurn > combat.freeRerollsUsed
@@ -556,15 +562,14 @@ export class SmartBot {
     const dice = songs.map(songDie).filter((d): d is Dice => !!d)
     if (dice.length === 0) return 0
     const allEl = hasHarmony(songs)
-    const t = getTunables()
     let total = 0
     let tames = 0
     for (const m of monsters) {
       let best = 0
       let chipSum = 0
       let hits = false
-      const specs = specsOf(player)
-      const play = specs.length ? this.neutralCtx(player, m) : undefined
+      const specs = specsForStyles(styles, player.specStyles)
+      const play = specs.length ? this.neutralCtx(player, m, specs, monsters.length, guests > 0) : undefined
       for (const die of dice) {
         const mult = this.multiplier(die, m, false, specs, play)
         if (mult <= 0) continue
@@ -580,9 +585,9 @@ export class SmartBot {
       const chipKill = chipSum >= m.currentHP ? 0.55 : chipSum / m.currentHP * 0.3
       const pTame = best + (1 - best) * chipKill
       tames += pTame
+      if (styles.includes('bravo')) total += pTame * bravoFameFor(m.level)
       total += pTame * calculateMonsterFameValue(m.level) + this.p.expWeight * calculateMonsterExp(m.level) * 0.9
     }
-    if (styles.includes('bravo')) total += tames * t.bravoFamePerTame
     if (styles.includes('staccato')) total += Math.min(1, tames) * (STYLE_PRIOR.staccato ?? 0)
     if (guests > 0) total *= 1.05
     return total
@@ -695,10 +700,14 @@ export class SmartBot {
       fermata: Math.min(1, count(BIG) / 2),
       virtuoso: Math.min(1, count(BIG) / 2),
       fortissimo: Math.min(1, count(['d20']) / 2),
-      ostinato: Math.min(1, count(['d4']) / 3),
-      rubato: Math.min(1, count(SMALL) / 3),
+      ostinato: Math.min(1, dice.filter((d) => getMaxValue(d.type) <= getTunables().ostinatoMaxFaces).length / 3),
+      rubato: Math.min(1, dice.filter(isRubatoDie).length / 3),
       tutti: elements >= 4 ? 1 : elements === 3 ? 0.5 : 0.1,
       ispirato: player.inspiration < 1 ? 1 : 0.3,
+      'hometown-hero': Math.min(1, dice.filter((d) => d.genre === player.starterGenre).length / 3),
+      'small-ensemble': Math.min(1, dice.filter((d) => getMaxValue(d.type) <= getTunables().smallEnsembleMaxFaces).length / 3),
+      'studio-regular': 1, 'double-time': 1, 'chain-reaction': 1, 'swarm-singer': 1, 'jam-session': 1,
+      'inspired-play': player.inspiration >= getTunables().inspiredPlayMin ? 1 : 0.5,
     }
     const spaces = Math.max(1, this.state.spaces.filter((s) => s.monsters.length > 0).length)
     for (const st of styles) total += STYLE_MEASURED[st] * fit[st] * this.p.priorScale * spaces * 0.25

@@ -243,9 +243,10 @@ export function applySpecRollModifiers(
   die: Dice,
   ctx: PlayContext,
   base: GenericRollOptions
-): { opts: GenericRollOptions; fired: string[] } {
+): { opts: GenericRollOptions; fired: string[]; applied: string[] } {
   const opts: GenericRollOptions = { ...base }
   const fired: string[] = []
+  const applied: string[] = []
   for (const spec of specs) {
     for (const mod of spec.roll ?? []) {
       if (!conditionHolds(mod.when, die, ctx, spec.id)) continue
@@ -257,6 +258,9 @@ export function applySpecRollModifiers(
       if (mod.perElementPlayed) scaled += mod.perElementPlayed * ctx.elementsPlayed.length
       if (mod.bonusCap !== undefined) scaled = Math.min(scaled, mod.bonusCap)
       flat += scaled
+      const changes = !!(flat || mod.critBonus || mod.advantage || mod.disadvantage || mod.critFaceDelta || mod.floor ||
+        mod.rerollAtMost || mod.flipAtMost || mod.cascadeBonus || mod.noCrit || (mod.times && mod.times !== 1))
+      if (changes && !applied.includes(spec.id)) applied.push(spec.id)
       if (flat) opts.flat = (opts.flat ?? 0) + flat
       if (mod.critBonus) opts.critBonus = (opts.critBonus ?? 0) + mod.critBonus
       if (mod.advantage) opts.advantage = true
@@ -270,7 +274,7 @@ export function applySpecRollModifiers(
       if (mod.times) opts.times = (opts.times ?? 1) * mod.times
     }
   }
-  return { opts, fired: [...new Set(fired)] }
+  return { opts, fired: [...new Set(fired)], applied }
 }
 
 /** The element multiplier for one die against one monster, after spec changes. */
