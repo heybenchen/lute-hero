@@ -2,6 +2,8 @@
 
 A reference for every style in the Studio: what it does, what it costs, which tunables shape it, where its logic lives and how strong it simulates.
 
+> The same information is on the **`/songbook`** page of the app (`src/songbook/`). It reads rules, prices and settings live from the code, so only the win rates and "was" prices in `src/songbook/data.ts` need updating by hand along with this file.
+
 > **Keep this file in sync.** If you change a style's logic, rule text, price or a style tunable's default, or add or remove a style, update this file in the same change. The code carries notes pointing here; see [Where the logic lives](#where-the-logic-lives).
 
 ## How styles work
