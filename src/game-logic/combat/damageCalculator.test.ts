@@ -4,6 +4,7 @@ import {
   applyDamageToMonster,
   isMonsterDefeated,
   songsCanStillDamage,
+  songIsImmune,
 } from './damageCalculator'
 import { Genre, Monster, Song } from '@/types'
 
@@ -90,6 +91,34 @@ describe('Damage Calculator', () => {
       }
 
       expect(isMonsterDefeated(monster)).toBe(true)
+    })
+  })
+
+  describe('songIsImmune', () => {
+    const song = (genre: Genre): Song => ({
+      id: 's',
+      used: false,
+      slots: [{ dice: { id: 'd0', type: 'd8' as const, genre } }],
+    })
+    const monster = (): Monster => ({
+      id: 'm', templateId: 't', name: 'M', currentHP: 50, maxHP: 50,
+      vulnerability: 'Ballad', resistance: 'Shanty', isBoss: false, level: 1,
+    })
+
+    it('is true only for the immune element', () => {
+      expect(songIsImmune(song('Shanty'), monster())).toBe(true)
+      expect(songIsImmune(song('Folk'), monster())).toBe(false)
+      expect(songIsImmune(song('Ballad'), monster())).toBe(false)
+    })
+
+    it('is false for a song with no dice, and when Dissonance softens the hit', () => {
+      expect(songIsImmune({ id: 's', used: false, slots: [{ dice: null }] }, monster())).toBe(false)
+      expect(songIsImmune(song('Shanty'), monster(), { immuneMultiplier: 0.5 })).toBe(false)
+      expect(songIsImmune(song('Shanty'), monster(), { immuneMultiplier: 1 })).toBe(false)
+    })
+
+    it('looks only at elements, so it works for the Showdown boss, which has no HP', () => {
+      expect(songIsImmune(song('Shanty'), { ...monster(), currentHP: 0, maxHP: 0 })).toBe(true)
     })
   })
 

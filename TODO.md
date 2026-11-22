@@ -15,6 +15,7 @@
 (none)
 
 ## Completed
+- The reroll button now sits on the most recently rolled dice (hanging off their lower edge) in fights and in the Final Showdown, instead of a separate button; a free Nimble Fingers reroll is offered ahead of the paid one in both. The Showdown also marks dice the Silence is immune to with the same icon a fight uses (Dissonance counted), and shows the performer's styles; the two screens now share `RerollPill`, `makeReroll` and `songIsImmune`.
 - The map now highlights every space within the moves a bard has left, not just the neighbours: spaces two moves away are selectable too (marked with a small 2) and clicking one takes both steps. Move counters follow the real moves per turn (`movesFor`) instead of a hardcoded 2.
 - Added `/songbook`, a standalone page listing every Studio style with its rule, price, settings, trigger, group and simulated strength (search, group filter, sort, and an at-a-glance table). Rules and prices are read live from the game's style code.
 - Re-balanced all styles against the rules after the combat target lock and Showdown stage landed (bards now tame about 9 monsters a game, not 14): Rallying Cry refreshes any die for 1 EXP, Harmony is +4 for 1 EXP, Fanfare is +3, Swarm Singer is +1, Crowd Favorite 3 EXP, Double Time 1 EXP, Dissonance 2 EXP, Muse's Favor 2 EXP, Jam Session 4 EXP, Studio Regular 3 EXP. All 20 styles win 32.6–38.5% against shopping rivals (800 games, baseline 33.5%); see `songStyles.md`.
