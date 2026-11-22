@@ -375,6 +375,37 @@ describe('combat flow', () => {
     expect(state.players[0].inspiration).toBe(0)
   })
 
+  it('locks on damage and keeps the target locked if a reroll replaces the wound with zero damage', () => {
+    let state = stateWithMonsterAtPlayer()
+    state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    const monster = state.combat.monsters[0]
+    const songId = state.players[0].songs[0].id
+    state = {
+      ...state,
+      // Half-damage Dissonance, so a roll of 1 rounds down to zero damage (the shipped default is full damage)
+      tunables: { ...state.tunables, counterpointMultiplier: 0.5 },
+      players: state.players.map((p, i) => i === 0 ? { ...p, styles: ['counterpoint'], inspiration: 1 } : p),
+      combat: {
+        ...state.combat,
+        monsters: [
+          { ...monster, id: 'immune', vulnerability: null, resistance: 'Ballad', currentHP: 20, maxHP: 20 },
+          { ...monster, id: 'other' },
+        ],
+      },
+    }
+    const play: GameAction = { type: 'PLAY_SONG', songId, targetMonsterId: 'immune' }
+    const noDamage = { ...ctx(), rng: () => 0 }
+    expect(apply(state, play, noDamage).state.combat.lockedTargetMonsterId).toBeNull()
+
+    state = apply(state, play, { ...ctx(), rng: () => 0.25 }).state
+    expect(state.combat.monsters[0].currentHP).toBeLessThan(20)
+    expect(state.combat.lockedTargetMonsterId).toBe('immune')
+
+    state = apply(state, { type: 'REROLL_SONG' }, noDamage).state
+    expect(state.combat.monsters[0].currentHP).toBe(20)
+    expect(normalizeEngineState(state).combat.lockedTargetMonsterId).toBe('immune')
+  })
+
   it('refreshes a song that lands a kill so it can be replayed on another monster', () => {
     let state = stateWithMonsterAtPlayer()
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state

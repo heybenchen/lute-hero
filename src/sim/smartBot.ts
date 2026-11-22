@@ -8,7 +8,7 @@
  *    A tame hands the die back, so likely kills are free; Lingering Note makes
  *    a big die's miss free, Nimble Fingers / Inspiration rerolls are priced in.
  *    Featured songs are free but split a tame with a rival, so they are used
- *    to chip. Leftover songs wound untouched monsters for EXP.
+ *    to chip. The bot focuses on a wounded target until it tames it or retreats.
  *  - Moving: to the reachable space with the best expected fight, looking two
  *    turns ahead when nothing is in reach.
  *  - Shopping: every option (new d4, upgrade, style, Inspiration) is scored by
@@ -303,19 +303,21 @@ export class SmartBot {
       const fighter = this.me
       const alive = combat.monsters.filter((m) => m.currentHP > 0)
       if (alive.length === 0) break
+      const lockedTarget = alive.find((m) => m.id === combat.lockedTargetMonsterId)
+      const targets = lockedTarget ? [lockedTarget] : alive
 
       // Rallying Cry: bring back the spent song worth the most against what's left
       if (combat.rallyReady && fighter.styles.includes('staccato') && !combat.stylesUsed.includes('staccato')) {
         const spent = fighter.songs.filter((s) => combat.spentSongIds.includes(s.id) && songDie(s) && staccatoCanRefresh(s))
         if (spent.length > 0) {
           const best = spent
-            .map((s) => ({ s, v: Math.max(...alive.map((m) => this.playValue(s, m, fighter, alive).score)) }))
+            .map((s) => ({ s, v: Math.max(...targets.map((m) => this.playValue(s, m, fighter, alive).score)) }))
             .sort((a, b) => b.v - a.v)[0]
           if (this.act({ type: 'RALLY_SONG', songId: best.s.id })) continue
         }
       }
 
-      const pick = this.bestCandidate(fighter, alive)
+      const pick = this.bestCandidate(fighter, alive, targets)
       if (!pick) break
       const hpBefore = pick.monster.currentHP
       const ok = pick.featuredFrom
@@ -332,7 +334,7 @@ export class SmartBot {
     return this.state.players.filter((p) => p.id !== fighterId && p.position === spaceId)
   }
 
-  private bestCandidate(fighter: Player, alive: Monster[]): Candidate | null {
+  private bestCandidate(fighter: Player, alive: Monster[], targets: Monster[]): Candidate | null {
     const combat = this.state.combat
     let best: Candidate | null = null
     const own: Candidate[] = []
@@ -342,7 +344,7 @@ export class SmartBot {
     }
     for (const song of fighter.songs) {
       if (!songDie(song) || combat.spentSongIds.includes(song.id)) continue
-      for (const m of alive) {
+      for (const m of targets) {
         const v = this.playValue(song, m, fighter, alive)
         if (v.dmgPossible) consider({ song, monster: m, score: v.score, pk: v.pk })
       }
@@ -353,7 +355,7 @@ export class SmartBot {
       for (const song of guest.songs) {
         const die = songDie(song)
         if (!die) continue
-        for (const m of alive) {
+        for (const m of targets) {
           const mult = getGenreMultiplier(die.genre, m)
           if (mult <= 0) continue
           const d = rollDist(die.type, { maxCascades: getTunables().maxCritCascades })
@@ -408,6 +410,7 @@ export class SmartBot {
     const bravo = (level: number) => (styles.includes('bravo') ? bravoFameFor(level) : 0)
     const specs = specsOf(fighter)
     let value = 0
+    let lockedTargetId = combat.lockedTargetMonsterId
     const play = (song: Song, target: (typeof ms)[number]) => {
       const die = songDie(song)!
       const counter = styles.includes('counterpoint') && !used.has('counterpoint')
@@ -427,10 +430,12 @@ export class SmartBot {
       }
       if (dmg > 0) target.touched = true
       if (dmg >= target.hp) {
+        lockedTargetId = null
         target.hp = 0
         value += calculateMonsterFameValue(target.m.level) + bravo(target.m.level)
         return
       }
+      if (dmg > 0) lockedTargetId = target.m.id
       target.hp -= dmg
       if (styles.includes('fermata') && !used.has('fermata') && isFermataDie(die) && canPayLingering) used.add('fermata')
       else ready.delete(song.id)
@@ -448,6 +453,7 @@ export class SmartBot {
         const die = songDie(song)!
         const d = this.dist(die, styles, { firstRoll, advantage: styles.includes('virtuoso') && !used.has('virtuoso'), allElements: allEl })
         for (const x of live) {
+          if (lockedTargetId && x.m.id !== lockedTargetId) continue
           const mult = getGenreMultiplier(die.genre, x.m)
           if (mult <= 0) continue
           const pk = killChance(d, mult, x.hp)

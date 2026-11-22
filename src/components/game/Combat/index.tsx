@@ -43,6 +43,7 @@ export function CombatModal() {
       lastDamageCalculations: state.lastDamageCalculations,
       lastPlayedSongId: state.lastPlayedSongId,
       lastTargetMonsterId: state.lastTargetMonsterId,
+      lockedTargetMonsterId: state.lockedTargetMonsterId,
       players: state.players,
       stylesUsed: state.stylesUsed,
       specFired: state.specFired,
@@ -60,6 +61,7 @@ export function CombatModal() {
     lastDamageCalculations,
     lastPlayedSongId,
     lastTargetMonsterId,
+    lockedTargetMonsterId,
     players,
     stylesUsed,
     specFired,
@@ -69,8 +71,9 @@ export function CombatModal() {
   } = useHeldWhileRolling(liveView)
   const diceBusy = useDiceTrayBusy()
 
-  // The chosen single-target monster for the next song
-  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
+  const [chosenTargetId, setChosenTargetId] = useState<string | null>(null)
+  const lockedTarget = monsters.find((m) => m.id === lockedTargetMonsterId && m.currentHP > 0)
+  const selectedTargetId = lockedTarget?.id ?? chosenTargetId
 
   const isSongSpent = useCallback(
     (songId: string) => spentSongIds.includes(songId),
@@ -97,14 +100,12 @@ export function CombatModal() {
   useEffect(() => {
     if (!isActive) return
     const alive = monsters.filter((m) => m.currentHP > 0)
-    if (alive.length === 0) {
-      if (selectedTargetId !== null) setSelectedTargetId(null)
-      return
+    if (lockedTarget) {
+      setChosenTargetId(lockedTarget.id)
+    } else if (!alive.some((m) => m.id === chosenTargetId)) {
+      setChosenTargetId(alive[0]?.id ?? null)
     }
-    if (!selectedTargetId || !alive.some((m) => m.id === selectedTargetId)) {
-      setSelectedTargetId(alive[0].id)
-    }
-  }, [isActive, monsters, selectedTargetId])
+  }, [isActive, monsters, chosenTargetId, lockedTarget])
 
   // Any new play (or a new fight) drops a pending retreat confirmation
   useEffect(() => {
@@ -221,13 +222,14 @@ export function CombatModal() {
   // (Featured songs roll without styles, so Dissonance doesn't soften theirs.)
   const remainingSongs = playableSongs.filter((s) => !isSongSpent(s.id))
   const target = monsters.find((monster) => monster.id === selectedTargetId)
+  const availableTargets = lockedTarget ? [lockedTarget] : monsters
   const damageOptions = {
     immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false, elementCount: 0 }),
   }
   const retreatForfeitsDamage =
     canContinue &&
     !allMonstersDefeated &&
-    (songsCanStillDamage(remainingSongs, monsters, damageOptions) || songsCanStillDamage(featurableSongs, monsters))
+    (songsCanStillDamage(remainingSongs, availableTargets, damageOptions) || songsCanStillDamage(featurableSongs, availableTargets))
 
   const handleRetreatClick = () => {
     if (retreatForfeitsDamage && !confirmingRetreat) {
@@ -295,7 +297,7 @@ export function CombatModal() {
               {canContinue && (
                 <p className="flex items-center gap-2 text-sm text-parchment-300">
                   <Target size={15} className="shrink-0 text-gold-400" aria-hidden="true" />
-                  Target a monster, then play a song.
+                  {lockedTarget ? 'Finish the wounded monster or retreat.' : 'Target a monster, then play a song.'}
                 </p>
               )}
             </div>
@@ -380,7 +382,7 @@ export function CombatModal() {
                       index={idx}
                       fameValue={calculateMonsterFameValue(monster.level)}
                       isSelected={selectedTargetId === monster.id}
-                      onSelect={canAct && monster.currentHP > 0 ? () => setSelectedTargetId(monster.id) : undefined}
+                      onSelect={canRoll && !lockedTarget && monster.currentHP > 0 ? () => setChosenTargetId(monster.id) : undefined}
                     />
                     {monster.id === lastTargetMonsterId && lastDamageCalculations[idx] && (
                       <div className="flex flex-col gap-1.5">
