@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useGameStore, hasSavedGame } from './store'
 import { getOnlineSession, getIdentity } from './net/identity'
 import * as api from './net/api'
@@ -6,10 +6,13 @@ import { DebugPanel } from './components/game/DebugPanel'
 import { DiceRollHost } from './components/dice3d/DiceRollHost'
 import { Setup } from './components/game/Setup'
 import { GameView } from './components/game/GameView'
-import { FinalShowdown } from './components/game/Showdown'
 import { FinalSummary } from './components/game/FinalSummary'
 import { ModeSelect } from './components/lobby/ModeSelect'
 import { LobbyRoom } from './components/lobby/LobbyRoom'
+
+const FinalShowdown = lazy(async () => ({
+  default: (await import('./components/game/Showdown')).FinalShowdown,
+}))
 
 function App() {
   const phase = useGameStore((state) => state.phase)
@@ -84,7 +87,7 @@ function App() {
     }
 
     if (phase === 'finalBoss') {
-      return <FinalShowdown />
+      return <Suspense fallback={<p role="status" className="text-center py-12 text-gold-300">Tuning the stage…</p>}><FinalShowdown /></Suspense>
     }
 
     if (phase === 'gameOver') {

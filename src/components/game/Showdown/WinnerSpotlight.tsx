@@ -1,9 +1,11 @@
+import type { ShowdownPerformance } from '@/game-logic/showdown/showdown'
 import { useEffect, useMemo, useState } from 'react'
 import { Player } from '@/types'
 import { calculateFinalRankings } from '@/game-logic/fame/calculator'
 import { readableTextColor } from '@/data/genreTheme'
 
 interface WinnerSpotlightProps {
+  history: ShowdownPerformance[][]
   players: Player[]
   showdownFandom: Record<string, number>
   onContinue: () => void
@@ -46,7 +48,7 @@ function useCountUp(target: number, durationMs: number, start: boolean) {
   return value
 }
 
-export function WinnerSpotlight({ players, showdownFandom, onContinue }: WinnerSpotlightProps) {
+export function WinnerSpotlight({ players, showdownFandom, history, onContinue }: WinnerSpotlightProps) {
   const ranked = useMemo(() => calculateFinalRankings(players), [players])
   const winner = ranked[0]
   const confetti = useMemo(() => buildConfetti(28), [])
@@ -65,6 +67,11 @@ export function WinnerSpotlight({ players, showdownFandom, onContinue }: WinnerS
   const winnerFans = useCountUp(winner?.fame ?? 0, 1600, revealStage >= 2)
 
   if (!winner) return null
+  const highlight = history.flatMap((performances, verse) => performances
+    .filter(performance => performance.playerId === winner.id && performance.fandom > 0)
+    .map(performance => ({ ...performance, verse: verse + 1 })))
+    .sort((a, b) => b.fandom - a.fandom)[0]
+
 
   return (
     <div className="min-h-[100dvh] relative overflow-hidden flex flex-col items-center justify-center px-4 py-10" style={{ background: '#07050a' }}>
@@ -157,6 +164,11 @@ export function WinnerSpotlight({ players, showdownFandom, onContinue }: WinnerS
           <span className="block text-sm text-parchment-400 font-medieval uppercase tracking-widest mt-1">Adoring Fans</span>
         </div>
 
+        {highlight && revealStage >= 2 && (
+          <p className="text-parchment-300 text-center mb-6">
+            In verse {highlight.verse}, {winner.name} won {highlight.fandom} fans with {highlight.genre ?? 'a single chord'}.
+          </p>
+        )}
         {/* Final score breakdown */}
         <div
           className={`w-full max-w-xl transition-all duration-700 ${revealStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
