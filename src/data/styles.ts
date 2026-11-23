@@ -29,7 +29,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'staccato',
     name: 'Rallying Cry',
     flavor: 'One victory, and a weary song finds its voice again.',
-    rule: 'Once per turn, after one of your songs tames a monster, refresh a spent song of your choice.',
+    rule: 'Once per turn, after a song tames a monster, refresh any spent song.',
   },
   coda: {
     id: 'coda',
@@ -47,43 +47,43 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'rubato',
     name: 'Nimble Fingers',
     flavor: 'A slipped note, caught before anyone hears.',
-    rule: 'Once per turn, you may re-roll the die you just rolled and keep the higher value.',
+    rule: 'Once per turn, re-roll the die you just rolled and keep the higher result.',
   },
   virtuoso: {
     id: 'virtuoso',
     name: "Master's Touch",
     flavor: 'Years of practice, poured into one great chord.',
-    rule: 'Once per turn, your first roll of a d12 or smaller die is rolled twice; keep the higher.',
+    rule: 'Once per turn, roll your first d12 or smaller die twice and keep the higher.',
   },
   fortissimo: {
     id: 'fortissimo',
     name: "Dragon's Roar",
     flavor: 'Loud enough to shake the scales off a wyrm.',
-    rule: 'Increases the face value of every d20 you roll by 2; a die that reaches 20 this way crits.',
+    rule: 'Increases the face value of every d20 by 2. Reaching 20 crits.',
   },
   fermata: {
     id: 'fermata',
     name: 'Lingering Note',
     flavor: 'The last chord hangs in the air, unbroken.',
-    rule: "Once per turn, a d12 or d20 song that doesn't tame its target isn't spent.",
+    rule: "Once per turn, a d12 or d20 song that fails to tame isn't spent.",
   },
   counterpoint: {
     id: 'counterpoint',
     name: 'Dissonance',
     flavor: 'A clashing chord that no ward can fully block.',
-    rule: 'Once per turn, a roll against an immune target deals full damage.',
+    rule: 'Once per turn, a roll against an immune monster deals full damage.',
   },
   tutti: {
     id: 'tutti',
     name: 'Harmony',
     flavor: 'Fire, earth, wind and wave, singing as one.',
-    rule: "If your setlist holds all four elements, adds +1 to the value of the song for each die rolled. It doesn't change a die's face, so it can't crit.",
+    rule: "With all four elements in your setlist, adds +1 to the value of the song per die. Can't crit.",
   },
   overture: {
     id: 'overture',
     name: 'Fanfare',
     flavor: 'Horns announce the hero before the first blow.',
-    rule: "Adds +3 to the value of your first song each turn. It doesn't change a die's face, so it can't crit.",
+    rule: "Adds +3 to the value of your first song each turn. Can't crit.",
   },
   bravo: {
     id: 'bravo',
@@ -101,7 +101,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'hometown-hero',
     name: 'Hometown Hero',
     flavor: 'The songs of home never miss a beat.',
-    rule: 'Increases the face value of dice of your starting element by 1; a die boosted to its crit face crits.',
+    rule: "Increases the face value of your starting element's dice by 1. Reaching the crit face crits.",
   },
   'studio-regular': {
     id: 'studio-regular',
@@ -113,13 +113,13 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'inspired-play',
     name: 'Inspired Play',
     flavor: 'A head full of ideas makes every note ring truer.',
-    rule: '+2 to every die while you hold 3+ Inspiration.',
+    rule: "With 3+ Inspiration, adds +2 to the value of the song per die. Can't crit.",
   },
   'steady-hands': {
     id: 'steady-hands',
     name: 'Steady Hands',
     flavor: 'No nerves, no fumbled notes.',
-    rule: 'A die that lands below 3 counts as showing 3.',
+    rule: 'Increases the face value of any die below 3 to 3. The raised face can crit.',
   },
   'street-performer': {
     id: 'street-performer',
@@ -200,62 +200,62 @@ function dieRange(minFaces: number, maxFaces: number): string {
  *  - "increases the face value of a die": changes the face itself, so the die can crit
  *    (and combine with other styles that act on the face).
  */
-const NO_CRIT = "It doesn't change a die's face, so it can't crit."
+const NO_CRIT = "Can't crit."
 
 export function styleRule(id: StyleId): string {
   const t = getTunables()
   switch (id) {
-    case 'fortissimo': return `Increases the face value of every d20 you roll by ${t.fortissimoBonus}; a die that reaches 20 this way crits.`
+    case 'fortissimo': return `Increases the face value of every d20 by ${t.fortissimoBonus}. Reaching 20 crits.`
     case 'overture': return `Adds +${t.overtureBonus} to the value of your first song each turn. ${NO_CRIT}`
     case 'tutti': return t.tuttiElements >= 4
-      ? `If your setlist holds all four elements, adds +${t.tuttiBonus} to the value of the song for each die rolled. ${NO_CRIT}`
-      : `If your setlist holds at least ${t.tuttiElements} elements, adds +${t.tuttiBonus} to the value of the song for each die rolled. ${NO_CRIT}`
+      ? `With all four elements in your setlist, adds +${t.tuttiBonus} to the value of the song per die. ${NO_CRIT}`
+      : `With ${t.tuttiElements}+ elements in your setlist, adds +${t.tuttiBonus} to the value of the song per die. ${NO_CRIT}`
     case 'ostinato': {
       const lower = 4 - t.ostinatoCritFace
       const by = lower === 1 ? 'one number' : `${lower} numbers`
       const which = t.ostinatoMaxFaces >= 20 ? 'All your dice' : `Your ${dieRange(4, t.ostinatoMaxFaces)} dice`
       const chain = t.ostinatoChainFace < 4
-        ? ` (bonus dice keep chaining${t.ostinatoChainFace === 3 ? ' one number lower' : ' on lower numbers'})`
-        : ' (bonus dice still need the top face)'
-      const extra = t.ostinatoCascadeBonus ? `; their bonus dice add +${t.ostinatoCascadeBonus}` : chain
-      return `${which} crit ${by} lower${extra}.`
+        ? ` Bonus dice keep chaining${t.ostinatoChainFace === 3 ? ' one number lower' : ' on lower numbers'}.`
+        : ' Bonus dice still need the top face.'
+      const extra = t.ostinatoCascadeBonus ? `. Bonus dice add +${t.ostinatoCascadeBonus}.` : chain
+      return `${which} crit ${by} lower.${extra}`
     }
     case 'bravo': return t.bravoMinLevel > 1
       ? `+${t.bravoFamePerTame} Fame for every Lv${t.bravoMinLevel}+ monster you tame.`
       : `+${t.bravoFamePerTame} Fame for every monster you tame.`
     case 'fermata': {
-      const pay = t.fermataInspirationCost > 0 ? `, for ${t.fermataInspirationCost} Inspiration` : ''
-      return `Once per turn, a ${dieRange(t.fermataMinFaces, 20)} song that doesn't tame its target isn't spent${pay}.`
+      const pay = t.fermataInspirationCost > 0 ? ` Costs ${t.fermataInspirationCost} Inspiration.` : ''
+      return `Once per turn, a ${dieRange(t.fermataMinFaces, 20)} song that fails to tame isn't spent.${pay}`
     }
     case 'staccato': return t.staccatoMaxFaces >= 20
-      ? 'Once per turn, after one of your songs tames a monster, refresh a spent song of your choice.'
-      : `Once per turn, after one of your songs tames a monster, refresh a spent ${dieRange(4, t.staccatoMaxFaces)} song of your choice.`
+      ? 'Once per turn, after a song tames a monster, refresh any spent song.'
+      : `Once per turn, after a song tames a monster, refresh any spent ${dieRange(4, t.staccatoMaxFaces)} song.`
     case 'rubato': {
       const times = t.rubatoUsesPerTurn === 1 ? 'Once' : t.rubatoUsesPerTurn === 2 ? 'Twice' : `${t.rubatoUsesPerTurn} times`
       const which = t.rubatoMaxFaces >= 20 ? 'the die' : `a ${dieRange(4, t.rubatoMaxFaces)} die`
-      return `${times} per turn, you may re-roll ${which} you just rolled and keep the higher value.`
+      return `${times} per turn, re-roll ${which} you just rolled and keep the higher result.`
     }
-    case 'virtuoso': return `Once per turn, your first roll of a ${dieRange(t.virtuosoMinFaces, t.virtuosoMaxFaces)} die is rolled twice; keep the higher.`
+    case 'virtuoso': return `Once per turn, roll your first ${dieRange(t.virtuosoMinFaces, t.virtuosoMaxFaces)} die twice and keep the higher.`
     case 'counterpoint': {
       const m = t.counterpointMultiplier
       const share = m >= 1 ? 'full' : m === 0.75 ? '¾' : m === 0.5 ? 'half' : m === 0.25 ? '¼' : `${Math.round(m * 100)}%`
       return m >= 1
-        ? 'Once per turn, a roll against an immune target deals full damage.'
-        : `Once per turn, a roll against an immune target deals ${share} damage instead of none.`
+        ? 'Once per turn, a roll against an immune monster deals full damage.'
+        : `Once per turn, a roll against an immune monster deals ${share} damage instead of none.`
     }
     case 'ispirato': {
       if (t.ispiratoPerTurn <= 0) return `Start each turn with at least ${t.ispiratoMin} Inspiration.`
       const gain = `Gain ${t.ispiratoPerTurn} Inspiration at the start of each turn`
       return t.ispiratoMin > t.ispiratoPerTurn ? `${gain} (and start it with at least ${t.ispiratoMin}).` : `${gain}.`
     }
-    case 'hometown-hero': return `Increases the face value of dice of your starting element by ${t.hometownHeroBonus}; a die boosted to its crit face crits.`
-    case 'steady-hands': return `Increases the face value of any die that lands below ${t.steadyHandsFloor} to ${t.steadyHandsFloor}; the raised face counts for crits.`
-    case 'street-performer': return `Gain ${t.streetPerformerExp} EXP at the start of each of your turns.`
+    case 'hometown-hero': return `Increases the face value of your starting element's dice by ${t.hometownHeroBonus}. Reaching the crit face crits.`
+    case 'steady-hands': return `Increases the face value of any die below ${t.steadyHandsFloor} to ${t.steadyHandsFloor}. The raised face can crit.`
+    case 'street-performer': return `Gain ${t.streetPerformerExp} EXP at the start of each turn.`
     case 'studio-regular': return `Upgrades cost ${t.studioRegularDiscount} less EXP.`
-    case 'inspired-play': return `While you hold ${t.inspiredPlayMin}+ Inspiration, adds +${t.inspiredPlayBonus} to the value of the song for each die rolled. ${NO_CRIT}`
-    case 'chain-reaction': return `Adds +${t.chainReactionBonus} to the value of the song, per die rolled, for each same-element song played in a row before it (max +${t.chainReactionCap} per die). ${NO_CRIT}`
-    case 'swarm-singer': return `In fights with ${t.swarmSingerMin}+ monsters, adds +${t.swarmSingerBonus} to the value of the song for each die rolled. ${NO_CRIT}`
-    case 'jam-session': return `While you share a space with another bard, adds +${t.jamSessionBonus} to the value of the song for each die rolled. ${NO_CRIT}`
+    case 'inspired-play': return `With ${t.inspiredPlayMin}+ Inspiration, adds +${t.inspiredPlayBonus} to the value of the song per die. ${NO_CRIT}`
+    case 'chain-reaction': return `Adds +${t.chainReactionBonus} to the value of the song per die, for each same-element song played just before it (max +${t.chainReactionCap}). ${NO_CRIT}`
+    case 'swarm-singer': return `In fights with ${t.swarmSingerMin}+ monsters, adds +${t.swarmSingerBonus} to the value of the song per die. ${NO_CRIT}`
+    case 'jam-session': return `While sharing a space with another bard, adds +${t.jamSessionBonus} to the value of the song per die. ${NO_CRIT}`
     default: return STYLES[id].rule
   }
 }
