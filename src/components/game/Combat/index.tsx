@@ -5,6 +5,7 @@ import { MonsterCard } from './MonsterCard'
 import { SongCard } from './SongCard'
 import { FeaturedSongs } from './FeaturedSongs'
 import { SongGrid } from './SongGrid'
+import { makeReroll } from './reroll'
 import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateMonsterFameValue } from '@/game-logic/fame/calculator'
@@ -15,9 +16,9 @@ import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
 import { STYLES } from '@/data/styles'
 import { counterpointMultiplier, rubatoCanReroll, rubatoUsesLeft, staccatoCanRefresh } from '@/game-logic/styles/styleEffects'
-import { songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
+import { songIsImmune, songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
-import { Flag, RotateCcw, Sparkles, Target } from 'lucide-react'
+import { Flag, RotateCcw, Target } from 'lucide-react'
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
@@ -201,6 +202,17 @@ export function CombatModal() {
     const result = await dispatch({ type: 'REROLL_SONG', rubato: true })
     if (result.ok) void showDamageEvents(result.events)
   }
+
+  // The reroll sits on the dice of the song just played (free with Nimble Fingers, else 1 Inspiration)
+  const reroll = canPaidReroll
+    ? makeReroll({
+        free: canNimbleReroll ? { name: STYLES.rubato.name, onClick: handleRubato } : undefined,
+        inspiration: player.inspiration,
+        enabled: canRoll,
+        subject: 'song',
+        onPaid: handleReroll,
+      })
+    : undefined
 
   // Hotseat: the guest always agrees, so the song just plays. Online: ask.
   const handleFeature = async (guestPlayerId: string, songId: string) => {
@@ -419,11 +431,12 @@ export function CombatModal() {
                   <SongCard
                     key={song.id}
                     song={{ ...song, used: isSongSpent(song.id) }}
-                    resisted={!!target && !songsCanStillDamage([song], [target], damageOptions)}
+                    resisted={!!target && songIsImmune(song, target, damageOptions)}
                     onPlay={() => handlePlaySong(song.id)}
                     disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
                     index={idx}
                     rolls={currentSongId === song.id ? rolls : undefined}
+                    reroll={reroll && lastPlayedSong?.id === song.id ? reroll : undefined}
                     onRally={canRally && isSongSpent(song.id) && staccatoCanRefresh(song) ? () => handleRally(song.id) : undefined}
                   />
                 ))}
@@ -453,34 +466,6 @@ export function CombatModal() {
           {/* Actions */}
           {!allMonstersDefeated && (
             <div className="flex w-full flex-col gap-2 border-t border-gold-700/15 pt-4 sm:flex-row sm:justify-end animate-fade-in">
-              {canPaidReroll && (
-                <button
-                  onClick={canNimbleReroll ? handleRubato : handleReroll}
-                  disabled={!canRoll || (!canNimbleReroll && player.inspiration <= 0)}
-                  className={`flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-medieval font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                    canNimbleReroll
-                      ? 'border border-gold-400/30 bg-gold-400/10 text-gold-200 hover:enabled:bg-gold-400/15'
-                      : 'border border-violet-300/25 bg-violet-400/10 text-violet-100 hover:enabled:bg-violet-400/15'
-                  }`}
-                  title={
-                    canNimbleReroll
-                      ? `${STYLES.rubato.name}: reroll this song for free`
-                      : player.inspiration > 0
-                      ? 'Reroll the last song for 1 Inspiration'
-                      : 'Requires Inspiration'
-                  }
-                >
-                  <RotateCcw size={17} aria-hidden="true" />
-                  Reroll
-                  {canNimbleReroll ? (
-                    <span className="text-xs font-normal text-gold-200/70">{STYLES.rubato.name} · free</span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs font-normal text-violet-200/70">
-                      <Sparkles size={12} aria-hidden="true" /> 1 · {player.inspiration} left
-                    </span>
-                  )}
-                </button>
-              )}
               {/* Retreat is always on offer, even before a song is played */}
               {confirmingRetreat && retreatForfeitsDamage ? (
                 <div

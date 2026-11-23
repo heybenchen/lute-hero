@@ -122,8 +122,8 @@ const STYLE_MEASURED: Record<StyleId, number> = {
   bravo: 5.8, fermata: 4.8, staccato: 3.5, tutti: 2.6, fortissimo: 1.9, overture: 1.9,
   coda: 1.6, counterpoint: 1.6, virtuoso: 1.0, ostinato: 1.0, rubato: 0.3, ispirato: 0,
   // Studio styles from the style lab: approximate, from their style-lab win rates
-  'hometown-hero': 2.3, 'small-ensemble': 2.8, 'studio-regular': 2.4, 'inspired-play': 2.4,
-  'double-time': 2.1, 'chain-reaction': 2.4, 'swarm-singer': 1.9, 'jam-session': 2.4,
+  'hometown-hero': 2.3, 'steady-hands': 2.0, 'studio-regular': 2.4, 'inspired-play': 2.4,
+  'street-performer': 2.0, 'chain-reaction': 2.4, 'swarm-singer': 1.9, 'jam-session': 2.4,
 }
 
 const STYLE_PRIOR: Partial<Record<StyleId, number>> = {
@@ -136,10 +136,12 @@ const STYLE_PRIOR: Partial<Record<StyleId, number>> = {
   ispirato: 0.6,
   // Economy the odds can't see: cheaper upgrades keep paying all game
   'studio-regular': 1.2,
+  // An EXP a turn is worth the bot's EXP weight in Fame the odds can't see
+  'street-performer': 2.0,
 }
 
 /** Style reach checks, following the tunable die-size limits. */
-const isVirtuosoDie = (d: Dice) => getMaxValue(d.type) >= getTunables().virtuosoMinFaces
+const isVirtuosoDie = (d: Dice) => getMaxValue(d.type) >= getTunables().virtuosoMinFaces && getMaxValue(d.type) <= getTunables().virtuosoMaxFaces
 const isFermataDie = (d: Dice) => getMaxValue(d.type) >= getTunables().fermataMinFaces
 const isRubatoDie = (d: Dice) => getMaxValue(d.type) <= getTunables().rubatoMaxFaces
 const hasHarmony = (songs: Song[]) => elementCount(songs) >= getTunables().tuttiElements
@@ -425,8 +427,9 @@ export class SmartBot {
       firstRoll = false
       let dmg = Math.floor(sample(d, rng) * mult)
       if (dmg < target.hp && styles.includes('rubato') && rubatoLeft > 0 && isRubatoDie(die)) {
+        // Nimble Fingers keeps the higher of the two rolls
         rubatoLeft--
-        dmg = Math.floor(sample(d, rng) * mult)
+        dmg = Math.max(dmg, Math.floor(sample(d, rng) * mult))
       }
       if (dmg > 0) target.touched = true
       if (dmg >= target.hp) {
@@ -721,8 +724,8 @@ export class SmartBot {
       tutti: elements >= 4 ? 1 : elements === 3 ? 0.5 : 0.1,
       ispirato: player.inspiration < 1 ? 1 : 0.3,
       'hometown-hero': Math.min(1, dice.filter((d) => d.genre === player.starterGenre).length / 3),
-      'small-ensemble': Math.min(1, dice.filter((d) => getMaxValue(d.type) <= getTunables().smallEnsembleMaxFaces).length / 3),
-      'studio-regular': 1, 'double-time': 1, 'chain-reaction': 1, 'swarm-singer': 1, 'jam-session': 1,
+      'steady-hands': Math.min(1, dice.filter((d) => getMaxValue(d.type) <= 8).length / 2),
+      'studio-regular': 1, 'street-performer': 1, 'chain-reaction': 1, 'swarm-singer': 1, 'jam-session': 1,
       'inspired-play': player.inspiration >= getTunables().inspiredPlayMin ? 1 : 0.5,
     }
     const spaces = Math.max(1, this.state.spaces.filter((s) => s.monsters.length > 0).length)
@@ -937,6 +940,10 @@ export class SmartBot {
       // An encore paid per unspent Inspiration makes rerolls cost real fans
       const perInsp = mySpecs.reduce((t, sp) => t + (sp.showdownEnd?.perInspiration ?? 0), 0)
       const freeLeft = inspirationRules(mySpecs).freePerTurn > (now.showdownUndo?.freeRerollsUsed ?? 0)
+      // Nimble Fingers keeps the higher result, so using it can never hurt: take it first
+      const hasFree = me.styles.includes('rubato') && !now.showdownUndo?.rubatoUsed &&
+        me.songs.some((sg) => (now.showdownUndo?.songIds ?? []).includes(sg.id) && (songDie(sg) ? isRubatoDie(songDie(sg)!) : false))
+      if (hasFree && this.act({ type: 'REROLL_SHOWDOWN_SONG', rubato: true })) continue
       // Spread spare Inspiration over the verses still to come
       const budget = versesLeft === 0 ? me.inspiration : Math.floor(me.inspiration / (versesLeft + 1)) || (me.inspiration > versesLeft ? 1 : 0)
       if (this.p.showdownStop === 'optimal') {
@@ -947,9 +954,6 @@ export class SmartBot {
       } else if (got >= par * (versesLeft === 0 ? 1 : 0.85)) return
       if (freeLeft && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
       if (perInsp > 0 && par - got < perInsp * 2) return
-      const hasFree = me.styles.includes('rubato') && !now.showdownUndo?.rubatoUsed &&
-        me.songs.some((sg) => (now.showdownUndo?.songIds ?? []).includes(sg.id) && (songDie(sg) ? isRubatoDie(songDie(sg)!) : false))
-      if (hasFree && this.act({ type: 'REROLL_SHOWDOWN_SONG', rubato: true })) continue
       if (budget >= 1 && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
       return
     }

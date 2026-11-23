@@ -189,3 +189,16 @@ export function songsCanStillDamage(
     }),
   );
 }
+
+/**
+ * Would every die in this song do zero damage to this monster because of its
+ * immunity (Dissonance's `immuneMultiplier` softening a hit counts as damage)?
+ * Shared by fights and the Final Showdown, where the boss has no HP to speak of,
+ * so unlike `songsCanStillDamage` this looks only at elements.
+ */
+export function songIsImmune(song: Song, monster: Monster, opts: DamageOptions = {}): boolean {
+  const dice = song.slots.flatMap((slot) => (slot.dice ? [slot.dice] : []));
+  if (dice.length === 0) return false;
+  if ((opts.immuneMultiplier ?? 0) > 0) return false;
+  return dice.every((die) => getGenreMultiplier(die.genre, monster) === 0);
+}

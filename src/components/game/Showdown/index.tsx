@@ -5,14 +5,16 @@ import { Song, DiceRoll } from '@/types'
 import type { EngineEvent } from '@/engine/events'
 import { SongCard } from '../Combat/SongCard'
 import { SongGrid } from '../Combat/SongGrid'
+import { makeReroll } from '../Combat/reroll'
+import { CombatStyles } from '../DraftShop/StyleShelf'
 import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
-import { rubatoCanReroll } from '@/game-logic/styles/styleEffects'
-import { getPlayableSongs, mergeSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
+import { counterpointMultiplier, rubatoCanReroll } from '@/game-logic/styles/styleEffects'
+import { songIsImmune } from '@/game-logic/combat/damageCalculator'
+import { createShowdownBoss, getPlayableSongs, mergeSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
 import { STYLES } from '@/data/styles'
-import { RotateCcw, Sparkles } from 'lucide-react'
 import { readableTextColor } from '@/data/genreTheme'
 
 type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
@@ -144,6 +146,26 @@ export function FinalShowdown() {
     if (!canRubato) return
     const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG', rubato: true })
     if (result.ok) showPerformance(result.events)
+  }
+
+  // The reroll sits on the dice just performed: free with Nimble Fingers, else 1 Inspiration
+  const reroll = performer && hasPerformed && performedSongs.length > 0
+    ? makeReroll({
+        free: canRubato ? { name: STYLES.rubato.name, onClick: handleRubato } : undefined,
+        inspiration: performer.inspiration,
+        enabled: canReroll,
+        subject: 'performance',
+        onPaid: handleReroll,
+      })
+    : undefined
+
+  // The Silence is immune to one element each verse: show which dice will deal nothing,
+  // the same way a fight does (Dissonance softens the hit, so it counts as damage).
+  const boss = useMemo(() => createShowdownBoss({ resistGenre: showdownResistGenre }), [showdownResistGenre])
+  const damageOptions = {
+    immuneMultiplier: performer
+      ? counterpointMultiplier({ styles: performer.styles, used: [], firstRoll: true, allElements: false, elementCount: 0 })
+      : undefined,
   }
 
   const handleFinishPerformance = async () => {
@@ -294,45 +316,18 @@ export function FinalShowdown() {
                     <SongCard
                       key={song.id}
                       song={{ ...song, used: held.showdownSongsUsed.includes(song.id) }}
+                      resisted={songIsImmune(song, boss, damageOptions)}
                       onPlay={() => handlePlaySong(song)}
                       disabled={hasPerformed || !canPerform || diceBusy}
                       index={idx}
                       rolls={shownRolls}
+                      reroll={canPerform && shownRolls ? reroll : undefined}
                     />
                   )
                 })}
               </SongGrid>
+              <CombatStyles player={performer} usedStyleIds={rubatoUsed ? ['rubato'] : []} />
             </div>
-
-            {/* Rerolls: Inspiration (or Nimble Fingers, free) rerolls the whole performance */}
-            {canPerform && hasPerformed && performedSongs.length > 0 && (
-              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
-                {canRubato && (
-                  <button
-                    onClick={handleRubato}
-                    disabled={!canRubato}
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-gold-400/30 bg-gold-400/10 px-5 py-2.5 font-medieval font-bold text-gold-200 transition-colors hover:enabled:bg-gold-400/15 disabled:cursor-not-allowed disabled:opacity-40"
-                    title={`${STYLES.rubato.name}: reroll this d4/d8 performance for free (once per verse)`}
-                  >
-                    <RotateCcw size={17} aria-hidden="true" />
-                    Reroll
-                    <span className="text-xs font-normal text-gold-200/70">{STYLES.rubato.name} · free</span>
-                  </button>
-                )}
-                <button
-                  onClick={handleReroll}
-                  disabled={!canReroll || performer.inspiration <= 0}
-                  className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-violet-300/35 bg-violet-400/10 px-5 py-2.5 font-medieval font-bold text-violet-100 transition-colors hover:enabled:bg-violet-400/15 disabled:cursor-not-allowed disabled:opacity-40"
-                  title={performer.inspiration > 0 ? 'Reroll this performance for 1 Inspiration' : 'Requires Inspiration'}
-                >
-                  <RotateCcw size={17} aria-hidden="true" />
-                  Reroll
-                  <span className="flex items-center gap-1 text-xs font-normal text-violet-200/70">
-                    <Sparkles size={12} aria-hidden="true" /> 1 · {performer.inspiration} left
-                  </span>
-                </button>
-              </div>
-            )}
 
             {/* Finish performance */}
             <div className="flex justify-center pt-2">

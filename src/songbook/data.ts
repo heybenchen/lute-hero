@@ -43,7 +43,7 @@ interface StyleMeta {
 }
 
 /** The no-style baseline in the same simulation (everyone shopping for styles). */
-export const BASELINE_WIN = 33.5
+export const BASELINE_WIN = 33.4
 /** A third of games, the fair share at a three-bard table. */
 export const PARITY = 33.3
 /** Games per style in the latest audit. */
@@ -51,43 +51,40 @@ export const AUDIT_GAMES = 800
 
 export const STYLE_META: Record<StyleId, StyleMeta> = {
   staccato: {
-    group: 'original', timing: 'button', was: 2, win: 35.3, tunables: ['staccatoMaxFaces'],
+    group: 'original', timing: 'button', was: 1, win: 32.5, tunables: ['staccatoMaxFaces'],
     note: 'After a tame, a prompt lets you choose a spent song to refresh. Once per turn.',
   },
   coda: {
-    group: 'original', timing: 'always', was: 1, win: 32.6, tunables: [],
+    group: 'original', timing: 'always', was: 1, win: 29.5, tunables: [],
     note: "Losing the style returns that song's die as an unclaimed reward.",
   },
   ostinato: {
-    group: 'original', timing: 'always', was: 2, win: 37.1,
+    group: 'original', timing: 'always', was: 2, win: 36.0,
     tunables: ['ostinatoCritFace', 'ostinatoMaxFaces', 'ostinatoCascadeBonus', 'ostinatoChainFace'],
   },
   rubato: {
-    group: 'original', timing: 'button', was: 1, win: 34.4, tunables: ['rubatoMaxFaces', 'rubatoUsesPerTurn'],
-    note: 'A free reroll button. It never costs Inspiration.',
+    group: 'original', timing: 'button', was: 1, win: 33.8, tunables: ['rubatoMaxFaces', 'rubatoUsesPerTurn'],
+    note: 'A free reroll button, never costs Inspiration. If the new roll is lower, your first roll stands (the use is still spent).',
   },
-  virtuoso: { group: 'original', timing: 'once-per-turn', was: 2, win: 35.1, tunables: ['virtuosoMinFaces'] },
-  fortissimo: { group: 'original', timing: 'always', was: 2, win: 36.0, tunables: ['fortissimoBonus'] },
+  virtuoso: { group: 'original', timing: 'once-per-turn', was: 2, win: 32.3, tunables: ['virtuosoMinFaces', 'virtuosoMaxFaces'] },
+  fortissimo: { group: 'original', timing: 'always', was: 2, win: 33.3, tunables: ['fortissimoBonus'] },
   fermata: {
-    group: 'original', timing: 'once-per-turn', was: 3, win: 35.1, tunables: ['fermataMinFaces', 'fermataInspirationCost'],
+    group: 'original', timing: 'once-per-turn', was: 3, win: 35.5, tunables: ['fermataMinFaces', 'fermataInspirationCost'],
     note: 'Without the Inspiration to pay for it, the song is spent as usual.',
   },
-  counterpoint: { group: 'original', timing: 'once-per-turn', was: 1, win: 35.8, tunables: ['counterpointMultiplier'] },
-  tutti: { group: 'original', timing: 'once-per-turn', was: 2, win: 38.4, tunables: ['tuttiBonus', 'tuttiElements'] },
-  overture: { group: 'original', timing: 'once-per-turn', was: 2, win: 35.5, tunables: ['overtureBonus'] },
-  bravo: { group: 'original', timing: 'always', was: 4, win: 35.4, tunables: ['bravoFamePerTame', 'bravoMinLevel'] },
-  ispirato: { group: 'original', timing: 'always', was: 1, win: 38.5, tunables: ['ispiratoPerTurn', 'ispiratoMin'] },
-  'hometown-hero': { group: 'lab', timing: 'always', was: 1, win: 33.7, tunables: ['hometownHeroBonus'] },
-  'small-ensemble': { group: 'lab', timing: 'always', was: 4, win: 34.9, tunables: ['smallEnsembleMaxFaces'] },
-  'studio-regular': { group: 'lab', timing: 'always', was: 2, win: 37.1, tunables: ['studioRegularDiscount'] },
-  'inspired-play': { group: 'lab', timing: 'always', was: 3, win: 33.6, tunables: ['inspiredPlayBonus', 'inspiredPlayMin'] },
-  'double-time': {
-    group: 'lab', timing: 'once-per-turn', was: 2, win: 34.9, tunables: [],
-    note: 'It always applies to the first die you roll that turn.',
-  },
-  'chain-reaction': { group: 'lab', timing: 'always', was: 3, win: 35.9, tunables: ['chainReactionBonus', 'chainReactionCap'] },
-  'swarm-singer': { group: 'lab', timing: 'always', was: 2, win: 35.0, tunables: ['swarmSingerBonus', 'swarmSingerMin'] },
-  'jam-session': { group: 'lab', timing: 'always', was: 2, win: 36.2, tunables: ['jamSessionBonus'] },
+  counterpoint: { group: 'original', timing: 'once-per-turn', was: 2, win: 31.5, tunables: ['counterpointMultiplier'] },
+  tutti: { group: 'original', timing: 'once-per-turn', was: 1, win: 30.4, tunables: ['tuttiBonus', 'tuttiElements'] },
+  overture: { group: 'original', timing: 'once-per-turn', was: 2, win: 31.6, tunables: ['overtureBonus'] },
+  bravo: { group: 'original', timing: 'always', was: 3, win: 35.4, tunables: ['bravoFamePerTame', 'bravoMinLevel'] },
+  ispirato: { group: 'original', timing: 'always', was: 2, win: 33.1, tunables: ['ispiratoPerTurn', 'ispiratoMin'] },
+  'hometown-hero': { group: 'lab', timing: 'always', was: 1, win: 36.1, tunables: ['hometownHeroBonus'] },
+  'studio-regular': { group: 'lab', timing: 'always', was: 3, win: 35.9, tunables: ['studioRegularDiscount'] },
+  'inspired-play': { group: 'lab', timing: 'always', was: 3, win: 31.9, tunables: ['inspiredPlayBonus', 'inspiredPlayMin'] },
+  'steady-hands': { group: 'lab', timing: 'always', was: 1, win: 34.8, tunables: ['steadyHandsFloor'], note: 'Changes the die\'s face, so a raised die counts for crits as well.' },
+  'street-performer': { group: 'lab', timing: 'always', was: 1, win: 33.3, tunables: ['streetPerformerExp'] },
+  'chain-reaction': { group: 'lab', timing: 'always', was: 2, win: 31.3, tunables: ['chainReactionBonus', 'chainReactionCap'] },
+  'swarm-singer': { group: 'lab', timing: 'always', was: 2, win: 34.4, tunables: ['swarmSingerBonus', 'swarmSingerMin'] },
+  'jam-session': { group: 'lab', timing: 'always', was: 4, win: 32.5, tunables: ['jamSessionBonus'] },
 }
 
 export interface SongbookSetting {

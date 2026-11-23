@@ -54,10 +54,10 @@ export type StyleId =
   | "ispirato"
   // Studio styles promoted from the style lab (effects are data-defined specs)
   | "hometown-hero"
-  | "small-ensemble"
   | "studio-regular"
   | "inspired-play"
-  | "double-time"
+  | "steady-hands"
+  | "street-performer"
   | "chain-reaction"
   | "swarm-singer"
   | "jam-session";
