@@ -221,7 +221,7 @@ function wrap(s: string, n: number): string[] {
     b += text(x, 214, `total so far ${total} EXP`, { size: 12, anchor: 'middle', fill: SOFT })
     if (i < 3) b += arrow(x + 62 + i * 5, 120, x + 133 - i * 3, 120, { stroke: GOLD, sw: 3 })
   })
-  b += text(380, 252, 'To upgrade a die, pay the EXP and also spend a Studio chip of the same element as that die.', { size: 12.5, anchor: 'middle', fill: SOFT, italic: true })
+  b += text(380, 252, 'To upgrade a die, pay the EXP and also spend a Studio cube of the same element as that die.', { size: 12.5, anchor: 'middle', fill: SOFT, italic: true })
   write('dice-ladder.svg', svg(760, 274, b, 'Dice ladder from d4 to d20 with EXP prices'))
 }
 

@@ -25,7 +25,7 @@ The Silence swallowed the world's music, and in the quiet, monsters woke. You ar
 
 **The bard with the most Fame after the Final Showdown wins.**
 
-You need the 16-space board, element chips in four elements (**Ballad**, **Folk**, **Hymn**, **Shanty**), d4/d8/d12/d20 dice in each element, a 6-song mat per bard, Fame/EXP/Inspiration counters and the 20 style cards. The Lute Hero app does all of this for you.
+You need the 16-space board, monster chips and element cubes in four elements (**Ballad**, **Folk**, **Hymn**, **Shanty**), d4/d8/d12/d20 dice in each element, a 6-song mat per bard, Fame/EXP/Inspiration counters and the 20 style cards. The Lute Hero app does all of this for you.
 
 ## 2. Setup
 
@@ -34,7 +34,7 @@ You need the 16-space board, element chips in four elements (**Ballad**, **Folk*
 1. **Pick an element** each: your **starter element**. Start on a corner (Bard 1 to 4: The Forgotten Stage, The Last Venue, The Quiet Quarter, Rhythm's End).
 2. **Take your mat.** Put a **d8** of your element in **Song 1**. Start with **1 Inspiration**, 0 Fame and 0 EXP.
 3. **Deal the board.** One chip on each space: four of each element, shuffled. Swap chips so your start space holds one of **your own element**.
-4. **Stock the Studio.** Bag **6 element chips of each element for every bard**. Draw **4 chips** face up (the element shelf) and turn **2** style cards face up.
+4. **Stock the Studio.** Bag **6 element cubes of each element for every bard**. Draw **4 cubes** onto the element shelf and turn **2** style cards face up.
 
 Bard 1 goes first; play passes in seat order.
 
@@ -55,7 +55,7 @@ When every bard has had a turn, the round ends. New monsters arrive:
 1. **New chips.** Every bard adds **one chip of each element** (4 chips per bard).
 2. **Scatter them.** Shuffle the spaces and place the chips one per space, so no space gets a second new chip until every space has one. A space never holds more than **5 chips of the same element**; a chip that doesn't fit goes to the next space.
 3. **Monsters level up.** A chip joining chips of its element raises that monster's level; a chip of a new element brings a new Level 1 monster.
-4. **Refill** the element shelf to 4 chips. Bard 1 starts the next round.
+4. **Refill** the element shelf to 4 cubes from the bag. Bard 1 starts the next round.
 
 New chips are the main way the board grows, so the monsters get bigger as the game goes on.
 
@@ -87,15 +87,15 @@ Your **setlist** is up to six songs, each holding one die. **To play a song**, c
 
 ## 6. The Studio
 
-The Studio has two shared shelves: **4 element chips** and **2 styles**. **EXP** buys dice and styles. **Inspiration** pays for encores and shelf refreshes.
+The Studio has two shared shelves: **4 element cubes** and **2 styles**. Monster chips stay on the board; the Studio only uses cubes. **EXP** buys dice and styles. **Inspiration** pays for encores and shelf refreshes.
 
 | Action | Cost | Effect |
 |---|---|---|
-| **Buy a new d4** | 1 EXP | Take a shelf chip; a d4 of its element fills an empty song. |
-| **Upgrade a die** | d8: 2 EXP, d12: 2 EXP, d20: 4 EXP | Also use a shelf chip of the die's element. |
+| **Buy a new d4** | 1 EXP | Take a shelf cube; a d4 of its element fills an empty song. |
+| **Upgrade a die** | d8: 2 EXP, d12: 2 EXP, d20: 4 EXP | Also spend a shelf cube of the die's element. |
 | **Buy Inspiration** | 1 EXP each | |
 | **Learn a style** | Price on the card | Hold up to **2**. A style changes all your songs. |
-| **Refresh the shelves** | 1 Inspiration | Draw new chips and styles. |
+| **Refresh the shelves** | 1 Inspiration | Draw new cubes and styles. |
 
 <p align="center"><img src="img/dice-ladder.svg" width="400" alt="The dice ladder"></p>
 
@@ -156,7 +156,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 - Passing through a space rebuilds its monsters just like stopping there.
 - When you win over a whole space, skip neighbours that already hold 5 chips of your chosen element. New round chips that don't fit go to another space.
 - With all songs full, a new d4 replaces a die of your choice.
-- No shelf chip of the die's element means no upgrade: refresh the shelves or wait.
+- No shelf cube of the die's element means no upgrade: refresh the shelves or wait.
 - To learn a third style, forget one.
 - Online, a guest must agree to lend a song.
 - If several bards pass the gate, there is still only one more round.
@@ -182,7 +182,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 
 | Studio | Cost |
 |---|---|
-| New d4 · upgrade to d8 · d12 · d20 | 1 · 2 · 2 · 4 EXP (upgrades also use a matching shelf chip) |
+| New d4 · upgrade to d8 · d12 · d20 | 1 · 2 · 2 · 4 EXP (upgrades also spend a matching shelf cube) |
 | Inspiration | 1 EXP |
 | Encore · refresh the shelves | 1 Inspiration |
 

@@ -16,6 +16,8 @@
 
 ## Completed
 
+- Rulebook: monsters are chips on the board; the Studio's element shelf uses cubes (setup bag, shelf, buying and upgrading dice).
+
 - The app now uses the rulebook's words: concerts, moved / won over, Resolve, encores, guest songs, "End concert" (UI text, help, validation messages, debug labels; code identifiers unchanged). Rulebook gained an End of Round section (how new chips scatter) and the ending-early rule (monsters left each gain a chip).
 
 - Rulebook now 5 pages + a quick-reference page. Fights are "concerts": a monster is "moved" (was wounded) or "won over" (was tamed) and becomes a fan; HP is "Resolve"; rerolls are "encores". Elements are shown as a cross diagram, monster levels appear once (on the quick reference), and a test keeps fighting words out of the book. Style text says "win over" and "concerts" too.

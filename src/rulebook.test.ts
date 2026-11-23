@@ -42,8 +42,8 @@ describe('rulebook', () => {
   it('quotes the setup, turn and pricing numbers', () => {
     expect(md).toContain(`**${T.fameFinalBossThreshold} Fame**`)
     expect(md).toContain(`**1 Inspiration**`.replace('1', String(T.startingInspiration)))
-    expect(md).toContain(`**${T.chipsPerElementPerPlayer} element chips of each element for every bard**`)
-    expect(md).toContain(`Draw **${T.elementOfferCount} chips**`)
+    expect(md).toContain(`**${T.chipsPerElementPerPlayer} element cubes of each element for every bard**`)
+    expect(md).toContain(`Draw **${T.elementOfferCount} cubes**`)
     expect(md).toContain(`**Move** up to **${T.maxMovesPerTurn}** spaces`)
     expect(md).toContain(`d8: ${T.upgradeCostD8} EXP, d12: ${T.upgradeCostD12} EXP, d20: ${T.upgradeCostD20} EXP`)
     expect(md).toContain(`| **Buy a new d4** | ${T.newD4Cost} EXP |`)
