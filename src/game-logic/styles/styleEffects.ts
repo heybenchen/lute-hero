@@ -52,7 +52,7 @@ export function holdsAllElements(songs: Song[]): boolean {
  * - Virtuoso: the first roll of a d12-or-smaller die each turn rolls twice and keeps the higher.
  * - Fortissimo: +N to a d20, and reaching its top face this way crits.
  * - Ostinato: a d4 crits from a lower face (cascade dice still need a 4).
- * - Overture / Tutti: a flat bonus on the turn's first roll that never crits.
+ * - Overture: a flat bonus on the turn's first roll that never crits; Tutti: a flat bonus on every die.
  * Crits cascade exactly as before: each bonus die is a plain roll of the same die.
  */
 /**
@@ -73,18 +73,17 @@ export function builtinRollOptions(dice: Dice, ctx: StyleContext, isFirstDie: bo
     triggered.push('fortissimo')
   }
   // Flat bonuses that never crit
-  if (isFirstDie && ctx.firstRoll) {
-    let flat = 0
-    if (has(ctx, 'overture') && t.overtureBonus > 0) {
-      flat += t.overtureBonus
-      triggered.push('overture')
-    }
-    if (has(ctx, 'tutti') && ctx.elementCount >= t.tuttiElements && t.tuttiBonus > 0) {
-      flat += t.tuttiBonus
-      triggered.push('tutti')
-    }
-    if (flat) opts.flat = flat
+  let flat = 0
+  if (isFirstDie && ctx.firstRoll && has(ctx, 'overture') && t.overtureBonus > 0) {
+    flat += t.overtureBonus
+    triggered.push('overture')
   }
+  // Harmony adds to every die, not just the turn's first roll
+  if (has(ctx, 'tutti') && ctx.elementCount >= t.tuttiElements && t.tuttiBonus > 0) {
+    flat += t.tuttiBonus
+    triggered.push('tutti')
+  }
+  if (flat) opts.flat = flat
   if (has(ctx, 'ostinato') && max <= t.ostinatoMaxFaces) {
     opts.critFace = ostinatoCritFace(max)
     if (t.ostinatoCascadeBonus) opts.cascadeBonus = t.ostinatoCascadeBonus

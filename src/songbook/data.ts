@@ -73,7 +73,7 @@ export const STYLE_META: Record<StyleId, StyleMeta> = {
     note: 'Without the Inspiration to pay for it, the song is spent as usual.',
   },
   counterpoint: { group: 'original', timing: 'once-per-turn', was: 2, win: 31.5, tunables: ['counterpointMultiplier'] },
-  tutti: { group: 'original', timing: 'once-per-turn', was: 1, win: 30.4, tunables: ['tuttiBonus', 'tuttiElements'] },
+  tutti: { group: 'original', timing: 'always', was: 1, win: 31.7, tunables: ['tuttiBonus', 'tuttiElements'] },
   overture: { group: 'original', timing: 'once-per-turn', was: 2, win: 31.6, tunables: ['overtureBonus'] },
   bravo: { group: 'original', timing: 'always', was: 3, win: 35.4, tunables: ['bravoFamePerTame', 'bravoMinLevel'] },
   ispirato: { group: 'original', timing: 'always', was: 2, win: 33.1, tunables: ['ispiratoPerTurn', 'ispiratoMin'] },

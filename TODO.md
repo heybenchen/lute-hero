@@ -15,6 +15,8 @@
 (none)
 
 ## Completed
+
+- Harmony now adds +1 to every die you roll while your setlist holds all four elements (was +4 to the first roll each turn); still 2 EXP. Simulated at 31.7% (600 games, `OPP=1 ROUND=5`, within noise of the old 30.9%). Updated the rule text, `songStyles.md`, `/songbook`, the rulebook and its PDF.
 - Wrote the game's rulebook (`rulebook/RULEBOOK.md`): Introduction, Setup, Rounds, Turns, Playing Songs, the Studio, Monster Rules, Fame, the Final Showdown and Scoring, plus a style list, a quick-reference page and a glossary, laid out for printing with 14 generated diagrams (`rulebook/img/`, `scripts/rulebook-visuals.ts`). A test keeps its numbers and style list in step with the game.
 - Style changes: Nimble Fingers is now "once per turn, re-roll the die you just rolled and keep the higher value" (1 EXP); Master's Touch covers d12 and smaller; Muse's Favor is +1 Inspiration a turn for 1 EXP; Harmony and Rallying Cry cost 2; Jam Session 3. Double Time and Small Ensemble (too similar to Master's Touch) were replaced by Steady Hands (a die that lands below 3 counts as 3) and Street Performer (+1 EXP at the start of each turn). Bonus wording now says it is added to the roll's value, not the die's face. All 20 styles win 29.5–36.1% against a 33.4% baseline (`songStyles.md`).
 - The reroll button now sits on the most recently rolled dice (hanging off their lower edge) in fights and in the Final Showdown, instead of a separate button; a free Nimble Fingers reroll is offered ahead of the paid one in both. The Showdown also marks dice the Silence is immune to with the same icon a fight uses (Dissonance counted), and shows the performer's styles; the two screens now share `RerollPill`, `makeReroll` and `songIsImmune`.

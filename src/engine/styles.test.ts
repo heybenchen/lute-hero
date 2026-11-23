@@ -138,10 +138,13 @@ describe('Overture and Tutti', () => {
     expect(second.combat.rolls[0].bonus).toBeUndefined()
   })
 
-  it('Tutti adds its bonus (on top of the face, never a crit) only when your songs hold all four elements', () => {
+  it('Tutti adds its bonus to every die (on top of the face, never a crit) only when your songs hold all four elements', () => {
     const allFour: DieSpec[] = [['d4', 'Ballad'], ['d4', 'Folk'], ['d4', 'Hymn'], ['d4', 'Shanty']]
     const withAll = play(fight(['tutti'], allFour, [{}]), 1, faces([2, 4])).state
     expect(withAll.combat.rolls[0]).toMatchObject({ value: 2, bonus: DEFAULT_TUNABLES.tuttiBonus, isCrit: false })
+    // ...and again on a later play, not just the turn's first roll
+    const later = play(withAll, 2, faces([3, 4])).state
+    expect(later.combat.rolls[0]).toMatchObject({ value: 3, bonus: DEFAULT_TUNABLES.tuttiBonus, isCrit: false })
 
     const missingOne = play(fight(['tutti'], allFour.slice(0, 3), [{}]), 1, faces([2, 4])).state
     expect(missingOne.combat.rolls[0].bonus).toBeUndefined()

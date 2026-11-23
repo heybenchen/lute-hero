@@ -202,8 +202,8 @@ export function styleRule(id: StyleId): string {
     case 'fortissimo': return `Adds +${t.fortissimoBonus} to the value of every d20 roll; a roll that reaches 20 this way crits.`
     case 'overture': return `Adds +${t.overtureBonus} to the value of your first roll each turn. ${NO_CRIT}`
     case 'tutti': return t.tuttiElements >= 4
-      ? `If your setlist holds all four elements, adds +${t.tuttiBonus} to the value of your first roll each turn. ${NO_CRIT}`
-      : `If your setlist holds at least ${t.tuttiElements} elements, adds +${t.tuttiBonus} to the value of your first roll each turn. ${NO_CRIT}`
+      ? `If your setlist holds all four elements, adds +${t.tuttiBonus} to the value of every die you roll. ${NO_CRIT}`
+      : `If your setlist holds at least ${t.tuttiElements} elements, adds +${t.tuttiBonus} to the value of every die you roll. ${NO_CRIT}`
     case 'ostinato': {
       const lower = 4 - t.ostinatoCritFace
       const by = lower === 1 ? 'one number' : `${lower} numbers`

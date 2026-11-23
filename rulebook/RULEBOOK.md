@@ -377,7 +377,7 @@ A style changes how **all** your songs play. You may hold 2. Prices are in EXP. 
 | **Dragon's Roar** | 2 | Adds +2 to the value of every d20 roll; a roll that reaches 20 this way crits. |
 | **Lingering Note** | 3 | Once per turn, a d20 song that doesn't tame its target isn't spent, for 1 Inspiration. |
 | **Dissonance** | 2 | Once per turn, a roll against an immune target deals full damage. |
-| **Harmony** | 2 | If your setlist holds all four elements, adds +4 to the value of your first roll each turn. It changes the roll, not the die's face, so it can't crit. |
+| **Harmony** | 2 | If your setlist holds all four elements, adds +1 to the value of every die you roll. It changes the roll, not the die's face, so it can't crit. |
 | **Fanfare** | 2 | Adds +3 to the value of your first roll each turn. It changes the roll, not the die's face, so it can't crit. |
 | **Crowd Favorite** | 3 | +10 Fame for every Lv3+ monster you tame. |
 | **Muse's Favor** | 1 | Gain 1 Inspiration at the start of each turn. |

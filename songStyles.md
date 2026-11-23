@@ -41,7 +41,7 @@ Earlier rounds of this work judged styles with rivals who had no styles, or with
 | **Dragon's Roar** | `fortissimo` | 2 (2) | Adds +2 to the value of every d20 roll; a roll that reaches 20 this way crits. | `fortissimoBonus` (2) | 33.3 |
 | **Lingering Note** | `fermata` | 3 (3) | Once per turn, a d20 song that doesn't tame its target isn't spent, for 1 Inspiration. Without the Inspiration, the song is spent as usual. | `fermataMinFaces` (20), `fermataInspirationCost` (1) | 35.5 |
 | **Dissonance** | `counterpoint` | 2 (2) | Once per turn, a roll against an immune target deals full damage. | `counterpointMultiplier` (1) | 31.5 |
-| **Harmony** | `tutti` | 2 (1) | If your setlist holds all four elements, adds +4 to the value of your first roll each turn. It changes the roll, not the die's face, so it can't crit. | `tuttiBonus` (4), `tuttiElements` (4) | 30.4 |
+| **Harmony** | `tutti` | 2 (1) | If your setlist holds all four elements, adds +1 to the value of every die you roll. It changes the roll, not the die's face, so it can't crit. | `tuttiBonus` (1), `tuttiElements` (4) | 31.7 |
 | **Fanfare** | `overture` | 2 (2) | Adds +3 to the value of your first roll each turn. It changes the roll, not the die's face, so it can't crit. | `overtureBonus` (3) | 31.6 |
 | **Crowd Favorite** | `bravo` | 3 (3) | +10 Fame for every Lv3+ monster you tame. | `bravoFamePerTame` (10), `bravoMinLevel` (3) | 35.4 |
 | **Muse's Favor** | `ispirato` | 1 (2) | Gain 1 Inspiration at the start of each turn. | `ispiratoPerTurn` (1), `ispiratoMin` (1, the floor it tops up to) | 33.1 |
@@ -69,7 +69,7 @@ Requested changes, applied together and then re-measured (all 20 styles, 800 gam
 
 | Style | Change | Result |
 |---|---|---|
-| Harmony | 1 → 2 EXP | 30.4% |
+| Harmony | 1 → 2 EXP | 31.7% |
 | Rallying Cry | 1 → 2 EXP | 32.5% |
 | Muse's Favor | +3 → **+1** Inspiration a turn, 2 → 1 EXP | 33.1% |
 | Jam Session | 4 → 3 EXP | 32.5% |
