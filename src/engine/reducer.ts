@@ -1203,7 +1203,7 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
       })
     }
     const survivingGenres = combat.monsters
-      .filter((m) => m.currentHP > 0 && m.currentHP < m.maxHP && m.vulnerability !== null)
+      .filter((m) => m.currentHP > 0 && m.vulnerability !== null && (m.currentHP < m.maxHP || getTunables().retreatLevelsUpAll > 0))
       .map((m) => m.vulnerability!)
     if (survivingGenres.length > 0) {
       spaces = spaces.map((s) =>

@@ -111,6 +111,8 @@ export interface Tunables {
   virtuosoMaxFaces: number
   /** Harmony: distinct elements the setlist must hold. */
   tuttiElements: number
+  /** Ending a concert early: 0 = only moved (wounded) monsters level up, 1 = every monster left levels up. */
+  retreatLevelsUpAll: number
   /** Muse's Favor: Inspiration topped up to at the start of each turn. */
   ispiratoMin: number
   /** Muse's Favor: Inspiration gained at the start of each turn (after the floor). */
@@ -220,6 +222,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   virtuosoMinFaces: 4,
   virtuosoMaxFaces: 12,
   tuttiElements: 4,
+  retreatLevelsUpAll: 0,
   ispiratoMin: 1,
   ispiratoPerTurn: 1,
   fermataInspirationCost: 1,
@@ -296,6 +299,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
 
   { key: 'vulnerabilityMultiplier', label: 'Weakness multiplier', group: 'Concerts', min: 0, max: 10, step: 0.25 },
   { key: 'resistanceMultiplier', label: 'Immunity multiplier', group: 'Concerts', min: 0, max: 10, step: 0.25 },
+  { key: 'retreatLevelsUpAll', label: 'Ending early levels up untouched monsters too (1) or only moved ones (0)', group: 'Concerts', min: 0, max: 1, step: 1 },
   { key: 'maxCritCascades', label: 'Max crit cascades', group: 'Concerts', min: 1, max: 50, step: 1 },
 
   { key: 'startingInspiration', label: 'Starting Inspiration', group: 'Economy', min: 0, max: 20, step: 1 },

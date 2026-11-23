@@ -16,6 +16,8 @@
 
 ## Completed
 
+- Simulated the ending-early rule (`scripts/retreat-rule-sim.ts`, 300 smart-bot games per rule per table): levelling up every monster left instead of only moved ones gives ~5–8% more EXP, ~2–3 times as many chips added by early endings, 50–80% more Lv4+ monsters by round 4–8, and games about 0.25–0.4 rounds shorter. Kept "only moved" as default; `retreatLevelsUpAll` tunable switches.
+
 - Ending a concert early now levels up only the monsters that were moved but not won over (untouched ones stay as they were); the Studio's element shelf says "cubes" in the app too.
 
 - Rulebook: monsters are chips on the board; the Studio's element shelf uses cubes (setup bag, shelf, buying and upgrading dice).
