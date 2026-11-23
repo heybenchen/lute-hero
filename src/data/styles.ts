@@ -29,7 +29,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'staccato',
     name: 'Rallying Cry',
     flavor: 'One victory, and a weary song finds its voice again.',
-    rule: 'Once per turn, after a song tames a monster, refresh any spent song.',
+    rule: 'Once per turn, after a song wins over a monster, refresh any spent song.',
   },
   coda: {
     id: 'coda',
@@ -65,13 +65,13 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'fermata',
     name: 'Lingering Note',
     flavor: 'The last chord hangs in the air, unbroken.',
-    rule: "Once per turn, a d12 or d20 song that fails to tame isn't spent.",
+    rule: "Once per turn, a d12 or d20 song that doesn't win over its monster isn't spent.",
   },
   counterpoint: {
     id: 'counterpoint',
     name: 'Dissonance',
     flavor: 'A clashing chord that no ward can fully block.',
-    rule: 'Once per turn, a roll against an immune monster deals full damage.',
+    rule: 'Once per turn, a song counts in full against an immune monster.',
   },
   tutti: {
     id: 'tutti',
@@ -88,8 +88,8 @@ export const STYLES: Record<StyleId, StyleDef> = {
   bravo: {
     id: 'bravo',
     name: 'Crowd Favorite',
-    flavor: 'Every beast you tame wins you more admirers.',
-    rule: '+1 Fame for every monster you tame.',
+    flavor: 'Every monster you win over becomes another admirer.',
+    rule: '+1 Fame for every monster you win over.',
   },
   ispirato: {
     id: 'ispirato',
@@ -137,7 +137,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'swarm-singer',
     name: 'Swarm Singer',
     flavor: 'The bigger the crowd, the louder the song.',
-    rule: '+2 to every die in fights with 3+ monsters.',
+    rule: '+2 to every die in concerts with 3+ monsters.',
   },
   'jam-session': {
     id: 'jam-session',
@@ -221,15 +221,15 @@ export function styleRule(id: StyleId): string {
       return `${which} crit ${by} lower.${extra}`
     }
     case 'bravo': return t.bravoMinLevel > 1
-      ? `+${t.bravoFamePerTame} Fame for every Lv${t.bravoMinLevel}+ monster you tame.`
-      : `+${t.bravoFamePerTame} Fame for every monster you tame.`
+      ? `+${t.bravoFamePerTame} Fame for every Lv${t.bravoMinLevel}+ monster you win over.`
+      : `+${t.bravoFamePerTame} Fame for every monster you win over.`
     case 'fermata': {
       const pay = t.fermataInspirationCost > 0 ? ` Costs ${t.fermataInspirationCost} Inspiration.` : ''
-      return `Once per turn, a ${dieRange(t.fermataMinFaces, 20)} song that fails to tame isn't spent.${pay}`
+      return `Once per turn, a ${dieRange(t.fermataMinFaces, 20)} song that doesn't win over its monster isn't spent.${pay}`
     }
     case 'staccato': return t.staccatoMaxFaces >= 20
-      ? 'Once per turn, after a song tames a monster, refresh any spent song.'
-      : `Once per turn, after a song tames a monster, refresh any spent ${dieRange(4, t.staccatoMaxFaces)} song.`
+      ? 'Once per turn, after a song wins over a monster, refresh any spent song.'
+      : `Once per turn, after a song wins over a monster, refresh any spent ${dieRange(4, t.staccatoMaxFaces)} song.`
     case 'rubato': {
       const times = t.rubatoUsesPerTurn === 1 ? 'Once' : t.rubatoUsesPerTurn === 2 ? 'Twice' : `${t.rubatoUsesPerTurn} times`
       const which = t.rubatoMaxFaces >= 20 ? 'the die' : `a ${dieRange(4, t.rubatoMaxFaces)} die`
@@ -240,8 +240,8 @@ export function styleRule(id: StyleId): string {
       const m = t.counterpointMultiplier
       const share = m >= 1 ? 'full' : m === 0.75 ? '¾' : m === 0.5 ? 'half' : m === 0.25 ? '¼' : `${Math.round(m * 100)}%`
       return m >= 1
-        ? 'Once per turn, a roll against an immune monster deals full damage.'
-        : `Once per turn, a roll against an immune monster deals ${share} damage instead of none.`
+        ? 'Once per turn, a song counts in full against an immune monster.'
+        : `Once per turn, a song counts for ${share} against an immune monster instead of nothing.`
     }
     case 'ispirato': {
       if (t.ispiratoPerTurn <= 0) return `Start each turn with at least ${t.ispiratoMin} Inspiration.`
@@ -254,7 +254,7 @@ export function styleRule(id: StyleId): string {
     case 'studio-regular': return `Upgrades cost ${t.studioRegularDiscount} less EXP.`
     case 'inspired-play': return `With ${t.inspiredPlayMin}+ Inspiration, adds +${t.inspiredPlayBonus} to the value of the song per die. ${NO_CRIT}`
     case 'chain-reaction': return `Adds +${t.chainReactionBonus} to the value of the song per die, for each same-element song played just before it (max +${t.chainReactionCap}). ${NO_CRIT}`
-    case 'swarm-singer': return `In fights with ${t.swarmSingerMin}+ monsters, adds +${t.swarmSingerBonus} to the value of the song per die. ${NO_CRIT}`
+    case 'swarm-singer': return `In concerts with ${t.swarmSingerMin}+ monsters, adds +${t.swarmSingerBonus} to the value of the song per die. ${NO_CRIT}`
     case 'jam-session': return `While sharing a space with another bard, adds +${t.jamSessionBonus} to the value of the song per die. ${NO_CRIT}`
     default: return STYLES[id].rule
   }
