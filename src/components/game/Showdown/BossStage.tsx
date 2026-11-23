@@ -71,7 +71,7 @@ export function BossStage({ turn, resistGenre, fandom, players, defeated, strike
                 border: '1px solid rgba(232, 32, 64, 0.4)',
                 color: '#ff9d9d',
               }}
-              title={`${resistGenre} dice deal no damage this verse`}
+              title={`${resistGenre} dice count for nothing this verse`}
             >
               🛡 0× {GENRE_THEME[resistGenre].emoji} <span style={{ color: GENRE_THEME[resistGenre].color }}>{resistGenre}</span> — immune
             </span>

@@ -52,7 +52,7 @@ export const AUDIT_GAMES = 800
 export const STYLE_META: Record<StyleId, StyleMeta> = {
   staccato: {
     group: 'original', timing: 'button', was: 1, win: 32.5, tunables: ['staccatoMaxFaces'],
-    note: 'After a tame, a prompt lets you choose a spent song to refresh. Once per turn.',
+    note: 'After you win a monster over, a prompt lets you choose a spent song to refresh. Once per turn.',
   },
   coda: {
     group: 'original', timing: 'always', was: 1, win: 29.5, tunables: [],
@@ -64,7 +64,7 @@ export const STYLE_META: Record<StyleId, StyleMeta> = {
   },
   rubato: {
     group: 'original', timing: 'button', was: 1, win: 33.8, tunables: ['rubatoMaxFaces', 'rubatoUsesPerTurn'],
-    note: 'A free reroll button, never costs Inspiration. If the new roll is lower, your first roll stands (the use is still spent).',
+    note: 'A free encore button, never costs Inspiration. If the new roll is lower, your first roll stands (the use is still spent).',
   },
   virtuoso: { group: 'original', timing: 'once-per-turn', was: 2, win: 32.3, tunables: ['virtuosoMinFaces', 'virtuosoMaxFaces'] },
   fortissimo: { group: 'original', timing: 'always', was: 2, win: 33.3, tunables: ['fortissimoBonus'] },

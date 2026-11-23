@@ -129,7 +129,7 @@ describe('featured songs', () => {
     })
     expect(applyAction(state, play('m2'), hotseat())).toMatchObject({
       ok: false,
-      message: 'Finish the wounded monster or retreat',
+      message: 'Win over the monster you moved, or end the concert',
     })
     // The bard rolls an 8 and a 7 on the crit to finish the locked target.
     const rolls = [0.875, 0.75]

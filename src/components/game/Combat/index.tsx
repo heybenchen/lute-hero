@@ -264,7 +264,7 @@ export function CombatModal() {
       <DamagePopups entries={popups} onComplete={handlePopupComplete} />
       <div className="modal-content max-w-7xl animate-scale-in">
         <div className="p-4 sm:p-5">
-          {/* Header — once the fight is over it becomes the rewards summary */}
+          {/* Header — once the concert is over it becomes the rewards summary */}
           {isCombatOver ? (
             <div
               className="mb-4 rounded-xl px-4 py-3 text-center animate-fade-in sm:px-5 sm:py-4"
@@ -277,7 +277,7 @@ export function CombatModal() {
               }}
             >
               <div className="font-medieval text-sm uppercase tracking-wider text-parchment-400">
-                {allMonstersDefeated ? 'Victory' : 'Out of Songs'} — {player.name}'s Rewards{!canAct ? ' (watching live)' : ''}
+                {allMonstersDefeated ? 'Won Over' : 'Out of Songs'} — {player.name}'s Rewards{!canAct ? ' (watching live)' : ''}
               </div>
               <div className="flex flex-wrap items-baseline justify-center gap-x-5 gap-y-1 mt-1">
                 <span className="font-display text-2xl sm:text-3xl text-gold-400 tabular-nums" style={{ textShadow: '0 0 12px rgba(212, 168, 83, 0.2)' }}>
@@ -287,14 +287,14 @@ export function CombatModal() {
                   +{totalExp} EXP
                 </span>
                 {allMonstersDefeated && (
-                  <span className="font-display text-xl sm:text-2xl tabular-nums" style={{ color: '#d9c2ff' }} title="Clearing a space earns 1 Inspiration">
+                  <span className="font-display text-xl sm:text-2xl tabular-nums" style={{ color: '#d9c2ff' }} title="Winning over a whole space earns 1 Inspiration">
                     +1 &#x2728;
                   </span>
                 )}
               </div>
               {Object.entries(rewards.guestRewards).map(([guestId, share]) => (
                 <div key={guestId} className="mt-1 text-sm text-parchment-300">
-                  Featured: {players.find((p) => p.id === guestId)?.name ?? 'Guest'} +{share.fame} Fame, +{share.exp} EXP
+                  Guest song: {players.find((p) => p.id === guestId)?.name ?? 'Guest'} +{share.fame} Fame, +{share.exp} EXP
                 </div>
               ))}
             </div>
@@ -309,19 +309,19 @@ export function CombatModal() {
               {canContinue && (
                 <p className="flex items-center gap-2 text-sm text-parchment-300">
                   <Target size={15} className="shrink-0 text-gold-400" aria-hidden="true" />
-                  {lockedTarget ? 'Finish the wounded monster or retreat.' : 'Target a monster, then play a song.'}
+                  {lockedTarget ? 'Win over the monster you moved, or end the concert.' : 'Pick a monster, then play a song.'}
                 </p>
               )}
             </div>
           )}
 
-          {/* Once the fight is won, the radiate choice replaces the monster cards. */}
+          {/* Once every monster is won over, the radiate choice replaces the monster cards. */}
           {allMonstersDefeated ? (
             <div className="mb-5 animate-fade-in">
               <div className="mb-4 text-center">
                 <div className="font-display text-xl sm:text-2xl text-green-300">Radiate an Element</div>
                 <p className="mt-1 text-sm sm:text-base text-parchment-400">
-                  Choose an element. Every bordering space gains 1 tag of it.
+                  Choose an element. Every bordering space gains 1 chip of it.
                 </p>
               </div>
 
@@ -466,23 +466,23 @@ export function CombatModal() {
           {/* Actions */}
           {!allMonstersDefeated && (
             <div className="flex w-full flex-col gap-2 border-t border-gold-700/15 pt-4 sm:flex-row sm:justify-end animate-fade-in">
-              {/* Retreat is always on offer, even before a song is played */}
+              {/* Ending the concert is always on offer, even before a song is played */}
               {confirmingRetreat && retreatForfeitsDamage ? (
                 <div
                   className="flex flex-col gap-2 rounded-lg p-3 animate-fade-in sm:flex-row sm:items-center"
                   style={{ background: 'rgba(130, 68, 48, 0.18)', border: '1px solid rgba(224, 124, 90, 0.38)' }}
                   role="alertdialog"
-                  aria-label="Confirm retreat"
+                  aria-label="Confirm ending the concert"
                 >
                   <span className="text-sm text-parchment-200 sm:mr-2">
-                    You still have songs that can deal damage. Retreat anyway?
+                    You still have songs that can move a monster. End the concert anyway? Monsters still here level up.
                   </span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setConfirmingRetreat(false)}
                       className="btn-secondary min-h-11 flex-1 px-4 text-sm"
                     >
-                      Keep fighting
+                      Keep playing
                     </button>
                     <button
                       onClick={handleRetreatClick}
@@ -495,7 +495,7 @@ export function CombatModal() {
                       }}
                     >
                       <Flag size={15} className="shrink-0" aria-hidden="true" />
-                      Retreat
+                      End concert
                     </button>
                   </div>
                 </div>
@@ -512,10 +512,10 @@ export function CombatModal() {
                   color: canContinue ? '#d8c7a5' : '#f0c1aa',
                   boxShadow: 'none',
                 }}
-                title="Leave the fight now — you earn EXP for every monster you wounded and Fame for each one you defeated"
+                title="End the concert now — you earn EXP for every monster you moved and Fame for each one you won over. Monsters still here level up."
               >
                 <Flag size={16} className="shrink-0 opacity-80" aria-hidden="true" />
-                <span className="font-medieval font-bold">{canContinue ? 'Retreat' : 'End fight'}</span>
+                <span className="font-medieval font-bold">{canContinue ? 'End concert' : 'Finish concert'}</span>
               </button>
               )}
             </div>

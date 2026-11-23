@@ -38,19 +38,30 @@ You need the 16-space board, element chips in four elements (**Ballad**, **Folk*
 
 Bard 1 goes first; play passes in seat order.
 
-## 3. Rounds and Turns
+## 3. Turns
 
-On your turn, in any order:
+Bards take turns in seat order. On your turn, in any order:
 
 - **Move** up to **2** spaces (up, down or sideways; bards may share a space). Before your concert you may take back your last step.
 - **Play one concert** for the monsters on your space.
 - **Visit the Studio**, any time except during a concert.
 
-Unspent EXP and Inspiration carry over. When every bard has had a turn, the round ends: every bard adds **one chip of each element** to the board, one per space at random, and the element shelf refills to 4. A space never holds more than **5 chips of the same element**.
+Unspent EXP and Inspiration carry over.
 
-**The fame gate.** When any bard reaches **200 Fame**, finish the round, play **one more round** (no new chips at its end), then hold the [Final Showdown](#7-the-final-showdown).
+## 4. End of Round
 
-## 4. Concerts
+When every bard has had a turn, the round ends. New monsters arrive:
+
+1. **New chips.** Every bard adds **one chip of each element** (4 chips per bard).
+2. **Scatter them.** Shuffle the spaces and place the chips one per space, so no space gets a second new chip until every space has one. A space never holds more than **5 chips of the same element**; a chip that doesn't fit goes to the next space.
+3. **Monsters level up.** A chip joining chips of its element raises that monster's level; a chip of a new element brings a new Level 1 monster.
+4. **Refill** the element shelf to 4 chips. Bard 1 starts the next round.
+
+New chips are the main way the board grows, so the monsters get bigger as the game goes on.
+
+**The fame gate.** When any bard reaches **200 Fame**, finish the round, play **one more round** (no new chips at its end), then hold the [Final Showdown](#8-the-final-showdown).
+
+## 5. Concerts
 
 Each chip on a space is a monster of that element; **N chips of one element make one Level N monster**. Every monster on your space is in your audience. Each monster has **Resolve**, and you win it over by bringing its Resolve to 0. Levels, Resolve and rewards are on the [Quick Reference](#quick-reference).
 
@@ -70,9 +81,11 @@ Your **setlist** is up to six songs, each holding one die. **To play a song**, c
 - **Encore.** After a song that moves a monster, you may pay **1 Inspiration** to roll it again. The new roll replaces the old one.
 - **Guest songs.** Once per concert, you may borrow one song from each other bard on your space. It plays without styles or encores and is never spent. If it wins a monster over, your guest gets half its Fame and EXP, rounded down.
 
-**Ending a concert.** Stop any time, or play until your songs are spent or every monster is won over. You gain **EXP for every monster you moved or won over**. If you win over every monster, you also gain **1 Inspiration** and add one chip of an element of your choice to each neighbouring space. Otherwise chips of the monsters you won over leave the board (one per level), and the rest recover fully.
+**Ending a concert.** Stop any time, or play until your songs are spent or every monster is won over. You gain **EXP for every monster you moved or won over**. If you win over every monster, you also gain **1 Inspiration** and add one chip of an element of your choice to each neighbouring space.
 
-## 5. The Studio
+**Ending early.** If any monster is left, the chips of the monsters you won over leave the board (one per level), and **every monster still there levels up**: add one chip of its element (up to 5). A concert you can't finish makes the space tougher.
+
+## 6. The Studio
 
 The Studio has two shared shelves: **4 element chips** and **2 styles**. **EXP** buys dice and styles. **Inspiration** pays for encores and shelf refreshes.
 
@@ -86,11 +99,11 @@ The Studio has two shared shelves: **4 element chips** and **2 styles**. **EXP**
 
 <p align="center"><img src="img/dice-ladder.svg" width="400" alt="The dice ladder"></p>
 
-## 6. Monsters
+## 7. Monsters
 
 Monsters are rebuilt from their chips whenever a space is entered and at every round end, so they always start a concert at full Resolve. Monsters never harm you; a concert costs only your turn and your songs.
 
-## 7. The Final Showdown
+## 8. The Final Showdown
 
 The **Eternal Silence** can't be won over, only outshone. There are **three verses**; in each, every bard performs once in seat order:
 
@@ -100,7 +113,7 @@ The **Eternal Silence** can't be won over, only outshone. There are **three vers
 
 The Silence has no weakness (×1). After each verse it becomes **immune (×0) to the element of the strongest performance**, for the next verse only. Keep Inspiration for the finale: it is worth nothing after.
 
-## 8. Scoring
+## 9. Scoring
 
 **Final Fame = Fame from monsters + Showdown fandom.** Most Fame wins. Ties go to the bard with more fandom.
 
@@ -155,7 +168,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 
 **Turn:** move up to 2 · one concert · Studio (not mid-concert) · EXP and Inspiration carry over.
 
-**Concert:** choose a monster, roll a song. **(roll + crits + bonuses) × element**, rounded down, comes off its Resolve. **Won over:** gain Fame, the die comes back. **Moved:** the song is spent; keep playing to that monster. **Encore:** 1 Inspiration. **Win over every monster:** +1 Inspiration and a chip to each neighbour. **EXP:** for each monster moved or won over.
+**Concert:** choose a monster, roll a song. **(roll + crits + bonuses) × element**, rounded down, comes off its Resolve. **Won over:** gain Fame, the die comes back. **Moved:** the song is spent; keep playing to that monster. **Encore:** 1 Inspiration. **Win over every monster:** +1 Inspiration and a chip to each neighbour. **End early:** monsters left each gain a chip (level up). **EXP:** for each monster moved or won over.
 
 **Elements:** own element ×2 (weak) · opposite ×0 (immune) · others ×1. Opposites: Ballad and Shanty, Folk and Hymn.
 
@@ -174,7 +187,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 | Encore · refresh the shelves | 1 Inspiration |
 
 **Limits:** 6 songs · 2 styles · 5 chips of one element per space.
-**Round end:** each bard adds one chip of every element.
+**Round end:** each bard adds one chip of every element, one per space.
 **Gate:** 200 Fame, then one more round, then the Showdown.
 **Showdown:** 3 verses · one element per performance · the Silence becomes immune to the strongest element.
 **Win:** most Fame (monsters + fandom); ties go to fandom.

@@ -12,7 +12,7 @@ export function RerollPill({ reroll }: { reroll: RerollOption }) {
       type="button"
       onClick={reroll.onClick}
       disabled={reroll.disabled}
-      aria-label={`Reroll: ${reroll.title}`}
+      aria-label={`Encore: ${reroll.title}`}
       title={reroll.title}
       className={`absolute left-1/2 top-full z-10 flex h-8 -translate-x-1/2 -translate-y-[28%] items-center gap-1 whitespace-nowrap rounded-full px-3 font-medieval text-[11px] font-bold shadow-md shadow-black/50 transition-all duration-150 hover:enabled:-translate-y-[34%] focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-400 disabled:cursor-not-allowed disabled:opacity-45 ${
         free

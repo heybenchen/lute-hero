@@ -235,7 +235,7 @@ function ValuesTab() {
 
       <p className="text-[10px] text-parchment-500 mt-4 leading-relaxed">
         Values apply immediately and travel with the game — they persist in the local save and sync
-        to every seat in an online game. Board/monster changes (HP scale, starting chips) affect
+        to every seat in an online game. Board/monster changes (Resolve scale, starting chips) affect
         monsters spawned <em>after</em> the change; use “Respawn monsters” on the Board tab to
         re-derive the whole board now.
       </p>
@@ -252,8 +252,8 @@ const PLAYER_FIELDS: { key: 'fame' | 'exp' | 'inspiration' | 'movesThisTurn' | '
   { key: 'exp', label: 'EXP', max: 500 },
   { key: 'inspiration', label: 'Inspiration', max: 50 },
   { key: 'movesThisTurn', label: 'Moves used', max: 16 },
-  { key: 'fightsThisTurn', label: 'Fights used', max: 10 },
-  { key: 'monstersDefeated', label: 'Monsters beaten', max: 200 },
+  { key: 'fightsThisTurn', label: 'Concerts used', max: 10 },
+  { key: 'monstersDefeated', label: 'Monsters won over', max: 200 },
 ]
 
 const PHASES: GamePhase[] = ['setup', 'main', 'finalBoss', 'gameOver']

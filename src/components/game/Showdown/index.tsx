@@ -238,7 +238,7 @@ export function FinalShowdown() {
               +{p.fandom}
             </div>
             <div className="text-parchment-300 font-medieval font-bold text-sm mt-1 tracking-wider uppercase" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}>
-              {p.fandom === 1 ? 'fan won' : 'fans won'} · {p.fandom} damage
+              {p.fandom === 1 ? 'fan won' : 'fans won'}
             </div>
             {p.wasResisted && (
               <div className="text-red-300 font-medieval font-bold text-xs tracking-widest uppercase">Immune 0×</div>
@@ -405,9 +405,9 @@ function ShowdownIntro({ onBegin, playerCount }: { onBegin: () => void; playerCo
         >
           <div className="text-xs font-medieval uppercase tracking-[0.3em] text-gold-500 mb-3 text-center">How the Showdown Works</div>
           <ul className="space-y-2.5 text-sm text-parchment-300">
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Three verses. Each verse, every bard performs <span className="text-gold-300 font-bold">one element</span> — every die of it rolls together — against the Silence. Spend Inspiration to reroll a performance.</span></li>
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Every point of damage earns you <span className="text-gold-300 font-bold">1 fandom</span>.</span></li>
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Between verses it adapts: it becomes <span className="text-red-300 font-bold">immune (0×)</span> to the element of the strongest attack. It has no weakness.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Three verses. Each verse, every bard performs <span className="text-gold-300 font-bold">one element</span> — every die of it rolls together — against the Silence. Spend Inspiration for an encore.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Every point you score earns you <span className="text-gold-300 font-bold">1 fandom</span>.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Between verses it adapts: it becomes <span className="text-red-300 font-bold">immune (0×)</span> to the element of the strongest performance. It has no weakness.</span></li>
             <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>After the third verse the Silence shatters — and the bard with the most fans is crowned <span className="text-gold-300 font-bold">Legend of the Realm</span>.</span></li>
           </ul>
         </div>

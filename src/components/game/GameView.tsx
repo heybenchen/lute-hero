@@ -276,20 +276,21 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           <Section title="🔄 Your Turn">
             <List items={[
               <>Move up to <Hl>2 spaces</Hl> across the board.</>,
-              <>If monsters are on your space, <Hl>Fight</Hl> once — one combat per turn.</>,
+              <>If monsters are on your space, play them <Hl>one concert</Hl> per turn.</>,
               <>Visit the <Hl>Studio</Hl> to spend EXP on dice (unlimited buys).</>,
               <>Press <Hl>End Turn</Hl> to pass to the next bard.</>,
             ]} />
           </Section>
 
-          <Section title="🎲 Combat">
+          <Section title="🎲 Concerts">
             <List items={[
-              <>Pick <Hl>one monster</Hl> to target, then play a song. Once you <Hl>wound</Hl> it, defeat it before switching targets, or retreat.</>,
-              <>Defeat the target and you get that song's <Hl>dice back</Hl> to play it again; only wounding it <Hl>spends</Hl> the song for the fight.</>,
-              <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for bonus damage.</>,
-              <>Clear <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> and radiate an element.</>,
-              <>Spend <Hl>Inspiration</Hl> to reroll the song you just performed.</>,
-              <>Sharing a space with another bard? Borrow one <Hl>featured song</Hl> from each of them per fight (online, they must agree). It costs you nothing, and a monster it tames <Hl>splits</Hl> its Fame and EXP with them.</>,
+              <>Pick <Hl>one monster</Hl> to play to, then play a song. Once you <Hl>move</Hl> it, keep playing to it until it is won over, or end the concert.</>,
+              <>Win it over and you get that song's <Hl>die back</Hl> to play it again; only moving it <Hl>spends</Hl> the song for the concert.</>,
+              <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for a bigger total.</>,
+              <>Win over <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> and radiate an element.</>,
+              <>End a concert early and every monster still there <Hl>levels up</Hl> (one more chip, up to Lv5).</>,
+              <>Spend <Hl>Inspiration</Hl> for an <Hl>encore</Hl>: roll the song you just performed again.</>,
+              <>Sharing a space with another bard? Borrow one <Hl>guest song</Hl> from each of them per concert (online, they must agree). It costs you nothing, and a monster it wins over <Hl>splits</Hl> its Fame and EXP with them.</>,
             ]} />
           </Section>
 
@@ -297,24 +298,24 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
             <List items={[
               <>After every bard has taken a turn, the round ends with <Hl>reinforcements</Hl>.</>,
               <>Each bard adds <Hl>one chip of every element</Hl> — Ballad, Folk, Hymn and Shanty.</>,
-              <>They scatter across the board at random, <Hl>never two on the same tile</Hl>, spawning new threats for next round.</>,
+              <>They scatter across the board at random, <Hl>never two on the same tile</Hl>, bringing new monsters for next round.</>,
             ]} />
           </Section>
 
           <Section title="🎵 Genres & Elements">
-            <p className="mb-3">You start with one d8 of your chosen element. Opposing elements are immune to each other, and every monster takes double damage from its own element:</p>
+            <p className="mb-3">You start with one d8 of your chosen element. Opposing elements are immune to each other, and songs of a monster's own element count double:</p>
             <TypeChart className="mb-1" />
           </Section>
 
           <Section title="👹 Monster Levels">
-            <p className="mb-2">A space spawns one monster per element chip; duplicate chips level it up. Higher levels mean more health, Fame, and EXP:</p>
+            <p className="mb-2">A space spawns one monster per element chip; duplicate chips level it up. Higher levels mean more Resolve, Fame, and EXP:</p>
             <MonsterLevelTable />
           </Section>
 
           <Section title="🛠 The Studio (Shop)">
             <List items={[
               <>Spend <Hl>EXP</Hl> to buy new dice or upgrade them: <Hl>d4 → d8 → d12 → d20</Hl>.</>,
-              <>Spend EXP to buy <Hl>Inspiration</Hl> — used for rerolls and refreshing offers.</>,
+              <>Spend EXP to buy <Hl>Inspiration</Hl> — used for encores and refreshing offers.</>,
               <>Learn up to <Hl>2 Styles</Hl> — each changes how <Hl>every song in your setlist</Hl> plays. Two are on the shelf each turn; spend Inspiration for a new pair.</>,
             ]} />
           </Section>
@@ -322,8 +323,8 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           <Section title="⚡ The Final Showdown">
             <List items={[
               <>Three verses; each verse every bard performs <Hl>one element</Hl> — all their dice of it roll together — against The Eternal Silence.</>,
-              <>Every point of damage earns <Hl>1 fandom</Hl>, banked into your Fame.</>,
-              <>Between verses the boss <Hl>adapts</Hl>: immune to the strongest attack's element (it has no weakness).</>,
+              <>Every point you score earns <Hl>1 fandom</Hl>, banked into your Fame.</>,
+              <>Between verses the boss <Hl>adapts</Hl>: immune to the strongest performance's element (it has no weakness).</>,
               <>The bard with the most Fame at the end wins.</>,
             ]} />
           </Section>

@@ -203,7 +203,7 @@ export function TypeChart({ className = '' }: { className?: string }) {
           >
             2×
           </span>
-          <span>Hit a monster with its <span className="text-green-300 font-bold">matching</span> element for double damage.</span>
+          <span>Songs of a monster's <span className="text-green-300 font-bold">own</span> element count double.</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold flex-shrink-0"

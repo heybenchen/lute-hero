@@ -28,7 +28,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
   staccato: {
     id: 'staccato',
     name: 'Rallying Cry',
-    flavor: 'One victory, and a weary song finds its voice again.',
+    flavor: 'One monster won over, and a weary song finds its voice again.',
     rule: 'Once per turn, after a song wins over a monster, refresh any spent song.',
   },
   coda: {

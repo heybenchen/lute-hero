@@ -18,11 +18,11 @@ export function DamageCell({ calc }: DamageCellProps) {
   return (
     <div className="flex w-full flex-col gap-2 border-l-2 border-red-400/30 py-1.5 pl-3 animate-scale-in">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-parchment-500">Last hit</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-parchment-500">Last song</span>
         <span className="text-xl font-bold leading-none tabular-nums text-red-400"
           style={{ textShadow: '0 0 6px rgba(232, 80, 80, 0.2)' }}
         >
-          -{calc.totalDamage} HP
+          -{calc.totalDamage} Resolve
         </span>
       </div>
 

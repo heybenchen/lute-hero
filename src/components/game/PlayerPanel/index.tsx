@@ -10,7 +10,7 @@ import {
   MapPin,
   Sparkles,
   Store,
-  Swords,
+  Mic2,
 } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
 import { StyleChip } from '@/components/ui/StyleBadge'
@@ -77,7 +77,7 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
             border: '1px solid rgba(255, 180, 60, 0.4)',
             color: '#ffd591',
           }}
-          title="The current player looks disconnected — skip their turn (auto-retreats their combat)"
+          title="The current player looks disconnected — skip their turn (ends their concert)"
         >
           &#x23ED; Skip{compact ? '' : ` ${currentPlayer.name}'s Turn (offline)`}
         </button>
@@ -95,15 +95,15 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
             textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
             boxShadow: canFight ? '0 0 12px rgba(232, 32, 64, 0.2)' : 'none',
           }}
-          title={canFight ? undefined : 'You have already fought this turn'}
+          title={canFight ? undefined : 'You have already played a concert this turn'}
         >
-          <Swords size={16} aria-hidden="true" />
+          <Mic2 size={16} aria-hidden="true" />
           <span className="truncate">
             {compact
-              ? 'Fight'
+              ? 'Concert'
               : canFight
-                ? `Fight ${monsterCount} Monster${monsterCount > 1 ? 's' : ''}`
-                : 'No fights left'}
+                ? `Play for ${monsterCount} Monster${monsterCount > 1 ? 's' : ''}`
+                : 'No concerts left'}
           </span>
         </button>
       )}
@@ -113,7 +113,7 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
           <button
             onClick={() => dispatch({ type: 'OPEN_STUDIO', playerId: currentPlayer.id })}
             className={`btn-secondary ${size} flex items-center justify-center gap-2 ${shouldHintStudio ? 'animate-gentle-flash' : ''}`}
-            title={shouldHintStudio ? 'You fought this turn — spend your EXP before ending the turn' : undefined}
+            title={shouldHintStudio ? 'You played a concert this turn — spend your EXP before ending the turn' : undefined}
           >
             <Store size={15} aria-hidden="true" />
             <span className="truncate">Studio <span className="opacity-60">({currentPlayer.exp}{compact ? '' : ' EXP'})</span></span>
@@ -125,7 +125,7 @@ function TurnActions({ compact = false }: { compact?: boolean }) {
               dispatch({ type: 'END_TURN' })
             }}
             disabled={canFight}
-            title={canFight ? 'Fight the monster here before ending your turn' : undefined}
+            title={canFight ? 'Play a concert for the monster here before ending your turn' : undefined}
             className={`btn-primary ${size} flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             <Flag size={15} aria-hidden="true" />
@@ -273,7 +273,7 @@ export function PlayerPanel() {
           </div>
         </div>
         <div className="turn-counter">
-          <span className="flex items-center gap-1.5"><Swords size={12} /> Battle</span>
+          <span className="flex items-center gap-1.5"><Mic2 size={12} /> Concert</span>
           <strong className={currentPlayer.fightsThisTurn < 1 ? 'text-emerald-300' : 'text-parchment-500'}>
             {currentPlayer.fightsThisTurn < 1 ? 'Ready' : 'Spent'}
           </strong>

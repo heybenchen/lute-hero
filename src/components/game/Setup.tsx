@@ -46,7 +46,7 @@ export function Setup() {
           <div className="h-px mx-auto w-64 mb-4" style={{ background: 'linear-gradient(to right, transparent, rgba(212, 168, 83, 0.5), transparent)' }} />
           <p className="text-parchment-400 italic font-game text-base">
           A post-catastrophe fantasy world where only Bards remain.
-          Defeat monsters by converting them into fans with the power of music!
+          Win monsters over and turn them into fans with the power of music!
         </p>
         </div>
 
@@ -171,10 +171,10 @@ export function Setup() {
           <ul className="list-disc list-inside space-y-1 text-parchment-400 text-xs">
             <li>Move to connected spaces each turn</li>
             <li>Genre tags spawn monsters when you enter</li>
-            <li>Pick one monster. Once you wound it, defeat it before switching targets, or retreat.</li>
-            <li>Defeat monsters to gain Fame and EXP</li>
-            <li>A monster's matching genre deals 2x damage; its immune genre deals 0 (no damage)</li>
-            <li>Rolling max value = Critical Hit (double damage!)</li>
+            <li>Pick one monster. Once you move it, keep playing to it until it is won over, or end the concert.</li>
+            <li>Win over monsters to gain Fame and EXP</li>
+            <li>Songs of a monster's own element count 2x; its immune element counts for nothing</li>
+            <li>Rolling a die's top face crits: roll it again and add it</li>
           </ul>
         </div>
       </div>

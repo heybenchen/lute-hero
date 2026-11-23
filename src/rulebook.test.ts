@@ -14,7 +14,7 @@ const md = readFileSync(resolve(rulebookDir, 'RULEBOOK.md'), 'utf8')
 
 describe('rulebook', () => {
   it('has every section the rules promise', () => {
-    for (const h of ['1. Introduction', '2. Setup', '3. Rounds and Turns', '4. Concerts', '5. The Studio', '6. Monsters', '7. The Final Showdown', '8. Scoring', 'Appendix A: The Styles', 'Appendix B: Edge Cases']) {
+    for (const h of ['1. Introduction', '2. Setup', '3. Turns', '4. End of Round', '5. Concerts', '6. The Studio', '7. Monsters', '8. The Final Showdown', '9. Scoring', 'Appendix A: The Styles', 'Appendix B: Edge Cases']) {
       expect(md).toContain(`## ${h}`)
     }
   })

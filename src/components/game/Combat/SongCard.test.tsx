@@ -25,10 +25,10 @@ describe('SongCard', () => {
     const onClick = vi.fn()
     const reroll = makeReroll({ inspiration: 2, enabled: true, subject: 'song', onPaid: onClick })
     const { host, unmount } = mount(<SongCard song={song} onPlay={() => {}} disabled={false} reroll={reroll} />)
-    const pill = host.querySelector('button[aria-label^="Reroll"]') as HTMLButtonElement
+    const pill = host.querySelector('button[aria-label^="Encore"]') as HTMLButtonElement
     expect(pill).not.toBeNull()
     expect(pill.title).toContain('1 Inspiration')
-    expect(pill.closest('button:not([aria-label^="Reroll"])')).toBeNull() // no button inside a button
+    expect(pill.closest('button:not([aria-label^="Encore"])')).toBeNull() // no button inside a button
     act(() => pill.click())
     expect(onClick).toHaveBeenCalledTimes(1)
     unmount()
@@ -44,7 +44,7 @@ describe('SongCard', () => {
   it('has neither without a reroll or immunity', () => {
     const { host, unmount } = mount(<SongCard song={song} onPlay={() => {}} disabled={false} />)
     expect(host.querySelector('[data-immune]')).toBeNull()
-    expect(host.querySelector('button[aria-label^="Reroll"]')).toBeNull()
+    expect(host.querySelector('button[aria-label^="Encore"]')).toBeNull()
     unmount()
   })
 })

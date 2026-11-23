@@ -54,6 +54,8 @@ React 18 + TypeScript (strict) + Vite + Zustand + Tailwind CSS. Server: Vercel N
 
 ## Key Game Mechanics
 
+- **Player-facing words**: everything players read calls a fight a **concert**; a monster is **moved** (wounded) or **won over** (tamed/defeated) and becomes a fan; HP is **Resolve**; a reroll is an **encore**; a featured song is a **guest song**; retreating is **ending the concert**. Code identifiers (`combat`, `PLAY_SONG`, `currentHP`, `REROLL_SONG`, `featuredPlayerIds`, …) keep their old names so saves and online games stay compatible. `src/rulebook.test.ts` keeps fighting words out of the rulebook.
+
 - **Damage flow**: Roll dice (crits cascade) → genre multipliers (2x vulnerable, 0x immune) → damage hits ONE chosen target monster (songs are single-target, not AOE)
 - **Combat rewards**: Fame per kill; EXP only for monsters the bard *wounded* (`currentHP < maxHP`) — every monster on a victory, but untouched ones pay nothing on a retreat (`computeCombatRewards`). Retreat is allowed at any point.
 - **Song economy in combat**: defeating the target returns that song's dice (it stays playable); damaging without defeating spends the song for that fight (`combat.spentSongIds`). There is no fixed song cap.

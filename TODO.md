@@ -16,6 +16,8 @@
 
 ## Completed
 
+- The app now uses the rulebook's words: concerts, moved / won over, Resolve, encores, guest songs, "End concert" (UI text, help, validation messages, debug labels; code identifiers unchanged). Rulebook gained an End of Round section (how new chips scatter) and the ending-early rule (monsters left each gain a chip).
+
 - Rulebook now 5 pages + a quick-reference page. Fights are "concerts": a monster is "moved" (was wounded) or "won over" (was tamed) and becomes a fan; HP is "Resolve"; rerolls are "encores". Elements are shown as a cross diagram, monster levels appear once (on the quick reference), and a test keeps fighting words out of the book. Style text says "win over" and "concerts" too.
 
 - Language pass: every style's rule text is shorter and plainer (flat bonuses end with "Can't crit."). The rulebook was cut from 19 pages to 10: one section per topic, an Edge Cases appendix (B) and a one-page Quick Reference as the last page (C); the Glossary and six lightly-used diagrams were dropped.

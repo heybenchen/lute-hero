@@ -17,18 +17,18 @@ export function makeReroll(opts: {
   inspiration: number
   /** False while dice are in the air or it isn't this player's call. */
   enabled: boolean
-  /** What is being rerolled: "song" in a fight, "performance" in the Showdown. */
+  /** What the encore replays: "song" in a concert, "performance" in the Showdown. */
   subject: string
   onPaid: () => void
 }): RerollOption {
   const { free, inspiration, enabled, subject, onPaid } = opts
   if (free) {
-    return { kind: 'free', onClick: free.onClick, disabled: !enabled, title: `${free.name}: reroll this ${subject} for free and keep the higher` }
+    return { kind: 'free', onClick: free.onClick, disabled: !enabled, title: `${free.name}: replay this ${subject} for free and keep the higher` }
   }
   return {
     kind: 'paid',
     onClick: onPaid,
     disabled: !enabled || inspiration <= 0,
-    title: inspiration > 0 ? `Reroll this ${subject} for 1 Inspiration (${inspiration} left)` : 'Requires Inspiration',
+    title: inspiration > 0 ? `Replay this ${subject} for 1 Inspiration (${inspiration} left)` : 'Requires Inspiration',
   }
 }

@@ -16,9 +16,9 @@ export function MonsterLevelTable({ className = '' }: { className?: string }) {
         <thead>
           <tr className="text-gold-300 font-medieval uppercase tracking-wider text-[10px]">
             <th className="text-left py-1 pr-2 font-bold">Level</th>
-            <th className="text-right py-1 px-2 font-bold" title="Hit points at this level">❤ HP</th>
-            <th className="text-right py-1 px-2 font-bold" title="Fame awarded on defeat">⭐ Fame</th>
-            <th className="text-right py-1 pl-2 font-bold" title="EXP awarded on defeat">✨ EXP</th>
+            <th className="text-right py-1 px-2 font-bold" title="Resolve: how much music it takes to win this monster over">❤ Resolve</th>
+            <th className="text-right py-1 px-2 font-bold" title="Fame for winning it over">⭐ Fame</th>
+            <th className="text-right py-1 pl-2 font-bold" title="EXP for moving or winning it over">✨ EXP</th>
           </tr>
         </thead>
         <tbody>
