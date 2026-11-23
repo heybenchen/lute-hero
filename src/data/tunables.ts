@@ -89,9 +89,9 @@ export interface Tunables {
   styleCostIspirato: number
   /** Fortissimo: added to every d20 roll (can crit). */
   fortissimoBonus: number
-  /** Overture: added to your first roll each turn (can't crit). */
+  /** Overture: added to the value of your first song each turn (can't crit). */
   overtureBonus: number
-  /** Tutti: added to every die you roll while you hold all four elements (can't crit). */
+  /** Tutti: added to the value of the song for each die rolled while you hold all four elements (can't crit). */
   tuttiBonus: number
   /** Ostinato: lowest d4 face that crits (cascade dice still need a 4). */
   ostinatoCritFace: number

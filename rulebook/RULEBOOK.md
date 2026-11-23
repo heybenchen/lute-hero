@@ -178,7 +178,7 @@ To start, say you are fighting the monsters on your space. **All** the monsters 
 
 1. **The roll.** The number the die shows.
 2. **Crits.** If the die shows its **highest face** (a 4 on a d4, an 8 on a d8, and so on), it **crits**: roll that same die again and **add** the result. If the new roll is also the highest face, roll again, and so on, up to 10 extra rolls.
-3. **Bonuses.** Add any bonus a style gives you. A bonus like "+2" is added to the **value of the roll**. It does not change the face the die shows, so on its own it never causes a crit. (A few styles say otherwise on their card.)
+3. **Bonuses.** Add any bonus a style gives you. A card that says "adds +2 to the **value of the song**" adds to the total on top of your dice. It does not change the face a die shows, so it never causes a crit. A card that says "increases the **face value of a die**" changes the face itself, so that die can crit.
 4. **The element.** Multiply by how the monster feels about your element:
 
 <p align="center"><img src="img/elements.svg" width="560" alt="How much damage a song deals"></p>
@@ -364,7 +364,7 @@ The game ends with a **Tour Summary** that ranks every bard and hands out light-
 
 ## Appendix A: The Styles
 
-A style changes how **all** your songs play. You may hold 2. Prices are in EXP. A bonus like "+3" is added to the value of the roll, not to the die's face. The same list, with simulated strength, is on the game's **Songbook** page (`/songbook`).
+A style changes how **all** your songs play. You may hold 2. Prices are in EXP. A card that "adds +3 to the value of the song" never changes a die's face (so it can't crit); a card that "increases the face value of a die" does (so it can). The same list, with simulated strength, is on the game's **Songbook** page (`/songbook`).
 
 <!-- STYLES:START -->
 | Style | EXP | What it does |
@@ -374,21 +374,21 @@ A style changes how **all** your songs play. You may hold 2. Prices are in EXP. 
 | **War Drums** | 2 | All your dice crit one number lower (bonus dice still need the top face). |
 | **Nimble Fingers** | 1 | Once per turn, you may re-roll the die you just rolled and keep the higher value. |
 | **Master's Touch** | 2 | Once per turn, your first roll of a d4, d8 or d12 die is rolled twice; keep the higher. |
-| **Dragon's Roar** | 2 | Adds +2 to the value of every d20 roll; a roll that reaches 20 this way crits. |
+| **Dragon's Roar** | 2 | Increases the face value of every d20 you roll by 2; a die that reaches 20 this way crits. |
 | **Lingering Note** | 3 | Once per turn, a d20 song that doesn't tame its target isn't spent, for 1 Inspiration. |
 | **Dissonance** | 2 | Once per turn, a roll against an immune target deals full damage. |
-| **Harmony** | 2 | If your setlist holds all four elements, adds +1 to the value of every die you roll. It changes the roll, not the die's face, so it can't crit. |
-| **Fanfare** | 2 | Adds +3 to the value of your first roll each turn. It changes the roll, not the die's face, so it can't crit. |
+| **Harmony** | 2 | If your setlist holds all four elements, adds +1 to the value of the song for each die rolled. It doesn't change a die's face, so it can't crit. |
+| **Fanfare** | 2 | Adds +3 to the value of your first song each turn. It doesn't change a die's face, so it can't crit. |
 | **Crowd Favorite** | 3 | +10 Fame for every Lv3+ monster you tame. |
 | **Muse's Favor** | 1 | Gain 1 Inspiration at the start of each turn. |
-| **Hometown Hero** | 1 | Adds +1 to the value of dice of your starting element; a roll boosted to its crit face crits. |
+| **Hometown Hero** | 1 | Increases the face value of dice of your starting element by 1; a die boosted to its crit face crits. |
 | **Studio Regular** | 3 | Upgrades cost 1 less EXP. |
-| **Inspired Play** | 3 | While you hold 3+ Inspiration, adds +2 to the value of every roll. It changes the roll, not the die's face, so it can't crit. |
-| **Steady Hands** | 1 | A die that lands below 3 counts as showing 3. |
+| **Inspired Play** | 3 | While you hold 3+ Inspiration, adds +2 to the value of the song for each die rolled. It doesn't change a die's face, so it can't crit. |
+| **Steady Hands** | 1 | Increases the face value of any die that lands below 3 to 3; the raised face counts for crits. |
 | **Street Performer** | 1 | Gain 1 EXP at the start of each of your turns. |
-| **Chain Reaction** | 2 | Adds +2 to a roll's value for each same-element song played in a row before it (max +6). It changes the roll, not the die's face, so it can't crit. |
-| **Swarm Singer** | 2 | In fights with 3+ monsters, adds +1 to the value of every roll. It changes the roll, not the die's face, so it can't crit. |
-| **Jam Session** | 3 | While you share a space with another bard, adds +2 to the value of every roll. It changes the roll, not the die's face, so it can't crit. |
+| **Chain Reaction** | 2 | Adds +2 to the value of the song, per die rolled, for each same-element song played in a row before it (max +6 per die). It doesn't change a die's face, so it can't crit. |
+| **Swarm Singer** | 2 | In fights with 3+ monsters, adds +1 to the value of the song for each die rolled. It doesn't change a die's face, so it can't crit. |
+| **Jam Session** | 3 | While you share a space with another bard, adds +2 to the value of the song for each die rolled. It doesn't change a die's face, so it can't crit. |
 <!-- STYLES:END -->
 
 <div style="page-break-after: always"></div>

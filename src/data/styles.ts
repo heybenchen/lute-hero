@@ -59,7 +59,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'fortissimo',
     name: "Dragon's Roar",
     flavor: 'Loud enough to shake the scales off a wyrm.',
-    rule: '+2 to every d20 roll. A d20 that reaches 20 this way crits.',
+    rule: 'Increases the face value of every d20 you roll by 2; a die that reaches 20 this way crits.',
   },
   fermata: {
     id: 'fermata',
@@ -77,13 +77,13 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'tutti',
     name: 'Harmony',
     flavor: 'Fire, earth, wind and wave, singing as one.',
-    rule: 'If your setlist holds all four elements, +4 to your first roll each turn (can\'t crit).',
+    rule: "If your setlist holds all four elements, adds +1 to the value of the song for each die rolled. It doesn't change a die's face, so it can't crit.",
   },
   overture: {
     id: 'overture',
     name: 'Fanfare',
     flavor: 'Horns announce the hero before the first blow.',
-    rule: "+2 to your first roll each turn (can't crit).",
+    rule: "Adds +3 to the value of your first song each turn. It doesn't change a die's face, so it can't crit.",
   },
   bravo: {
     id: 'bravo',
@@ -101,7 +101,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'hometown-hero',
     name: 'Hometown Hero',
     flavor: 'The songs of home never miss a beat.',
-    rule: 'Dice of your starting element get +1 (can crit).',
+    rule: 'Increases the face value of dice of your starting element by 1; a die boosted to its crit face crits.',
   },
   'studio-regular': {
     id: 'studio-regular',
@@ -193,17 +193,23 @@ function dieRange(minFaces: number, maxFaces: number): string {
 }
 
 /** Live rule text with the current tunable numbers filled in. */
-/** Why a flat bonus can't crit: it changes the roll's value, not the die's face. */
-const NO_CRIT = "It changes the roll, not the die's face, so it can't crit."
+/**
+ * Rule wording. Two kinds of bonus, always worded the same way:
+ *  - "adds +N to the value of the song": a flat bonus on top of the dice. It never
+ *    changes a die's face, so it can't crit or chain with other styles.
+ *  - "increases the face value of a die": changes the face itself, so the die can crit
+ *    (and combine with other styles that act on the face).
+ */
+const NO_CRIT = "It doesn't change a die's face, so it can't crit."
 
 export function styleRule(id: StyleId): string {
   const t = getTunables()
   switch (id) {
-    case 'fortissimo': return `Adds +${t.fortissimoBonus} to the value of every d20 roll; a roll that reaches 20 this way crits.`
-    case 'overture': return `Adds +${t.overtureBonus} to the value of your first roll each turn. ${NO_CRIT}`
+    case 'fortissimo': return `Increases the face value of every d20 you roll by ${t.fortissimoBonus}; a die that reaches 20 this way crits.`
+    case 'overture': return `Adds +${t.overtureBonus} to the value of your first song each turn. ${NO_CRIT}`
     case 'tutti': return t.tuttiElements >= 4
-      ? `If your setlist holds all four elements, adds +${t.tuttiBonus} to the value of every die you roll. ${NO_CRIT}`
-      : `If your setlist holds at least ${t.tuttiElements} elements, adds +${t.tuttiBonus} to the value of every die you roll. ${NO_CRIT}`
+      ? `If your setlist holds all four elements, adds +${t.tuttiBonus} to the value of the song for each die rolled. ${NO_CRIT}`
+      : `If your setlist holds at least ${t.tuttiElements} elements, adds +${t.tuttiBonus} to the value of the song for each die rolled. ${NO_CRIT}`
     case 'ostinato': {
       const lower = 4 - t.ostinatoCritFace
       const by = lower === 1 ? 'one number' : `${lower} numbers`
@@ -242,14 +248,14 @@ export function styleRule(id: StyleId): string {
       const gain = `Gain ${t.ispiratoPerTurn} Inspiration at the start of each turn`
       return t.ispiratoMin > t.ispiratoPerTurn ? `${gain} (and start it with at least ${t.ispiratoMin}).` : `${gain}.`
     }
-    case 'hometown-hero': return `Adds +${t.hometownHeroBonus} to the value of dice of your starting element; a roll boosted to its crit face crits.`
-    case 'steady-hands': return `A die that lands below ${t.steadyHandsFloor} counts as showing ${t.steadyHandsFloor}.`
+    case 'hometown-hero': return `Increases the face value of dice of your starting element by ${t.hometownHeroBonus}; a die boosted to its crit face crits.`
+    case 'steady-hands': return `Increases the face value of any die that lands below ${t.steadyHandsFloor} to ${t.steadyHandsFloor}; the raised face counts for crits.`
     case 'street-performer': return `Gain ${t.streetPerformerExp} EXP at the start of each of your turns.`
     case 'studio-regular': return `Upgrades cost ${t.studioRegularDiscount} less EXP.`
-    case 'inspired-play': return `While you hold ${t.inspiredPlayMin}+ Inspiration, adds +${t.inspiredPlayBonus} to the value of every roll. ${NO_CRIT}`
-    case 'chain-reaction': return `Adds +${t.chainReactionBonus} to a roll's value for each same-element song played in a row before it (max +${t.chainReactionCap}). ${NO_CRIT}`
-    case 'swarm-singer': return `In fights with ${t.swarmSingerMin}+ monsters, adds +${t.swarmSingerBonus} to the value of every roll. ${NO_CRIT}`
-    case 'jam-session': return `While you share a space with another bard, adds +${t.jamSessionBonus} to the value of every roll. ${NO_CRIT}`
+    case 'inspired-play': return `While you hold ${t.inspiredPlayMin}+ Inspiration, adds +${t.inspiredPlayBonus} to the value of the song for each die rolled. ${NO_CRIT}`
+    case 'chain-reaction': return `Adds +${t.chainReactionBonus} to the value of the song, per die rolled, for each same-element song played in a row before it (max +${t.chainReactionCap} per die). ${NO_CRIT}`
+    case 'swarm-singer': return `In fights with ${t.swarmSingerMin}+ monsters, adds +${t.swarmSingerBonus} to the value of the song for each die rolled. ${NO_CRIT}`
+    case 'jam-session': return `While you share a space with another bard, adds +${t.jamSessionBonus} to the value of the song for each die rolled. ${NO_CRIT}`
     default: return STYLES[id].rule
   }
 }
