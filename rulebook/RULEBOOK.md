@@ -83,7 +83,7 @@ Your **setlist** is up to six songs, each holding one die. **To play a song**, c
 
 **Ending a concert.** Stop any time, or play until your songs are spent or every monster is won over. You gain **EXP for every monster you moved or won over**. If you win over every monster, you also gain **1 Inspiration** and add one chip of an element of your choice to each neighbouring space.
 
-**Ending early.** If any monster is left, the chips of the monsters you won over leave the board (one per level), and **every monster still there levels up**: add one chip of its element (up to 5). A concert you can't finish makes the space tougher.
+**Ending early.** If any monster is left, the chips of the monsters you won over leave the board (one per level), and **every monster you moved but didn't win over levels up**: add one chip of its element (up to 5). Monsters you never played to stay as they are.
 
 ## 6. The Studio
 
@@ -168,7 +168,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 
 **Turn:** move up to 2 · one concert · Studio (not mid-concert) · EXP and Inspiration carry over.
 
-**Concert:** choose a monster, roll a song. **(roll + crits + bonuses) × element**, rounded down, comes off its Resolve. **Won over:** gain Fame, the die comes back. **Moved:** the song is spent; keep playing to that monster. **Encore:** 1 Inspiration. **Win over every monster:** +1 Inspiration and a chip to each neighbour. **End early:** monsters left each gain a chip (level up). **EXP:** for each monster moved or won over.
+**Concert:** choose a monster, roll a song. **(roll + crits + bonuses) × element**, rounded down, comes off its Resolve. **Won over:** gain Fame, the die comes back. **Moved:** the song is spent; keep playing to that monster. **Encore:** 1 Inspiration. **Win over every monster:** +1 Inspiration and a chip to each neighbour. **End early:** monsters you moved but didn't win over gain a chip (level up). **EXP:** for each monster moved or won over.
 
 **Elements:** own element ×2 (weak) · opposite ×0 (immune) · others ×1. Opposites: Ballad and Shanty, Folk and Hymn.
 

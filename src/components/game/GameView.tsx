@@ -288,7 +288,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
               <>Win it over and you get that song's <Hl>die back</Hl> to play it again; only moving it <Hl>spends</Hl> the song for the concert.</>,
               <>Rolling a die's highest face <Hl>crits</Hl>, rolling again for a bigger total.</>,
               <>Win over <Hl>every</Hl> monster on a space to earn <Hl>+1 Inspiration</Hl> and radiate an element.</>,
-              <>End a concert early and every monster still there <Hl>levels up</Hl> (one more chip, up to Lv5).</>,
+              <>End a concert early and every monster you <Hl>moved</Hl> but didn't win over <Hl>levels up</Hl> (one more chip, up to Lv5).</>,
               <>Spend <Hl>Inspiration</Hl> for an <Hl>encore</Hl>: roll the song you just performed again.</>,
               <>Sharing a space with another bard? Borrow one <Hl>guest song</Hl> from each of them per concert (online, they must agree). It costs you nothing, and a monster it wins over <Hl>splits</Hl> its Fame and EXP with them.</>,
             ]} />

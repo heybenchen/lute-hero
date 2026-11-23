@@ -301,7 +301,7 @@ export function validateAction(
         action.offerIndex !== null &&
         (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length)
       ) {
-        return illegal('No such element chip')
+        return illegal('No such element cube')
       }
       return ok
     }
@@ -329,7 +329,7 @@ export function validateAction(
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       if (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length) {
-        return illegal('No such element chip')
+        return illegal('No such element cube')
       }
       if (action.destination !== undefined) {
         const destination = action.destination
@@ -350,7 +350,7 @@ export function validateAction(
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       if (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length) {
-        return illegal('No such element chip')
+        return illegal('No such element cube')
       }
       const die = player.songs
         .flatMap((s) => s.slots)
@@ -358,7 +358,7 @@ export function validateAction(
         .find((d) => d?.id === action.diceId)
       if (!die) return illegal('You do not own that die')
       if (die.genre !== state.elementOffers[action.offerIndex]) {
-        return illegal('Die element does not match the chip')
+        return illegal('Die element does not match the cube')
       }
       const cost = upgradeCostFor(player, die)
       if (cost === null) return illegal('Die is already at max tier')

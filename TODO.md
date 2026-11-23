@@ -16,6 +16,8 @@
 
 ## Completed
 
+- Ending a concert early now levels up only the monsters that were moved but not won over (untouched ones stay as they were); the Studio's element shelf says "cubes" in the app too.
+
 - Rulebook: monsters are chips on the board; the Studio's element shelf uses cubes (setup bag, shelf, buying and upgrading dice).
 
 - The app now uses the rulebook's words: concerts, moved / won over, Resolve, encores, guest songs, "End concert" (UI text, help, validation messages, debug labels; code identifiers unchanged). Rulebook gained an End of Round section (how new chips scatter) and the ending-early rule (monsters left each gain a chip).

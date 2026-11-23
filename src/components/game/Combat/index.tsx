@@ -475,7 +475,7 @@ export function CombatModal() {
                   aria-label="Confirm ending the concert"
                 >
                   <span className="text-sm text-parchment-200 sm:mr-2">
-                    You still have songs that can move a monster. End the concert anyway? Monsters still here level up.
+                    You still have songs that can move a monster. End the concert anyway? Monsters you moved will level up.
                   </span>
                   <div className="flex gap-2">
                     <button
@@ -512,7 +512,7 @@ export function CombatModal() {
                   color: canContinue ? '#d8c7a5' : '#f0c1aa',
                   boxShadow: 'none',
                 }}
-                title="End the concert now — you earn EXP for every monster you moved and Fame for each one you won over. Monsters still here level up."
+                title="End the concert now — you earn EXP for every monster you moved and Fame for each one you won over. Monsters you moved but didn't win over level up."
               >
                 <Flag size={16} className="shrink-0 opacity-80" aria-hidden="true" />
                 <span className="font-medieval font-bold">{canContinue ? 'End concert' : 'Finish concert'}</span>
