@@ -12,7 +12,7 @@ A reference for every style in the Studio: what it does, what it costs, which tu
 - The Studio shelf shows **2** offers (`styleOfferCount`). Empty slots refill at the start of every turn, and Inspiration redraws the shelf (`REFRESH_STYLE_OFFERS`). Buying at the cap replaces a style the bard names.
 - Prices are in EXP and every price is a tunable (`styleCostKey(id)` gives its key, e.g. `styleCostHometownHero`).
 - "Once per turn" styles fire automatically the first time they apply. The two exceptions are buttons: Nimble Fingers (a free reroll) and Rallying Cry (choose a spent song to refresh after a tame).
-- A bonus like "+2" is added to the **value of the roll**, not to the die's face, so it can't make a die crit. Only a few say otherwise ("a roll boosted to its crit face crits": Hometown Hero, Dragon's Roar), and Steady Hands does change the face (a low die counts as showing 3).
+- Two kinds of bonus, worded the same way everywhere. "Adds +N to the **value of the song**" is a flat bonus on top of the dice: it never changes a die's face, so it can't crit (the text says "Can't crit"). "Increases the **face value of a die**" changes the face itself, so the die can crit (Dragon's Roar, Hometown Hero, Steady Hands: a low die is raised to 3). Rule text is kept short on purpose: say only what the player needs.
 - Featured songs (borrowed from another bard) roll without styles.
 
 ## How strength is measured
@@ -33,16 +33,16 @@ Earlier rounds of this work judged styles with rivals who had no styles, or with
 
 | Style | id | Price (was) | What it does | Tunables | Win % |
 |---|---|---|---|---|---|
-| **Rallying Cry** | `staccato` | 2 (1) | Once per turn, after one of your songs tames a monster, refresh a spent song of your choice. | `staccatoMaxFaces` (20 = any die) | 32.5 |
+| **Rallying Cry** | `staccato` | 2 (1) | Once per turn, after a song tames a monster, refresh any spent song. | `staccatoMaxFaces` (20 = any die) | 32.5 |
 | **Extra Verse** | `coda` | 1 (1) | Gain a 7th song slot. Losing the style returns that song's die as an unclaimed reward. | — | 29.5 |
-| **War Drums** | `ostinato` | 2 (2) | All your dice crit one number lower (bonus dice still need the top face). | `ostinatoCritFace` (3), `ostinatoMaxFaces` (20), `ostinatoCascadeBonus` (0), `ostinatoChainFace` (4 = top face only) | 36.0 |
-| **Nimble Fingers** | `rubato` | 1 (1) | Once per turn, you may re-roll the die you just rolled and keep the higher value. If the new roll is lower, your first roll stands (the use is still spent). | `rubatoMaxFaces` (20), `rubatoUsesPerTurn` (1) | 33.8 |
-| **Master's Touch** | `virtuoso` | 2 (2) | Once per turn, your first roll of a d4, d8 or d12 die is rolled twice; keep the higher. | `virtuosoMinFaces` (4), `virtuosoMaxFaces` (12) | 32.3 |
-| **Dragon's Roar** | `fortissimo` | 2 (2) | Adds +2 to the value of every d20 roll; a roll that reaches 20 this way crits. | `fortissimoBonus` (2) | 33.3 |
-| **Lingering Note** | `fermata` | 3 (3) | Once per turn, a d20 song that doesn't tame its target isn't spent, for 1 Inspiration. Without the Inspiration, the song is spent as usual. | `fermataMinFaces` (20), `fermataInspirationCost` (1) | 35.5 |
-| **Dissonance** | `counterpoint` | 2 (2) | Once per turn, a roll against an immune target deals full damage. | `counterpointMultiplier` (1) | 31.5 |
-| **Harmony** | `tutti` | 2 (1) | If your setlist holds all four elements, adds +4 to the value of your first roll each turn. It changes the roll, not the die's face, so it can't crit. | `tuttiBonus` (4), `tuttiElements` (4) | 30.4 |
-| **Fanfare** | `overture` | 2 (2) | Adds +3 to the value of your first roll each turn. It changes the roll, not the die's face, so it can't crit. | `overtureBonus` (3) | 31.6 |
+| **War Drums** | `ostinato` | 2 (2) | All your dice crit one number lower. Bonus dice still need the top face. | `ostinatoCritFace` (3), `ostinatoMaxFaces` (20), `ostinatoCascadeBonus` (0), `ostinatoChainFace` (4 = top face only) | 36.0 |
+| **Nimble Fingers** | `rubato` | 1 (1) | Once per turn, re-roll the die you just rolled and keep the higher result. If the new roll is lower, your first roll stands (the use is still spent). | `rubatoMaxFaces` (20), `rubatoUsesPerTurn` (1) | 33.8 |
+| **Master's Touch** | `virtuoso` | 2 (2) | Once per turn, roll your first d4, d8 or d12 die twice and keep the higher. | `virtuosoMinFaces` (4), `virtuosoMaxFaces` (12) | 32.3 |
+| **Dragon's Roar** | `fortissimo` | 2 (2) | Increases the face value of every d20 by 2. Reaching 20 crits. | `fortissimoBonus` (2) | 33.3 |
+| **Lingering Note** | `fermata` | 3 (3) | Once per turn, a d20 song that fails to tame isn't spent. Costs 1 Inspiration. Without the Inspiration, the song is spent as usual. | `fermataMinFaces` (20), `fermataInspirationCost` (1) | 35.5 |
+| **Dissonance** | `counterpoint` | 2 (2) | Once per turn, a roll against an immune monster deals full damage. | `counterpointMultiplier` (1) | 31.5 |
+| **Harmony** | `tutti` | 2 (1) | With all four elements in your setlist, adds +1 to the value of the song per die. Can't crit. | `tuttiBonus` (1), `tuttiElements` (4) | 31.7 |
+| **Fanfare** | `overture` | 2 (2) | Adds +3 to the value of your first song each turn. Can't crit. | `overtureBonus` (3) | 31.6 |
 | **Crowd Favorite** | `bravo` | 3 (3) | +10 Fame for every Lv3+ monster you tame. | `bravoFamePerTame` (10), `bravoMinLevel` (3) | 35.4 |
 | **Muse's Favor** | `ispirato` | 1 (2) | Gain 1 Inspiration at the start of each turn. | `ispiratoPerTurn` (1), `ispiratoMin` (1, the floor it tops up to) | 33.1 |
 
@@ -52,14 +52,14 @@ These keep kebab-case ids. Their effects are data-defined specs that `studioSpec
 
 | Style | id | Price (was) | What it does | Tunables | Win % |
 |---|---|---|---|---|---|
-| **Hometown Hero** | `hometown-hero` | 1 (1) | Adds +1 to the value of dice of your starting element; a roll boosted to its crit face crits. | `hometownHeroBonus` (1) | 36.1 |
-| **Steady Hands** | `steady-hands` | 1 (1) | A die that lands below 3 counts as showing 3. New. It changes the die's face, so a raised die counts for crits. | `steadyHandsFloor` (3) | 34.8 |
-| **Street Performer** | `street-performer` | 1 (1) | Gain 1 EXP at the start of each of your turns. New. | `streetPerformerExp` (1) | 33.3 |
+| **Hometown Hero** | `hometown-hero` | 1 (1) | Increases the face value of your starting element's dice by 1. Reaching the crit face crits. | `hometownHeroBonus` (1) | 36.1 |
+| **Steady Hands** | `steady-hands` | 1 (1) | Increases the face value of any die below 3 to 3. The raised face can crit. New. | `steadyHandsFloor` (3) | 34.8 |
+| **Street Performer** | `street-performer` | 1 (1) | Gain 1 EXP at the start of each turn. New. | `streetPerformerExp` (1) | 33.3 |
 | **Studio Regular** | `studio-regular` | 3 (3) | Upgrades cost 1 less EXP. | `studioRegularDiscount` (1) | 35.9 |
-| **Inspired Play** | `inspired-play` | 3 (3) | While you hold 3+ Inspiration, adds +2 to the value of every roll. It changes the roll, not the die's face, so it can't crit. | `inspiredPlayBonus` (2), `inspiredPlayMin` (3) | 31.9 |
-| **Chain Reaction** | `chain-reaction` | 2 (2) | Adds +2 to a roll's value for each same-element song played in a row before it (max +6). It changes the roll, not the die's face, so it can't crit. | `chainReactionBonus` (2), `chainReactionCap` (6) | 31.3 |
-| **Swarm Singer** | `swarm-singer` | 2 (2) | In fights with 3+ monsters, adds +1 to the value of every roll. It changes the roll, not the die's face, so it can't crit. | `swarmSingerBonus` (1), `swarmSingerMin` (3) | 34.4 |
-| **Jam Session** | `jam-session` | 3 (4) | While you share a space with another bard, adds +2 to the value of every roll. It changes the roll, not the die's face, so it can't crit. | `jamSessionBonus` (2) | 32.5 |
+| **Inspired Play** | `inspired-play` | 3 (3) | With 3+ Inspiration, adds +2 to the value of the song per die. Can't crit. | `inspiredPlayBonus` (2), `inspiredPlayMin` (3) | 31.9 |
+| **Chain Reaction** | `chain-reaction` | 2 (2) | Adds +2 to the value of the song per die, for each same-element song played just before it (max +6). Can't crit. | `chainReactionBonus` (2), `chainReactionCap` (6) | 31.3 |
+| **Swarm Singer** | `swarm-singer` | 2 (2) | In fights with 3+ monsters, adds +1 to the value of the song per die. Can't crit. | `swarmSingerBonus` (1), `swarmSingerMin` (3) | 34.4 |
+| **Jam Session** | `jam-session` | 3 (4) | While sharing a space with another bard, adds +2 to the value of the song per die. Can't crit. | `jamSessionBonus` (2) | 32.5 |
 
 All 20 land between **29.5% and 36.1%** (Extra Verse lowest, Hometown Hero highest).
 
@@ -69,13 +69,13 @@ Requested changes, applied together and then re-measured (all 20 styles, 800 gam
 
 | Style | Change | Result |
 |---|---|---|
-| Harmony | 1 → 2 EXP | 30.4% |
+| Harmony | 1 → 2 EXP | 31.7% |
 | Rallying Cry | 1 → 2 EXP | 32.5% |
 | Muse's Favor | +3 → **+1** Inspiration a turn, 2 → 1 EXP | 33.1% |
 | Jam Session | 4 → 3 EXP | 32.5% |
 | Master's Touch | Now applies to d12 and smaller (`virtuosoMinFaces` 4, `virtuosoMaxFaces` 12); was d8 and larger | 32.3% at 2 EXP (31.8–32.1% at 1 or 3 EXP, so price barely matters) |
 | **Nimble Fingers** | Now "Once per turn, you may re-roll the die you just rolled and keep the higher value" (was: two free rerolls that replace the roll). 1 EXP | 33.8% at 1 EXP; 30.3% at 2 or 3 EXP |
-| Bonus wording | Every "+N" now says it is added to the **value of the roll**, not the die's face, and whether it can crit | text only |
+| Bonus wording | Flat bonuses say "adds +N to the value of the song" (can't crit); face changes say "increases the face value of a die" (can crit) | text only |
 
 **Replaced:** Double Time and Small Ensemble. With Master's Touch covering d12 and smaller, Double Time ("once per turn, the first die you roll rolls twice, keep the higher") did everything Master's Touch does and more (any die, including the d20, and no waiting for a qualifying die), so it was strictly better apart from spending itself on whatever die came first. Small Ensemble (d4/d8 always roll twice) was a third roll-twice style. They became effects that are not about advantage:
 

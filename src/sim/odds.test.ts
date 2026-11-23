@@ -40,6 +40,8 @@ describe('exact roll distributions match the engine', () => {
   it('War Drums on a d4', () => compare('d4', ['ostinato'], false, { critFace: DEFAULT_TUNABLES.ostinatoCritFace, maxCascades: m }))
   it('Fanfare + Harmony flat bonus on the first roll', () =>
     compare('d8', ['overture', 'tutti'], true, { flat: DEFAULT_TUNABLES.overtureBonus + DEFAULT_TUNABLES.tuttiBonus, maxCascades: m }))
+  it('Harmony alone adds its bonus on later rolls too', () =>
+    compare('d8', ['tutti'], false, { flat: DEFAULT_TUNABLES.tuttiBonus, maxCascades: m }))
 })
 
 describe('generic roll options: engine roll matches the exact distribution', () => {

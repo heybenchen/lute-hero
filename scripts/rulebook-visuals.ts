@@ -124,44 +124,6 @@ const write = (name: string, content: string) => writeFileSync(OUT + name, conte
   write('cover.svg', svg(760, 310, b, 'Lute Hero cover'))
 }
 
-// =================================================================== setup
-{
-  let b = ''
-  // bard mat
-  b += panel(24, 24, 440, 330, "A BARD'S MAT")
-  b += text(44, 74, 'Setlist: six songs, one die each', { size: 13, fill: SOFT, italic: true })
-  for (let i = 0; i < 6; i++) {
-    const x = 44 + (i % 3) * 138
-    const y = 90 + Math.floor(i / 3) * 112
-    b += rect(x, y, 124, 98, { fill: i === 0 ? ELEMENTS[0].tint : '#fffdf6', stroke: i === 0 ? ELEMENTS[0].color : LINE, sw: i === 0 ? 2.5 : 1.5, dash: i === 0 ? undefined : '5 4' })
-    b += text(x + 8, y + 18, `Song ${i + 1}`, { size: 12, weight: 'bold', fill: SOFT })
-    if (i === 0) {
-      b += die('d8', x + 62, y + 52, 28, ELEMENTS[0].color)
-      b += text(x + 62, y + 90, 'your starter d8', { size: 10.5, anchor: 'middle', fill: ELEMENTS[0].color, weight: 'bold' })
-    } else b += text(x + 62, y + 62, 'empty', { size: 12, anchor: 'middle', fill: LINE, italic: true })
-  }
-  // trackers
-  const track = (x: number, label: string, val: string) =>
-    rect(x, 318, 128, 26, { fill: '#fffdf6', stroke: LINE }) + text(x + 8, 336, label, { size: 12, fill: SOFT }) + text(x + 120, 336, val, { size: 15, weight: 'bold', anchor: 'end' })
-  b += track(44, 'Fame', '0') + track(182, 'EXP', '0') + track(320, 'Inspiration', String(T.startingInspiration))
-  // steps
-  const steps = [
-    ['Pick your element', 'Each bard picks a different one: Ballad, Folk, Hymn or Shanty.'],
-    ['Place the board', 'The 4×4 realm of 16 spaces. Bards start on the corners.'],
-    ['Take your mat', `One ${'d8'} of your element in Song 1. ${T.startingInspiration} Inspiration, 0 Fame, 0 EXP.`],
-    ['Deal the chips', 'One element chip per space, the same number of each element, shuffled.'],
-    ['Fix your corner', 'Swap chips so your starting space holds a chip of your own element.'],
-    ['Stock the Studio', `Draw ${T.elementOfferCount} element chips and ${T.styleOfferCount} styles to the shelves.`],
-  ]
-  steps.forEach(([h, d], i) => {
-    const y = 48 + i * 54
-    b += badge(500, y + 6, i + 1)
-    b += text(522, y + 2, h, { size: 14, weight: 'bold' })
-    b += lines(522, y + 19, wrap(d, 40), { size: 11.5, fill: SOFT, lh: 14 })
-  })
-  write('setup.svg', svg(760, 380, b, 'Setup: a bard mat and the six setup steps'))
-}
-
 /** Greedy word-wrap by character count. */
 function wrap(s: string, n: number): string[] {
   const out: string[] = []
@@ -296,29 +258,6 @@ function wrap(s: string, n: number): string[] {
   write('turn-flow.svg', svg(760, 276, b, 'The four steps of a turn'))
 }
 
-// ============================================================ roll anatomy
-{
-  let b = text(380, 34, 'Reading a roll: an example', { size: 17, weight: 'bold', anchor: 'middle' })
-  const items: [string, string, string, string][] = [
-    ['ROLL', '8', 'A d8 lands on its top face', '#f8e6b4'],
-    ['CRIT', '+5', 'Top face: roll the die again and add it', '#f8e6b4'],
-    ['STYLE', '+2', 'A style adds to the roll’s value', '#fffdf6'],
-    ['ELEMENT', '×2', 'The monster is weak to your element', '#e3efe0'],
-  ]
-  items.forEach(([h, v, d, fill], i) => {
-    const x = 30 + i * 175
-    b += rect(x, 60, 150, 128, { fill, stroke: INK, sw: 1.8 })
-    b += text(x + 75, 82, h, { size: 12, weight: 'bold', anchor: 'middle', spacing: 3, fill: SOFT })
-    b += text(x + 75, 134, v, { size: 46, weight: 'bold', anchor: 'middle' })
-    b += lines(x + 75, 160, wrap(d, 22), { size: 11.5, anchor: 'middle', fill: SOFT, lh: 14 })
-    if (i < 3) b += text(x + 162, 134, i === 2 ? '×' : '+', { size: 26, weight: 'bold', anchor: 'middle', fill: GOLD })
-  })
-  b += rect(30, 218, 700, 54, { fill: INK, stroke: INK })
-  b += text(380, 252, '(8 + 5 + 2) = 15,  then × 2  =  30 damage to the target', { size: 20, weight: 'bold', fill: PAPER, anchor: 'middle' })
-  b += text(380, 296, 'Add the roll, the crit dice and any style bonus first, then multiply by the element, and round down.', { size: 12.5, anchor: 'middle', fill: SOFT, italic: true })
-  write('roll-anatomy.svg', svg(760, 318, b, 'Worked example of a roll: 8 plus 5 plus 2 times 2 equals 30'))
-}
-
 // ============================================================ fight flow
 {
   let b = ''
@@ -380,88 +319,6 @@ function wrap(s: string, n: number): string[] {
   write('monsters.svg', svg(760, 394, b, 'Monster table: HP, Fame and EXP by level'))
 }
 
-// ================================================================== studio
-{
-  let b = ''
-  b += panel(24, 24, 712, 372, 'THE STUDIO')
-  // shelf
-  b += text(48, 76, `Element shelf (${T.elementOfferCount} chips, refilled after every turn)`, { size: 13, weight: 'bold' })
-  ;[0, 1, 2, 3].forEach((i) => (b += chip(62 + i * 44, 104, ELEMENTS[[1, 3, 0, 3][i]], 16)))
-  b += text(48, 150, `Style shelf (${T.styleOfferCount} styles; a bard holds at most ${T.maxStyles})`, { size: 13, weight: 'bold' })
-  ;[0, 1].forEach((i) => {
-    b += rect(48 + i * 100, 160, 90, 52, { fill: '#fffdf6', stroke: GOLD, sw: 2 })
-    b += text(48 + i * 100 + 45, 182, i ? 'Style B' : 'Style A', { size: 12, weight: 'bold', anchor: 'middle', fill: GOLD })
-    b += text(48 + i * 100 + 45, 200, 'see Songbook', { size: 10.5, anchor: 'middle', fill: SOFT, italic: true })
-  })
-  // menu
-  const menu: [string, string, string][] = [
-    ['Buy a new d4', `${T.newD4Cost} EXP`, 'Take any shelf chip. The d4 of that element goes in an empty song, or replaces a die.'],
-    ['Upgrade a die', `${T.upgradeCostD8} / ${T.upgradeCostD12} / ${T.upgradeCostD20} EXP`, 'To d8 / d12 / d20. Also spend a shelf chip of the die’s element.'],
-    ['Buy Inspiration', `${T.inspirationBaseCost} EXP`, 'Each one costs the same, however many you buy.'],
-    ['Learn a style', 'price on the card', 'Changes how all your songs play. Learning a third replaces one.'],
-    ['Refresh the shelves', `${T.inspirationSpend} Inspiration`, 'Redraw all the element chips and both styles.'],
-  ]
-  menu.forEach(([h, c, d], i) => {
-    const y = 56 + i * 66
-    b += rect(340, y, 380, 60, { fill: '#fffdf6', stroke: LINE })
-    b += text(352, y + 21, h, { size: 14, weight: 'bold' })
-    b += text(708, y + 21, c, { size: 13, weight: 'bold', fill: GOLD, anchor: 'end' })
-    b += lines(352, y + 38, wrap(d, 60), { size: 11, fill: SOFT, lh: 13 })
-  })
-  b += rect(48, 250, 260, 110, { fill: '#f6f0dd', stroke: LINE, dash: '5 4' })
-  b += lines(60, 276, ['EXP is earned in fights.', 'Inspiration comes from clearing a', 'space, or from the Studio.', 'You keep both between turns.'], { size: 12, fill: SOFT, lh: 16 })
-  write('studio.svg', svg(760, 420, b, 'The Studio: shelves and what you can buy'))
-}
-
-// ================================================================== rounds
-{
-  let b = text(380, 34, 'A round', { size: 17, weight: 'bold', anchor: 'middle' })
-  const turns = ['Bard 1', 'Bard 2', 'Bard 3', 'Bard 4']
-  turns.forEach((t, i) => {
-    const x = 28 + i * 118
-    b += rect(x, 58, 100, 60, { fill: ELEMENTS[i].tint, stroke: ELEMENTS[i].color, sw: 2 })
-    b += text(x + 50, 84, t, { size: 14, weight: 'bold', anchor: 'middle' })
-    b += text(x + 50, 103, 'takes a turn', { size: 11, anchor: 'middle', fill: SOFT })
-    if (i < 3) b += arrow(x + 100, 88, x + 118, 88, { sw: 2.5 })
-  })
-  b += text(28, 138, '(With fewer bards, the round is shorter.)', { size: 11.5, fill: SOFT, italic: true })
-  b += arrow(500, 88, 524, 88, { sw: 2.5 })
-  b += rect(524, 50, 208, 150, { fill: '#f8e6b4', stroke: GOLD, sw: 2.2 })
-  b += text(628, 74, 'ROUND END', { size: 14, weight: 'bold', anchor: 'middle', fill: GOLD, spacing: 2 })
-  b += lines(628, 96, ['Every bard adds one chip of each', 'element (4 chips each), scattered', 'across different spaces.', 'All monsters reset to match chips.', 'The Studio shelf refills.'], { size: 11.5, anchor: 'middle', lh: 15 })
-  ELEMENTS.forEach((el, i) => (b += chip(562 + i * 34, 186, el, 9)))
-  b += rect(28, 218, 704, 78, { fill: '#fffdf6', stroke: INK, sw: 1.8 })
-  b += text(44, 242, `The fame gate: ${T.fameFinalBossThreshold} Fame`, { size: 14, weight: 'bold' })
-  b += lines(44, 262, ['When any bard reaches the gate, the table finishes the current round and plays ONE more full round.', 'There are no reinforcements at the end of that last round. Then the Final Showdown begins.'], { size: 12, fill: SOFT, lh: 16 })
-  write('rounds.svg', svg(760, 318, b, 'Round structure and the fame gate'))
-}
-
-// ================================================================== fame bar
-{
-  let b = text(380, 34, 'The road to the Showdown', { size: 17, weight: 'bold', anchor: 'middle' })
-  const X0 = 40
-  const W = 680
-  const gate = T.fameFinalBossThreshold
-  b += rect(X0, 70, W, 26, { fill: '#fffdf6', stroke: INK, sw: 1.8 })
-  b += `<rect x="${X0 + 1}" y="71" width="${W * 0.62}" height="24" rx="6" fill="${GOLD}" opacity="0.55"/>`
-  for (let f = 0; f <= gate; f += 25) {
-    const x = X0 + (f / gate) * W
-    b += line(x, 96, x, 106, { stroke: INK, sw: 1.3 })
-    b += text(x, 122, String(f), { size: 11, anchor: 'middle', fill: SOFT })
-  }
-  b += line(X0 + W, 56, X0 + W, 110, { stroke: '#9a4a3a', sw: 3 })
-  b += text(X0 + W, 50, `${gate} · the gate`, { size: 13, weight: 'bold', anchor: 'end', fill: '#9a4a3a' })
-  const lv = T.monsterFameByLevel
-  b += text(380, 158, 'Fame per tamed monster', { size: 13, weight: 'bold', anchor: 'middle' })
-  lv.forEach((f, i) => {
-    const x = 72 + i * 138
-    b += rect(x - 56, 172, 112, 56, { fill: '#fffdf6', stroke: LINE })
-    b += text(x, 196, `Lv ${i + 1}`, { size: 12, anchor: 'middle', fill: SOFT })
-    b += text(x, 220, `+${f}`, { size: 22, weight: 'bold', anchor: 'middle', fill: GOLD })
-  })
-  write('fame.svg', svg(760, 250, b, 'Fame bar with the gate and Fame by monster level'))
-}
-
 // ============================================================== showdown
 {
   let b = text(380, 34, 'The Final Showdown: three verses', { size: 17, weight: 'bold', anchor: 'middle' })
@@ -478,29 +335,6 @@ function wrap(s: string, n: number): string[] {
   b += text(380, 330, 'After verse 3, each bard’s fandom is added to their Fame.', { size: 16, weight: 'bold', fill: PAPER, anchor: 'middle' })
   b += text(380, 351, 'Highest Fame wins.', { size: 13, fill: '#e9dcbf', anchor: 'middle' })
   write('showdown.svg', svg(760, 384, b, 'Three verses of the Final Showdown'))
-}
-
-// ================================================================= scoring
-{
-  let b = text(380, 34, 'Scoring: an example', { size: 17, weight: 'bold', anchor: 'middle' })
-  const rows = [
-    { n: 'Ava', board: 214, fans: 61, c: ELEMENTS[0] },
-    { n: 'Ben', board: 201, fans: 84, c: ELEMENTS[1] },
-    { n: 'Cam', board: 188, fans: 70, c: ELEMENTS[2] },
-  ]
-  const scale = 2.0
-  rows.forEach((r, i) => {
-    const y = 66 + i * 60
-    b += text(30, y + 26, r.n, { size: 15, weight: 'bold' })
-    b += rect(90, y, r.board * scale, 38, { fill: r.c.tint, stroke: r.c.color, sw: 1.6, r: 4 })
-    b += text(90 + (r.board * scale) / 2, y + 25, `${r.board} board Fame`, { size: 12.5, anchor: 'middle' })
-    b += rect(90 + r.board * scale, y, r.fans * scale, 38, { fill: r.c.color, stroke: r.c.color, r: 4 })
-    b += text(90 + r.board * scale + (r.fans * scale) / 2, y + 25, `+${r.fans}`, { size: 13, weight: 'bold', fill: '#fff', anchor: 'middle' })
-    b += text(90 + (r.board + r.fans) * scale + 10, y + 26, `= ${r.board + r.fans}`, { size: 17, weight: 'bold' })
-  })
-  b += text(380, 258, 'Ben wins on 285 Fame (201 board + 84 fandom), though Ava led on the board.', { size: 12.5, anchor: 'middle', fill: SOFT, italic: true })
-  b += text(380, 276, 'Tied on Fame? The bard with more Showdown fandom wins.', { size: 12.5, anchor: 'middle', fill: SOFT, italic: true })
-  write('scoring.svg', svg(760, 300, b, 'Scoring example: board Fame plus Showdown fandom'))
 }
 
 // ===================================================== Appendix A (styles)

@@ -7,7 +7,7 @@
  *  - War Drums lowers a d4's crit face (cascade dice still need a 4),
  *  - a crit adds a cascade of plain rolls of the same die (each top face
  *    rolls again, capped at `maxCritCascades`),
- *  - Fanfare / Harmony add a flat bonus to the turn's first roll,
+ *  - Fanfare adds a flat bonus to the turn's first roll, Harmony to every die,
  *  - damage = floor(total × element multiplier).
  *
  * Everything is pure and memoised, so bots can ask "what are the odds this

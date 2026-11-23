@@ -89,9 +89,9 @@ export interface Tunables {
   styleCostIspirato: number
   /** Fortissimo: added to every d20 roll (can crit). */
   fortissimoBonus: number
-  /** Overture: added to your first roll each turn (can't crit). */
+  /** Overture: added to the value of your first song each turn (can't crit). */
   overtureBonus: number
-  /** Tutti: added to your first roll each turn when you hold all four elements (can't crit). */
+  /** Tutti: added to the value of the song for each die rolled while you hold all four elements (can't crit). */
   tuttiBonus: number
   /** Ostinato: lowest d4 face that crits (cascade dice still need a 4). */
   ostinatoCritFace: number
@@ -210,7 +210,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   styleCostIspirato: 1,
   fortissimoBonus: 2,
   overtureBonus: 3,
-  tuttiBonus: 4,
+  tuttiBonus: 1,
   ostinatoCritFace: 3,
   counterpointMultiplier: 1,
   bravoFamePerTame: 10,
@@ -328,7 +328,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'styleCostIspirato', label: 'Muse\'s Favor cost', group: 'Styles', min: 0, max: 30, step: 1 },
   { key: 'fortissimoBonus', label: "Dragon's Roar: d20 bonus", group: 'Styles', min: 0, max: 20, step: 1 },
   { key: 'overtureBonus', label: 'Fanfare: first-roll bonus', group: 'Styles', min: 0, max: 20, step: 1 },
-  { key: 'tuttiBonus', label: 'Harmony: first-roll bonus', group: 'Styles', min: 0, max: 20, step: 1 },
+  { key: 'tuttiBonus', label: 'Harmony: bonus per die', group: 'Styles', min: 0, max: 10, step: 1 },
   { key: 'ostinatoCritFace', label: 'War Drums: d4 crits from', group: 'Styles', min: 1, max: 4, step: 1 },
   { key: 'counterpointMultiplier', label: 'Dissonance: immune ×', group: 'Styles', min: 0, max: 2, step: 0.25 },
   { key: 'bravoFamePerTame', label: 'Crowd Favorite: Fame per tame', group: 'Styles', min: 0, max: 20, step: 1 },

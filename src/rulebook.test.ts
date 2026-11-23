@@ -19,9 +19,15 @@ describe('rulebook', () => {
     }
   })
 
+  it('ends with edge cases, then a one-page quick reference as the last page', () => {
+    expect(md).toContain('## Appendix B: Edge Cases')
+    const lastPage = md.split('page-break-after: always').pop() ?? ''
+    expect(lastPage).toContain('## Appendix C: Quick Reference')
+  })
+
   it('references only diagrams that exist', () => {
     const imgs = [...md.matchAll(/src="(img\/[a-z-]+\.svg)"/g)].map((m) => m[1])
-    expect(imgs.length).toBeGreaterThan(10)
+    expect(imgs.length).toBeGreaterThan(5)
     for (const img of imgs) expect(existsSync(resolve(rulebookDir, img)), img).toBe(true)
   })
 
