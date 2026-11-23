@@ -23,7 +23,7 @@ export function makeReroll(opts: {
 }): RerollOption {
   const { free, inspiration, enabled, subject, onPaid } = opts
   if (free) {
-    return { kind: 'free', onClick: free.onClick, disabled: !enabled, title: `${free.name}: reroll this ${subject} for free` }
+    return { kind: 'free', onClick: free.onClick, disabled: !enabled, title: `${free.name}: reroll this ${subject} for free and keep the higher` }
   }
   return {
     kind: 'paid',

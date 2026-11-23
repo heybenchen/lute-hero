@@ -107,6 +107,8 @@ export interface Tunables {
   rubatoMaxFaces: number
   /** Master's Touch: smallest die (faces) that rolls twice. */
   virtuosoMinFaces: number
+  /** Master's Touch: the largest die (faces) it rolls twice. */
+  virtuosoMaxFaces: number
   /** Harmony: distinct elements the setlist must hold. */
   tuttiElements: number
   /** Muse's Favor: Inspiration topped up to at the start of each turn. */
@@ -128,17 +130,19 @@ export interface Tunables {
 
   // --- Studio styles built from the style lab ---
   styleCostHometownHero: number
-  styleCostSmallEnsemble: number
+  styleCostSteadyHands: number
   styleCostStudioRegular: number
   styleCostInspiredPlay: number
-  styleCostDoubleTime: number
+  styleCostStreetPerformer: number
   styleCostChainReaction: number
   styleCostSwarmSinger: number
   styleCostJamSession: number
   /** Hometown Hero: bonus (can crit) to dice of the bard's starting element. */
   hometownHeroBonus: number
-  /** Small Ensemble: largest die (faces) that rolls twice and keeps the higher. */
-  smallEnsembleMaxFaces: number
+  /** Steady Hands: a die that lands below this counts as showing it. */
+  steadyHandsFloor: number
+  /** Street Performer: EXP gained at the start of each of the bard's turns. */
+  streetPerformerExp: number
   /** Studio Regular: EXP off every upgrade. */
   studioRegularDiscount: number
   /** Inspired Play: bonus to every die while holding enough Inspiration. */
@@ -192,7 +196,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   maxStyles: 2,
   styleOfferCount: 2,
   // Style defaults: changing any of these means updating songStyles.md
-  styleCostStaccato: 1,
+  styleCostStaccato: 2,
   styleCostCoda: 1,
   styleCostOstinato: 2,
   styleCostRubato: 1,
@@ -200,10 +204,10 @@ export const DEFAULT_TUNABLES: Tunables = {
   styleCostFortissimo: 2,
   styleCostFermata: 3,
   styleCostCounterpoint: 2,
-  styleCostTutti: 1,
+  styleCostTutti: 2,
   styleCostOverture: 2,
   styleCostBravo: 3,
-  styleCostIspirato: 2,
+  styleCostIspirato: 1,
   fortissimoBonus: 2,
   overtureBonus: 3,
   tuttiBonus: 4,
@@ -213,27 +217,29 @@ export const DEFAULT_TUNABLES: Tunables = {
   fermataMinFaces: 20,
   staccatoMaxFaces: 20,
   rubatoMaxFaces: 20,
-  virtuosoMinFaces: 8,
+  virtuosoMinFaces: 4,
+  virtuosoMaxFaces: 12,
   tuttiElements: 4,
   ispiratoMin: 1,
-  ispiratoPerTurn: 3,
+  ispiratoPerTurn: 1,
   fermataInspirationCost: 1,
   ostinatoMaxFaces: 20,
-  rubatoUsesPerTurn: 2,
+  rubatoUsesPerTurn: 1,
   ostinatoCascadeBonus: 0,
   ostinatoChainFace: 4,
   bravoMinLevel: 3,
 
   styleCostHometownHero: 1,
-  styleCostSmallEnsemble: 4,
+  styleCostSteadyHands: 1,
   styleCostStudioRegular: 3,
   styleCostInspiredPlay: 3,
-  styleCostDoubleTime: 1,
+  styleCostStreetPerformer: 1,
   styleCostChainReaction: 2,
   styleCostSwarmSinger: 2,
-  styleCostJamSession: 4,
+  styleCostJamSession: 3,
   hometownHeroBonus: 1,
-  smallEnsembleMaxFaces: 8,
+  steadyHandsFloor: 3,
+  streetPerformerExp: 1,
   studioRegularDiscount: 1,
   inspiredPlayBonus: 2,
   inspiredPlayMin: 3,
@@ -330,6 +336,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'staccatoMaxFaces', label: 'Rallying Cry: largest refreshed die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
   { key: 'rubatoMaxFaces', label: 'Nimble Fingers: largest die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
   { key: 'virtuosoMinFaces', label: "Master's Touch: smallest die (faces)", group: 'Styles', min: 4, max: 20, step: 4 },
+  { key: 'virtuosoMaxFaces', label: "Master's Touch: largest die (faces)", group: 'Styles', min: 4, max: 20, step: 4 },
   { key: 'tuttiElements', label: 'Harmony: elements needed', group: 'Styles', min: 1, max: 4, step: 1 },
   { key: 'ispiratoMin', label: "Muse's Favor: Inspiration floor", group: 'Styles', min: 0, max: 5, step: 1 },
   { key: 'ispiratoPerTurn', label: "Muse's Favor: Inspiration per turn", group: 'Styles', min: 0, max: 3, step: 1 },
@@ -340,15 +347,16 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'ostinatoChainFace', label: 'War Drums: bonus dice chain from', group: 'Styles', min: 2, max: 20, step: 1 },
   { key: 'bravoMinLevel', label: 'Crowd Favorite: lowest paying level', group: 'Styles', min: 1, max: 5, step: 1 },
   { key: 'styleCostHometownHero', label: 'Hometown Hero cost', group: 'Styles', min: 0, max: 30, step: 1 },
-  { key: 'styleCostSmallEnsemble', label: 'Small Ensemble cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostSteadyHands', label: 'Steady Hands cost', group: 'Styles', min: 0, max: 30, step: 1 },
   { key: 'styleCostStudioRegular', label: 'Studio Regular cost', group: 'Styles', min: 0, max: 30, step: 1 },
   { key: 'styleCostInspiredPlay', label: 'Inspired Play cost', group: 'Styles', min: 0, max: 30, step: 1 },
-  { key: 'styleCostDoubleTime', label: 'Double Time cost', group: 'Styles', min: 0, max: 30, step: 1 },
+  { key: 'styleCostStreetPerformer', label: 'Street Performer cost', group: 'Styles', min: 0, max: 30, step: 1 },
   { key: 'styleCostChainReaction', label: 'Chain Reaction cost', group: 'Styles', min: 0, max: 30, step: 1 },
   { key: 'styleCostSwarmSinger', label: 'Swarm Singer cost', group: 'Styles', min: 0, max: 30, step: 1 },
   { key: 'styleCostJamSession', label: 'Jam Session cost', group: 'Styles', min: 0, max: 30, step: 1 },
   { key: 'hometownHeroBonus', label: 'Hometown Hero: starting-element bonus', group: 'Styles', min: 0, max: 10, step: 1 },
-  { key: 'smallEnsembleMaxFaces', label: 'Small Ensemble: largest die (faces)', group: 'Styles', min: 4, max: 20, step: 4 },
+  { key: 'steadyHandsFloor', label: 'Steady Hands: lowest a die can show', group: 'Styles', min: 1, max: 12, step: 1 },
+  { key: 'streetPerformerExp', label: 'Street Performer: EXP per turn', group: 'Styles', min: 0, max: 5, step: 1 },
   { key: 'studioRegularDiscount', label: 'Studio Regular: EXP off upgrades', group: 'Styles', min: 0, max: 5, step: 1 },
   { key: 'inspiredPlayBonus', label: 'Inspired Play: bonus per die', group: 'Styles', min: 0, max: 10, step: 1 },
   { key: 'inspiredPlayMin', label: 'Inspired Play: Inspiration needed', group: 'Styles', min: 1, max: 10, step: 1 },

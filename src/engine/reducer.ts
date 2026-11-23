@@ -217,14 +217,19 @@ function reduce(
         ? [{ id: '_reroll-bonus', name: '', rule: '', theme: '', cost: 0, roll: [{ flat: insp.bonus }] }]
         : []
       let combat = performCombatPlay(state.combat, snapshot, song, targetId, updatedFighter, rng, events, state.players, rerollBonus)
-      // Keep-the-better rerolls: if the new roll charms the target less, the old result stands
-      if (!action.rubato && insp.keepBetter) {
+      // Keep-the-better rerolls (Nimble Fingers always, plus any style-lab spec that grants
+      // it): if the new roll charms the target less, the old result stands
+      let keptFirst = false
+      if (action.rubato || insp.keepBetter) {
         const charmOn = (c: EngineCombatState) => {
           const before = snapshot.monsters.find((m) => m.id === targetId)?.currentHP ?? 0
           const after = c.monsters.find((m) => m.id === targetId)?.currentHP ?? 0
           return before - after
         }
-        if (charmOn(combat) < charmOn(state.combat)) combat = { ...state.combat }
+        if (charmOn(combat) < charmOn(state.combat)) {
+          combat = { ...state.combat }
+          keptFirst = true
+        }
       }
       combat = { ...combat, freeRerollsUsed: state.combat.freeRerollsUsed + (freeReroll ? 1 : 0) }
       // The snapshot predates Rubato, so carry its use across the replay
@@ -239,7 +244,9 @@ function reduce(
       const wasHeld = lingeringTriggered(state.combat, snapshot)
       const nowHeld = lingeringTriggered(combat, snapshot)
       const charged = chargeLingeringNote(players, fighterId, wasHeld, nowHeld)
-      const styleNotes = action.rubato ? [STYLES.rubato.name, ...combat.styleNotes] : combat.styleNotes
+      const styleNotes = action.rubato
+        ? [keptFirst ? `${STYLES.rubato.name}: kept your higher first roll` : STYLES.rubato.name, ...combat.styleNotes]
+        : combat.styleNotes
       return { ...state, players: charged, combat: { ...combat, stylesUsed, styleNotes } }
     }
 
@@ -1557,7 +1564,7 @@ function rerollShowdownSong(state: EngineState, rubato: boolean, rng: Rng, event
     bonus
   )
   // Keep-the-better rerolls: the old performance stands if it was louder
-  if (!rubato && insp.keepBetter && fields.showdownCurrentFandom < state.showdownCurrentFandom) {
+  if ((rubato || insp.keepBetter) && fields.showdownCurrentFandom < state.showdownCurrentFandom) {
     fields = {
       showdownCurrentFandom: state.showdownCurrentFandom,
       showdownCurrentGenre: state.showdownCurrentGenre,

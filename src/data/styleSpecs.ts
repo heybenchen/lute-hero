@@ -11,16 +11,13 @@
  *    ./styleSpecBatches.
  */
 import type { StyleSpec } from '../game-logic/styles/specs.js'
-import type { DiceType, Player, StyleId } from '../types/index.js'
+import type { Player, StyleId } from '../types/index.js'
 import { STYLE_SPEC_BATCHES, STYLE_SPEC_REWORKS } from './styleSpecBatches.js'
 import { getTunables } from './tunables.js'
 
 export const STYLE_SPECS: Record<string, StyleSpec> = Object.fromEntries(
   [...STYLE_SPEC_BATCHES.flat(), ...STYLE_SPEC_REWORKS].map((spec) => [spec.id, spec])
 )
-
-const DICE: DiceType[] = ['d4', 'd8', 'd12', 'd20']
-const diceUpTo = (faces: number) => DICE.filter((d) => Number(d.slice(1)) <= faces)
 
 /** The spec behind a Studio style, or null for styles the engine handles directly. */
 export function studioSpec(id: StyleId): StyleSpec | null {
@@ -29,14 +26,14 @@ export function studioSpec(id: StyleId): StyleSpec | null {
   switch (id) {
     case 'hometown-hero':
       return { ...base, roll: [{ when: { element: 'starter' }, critBonus: t.hometownHeroBonus }] }
-    case 'small-ensemble':
-      return { ...base, roll: [{ when: { dice: diceUpTo(t.smallEnsembleMaxFaces) }, advantage: true }] }
     case 'studio-regular':
       return { ...base, economy: { upgradeCost: -t.studioRegularDiscount } }
     case 'inspired-play':
       return { ...base, roll: [{ when: { inspirationAtLeast: t.inspiredPlayMin }, flat: t.inspiredPlayBonus }] }
-    case 'double-time':
-      return { ...base, roll: [{ when: { oncePerTurn: true }, advantage: true }] }
+    case 'steady-hands':
+      return { ...base, roll: [{ floor: t.steadyHandsFloor }] }
+    case 'street-performer':
+      return { ...base, onTurnStart: [{ reward: { exp: t.streetPerformerExp } }] }
     case 'chain-reaction':
       return { ...base, roll: [{ perComboBonus: t.chainReactionBonus, bonusCap: t.chainReactionCap }] }
     case 'swarm-singer':

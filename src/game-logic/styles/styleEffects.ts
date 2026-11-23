@@ -49,7 +49,7 @@ export function holdsAllElements(songs: Song[]): boolean {
 
 /**
  * Roll one die under the bard's styles.
- * - Virtuoso: the first d12/d20 each turn rolls twice and keeps the higher.
+ * - Virtuoso: the first roll of a d12-or-smaller die each turn rolls twice and keeps the higher.
  * - Fortissimo: +N to a d20, and reaching its top face this way crits.
  * - Ostinato: a d4 crits from a lower face (cascade dice still need a 4).
  * - Overture / Tutti: a flat bonus on the turn's first roll that never crits.
@@ -63,7 +63,7 @@ export function builtinRollOptions(dice: Dice, ctx: StyleContext, isFirstDie: bo
   const t = getTunables()
   const max = getMaxValue(dice.type)
   const opts: GenericRollOptions = { maxCascades: t.maxCritCascades }
-  if (max >= t.virtuosoMinFaces && available(ctx, 'virtuoso') && !triggered.includes('virtuoso')) {
+  if (max >= t.virtuosoMinFaces && max <= t.virtuosoMaxFaces && available(ctx, 'virtuoso') && !triggered.includes('virtuoso')) {
     opts.advantage = true
     triggered.push('virtuoso')
   }

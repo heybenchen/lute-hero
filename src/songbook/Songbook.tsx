@@ -167,7 +167,7 @@ export function Songbook() {
             <li>The Studio shelf offers 2 styles at a time. Inspiration redraws it.</li>
             <li>Prices are in EXP, and bards usually have a first style by round 5.</li>
             <li><strong className="text-stone-100">Once per turn</strong> styles fire on their own the first time they apply.</li>
-            <li><strong className="text-stone-100">Can&apos;t crit</strong> bonuses add on top of the roll and never change the face.</li>
+            <li>A bonus like <strong className="text-stone-100">+2</strong> is added to the roll&apos;s <strong className="text-stone-100">value</strong>, not to the die&apos;s face, so it can&apos;t crit unless the style says so.</li>
             <li>Featured songs borrowed from another bard play without styles.</li>
             <li>Every number here is a setting in the playtest console, so the game can be re-tuned.</li>
           </ul>

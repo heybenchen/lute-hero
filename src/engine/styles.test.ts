@@ -149,14 +149,30 @@ describe('Overture and Tutti', () => {
 })
 
 describe('Virtuoso', () => {
-  it('rolls the first d12/d20 of the turn twice and keeps the higher, once', () => {
-    const state = fight(['virtuoso'], [['d20', 'Hymn'], ['d20', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
-    const first = play(state, 1, faces([4, 20], [15, 20])).state
-    expect(first.combat.rolls[0].value).toBe(15)
+  it('rolls the first d12-or-smaller roll of the turn twice and keeps the higher, once', () => {
+    const state = fight(['virtuoso'], [['d12', 'Hymn'], ['d12', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
+    const first = play(state, 1, faces([4, 12], [10, 12])).state
+    expect(first.combat.rolls[0].value).toBe(10)
     expect(first.combat.stylesUsed).toContain('virtuoso')
-    // Second big roll this turn is a normal single roll
-    const second = play(first, 2, faces([4, 20], [15, 20])).state
+    // The second roll this turn is a normal single roll
+    const second = play(first, 2, faces([4, 12], [10, 12])).state
     expect(second.combat.rolls[0].value).toBe(4)
+  })
+
+  it('covers d4s and d8s, but not a d20', () => {
+    const small = play(fight(['virtuoso'], [['d4', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([1, 4], [3, 4])).state
+    expect(small.combat.rolls[0].value).toBe(3)
+    const big = play(fight(['virtuoso'], [['d20', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([4, 20], [15, 20])).state
+    expect(big.combat.rolls[0].value).toBe(4)
+    expect(big.combat.stylesUsed).not.toContain('virtuoso')
+  })
+
+  it('waits for the first die in its range (a d20 rolled first does not spend it)', () => {
+    const state = fight(['virtuoso'], [['d20', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
+    const afterBig = play(state, 1, faces([4, 20])).state
+    expect(afterBig.combat.stylesUsed).not.toContain('virtuoso')
+    const afterSmall = play(afterBig, 2, faces([2, 8], [7, 8])).state
+    expect(afterSmall.combat.rolls[0].value).toBe(7)
   })
 })
 
@@ -248,9 +264,9 @@ describe('Counterpoint', () => {
 })
 
 describe('Rubato', () => {
-  it('rerolls a spent song for free, up to its uses per turn', () => {
+  it('rerolls for free, up to its uses per turn (once by default)', () => {
     let state = fight(['rubato'], [['d8', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
-    state = { ...state, tunables: { ...state.tunables, rubatoUsesPerTurn: 1 } }
+    expect(DEFAULT_TUNABLES.rubatoUsesPerTurn).toBe(1)
     const inspiration = state.players[0].inspiration
     state = play(state, 1, faces([2, 8])).state
     state = apply(state, { type: 'REROLL_SONG', rubato: true }, faces([7, 8])).state
@@ -260,6 +276,24 @@ describe('Rubato', () => {
     // A paid reroll afterwards doesn't bring Rubato back
     state = apply(state, { type: 'REROLL_SONG' }, faces([3, 8])).state
     expect(state.combat.stylesUsed).toContain('rubato')
+  })
+
+  it('keeps the higher roll: a worse reroll does not replace a better first roll', () => {
+    let state = fight(['rubato'], [['d8', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
+    state = play(state, 1, faces([7, 8])).state
+    expect(hp(state)).toBe(100 - 7)
+    state = apply(state, { type: 'REROLL_SONG', rubato: true }, faces([2, 8])).state
+    expect(hp(state)).toBe(100 - 7) // the 7 stands
+    expect(state.combat.rolls[0].value).toBe(7)
+    expect(state.combat.stylesUsed).toContain('rubato') // the use is still spent
+    expect(state.combat.styleNotes.join(' ')).toContain('kept your higher first roll')
+  })
+
+  it('takes a better reroll', () => {
+    let state = fight(['rubato'], [['d8', 'Hymn']], [{ currentHP: 100, maxHP: 100 }])
+    state = play(state, 1, faces([2, 8])).state
+    state = apply(state, { type: 'REROLL_SONG', rubato: true }, faces([7, 8])).state
+    expect(hp(state)).toBe(100 - 7)
   })
 
   it('works on any die by default', () => {
@@ -408,19 +442,19 @@ describe('Studio spec styles', () => {
     expect(after.combat.styleNotes).toContain(STYLES['hometown-hero'].name)
   })
 
-  it('Small Ensemble rolls a d4 twice and keeps the higher', () => {
-    const state = fight(['small-ensemble'], [['d4', 'Hymn']], [{}])
-    const { state: after } = play(state, 1, faces([1, 4], [3, 4]))
-    expect(after.combat.rolls[0].value).toBe(3)
+  it('Steady Hands raises a die that lands low to the floor, and leaves higher dice alone', () => {
+    const floor = DEFAULT_TUNABLES.steadyHandsFloor
+    const low = play(fight(['steady-hands'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([1, 8])).state
+    expect(low.combat.rolls[0].value).toBe(floor)
+    const high = play(fight(['steady-hands'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([6, 8])).state
+    expect(high.combat.rolls[0].value).toBe(6)
   })
 
-  it('Double Time helps only the first die of the turn', () => {
-    const state = fight(['double-time'], [['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
-    const first = play(state, 1, faces([1, 8], [6, 8])).state
-    expect(first.combat.rolls[0].value).toBe(6)
-    expect(first.combat.specFired).toContain('double-time')
-    const second = play(first, 2, faces([1, 8], [6, 8])).state
-    expect(second.combat.rolls[0].value).toBe(1)
+  it('Street Performer pays EXP at the start of each of your turns', () => {
+    let state = startGame()
+    state = { ...state, players: state.players.map((p) => (p.id === 'player-2' ? { ...p, styles: ['street-performer'], exp: 0 } : p)) }
+    state = apply(state, { type: 'END_TURN' }).state
+    expect(state.players[1].exp).toBe(DEFAULT_TUNABLES.streetPerformerExp)
   })
 
   it('Jam Session adds its bonus only while another bard shares the space', () => {

@@ -18,6 +18,7 @@ import type { SpecReward } from '../game-logic/styles/specs.js'
 import { SONGS_PER_BARD } from '../data/startingData.js'
 import { playerColorFor } from '../data/genreTheme.js'
 import { Tunables, DEFAULT_TUNABLES, normalizeTunables } from '../data/tunables.js'
+import { ALL_STYLE_IDS } from '../data/styles.js'
 
 /**
  * Live combat state — part of the synced engine state so spectators watch
@@ -304,10 +305,12 @@ function migrateRewardDice(rewards: Record<string, PendingReward[]>): Record<str
  */
 export function normalizeEngineState(state: EngineState): EngineState {
   // Colors used to follow seat order; they now always match the starter element
+  // A style that has since been retired drops out of saves rather than breaking them
+  const known = new Set<string>(ALL_STYLE_IDS)
   const players = migratePlayerDice(state.players ?? []).map((p) => ({
     ...p,
     color: playerColorFor(p.starterGenre),
-    styles: p.styles ?? [],
+    styles: (p.styles ?? []).filter((id) => known.has(id)),
   }))
   // Only legacy slots create aliases. Do not infer relationships from ids in
   // already-migrated games: each song can be spent independently after reload.
@@ -329,7 +332,7 @@ export function normalizeEngineState(state: EngineState): EngineState {
     ...state,
     players,
     pendingRewards: migrateRewardDice(state.pendingRewards ?? {}),
-    styleOffers: state.styleOffers ?? [],
+    styleOffers: (state.styleOffers ?? []).filter((id) => known.has(id)),
     combat: {
       ...createInitialCombatState(),
       ...state.combat,
