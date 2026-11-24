@@ -226,7 +226,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
 
             {/* With an element chosen, the song slots themselves become the shop */}
             {canInteract && !activeDie && (
-              <div className="rounded-lg px-4 py-3 mt-3 animate-slide-up flex flex-wrap items-center gap-2 text-sm text-parchment-200"
+              <div className="rounded-lg px-4 py-3 mt-3 min-h-[8.5rem] sm:min-h-[5.5rem] lg:min-h-16 animate-slide-up flex flex-wrap items-center gap-2 text-sm text-parchment-200"
                 style={{
                   background: selectedElement ? 'rgba(212, 168, 83, 0.05)' : 'rgba(255, 255, 255, 0.02)',
                   border: selectedElement ? '1px solid rgba(212, 168, 83, 0.25)' : '1px dashed rgba(212, 168, 83, 0.15)',
@@ -312,7 +312,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-7 gap-2 sm:gap-3">
+            <div className={`grid grid-cols-3 ${player.songs.length === 6 ? 'sm:grid-cols-6' : 'sm:grid-cols-7'} gap-2 sm:gap-3`}>
               {player.songs.map((song, songIndex) => (
                 <div
                   key={song.id}
