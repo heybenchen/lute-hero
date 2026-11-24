@@ -25,10 +25,59 @@
      MODULAR TABLETOP GAME SHELL
      ============================================= */
   .game-table {
+    isolation: isolate;
     background:
       radial-gradient(circle at 50% -20%, rgba(179, 133, 66, 0.16), transparent 42%),
       repeating-linear-gradient(90deg, transparent 0 118px, rgba(255,255,255,0.012) 119px, transparent 120px),
       linear-gradient(145deg, #17110b 0%, #0d0a07 52%, #171009 100%);
+  }
+
+  .table-ambient {
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .table-ambient-glow {
+    @apply absolute rounded-full;
+    width: min(58vw, 52rem);
+    aspect-ratio: 1;
+    filter: blur(2px);
+    opacity: 0.52;
+    will-change: transform, opacity;
+  }
+
+  .table-ambient-glow-left {
+    left: -20%;
+    top: 5%;
+    background: radial-gradient(circle, rgba(212, 168, 83, 0.13), rgba(119, 72, 31, 0.035) 43%, transparent 70%);
+    animation: candlelight-left 9s ease-in-out infinite alternate;
+  }
+
+  .table-ambient-glow-right {
+    right: -20%;
+    bottom: -28%;
+    background: radial-gradient(circle, rgba(157, 104, 53, 0.11), rgba(72, 103, 65, 0.03) 45%, transparent 70%);
+    animation: candlelight-right 12s ease-in-out infinite alternate;
+  }
+
+  .table-ambient-dust {
+    @apply absolute inset-0;
+    opacity: 0.2;
+    background-image:
+      radial-gradient(circle, rgba(240, 215, 140, 0.65) 0 0.7px, transparent 0.8px),
+      radial-gradient(circle, rgba(240, 215, 140, 0.35) 0 0.5px, transparent 0.7px);
+    background-position: 0 0, 37px 61px;
+    background-size: 89px 89px, 127px 127px;
+    mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+    animation: dust-drift 24s linear infinite;
+  }
+
+  .title-sparkle {
+    animation: title-sparkle 2.8s ease-in-out infinite;
+  }
+
+  .title-sparkle-delayed {
+    animation-delay: -1.4s;
   }
 
   .tabletop-header {
@@ -64,6 +113,12 @@
       linear-gradient(145deg, #283126, #172019);
     border: 1px solid rgba(212, 168, 83, 0.24);
     box-shadow: inset 0 0 0 5px rgba(25, 17, 10, 0.6), inset 0 0 60px rgba(0,0,0,0.55), 0 12px 32px rgba(0,0,0,0.35);
+  }
+
+  .realm-map-drift {
+    transform: scale(1.04);
+    animation: realm-map-drift 18s ease-in-out infinite alternate;
+    will-change: transform;
   }
 
   .tabletop-board::after {
@@ -119,6 +174,29 @@
     box-shadow: inset 0 1px rgba(255,255,255,0.08), 0 3px 7px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,0,0,0.35);
   }
 
+  .board-space-tile::before {
+    content: '';
+    @apply absolute inset-0 z-[2] pointer-events-none;
+    background: linear-gradient(115deg, transparent 28%, rgba(255,255,255,0.11) 48%, transparent 68%);
+    transform: translateX(-135%);
+    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .board-space-tile:hover::before,
+  .board-space-tile:focus-visible::before {
+    transform: translateX(135%);
+  }
+
+  .board-space-tile:hover .board-tile-art,
+  .board-space-tile:focus-visible .board-tile-art {
+    transform: scale(1.075);
+    filter: saturate(1.13) contrast(1.04);
+  }
+
+  .board-space-tile:active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
+  }
+
   .tile-nameplate {
     max-width: 100%;
     padding: 4px 5px;
@@ -135,6 +213,52 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.65);
   }
 
+  @keyframes candlelight-left {
+    0% { transform: translate3d(-2%, -3%, 0) scale(0.95); opacity: 0.38; }
+    42% { opacity: 0.62; }
+    100% { transform: translate3d(10%, 5%, 0) scale(1.12); opacity: 0.48; }
+  }
+
+  @keyframes candlelight-right {
+    0% { transform: translate3d(4%, 4%, 0) scale(1.08); opacity: 0.35; }
+    55% { opacity: 0.58; }
+    100% { transform: translate3d(-9%, -7%, 0) scale(0.94); opacity: 0.45; }
+  }
+
+  @keyframes dust-drift {
+    from { background-position: 0 0, 37px 61px; }
+    to { background-position: 89px -178px, -90px -193px; }
+  }
+
+  @keyframes title-sparkle {
+    0%, 100% { opacity: 0.35; transform: scale(0.82) rotate(-8deg); }
+    50% { opacity: 1; transform: scale(1.12) rotate(8deg); filter: drop-shadow(0 0 5px rgba(240, 215, 140, 0.6)); }
+  }
+
+  @keyframes realm-map-drift {
+    0% { transform: scale(1.04) translate3d(-0.4%, -0.3%, 0); }
+    100% { transform: scale(1.075) translate3d(0.6%, 0.4%, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .table-ambient-glow,
+    .table-ambient-dust,
+    .title-sparkle,
+    .realm-map-drift {
+      animation: none;
+    }
+
+    .board-space-tile::before {
+      display: none;
+    }
+
+    .board-space-tile:hover .board-tile-art,
+    .board-space-tile:focus-visible .board-tile-art {
+      transform: none;
+    }
+  }
+
+
   .chip-rack {
     padding: 3px 4px;
     border-radius: 99px;
@@ -147,6 +271,12 @@
     height: clamp(13px, 2vw, 18px);
     border-radius: 50%;
     border: 1px solid rgba(0,0,0,0.5);
+    transition: transform 0.2s ease, filter 0.2s ease;
+  }
+
+  .board-space-tile:hover .element-chip {
+    transform: translateY(-1px);
+    filter: brightness(1.12);
   }
 
   .legend-swatch { @apply inline-block w-2 h-2 rounded-sm; }

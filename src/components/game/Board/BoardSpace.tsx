@@ -42,7 +42,7 @@ export function BoardSpace({
       disabled={!canMoveTo}
       aria-label={`Move to ${space.name}${canMoveTo && moveCost > 1 ? ` (${moveCost} moves)` : ''}, ${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}, ${space.genreTags.join(', ') || 'no element tags'}`}
       className={`
-        board-space-tile relative sm:hover:z-40 w-full aspect-square
+        board-space-tile group relative sm:hover:z-40 w-full aspect-square
         flex flex-col justify-between p-1.5 sm:p-2
         transition-all duration-200 ease-out
         ${canMoveTo
@@ -76,7 +76,7 @@ export function BoardSpace({
           alt=""
           aria-hidden="true"
           draggable={false}
-          className={`absolute inset-0 z-0 h-full w-full object-cover pointer-events-none transition-all duration-200 ${isReachable ? 'opacity-100' : 'opacity-65 grayscale'}`}
+          className={`board-tile-art absolute inset-0 z-0 h-full w-full object-cover pointer-events-none transition-all duration-500 ${isReachable ? 'opacity-100' : 'opacity-65 grayscale'}`}
         />
       )}
       <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b from-black/20 via-transparent to-black/75" />
@@ -128,7 +128,7 @@ export function BoardSpace({
               return (
                 <div
                   key={genre}
-                  className="element-chip flex items-center justify-center leading-none"
+                className="element-chip flex items-center justify-center leading-none"
                   style={{
                     background: color,
                     boxShadow: `0 0 5px ${color}70, 0 1px 2px rgba(0,0,0,0.55)`,

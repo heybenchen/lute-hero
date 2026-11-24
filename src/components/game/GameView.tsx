@@ -76,17 +76,12 @@ export function GameView() {
 
   return (
     <div className="game-table min-h-[100dvh] lg:h-[100dvh] flex flex-col lg:overflow-hidden relative">
-      {/* Atmospheric background gradient */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `
-            radial-gradient(ellipse at 20% 50%, rgba(212, 168, 83, 0.04) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 30%, rgba(109, 86, 56, 0.06) 0%, transparent 50%),
-            radial-gradient(ellipse at 50% 100%, rgba(139, 111, 71, 0.05) 0%, transparent 40%)
-          `,
-        }}
-      />
+      {/* Slow candlelight and drifting dust keep the table feeling alive. */}
+      <div className="table-ambient absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="table-ambient-glow table-ambient-glow-left" />
+        <div className="table-ambient-glow table-ambient-glow-right" />
+        <div className="table-ambient-dust" />
+      </div>
 
       {/* Table header */}
       <header className="relative z-10 flex items-center justify-center px-3 py-2.5 sm:px-5 sm:py-3 flex-shrink-0">
@@ -102,11 +97,11 @@ export function GameView() {
 
           <div className="min-w-0 text-center">
             <div className="flex items-center justify-center gap-2">
-              <Sparkles size={14} className="hidden sm:block text-gold-500/70" aria-hidden="true" />
+              <Sparkles size={14} className="title-sparkle hidden sm:block text-gold-500/70" aria-hidden="true" />
               <h1 className="font-display text-xl sm:text-2xl text-gold-300 tracking-[0.08em]">
                 Lute Hero
               </h1>
-              <Sparkles size={14} className="hidden sm:block text-gold-500/70" aria-hidden="true" />
+              <Sparkles size={14} className="title-sparkle title-sparkle-delayed hidden sm:block text-gold-500/70" aria-hidden="true" />
             </div>
             <p className="hidden sm:block text-[9px] uppercase tracking-[0.3em] text-parchment-500">
               Songs against the silence
