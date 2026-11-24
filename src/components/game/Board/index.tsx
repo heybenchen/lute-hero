@@ -76,7 +76,7 @@ export function Board() {
           alt=""
           aria-hidden="true"
           draggable={false}
-          className="absolute inset-0 h-full w-full object-cover pointer-events-none opacity-20 mix-blend-luminosity"
+          className="realm-map-drift absolute inset-0 h-full w-full object-cover pointer-events-none opacity-20 mix-blend-luminosity"
         />
       </picture>
 
