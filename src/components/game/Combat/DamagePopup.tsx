@@ -92,7 +92,7 @@ function FloatingNumber({ entry, onComplete }: { entry: DamagePopupEntry; onComp
             className="text-green-400 font-medieval font-bold text-sm mt-1 tracking-wider uppercase"
             style={{ textShadow: '0 0 8px rgba(74, 222, 128, 0.4)' }}
           >
-            Defeated!
+            Won over!
           </div>
         )}
 

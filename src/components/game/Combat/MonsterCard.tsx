@@ -81,7 +81,7 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
                   </span>
                 )}
                 {fameValue !== undefined && fameValue > 0 && (
-                  <span className="font-bold text-gold-300" title="Fame earned if this monster is defeated">
+                  <span className="font-bold text-gold-300" title="Fame earned if you win this monster over">
                     {fameValue} Fame
                   </span>
                 )}
@@ -103,14 +103,14 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
 
           <div className="relative mb-3 border-y border-white/10 py-2.5">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="font-medieval text-[10px] font-bold uppercase tracking-[0.18em] text-parchment-400">Vitality</span>
+              <span className="font-medieval text-[10px] font-bold uppercase tracking-[0.18em] text-parchment-400">Resolve</span>
               <div className="flex items-baseline gap-1">
                 <span className={`font-display text-2xl leading-none tabular-nums ${
                   isDefeated ? 'text-green-400/60' : hpPercent > 50 ? 'text-parchment-100' : hpPercent > 25 ? 'text-gold-400' : 'text-red-400'
                 }`}>
                   {Math.max(0, monster.currentHP)}
                 </span>
-                <span className="text-xs text-parchment-500">/ {monster.maxHP} HP</span>
+                <span className="text-xs text-parchment-500">/ {monster.maxHP}</span>
               </div>
             </div>
             <div className="hp-bar h-2.5 rounded-full">
@@ -135,7 +135,7 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
             {monster.vulnerability && (
               <div
                 className="pr-3"
-                title="Weak — takes double damage from this genre"
+                title="Weak — songs of this element count double"
               >
                 <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-green-200/70">Weakness</div>
                 <div className="flex items-center justify-between gap-2">
@@ -147,7 +147,7 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
             {monster.resistance && (
               <div
                 className="pl-3"
-                title="Immune — takes no damage from this genre"
+                title="Immune — songs of this element count for nothing"
               >
                 <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-300/65">Immunity</div>
                 <div className="flex items-center justify-between gap-2">

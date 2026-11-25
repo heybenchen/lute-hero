@@ -105,14 +105,14 @@ export function AdaptBanner({
                     <span className="font-bold" style={{ color: GENRE_THEME[resistGenre].color }}>
                       {GENRE_THEME[resistGenre].emoji} {resistGenre}
                     </span>{' '}
-                    dice deal <span className="font-bold text-red-300">no damage</span> next verse.
+                    dice count for <span className="font-bold text-red-300">nothing</span> next verse.
                   </span>
                 </div>
               )}
             </>
           ) : (
             <div className="text-sm text-parchment-400 italic animate-slide-up" style={{ animationDelay: '600ms', animationFillMode: 'both' }}>
-              The Silence needs two performances to steal a chord. Every element can deal damage next verse.
+              The Silence needs two performances to steal a chord. Every element counts next verse.
             </div>
           )}
         </div>

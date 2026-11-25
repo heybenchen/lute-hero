@@ -90,13 +90,7 @@ function die(type: 'd4' | 'd8' | 'd12' | 'd20', cx: number, cy: number, r: numbe
   return `<polygon points="${pts}" fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>${text(cx, ty, type, { size: r * 0.42, weight: 'bold', anchor: 'middle' })}`
 }
 /** A numbered step badge. */
-function badge(cx: number, cy: number, n: number | string): string {
-  return `${circle(cx, cy, 13, { fill: INK })}${text(cx, cy + 5, String(n), { size: 14, weight: 'bold', fill: PAPER, anchor: 'middle' })}`
-}
 /** A titled panel. */
-function panel(x: number, y: number, w: number, h: number, title: string, fill = '#fffdf6'): string {
-  return `${rect(x, y, w, h, { fill, stroke: INK, sw: 1.6 })}${rect(x, y, w, 30, { fill: INK, stroke: INK, sw: 1.6 })}${text(x + w / 2, y + 21, title, { size: 14, weight: 'bold', fill: PAPER, anchor: 'middle', spacing: 1.5 })}`
-}
 const write = (name: string, content: string) => writeFileSync(OUT + name, content)
 
 // =================================================================== cover
@@ -187,34 +181,30 @@ function wrap(s: string, n: number): string[] {
 
 // ================================================================ elements
 {
+  // A cross: opposites sit at the ends of the same bar.
   let b = ''
-  b += text(380, 38, 'How much damage a song deals to a monster', { size: 17, weight: 'bold', anchor: 'middle' })
-  const cx0 = 214
-  const cy0 = 120
-  const cw = 130
-  const ch = 52
-  b += text(cx0 + (cw * 4) / 2, 78, "THE MONSTER'S ELEMENT", { size: 12, spacing: 3, anchor: 'middle', fill: SOFT })
-  b += text(100, cy0 - 14, 'YOUR SONG', { size: 12, spacing: 3, anchor: 'middle', fill: SOFT })
+  const W = 560
+  const cx = W / 2
+  const cy = 222
+  const arm = 128
+  b += text(cx, 34, 'Elements: weak and immune', { size: 17, weight: 'bold', anchor: 'middle' })
+  b += line(cx, cy - arm, cx, cy + arm, { stroke: '#9a4a3a', sw: 6 })
+  b += line(cx - arm * 1.45, cy, cx + arm * 1.45, cy, { stroke: '#9a4a3a', sw: 6 })
+  b += circle(cx, cy, 30, { fill: '#e6d2cc', stroke: '#9a4a3a', sw: 2.5 })
+  b += text(cx, cy + 6, '×0', { size: 19, weight: 'bold', anchor: 'middle', fill: '#9a4a3a' })
+  const spots: [number, number][] = [[cx, cy - arm], [cx - arm * 1.45, cy], [cx + arm * 1.45, cy], [cx, cy + arm]]
+  // ELEMENTS order: Ballad, Folk, Hymn, Shanty -> top, left, right, bottom
   ELEMENTS.forEach((el, i) => {
-    b += rect(cx0 + i * cw, 88, cw - 6, 32, { fill: el.color, stroke: INK })
-    b += text(cx0 + i * cw + (cw - 6) / 2, 109, el.name, { size: 15, weight: 'bold', fill: '#fff', anchor: 'middle' })
-    b += rect(30, cy0 + i * ch, 172, ch - 6, { fill: el.color, stroke: INK })
-    b += text(116, cy0 + i * ch + 28, el.name, { size: 15, weight: 'bold', fill: '#fff', anchor: 'middle' })
+    const [x, y] = spots[i]
+    b += circle(x, y, 40, { fill: el.color, stroke: INK, sw: 2 })
+    b += text(x, y + 5, el.name, { size: 15, weight: 'bold', fill: '#fff', anchor: 'middle' })
+    const vertical = i === 0 || i === 3
+    b += vertical
+      ? text(x + 52, y + 5, '×2 to itself', { size: 13, weight: 'bold', fill: GOLD })
+      : text(x, y + 62, '×2 to itself', { size: 13, weight: 'bold', anchor: 'middle', fill: GOLD })
   })
-  const opposite = [3, 2, 1, 0] // Ballad<->Shanty, Folk<->Hymn
-  for (let r = 0; r < 4; r++) {
-    for (let c = 0; c < 4; c++) {
-      const weak = r === c
-      const immune = opposite[r] === c
-      const x = cx0 + c * cw
-      const y = cy0 + r * ch
-      b += rect(x, y, cw - 6, ch - 6, { fill: weak ? '#f8e6b4' : immune ? '#e6d2cc' : '#fffdf6', stroke: weak ? GOLD : immune ? '#9a4a3a' : LINE, sw: weak || immune ? 2.5 : 1.3 })
-      b += text(x + (cw - 6) / 2, y + 27, weak ? '×2  weak' : immune ? '×0  immune' : '×1', { size: weak || immune ? 15 : 14, weight: weak || immune ? 'bold' : 'normal', anchor: 'middle', fill: weak ? GOLD : immune ? '#9a4a3a' : SOFT })
-    }
-  }
-  b += text(30, 350, 'A monster is named for its element. It is weak to songs of that element (double damage)', { size: 12.5, fill: SOFT })
-  b += text(30, 368, 'and immune to songs of the opposite element (none). Opposites: Ballad and Shanty, Folk and Hymn.', { size: 12.5, fill: SOFT })
-  write('elements.svg', svg(760, 392, b, 'Element matchup chart'))
+  b += text(cx, 420, 'Same element: ×2 (weak).  Across the cross: ×0 (immune).  Next door: ×1.', { size: 13.5, anchor: 'middle', fill: INK })
+  write('elements.svg', svg(W, 440, b, 'Element cross: a monster is weak to its own element and immune to the opposite one'))
 }
 
 // ============================================================ dice ladder
@@ -231,110 +221,8 @@ function wrap(s: string, n: number): string[] {
     b += text(x, 214, `total so far ${total} EXP`, { size: 12, anchor: 'middle', fill: SOFT })
     if (i < 3) b += arrow(x + 62 + i * 5, 120, x + 133 - i * 3, 120, { stroke: GOLD, sw: 3 })
   })
-  b += text(380, 252, 'To upgrade a die, pay the EXP and also spend a Studio chip of the same element as that die.', { size: 12.5, anchor: 'middle', fill: SOFT, italic: true })
+  b += text(380, 252, 'To upgrade a die, pay the EXP and also spend a Studio cube of the same element as that die.', { size: 12.5, anchor: 'middle', fill: SOFT, italic: true })
   write('dice-ladder.svg', svg(760, 274, b, 'Dice ladder from d4 to d20 with EXP prices'))
-}
-
-// ============================================================= turn flow
-{
-  let b = text(380, 34, 'Your turn', { size: 17, weight: 'bold', anchor: 'middle' })
-  const boxes = [
-    ['MOVE', `up to ${T.maxMovesPerTurn} spaces`, 'Each step is one move. Take back the last step until you fight.'],
-    ['FIGHT', `${T.maxFightsPerTurn} fight`, 'Optional. Play songs against the monsters where you stand.'],
-    ['STUDIO', 'any time, not mid-fight', 'Spend EXP and Inspiration on dice and styles.'],
-    ['END TURN', 'pass the lute', 'Unspent EXP is yours to keep for later.'],
-  ]
-  boxes.forEach(([h, sub, d], i) => {
-    const x = 28 + i * 181
-    b += rect(x, 56, 166, 170, { fill: '#fffdf6', stroke: INK, sw: 1.8 })
-    b += rect(x, 56, 166, 36, { fill: INK, stroke: INK, sw: 1.8 })
-    b += badge(x + 20, 74, i + 1)
-    b += text(x + 40, 80, h, { size: 15, weight: 'bold', fill: PAPER, spacing: 1.5 })
-    b += text(x + 83, 120, sub, { size: 13, weight: 'bold', anchor: 'middle', fill: GOLD })
-    b += lines(x + 83, 146, wrap(d, 21), { size: 12, anchor: 'middle', fill: SOFT, lh: 15 })
-    if (i < 3) b += arrow(x + 166, 141, x + 181, 141, { sw: 2.5 })
-  })
-  b += text(380, 254, 'Moving and the Studio can happen in any order around your fight. You only ever get one fight.', { size: 12.5, anchor: 'middle', fill: SOFT, italic: true })
-  write('turn-flow.svg', svg(760, 276, b, 'The four steps of a turn'))
-}
-
-// ============================================================ fight flow
-{
-  let b = ''
-  const box = (x: number, y: number, w: number, h: number, head: string, body: string[], fill = '#fffdf6', hc = INK) => {
-    b += rect(x, y, w, h, { fill, stroke: hc, sw: 1.8 })
-    b += text(x + w / 2, y + 22, head, { size: 13.5, weight: 'bold', anchor: 'middle', fill: hc })
-    b += lines(x + w / 2, y + 41, body, { size: 11.5, anchor: 'middle', fill: SOFT, lh: 14 })
-  }
-  b += text(380, 32, 'Anatomy of a fight', { size: 17, weight: 'bold', anchor: 'middle' })
-  box(28, 52, 200, 66, 'START', ['Fight the monsters', 'on your space (once a turn)'], '#f8e6b4', GOLD)
-  box(280, 52, 200, 66, '1 · PICK A TARGET', ['One monster at a time.', 'Songs are single-target.'])
-  box(532, 52, 200, 66, '2 · PLAY A SONG', ['Tap a die to roll it.', 'One die per song.'])
-  b += arrow(228, 85, 280, 85) + arrow(480, 85, 532, 85)
-  box(532, 150, 200, 66, '3 · DAMAGE', ['Roll + crits + bonuses,', 'times the element, = damage'])
-  b += arrow(632, 118, 632, 150)
-  // branch
-  b += arrow(532, 183, 480, 183)
-  box(280, 150, 200, 66, 'Is the target at 0 HP?', ['Yes → tamed.', 'No → wounded.'], '#fffdf6', INK)
-  b += arrow(380, 216, 142, 264) + arrow(380, 216, 380, 264) + arrow(380, 216, 618, 264)
-  box(28, 264, 228, 92, 'TAMED', ['You earn its Fame.', 'The die comes back: that', 'song can be played again.'], '#e3efe0', '#3f8f4a')
-  box(266, 264, 228, 92, 'WOUNDED', ['The song is spent this fight.', 'The target is locked in until', 'it is tamed or you retreat.'], '#fbf0d2', GOLD)
-  box(504, 264, 228, 92, 'THEN, YOUR CHOICE', ['Reroll the song (1 Inspiration)', 'Play another song', 'Or retreat, any time'], '#fffdf6', INK)
-  b += arrow(380, 356, 380, 384)
-  box(110, 384, 540, 80, 'FIGHT ENDS', ['Every monster tamed: claim Fame & Glory. Clear the space, gain 1 Inspiration,', 'and radiate an element to the spaces next door.  Retreat: keep what you earned.', 'EXP is paid for every monster you wounded (all of them after a win).'], '#e3efe0', '#3f8f4a')
-  write('fight-flow.svg', svg(760, 488, b, 'Flow of a fight'))
-}
-
-// ================================================================ monsters
-{
-  let b = text(380, 34, 'Monsters by level', { size: 17, weight: 'bold', anchor: 'middle' })
-  const names = ['', 'Strong', 'Veteran', 'Legendary', 'Mythic']
-  const hp = [1, 2, 3, 4, 5].map((l) => Math.max(1, Math.floor(T.monsterBaseHp * T.hpMultipliers[l - 1])))
-  const rows = [
-    ['Chips on the space', null],
-    ['HP', hp],
-    ['Fame for taming', T.monsterFameByLevel],
-    ['EXP', [1, 2, 3, 4, 5].map((l) => l * T.monsterExpPerLevel)],
-  ] as const
-  const x0 = 172
-  const cw = 112
-  for (let l = 0; l < 5; l++) {
-    b += rect(x0 + l * cw, 52, cw - 6, 52, { fill: INK, stroke: INK })
-    b += text(x0 + l * cw + (cw - 6) / 2, 74, `Lv ${l + 1}`, { size: 15, weight: 'bold', fill: PAPER, anchor: 'middle' })
-    b += text(x0 + l * cw + (cw - 6) / 2, 93, names[l] || 'plain', { size: 11, fill: '#e9dcbf', anchor: 'middle', italic: true })
-  }
-  rows.forEach(([label, vals], r) => {
-    const y = 112 + r * 62
-    b += rect(28, y, 136, 56, { fill: '#f0e5c8', stroke: LINE })
-    b += text(40, y + 33, label, { size: 13, weight: 'bold' })
-    for (let l = 0; l < 5; l++) {
-      b += rect(x0 + l * cw, y, cw - 6, 56, { fill: '#fffdf6', stroke: LINE })
-      const cx = x0 + l * cw + (cw - 6) / 2
-      if (vals === null) {
-        for (let k = 0; k <= l; k++) b += chip(cx - l * 8 + k * 16, y + 28, ELEMENTS[0], 7)
-      } else b += text(cx, y + 36, String(vals[l]), { size: 24, weight: 'bold', anchor: 'middle', fill: r === 2 ? GOLD : INK })
-    }
-  })
-  b += text(380, 372, 'A space with N chips of one element holds one Level N monster of that element (at most 5 chips of an element).', { size: 12.5, anchor: 'middle', fill: SOFT, italic: true })
-  write('monsters.svg', svg(760, 394, b, 'Monster table: HP, Fame and EXP by level'))
-}
-
-// ============================================================== showdown
-{
-  let b = text(380, 34, 'The Final Showdown: three verses', { size: 17, weight: 'bold', anchor: 'middle' })
-  for (let v = 0; v < T.showdownTurns; v++) {
-    const x = 24 + v * 238
-    b += panel(x, 54, 222, 232, `VERSE ${v + 1}`)
-    b += lines(x + 111, 100, ['Each bard performs once, in turn:', 'pick ONE element.', 'Every die of that element', 'in your setlist rolls together.', 'The total is your fandom.'], { size: 12, anchor: 'middle', lh: 16 })
-    b += rect(x + 14, 190, 194, 46, { fill: v === 0 ? '#e3efe0' : '#e6d2cc', stroke: v === 0 ? '#3f8f4a' : '#9a4a3a', sw: 1.8 })
-    b += lines(x + 111, 210, v === 0 ? ['The Silence is not immune', 'to anything yet.'] : ['The Silence is IMMUNE (×0) to the', 'element of the last verse’s best.'], { size: 11, anchor: 'middle', lh: 14 })
-    b += text(x + 111, 262, 'No weakness, ever: ×1 or ×0.', { size: 11, anchor: 'middle', fill: SOFT, italic: true })
-    if (v < T.showdownTurns - 1) b += arrow(x + 222, 170, x + 238, 170, { sw: 2.5 })
-  }
-  b += rect(24, 304, 712, 58, { fill: INK, stroke: INK })
-  b += text(380, 330, 'After verse 3, each bard’s fandom is added to their Fame.', { size: 16, weight: 'bold', fill: PAPER, anchor: 'middle' })
-  b += text(380, 351, 'Highest Fame wins.', { size: 13, fill: '#e9dcbf', anchor: 'middle' })
-  write('showdown.svg', svg(760, 384, b, 'Three verses of the Final Showdown'))
 }
 
 // ===================================================== Appendix A (styles)

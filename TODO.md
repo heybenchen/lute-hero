@@ -16,6 +16,16 @@
 
 ## Completed
 
+- Simulated the ending-early rule (`scripts/retreat-rule-sim.ts`, 300 smart-bot games per rule per table): levelling up every monster left instead of only moved ones gives ~5–8% more EXP, ~2–3 times as many chips added by early endings, 50–80% more Lv4+ monsters by round 4–8, and games about 0.25–0.4 rounds shorter. Kept "only moved" as default; `retreatLevelsUpAll` tunable switches.
+
+- Ending a concert early now levels up only the monsters that were moved but not won over (untouched ones stay as they were); the Studio's element shelf says "cubes" in the app too.
+
+- Rulebook: monsters are chips on the board; the Studio's element shelf uses cubes (setup bag, shelf, buying and upgrading dice).
+
+- The app now uses the rulebook's words: concerts, moved / won over, Resolve, encores, guest songs, "End concert" (UI text, help, validation messages, debug labels; code identifiers unchanged). Rulebook gained an End of Round section (how new chips scatter) and the ending-early rule (monsters left each gain a chip).
+
+- Rulebook now 5 pages + a quick-reference page. Fights are "concerts": a monster is "moved" (was wounded) or "won over" (was tamed) and becomes a fan; HP is "Resolve"; rerolls are "encores". Elements are shown as a cross diagram, monster levels appear once (on the quick reference), and a test keeps fighting words out of the book. Style text says "win over" and "concerts" too.
+
 - Made the main tabletop feel more dynamic with drifting candlelight and dust, a subtly moving realm map, twinkling title accents, tactile tile art/chip hover responses, and reduced-motion fallbacks.
 
 - Language pass: every style's rule text is shorter and plainer (flat bonuses end with "Can't crit."). The rulebook was cut from 19 pages to 10: one section per topic, an Edge Cases appendix (B) and a one-page Quick Reference as the last page (C); the Glossary and six lightly-used diagrams were dropped.

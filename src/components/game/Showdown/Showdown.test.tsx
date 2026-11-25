@@ -24,11 +24,11 @@ it('takes a solo bard from the first chord through the winner highlight without 
     await click(/Face the Silence/)
     for (let verse = 1; verse <= 3; verse++) {
       // Nothing rolled yet: no reroll button (a solo showdown never adapts, so no immunity either)
-      expect(host.querySelector('.song-grid button[aria-label^="Reroll"]')).toBeNull()
+      expect(host.querySelector('.song-grid button[aria-label^="Encore"]')).toBeNull()
       expect(host.querySelector('.song-grid [data-immune]')).toBeNull()
       await click(/Perform song/)
       // The reroll sits on the dice just rolled, not in a separate row
-      expect(host.querySelector('.song-grid button[aria-label^="Reroll"]')).not.toBeNull()
+      expect(host.querySelector('.song-grid button[aria-label^="Encore"]')).not.toBeNull()
       expect(host.querySelector('[aria-label="Performance dice"]')?.children.length).toBeGreaterThan(1)
       await click(/Drop the Mic/)
       if (verse < 3) await click(/Begin Verse/)

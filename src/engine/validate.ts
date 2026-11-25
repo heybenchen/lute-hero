@@ -31,11 +31,11 @@ function validateFeature(
   feature: { guestPlayerId: string; songId: string; targetMonsterId: string }
 ): ValidationResult {
   const combat = state.combat
-  if (!combat.isActive) return illegal('No active combat')
+  if (!combat.isActive) return illegal('No concert in progress')
   const guest = state.players.find((p) => p.id === feature.guestPlayerId)
-  if (!guest || guest.id === combat.playerId) return illegal('Choose another bard to feature')
+  if (!guest || guest.id === combat.playerId) return illegal('Choose another bard to borrow from')
   if (guest.position !== combat.spaceId) return illegal('That bard is not on this space')
-  if (combat.featuredPlayerIds.includes(guest.id)) return illegal('That bard has already been featured this fight')
+  if (combat.featuredPlayerIds.includes(guest.id)) return illegal('You already borrowed a song from that bard this concert')
   const song = guest.songs.find((sg) => sg.id === feature.songId)
   if (!song?.slots.some((slot) => slot.dice)) return illegal('Choose one of their songs with a die')
   return validateCombatTarget(combat, feature.targetMonsterId)
@@ -44,10 +44,10 @@ function validateFeature(
 function validateCombatTarget(combat: EngineCombatState, targetId: string | null): ValidationResult {
   const target = combat.monsters.find((m) => m.id === targetId)
   if (!target) return illegal('Choose a monster to target')
-  if (target.currentHP <= 0) return illegal('That monster is already defeated')
+  if (target.currentHP <= 0) return illegal('That monster is already won over')
   const lockedTarget = combat.monsters.find((m) => m.id === combat.lockedTargetMonsterId)
   if (lockedTarget && lockedTarget.currentHP > 0 && lockedTarget.id !== target.id) {
-    return illegal('Finish the wounded monster or retreat')
+    return illegal('Win over the monster you moved, or end the concert')
   }
   return ok
 }
@@ -114,7 +114,7 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (state.phase !== 'main') return illegal('Movement only during the main phase')
-      if (state.combat.isActive) return illegal('Cannot move during combat')
+      if (state.combat.isActive) return illegal('Cannot move during a concert')
       if (state.studio.playerId) return illegal('Close the Studio before moving')
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player) return illegal('Unknown player')
@@ -132,7 +132,7 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (state.phase !== 'main') return illegal('Movement only during the main phase')
-      if (state.combat.isActive) return illegal('Cannot move during combat')
+      if (state.combat.isActive) return illegal('Cannot move during a concert')
       if (state.studio.playerId) return illegal('Close the Studio before moving')
       if (action.playerId !== currentPlayerId(state)) return illegal('Not this player\'s turn')
       const last = state.moveTrail[state.moveTrail.length - 1]
@@ -143,12 +143,12 @@ export function validateAction(
     case 'START_COMBAT': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
-      if (state.phase !== 'main') return illegal('Combat only during the main phase')
-      if (state.combat.isActive) return illegal('Combat already active')
-      if (state.studio.playerId) return illegal('Close the Studio before combat')
+      if (state.phase !== 'main') return illegal('Concerts only during the main phase')
+      if (state.combat.isActive) return illegal('A concert is already in progress')
+      if (state.studio.playerId) return illegal('Close the Studio before a concert')
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player || player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
-      if (player.fightsThisTurn >= maxFightsPerTurn()) return illegal('No fights left this turn')
+      if (player.fightsThisTurn >= maxFightsPerTurn()) return illegal('No concerts left this turn')
       const space = state.spaces.find((s) => s.id === player.position)
       if (!space || space.monsters.length === 0) return illegal('No monsters here')
       return ok
@@ -157,14 +157,14 @@ export function validateAction(
     case 'PLAY_SONG': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
-      if (!state.combat.isActive) return illegal('No active combat')
-      if (state.combat.featureRequest) return illegal('Waiting for an answer about a featured song')
+      if (!state.combat.isActive) return illegal('No concert in progress')
+      if (state.combat.featureRequest) return illegal('Waiting for an answer about a guest song')
       // A song whose dice are spent (it damaged without defeating) can't replay.
       if (state.combat.spentSongIds.includes(action.songId)) {
         return illegal('That song\'s dice are spent this combat')
       }
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
-      if (!fighter) return illegal('No fighting player')
+      if (!fighter) return illegal('No performing bard')
       const song = fighter.songs.find((s) => s.id === action.songId)
       if (!song) return illegal('Unknown song')
       if (!song.slots.some((slot) => slot.dice)) return illegal('Song has no dice')
@@ -174,23 +174,23 @@ export function validateAction(
     case 'REROLL_SONG': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
-      if (!state.combat.isActive) return illegal('No active combat')
-      if (state.combat.featureRequest) return illegal('Waiting for an answer about a featured song')
+      if (!state.combat.isActive) return illegal('No concert in progress')
+      if (state.combat.featureRequest) return illegal('Waiting for an answer about a guest song')
       if (!state.combat.undoSnapshot || !state.combat.lastPlayedSongId) {
-        return illegal('Nothing to reroll')
+        return illegal('Nothing to encore')
       }
       // Only a SPENT song can be rerolled. A song that landed the kill refreshed
       // instead, and replaying it would re-resolve against a dead target.
       if (!state.combat.spentSongIds.includes(state.combat.lastPlayedSongId)) {
-        return illegal('That song defeated its target — play it again instead')
+        return illegal('That song won its monster over — play it again instead')
       }
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
-      if (!fighter) return illegal('No fighter')
+      if (!fighter) return illegal('No performing bard')
       if (action.rubato) {
         if (!fighter.styles.includes('rubato')) return illegal('Rubato is not one of your styles')
         if (rubatoUsesLeft(state.combat.stylesUsed) <= 0) return illegal('Nimble Fingers is used up this turn')
         const song = fighter.songs.find((sg) => sg.id === state.combat.lastPlayedSongId)
-        if (!song || !rubatoCanReroll(song)) return illegal("Nimble Fingers can't reroll a die that large")
+        if (!song || !rubatoCanReroll(song)) return illegal("Nimble Fingers can't encore a die that large")
       } else if (
         fighter.inspiration < inspirationSpend() &&
         state.combat.freeRerollsUsed >= inspirationRules(specsOf(fighter)).freePerTurn
@@ -203,12 +203,12 @@ export function validateAction(
     case 'RALLY_SONG': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
-      if (!state.combat.isActive) return illegal('No active combat')
-      if (state.combat.featureRequest) return illegal('Waiting for an answer about a featured song')
+      if (!state.combat.isActive) return illegal('No concert in progress')
+      if (state.combat.featureRequest) return illegal('Waiting for an answer about a guest song')
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
       if (!fighter?.styles.includes('staccato')) return illegal('Rallying Cry is not one of your styles')
       if (state.combat.stylesUsed.includes('staccato')) return illegal('Rallying Cry is already used this turn')
-      if (!state.combat.rallyReady) return illegal('Tame a monster first')
+      if (!state.combat.rallyReady) return illegal('Win a monster over first')
       if (!fighter.songs.some((sg) => sg.id === action.songId)) return illegal('Choose one of your own songs')
       if (!state.combat.spentSongIds.includes(action.songId)) return illegal('That song is not spent')
       const rallied = fighter.songs.find((sg) => sg.id === action.songId)
@@ -220,8 +220,8 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       // Online the guest must agree first: ask with REQUEST_FEATURE
-      if (isSeat) return forbidden('Ask that bard to feature their song first')
-      if (state.combat.featureRequest) return illegal('Waiting for an answer about a featured song')
+      if (isSeat) return forbidden('Ask that bard to lend their song first')
+      if (state.combat.featureRequest) return illegal('Waiting for an answer about a guest song')
       return validateFeature(state, action)
     }
 
@@ -234,7 +234,7 @@ export function validateAction(
 
     case 'ANSWER_FEATURE': {
       const request = state.combat.featureRequest
-      if (!state.combat.isActive || !request) return illegal('No featured song to answer')
+      if (!state.combat.isActive || !request) return illegal('No guest song request to answer')
       if (action.accept) {
         // Only the guest can agree to feature their own song
         if (isSeat && seatPlayerId !== request.guestPlayerId) return forbidden('Only that bard can agree')
@@ -250,9 +250,9 @@ export function validateAction(
     case 'SELECT_COMBAT_SPREAD': {
       const gate = requireCurrentTurn()
       if (gate.ok === false) return gate
-      if (!state.combat.isActive) return illegal('No active combat')
+      if (!state.combat.isActive) return illegal('No concert in progress')
       if (!state.combat.monsters.every((m) => m.currentHP <= 0)) {
-        return illegal('Defeat every monster before choosing an element')
+        return illegal('Win over every monster before choosing an element')
       }
       return ok
     }
@@ -260,10 +260,10 @@ export function validateAction(
     case 'END_COMBAT': {
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
-      if (!state.combat.isActive) return illegal('No active combat')
+      if (!state.combat.isActive) return illegal('No concert in progress')
       const allDefeated = state.combat.monsters.every((m) => m.currentHP <= 0)
       if (allDefeated && !action.spreadGenre && !state.combat.selectedSpreadGenre) {
-        return illegal('Choose an element to radiate before claiming victory')
+        return illegal('Choose an element to radiate before finishing the concert')
       }
       return ok
     }
@@ -272,7 +272,7 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (state.phase !== 'main') return illegal('Turns only advance during the main phase')
-      if (state.combat.isActive) return illegal('Finish combat before ending the turn')
+      if (state.combat.isActive) return illegal('Finish the concert before ending the turn')
       if (state.studio.playerId) return illegal('Close the Studio before ending the turn')
       return ok
     }
@@ -281,7 +281,7 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (gate.ok === false) return gate
       if (state.phase !== 'main') return illegal('Studio only opens during the main phase')
-      if (state.combat.isActive) return illegal('Finish combat before opening the Studio')
+      if (state.combat.isActive) return illegal('Finish the concert before opening the Studio')
       if (action.playerId !== currentPlayerId(state)) return illegal('Not this player\'s turn')
       return ok
     }
@@ -301,7 +301,7 @@ export function validateAction(
         action.offerIndex !== null &&
         (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length)
       ) {
-        return illegal('No such element chip')
+        return illegal('No such element cube')
       }
       return ok
     }
@@ -329,7 +329,7 @@ export function validateAction(
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       if (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length) {
-        return illegal('No such element chip')
+        return illegal('No such element cube')
       }
       if (action.destination !== undefined) {
         const destination = action.destination
@@ -350,7 +350,7 @@ export function validateAction(
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       if (action.offerIndex < 0 || action.offerIndex >= state.elementOffers.length) {
-        return illegal('No such element chip')
+        return illegal('No such element cube')
       }
       const die = player.songs
         .flatMap((s) => s.slots)
@@ -358,7 +358,7 @@ export function validateAction(
         .find((d) => d?.id === action.diceId)
       if (!die) return illegal('You do not own that die')
       if (die.genre !== state.elementOffers[action.offerIndex]) {
-        return illegal('Die element does not match the chip')
+        return illegal('Die element does not match the cube')
       }
       const cost = upgradeCostFor(player, die)
       if (cost === null) return illegal('Die is already at max tier')
@@ -457,7 +457,7 @@ export function validateAction(
       if (state.showdownComplete) return illegal('Showdown is over')
       const performerId = currentPerformerId(state)
       if (isSeat && seatPlayerId !== performerId) return forbidden('Not your performance')
-      if (!state.showdownUndo) return illegal('Nothing to reroll')
+      if (!state.showdownUndo) return illegal('Nothing to encore')
       const performer = state.players.find((p) => p.id === performerId)
       if (!performer) return illegal('No performer')
       if (action.rubato) {
@@ -465,7 +465,7 @@ export function validateAction(
         if (state.showdownUndo.rubatoUsed) return illegal('Rubato is already used this verse')
         const undo = state.showdownUndo
         const songs = performer.songs.filter((sg) => (undo.songIds ?? [undo.songId]).includes(sg.id))
-        if (!songs.length || !rubatoCanReroll(mergeSongs(songs))) return illegal("Nimble Fingers can't reroll a die that large")
+        if (!songs.length || !rubatoCanReroll(mergeSongs(songs))) return illegal("Nimble Fingers can't encore a die that large")
       } else if (
         performer.inspiration < inspirationSpend() &&
         (state.showdownUndo.freeRerollsUsed ?? 0) >= inspirationRules(specsOf(performer)).freePerTurn

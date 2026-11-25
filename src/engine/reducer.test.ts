@@ -334,6 +334,22 @@ describe('combat flow', () => {
     }
   })
 
+  it('ending early levels up only monsters that were moved, not untouched ones', () => {
+    const base = apply(stateWithMonsterAtPlayer(), { type: 'START_COMBAT', playerId: 'player-1' }).state
+    const target = base.combat.monsters.find((m) => m.vulnerability)!
+    const genre = target.vulnerability!
+    const count = (st: typeof base) => st.spaces.find((s) => s.id === base.combat.spaceId)!.genreTags.filter((g) => g === genre).length
+    const before = count(base)
+    // Untouched: no new chip
+    expect(count(apply(base, { type: 'END_COMBAT' }).state)).toBe(before)
+    // Moved but not won over: one more chip of its element
+    const moved = { ...base, combat: { ...base.combat, monsters: base.combat.monsters.map((m) => (m.id === target.id ? { ...m, currentHP: m.maxHP - 1 } : m)) } }
+    expect(count(apply(moved, { type: 'END_COMBAT' }).state)).toBe(Math.min(before + 1, DEFAULT_TUNABLES.maxTagsPerGenre))
+    // With retreatLevelsUpAll, untouched monsters level up too
+    const all = { ...base, tunables: { ...base.tunables, retreatLevelsUpAll: 1 } }
+    expect(count(apply(all, { type: 'END_COMBAT' }).state)).toBe(Math.min(before + 1, DEFAULT_TUNABLES.maxTagsPerGenre))
+  })
+
   it('retreat pays EXP only for monsters the bard wounded', () => {
     let state = stateWithMonsterAtPlayer()
     state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Folk', 'Hymn', 'Hymn'] } : s)) }

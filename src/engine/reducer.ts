@@ -1186,8 +1186,8 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
       spaces = addGenreTagToNeighbors(spaces, spaceId, spreadGenre)
     }
   } else {
-    // Retreat: remove tags for defeated monsters (level x vulnerability),
-    // add tags back for the survivors
+    // Ended early: remove tags for defeated monsters (level x vulnerability),
+    // and every monster that was moved (wounded) but not won over levels up
     const defeatedTags: Genre[] = combat.monsters
       .filter((m) => m.currentHP <= 0 && m.vulnerability !== null)
       .flatMap((m) => Array(m.level).fill(m.vulnerability!) as Genre[])
@@ -1203,7 +1203,7 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
       })
     }
     const survivingGenres = combat.monsters
-      .filter((m) => m.currentHP > 0 && m.vulnerability !== null)
+      .filter((m) => m.currentHP > 0 && m.vulnerability !== null && (m.currentHP < m.maxHP || getTunables().retreatLevelsUpAll > 0))
       .map((m) => m.vulnerability!)
     if (survivingGenres.length > 0) {
       spaces = spaces.map((s) =>

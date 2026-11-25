@@ -128,7 +128,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   disabled={!canInteract || player.inspiration < inspirationSpend()}
                   className="btn-secondary flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-sm"
                   title={player.inspiration >= inspirationSpend()
-                    ? `Spend ${inspirationSpend()} Inspiration to draw new element chips and new style offers`
+                    ? `Spend ${inspirationSpend()} Inspiration to draw new element cubes and new style offers`
                     : 'Requires Inspiration'}
                 >
                   <RefreshCw size={13} aria-hidden="true" /> Refresh <span className="font-normal opacity-80">(&#x2728;{inspirationSpend()})</span>
@@ -152,7 +152,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
           {/* ===== Setlist: pick an element, then a slot, to add or upgrade a song ===== */}
           <StudioSection title="Setlist" />
 
-          {/* Element chips drawn from the bag */}
+          {/* Element cubes drawn from the bag */}
           <div className="mb-6">
             <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
               <div className="flex items-center gap-3">
@@ -169,7 +169,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               <div className="rounded-lg p-4 text-sm text-parchment-500 italic text-center"
                 style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed rgba(212, 168, 83, 0.15)' }}
               >
-                No chips on display — draw new ones from the bag
+                No cubes on display — draw new ones from the bag
               </div>
             ) : (
               <div className="grid w-full gap-2 sm:gap-3" style={{ gridTemplateColumns: `repeat(${elementOffers.length}, minmax(0, 1fr))` }}>

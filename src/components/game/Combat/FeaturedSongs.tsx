@@ -54,10 +54,10 @@ export function FeaturedSongs({
     <section className="mb-4 border-t border-gold-700/15 pt-4">
       <div className="mb-1 flex items-center gap-2 font-medieval text-xs font-bold uppercase tracking-widest text-parchment-400">
         <Mic2 size={13} className="text-gold-400" aria-hidden="true" />
-        Featured songs
+        Guest songs
       </div>
       <p className="mb-3 text-xs leading-snug text-parchment-500">
-        Borrow one song from each bard here. It costs you nothing, and a monster it tames splits its Fame and EXP with them.
+        Borrow one song from each bard here. It costs you nothing, and a monster it wins over splits its Fame and EXP with them.
       </p>
 
       {featureRequest && (
@@ -82,11 +82,11 @@ export function FeaturedSongs({
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: guest.color }} aria-hidden="true" />
                 <span className="font-medieval font-bold text-parchment-200">{guest.name}</span>
                 {featured ? (
-                  <span className="text-[11px] font-bold uppercase tracking-wide text-parchment-500">Featured</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-parchment-500">Guest</span>
                 ) : pendingForGuest ? (
                   <span className="text-[11px] font-bold uppercase tracking-wide text-sky-300">Asked</span>
                 ) : (
-                  <span className="text-xs text-parchment-500">{online ? 'ask to feature one' : 'feature one'}</span>
+                  <span className="text-xs text-parchment-500">{online ? 'ask to borrow one' : 'borrow one'}</span>
                 )}
               </div>
               {songs.length === 0 ? (
@@ -155,15 +155,15 @@ function FeatureRequestPrompt({
       className="mb-3 flex flex-col gap-2 rounded-lg p-3 text-sm animate-fade-in sm:flex-row sm:items-center sm:justify-between"
       style={{ background: 'rgba(80, 150, 220, 0.1)', border: '1px solid rgba(110, 180, 240, 0.4)' }}
       role={isGuest ? 'alertdialog' : 'status'}
-      aria-label="Featured song request"
+      aria-label="Guest song request"
     >
       <span className="text-parchment-200">
         {isGuest ? (
-          <>{fighter.name} wants to feature your {dieLabel} against {target?.name ?? 'a monster'}. You split the rewards if it tames it.</>
+          <>{fighter.name} wants to borrow your {dieLabel} for {target?.name ?? 'a monster'}. You split the rewards if it wins it over.</>
         ) : isFighter ? (
-          <>Waiting for {guest.name} to agree to feature their {dieLabel}…</>
+          <>Waiting for {guest.name} to lend their {dieLabel}…</>
         ) : (
-          <>{fighter.name} asked {guest.name} to feature their {dieLabel}.</>
+          <>{fighter.name} asked {guest.name} to lend their {dieLabel}.</>
         )}
       </span>
       {isGuest ? (
