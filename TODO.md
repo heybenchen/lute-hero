@@ -26,6 +26,8 @@
 
 - Rulebook now 5 pages + a quick-reference page. Fights are "concerts": a monster is "moved" (was wounded) or "won over" (was tamed) and becomes a fan; HP is "Resolve"; rerolls are "encores". Elements are shown as a cross diagram, monster levels appear once (on the quick reference), and a test keeps fighting words out of the book. Style text says "win over" and "concerts" too.
 
+- Made the main tabletop feel more dynamic with drifting candlelight and dust, a subtly moving realm map, twinkling title accents, tactile tile art/chip hover responses, and reduced-motion fallbacks.
+
 - Language pass: every style's rule text is shorter and plainer (flat bonuses end with "Can't crit."). The rulebook was cut from 19 pages to 10: one section per topic, an Edge Cases appendix (B) and a one-page Quick Reference as the last page (C); the Glossary and six lightly-used diagrams were dropped.
 
 - Style wording is now consistent: "adds +N to the value of the song" means a flat bonus that never changes a die's face (can't crit); "increases the face value of a die" means the face itself changes (can crit). Applied to Fanfare, Harmony, Inspired Play, Chain Reaction, Swarm Singer, Jam Session (value of the song) and Dragon's Roar, Hometown Hero, Steady Hands (face value). Updated `songStyles.md` and the rulebook and PDF.
