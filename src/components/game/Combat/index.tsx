@@ -391,14 +391,6 @@ export function CombatModal() {
                 <p className="mt-1 text-sm sm:text-base text-parchment-400">
                   Choose an element. Every bordering space gains 1 chip of it.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setPreviewingMap(true)}
-                  className="btn-secondary mt-3 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm"
-                >
-                  <MapIcon size={15} aria-hidden="true" />
-                  View map before choosing
-                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -457,6 +449,14 @@ export function CombatModal() {
                 title={selectedSpreadGenre ? undefined : 'Choose an element to radiate first'}
               >
                 {selectedSpreadGenre ? 'Claim Fame & Glory' : 'Choose an Element'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewingMap(true)}
+                className="btn-secondary mt-2 flex w-full items-center justify-center gap-2 px-4 py-2 text-sm"
+              >
+                <MapIcon size={15} aria-hidden="true" />
+                View map before choosing
               </button>
             </div>
           ) : (
