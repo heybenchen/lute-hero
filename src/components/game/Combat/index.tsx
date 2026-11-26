@@ -453,10 +453,10 @@ export function CombatModal() {
               <button
                 type="button"
                 onClick={() => setPreviewingMap(true)}
-                className="btn-secondary mt-2 flex w-full items-center justify-center gap-2 px-4 py-2 text-sm"
+                className="btn-secondary mt-2 flex w-full items-center justify-center gap-2 px-4 py-3 text-base"
               >
                 <MapIcon size={15} aria-hidden="true" />
-                View map before choosing
+                View Map
               </button>
             </div>
           ) : (
