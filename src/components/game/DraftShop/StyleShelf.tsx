@@ -36,19 +36,19 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
       <div
-        className="rounded-xl p-4 sm:p-5"
+        className="flex h-full flex-col rounded-xl p-4 sm:p-5"
         style={{
-          background: 'rgba(17, 12, 8, 0.42)',
-          border: '1px solid rgba(212, 168, 83, 0.18)',
+          background: 'rgba(58, 43, 27, 0.3)',
+          border: '1px solid rgba(212, 168, 83, 0.24)',
         }}
       >
         <h3 className="mb-3 font-display text-lg text-gold-300">Genres</h3>
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid flex-1 auto-rows-fr grid-cols-1 gap-3">
           {offers.map((id) => (
             <button key={id} type="button" aria-pressed={selected === id}
               disabled={!canInteract || player.exp < styleCost(id)}
               onClick={() => setSelected(selected === id ? null : id)}
-              className="style-offer text-left disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
+              className="style-offer flex min-h-28 flex-col text-left disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
               <span className="flex justify-between gap-2"><strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong><span>{styleCost(id)} EXP</span></span>
               <span className="mt-2 block text-sm">{styleRule(id)}</span>
             </button>
@@ -58,26 +58,21 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
       </div>
 
       <div
-        className="rounded-xl p-4 sm:p-5"
+        className="flex h-full flex-col rounded-xl p-4 sm:p-5"
         style={{
           background: 'rgba(58, 43, 27, 0.3)',
           border: '1px solid rgba(212, 168, 83, 0.24)',
         }}
       >
-        <h3 className="font-display text-lg text-gold-300">Your Genres · {player.styles.length}/{cap}</h3>
-        {ready && (
-          <p className="mb-3 text-sm text-parchment-300">
-            {full ? 'Choose the genre to replace.' : 'Choose the empty slot to learn this genre.'}
-          </p>
-        )}
-        <div className="mt-3 grid grid-cols-1 gap-3">
+        <h3 className="mb-3 font-display text-lg text-gold-300">Your Genres · {player.styles.length}/{cap}</h3>
+        <div className="grid flex-1 auto-rows-fr grid-cols-1 gap-3">
           {player.styles.map((id) => (
-            <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer text-left enabled:ring-1 enabled:ring-gold-400">
-              <strong className="font-display text-lg text-gold-300">{STYLES[id].name}</strong>
-              <span className="block text-sm">{styleRule(id)}</span>
+            <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer flex min-h-28 flex-col text-left enabled:ring-1 enabled:ring-gold-400">
+              <strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong>
+              <span className="mt-2 block text-sm">{styleRule(id)}</span>
             </button>
           ))}
-          {!full && <button type="button" disabled={!ready} onClick={() => place()} className="rounded-lg border border-dashed border-gold-700 p-4 enabled:ring-1 enabled:ring-gold-400">
+          {!full && <button type="button" disabled={!ready} onClick={() => place()} className="style-offer min-h-28 border-dashed text-left enabled:ring-1 enabled:ring-gold-400">
             Empty genre slot
           </button>}
         </div>
