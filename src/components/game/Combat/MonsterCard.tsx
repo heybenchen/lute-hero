@@ -1,6 +1,5 @@
 import { Monster, Genre } from '@/types'
 import { GenreBadge } from '@/components/ui/GenreBadge'
-import { calculateMonsterExp } from '@/game-logic/fame/calculator'
 import { Crown } from 'lucide-react'
 import { MONSTER_LEVEL_SPRITES } from '@/assets/combat/levels'
 
@@ -68,7 +67,6 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
                 <div className="truncate font-['MedievalSharp:Regular'] text-base leading-tight text-[#fff0c2] sm:text-lg">
                   {monster.name}
                 </div>
-                {isSelected && !isDefeated && <span className="pixel-selected-label">Target</span>}
               </div>
               <div className="mt-0.5 flex items-center gap-2 font-['Spectral:Bold'] text-[9px] uppercase tracking-[0.12em] text-[#d4b77d]">
                 {monster.isBoss && <span className="flex items-center gap-1"><Crown size={9} /> Boss</span>}
@@ -77,7 +75,6 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
                     {fameValue} Fame
                   </span>
                 )}
-                <span>{calculateMonsterExp(monster.level)} EXP</span>
               </div>
             </div>
             <span className="shrink-0 font-['Cinzel:Bold'] text-[10px] uppercase tracking-[0.12em] text-[#f0d78c]">

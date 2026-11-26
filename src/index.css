@@ -864,16 +864,6 @@
     outline-offset: 3px;
   }
 
-  .pixel-selected-label {
-    flex: 0 0 auto;
-    color: color-mix(in srgb, var(--monster-glow) 75%, white);
-    font-family: "Cinzel:Bold", serif;
-    font-size: 7px;
-    letter-spacing: .16em;
-    text-shadow: 0 0 7px var(--monster-glow);
-    text-transform: uppercase;
-  }
-
   .pixel-stat-heading {
     display: flex;
     align-items: flex-start;
