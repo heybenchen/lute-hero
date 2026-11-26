@@ -32,6 +32,8 @@
 
 - Made the main tabletop feel more dynamic with drifting candlelight and dust, a subtly moving realm map, twinkling title accents, tactile tile art/chip hover responses, and reduced-motion fallbacks.
 
+- Added level-specific pixel art for combat monsters: every elemental family now has five distinct silhouettes mapped directly to monster levels 1–5, progressing from minor creatures to boss-scale forms.
+
 - Stabilized the retro combat layout after attacks: the latest damage now appears as a trailing red segment in the target's HP bar, while its roll math and style details use a permanently reserved readout in the fight header instead of expanding a monster column.
 
 - Reimagined combat as a retro pixel-art dungeon encounter: monsters now appear as elemental sprites in a torchlit arena with compact live stat plates, elemental selection glows, Resolve, rewards, weaknesses, and immunities; the existing dice-song command flow remains intact in a pixel-styled action deck.

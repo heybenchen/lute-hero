@@ -2,10 +2,7 @@ import { Monster, Genre } from '@/types'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { calculateMonsterExp } from '@/game-logic/fame/calculator'
 import { Crown } from 'lucide-react'
-import emberSprite from '@/assets/combat/ember.png'
-import golemSprite from '@/assets/combat/golem.png'
-import harpySprite from '@/assets/combat/harpy.png'
-import serpentSprite from '@/assets/combat/serpent.png'
+import { MONSTER_LEVEL_SPRITES } from '@/assets/combat/levels'
 
 interface MonsterCardProps {
   monster: Monster
@@ -18,13 +15,6 @@ interface MonsterCardProps {
   onSelect?: () => void
   /** Most recent damage dealt to this monster, shown as a trailing HP-loss segment. */
   lastDamage?: number
-}
-
-const spriteByGenre: Record<Genre, string> = {
-  Ballad: emberSprite,
-  Folk: golemSprite,
-  Hymn: harpySprite,
-  Shanty: serpentSprite,
 }
 
 const glowByGenre: Record<Genre, string> = {
@@ -41,6 +31,8 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
     : 0
   const isDefeated = monster.currentHP <= 0
   const spriteGenre = monster.vulnerability ?? monster.resistance ?? 'Ballad'
+  const spriteLevel = Math.min(5, Math.max(1, monster.level))
+  const sprite = MONSTER_LEVEL_SPRITES[spriteGenre][spriteLevel - 1]
   const selectable = !!onSelect && !isDefeated
   const TargetCard = selectable ? 'button' : 'div'
 
@@ -63,7 +55,7 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
           <span className="pixel-monster-level">LV {monster.level}</span>
           <img
             className="pixel-monster-sprite"
-            src={spriteByGenre[spriteGenre]}
+            src={sprite}
             alt={`${monster.name}, level ${monster.level}`}
           />
           {isDefeated && <span className="pixel-defeated-label">TAMED</span>}
