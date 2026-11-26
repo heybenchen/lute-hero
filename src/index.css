@@ -459,31 +459,32 @@
     transform: translate(-50%, 0);
   }
 
-  @media (max-width: 639px) {
-    .map-style-list {
-      position: relative;
-    }
+  /* Map tooltips are anchored to the full row at every breakpoint. The player
+     console sits against the viewport edge on desktop, so centering on a chip
+     can otherwise push the tooltip off-screen. */
+  .map-style-list {
+    position: relative;
+  }
 
-    .map-style-list .style-chip-with-tooltip {
-      position: static;
-    }
+  .map-style-list .style-chip-with-tooltip {
+    position: static;
+  }
 
-    .map-style-list .style-rule-tooltip {
-      right: 0;
-      left: 0;
-      width: auto;
-      max-width: 100%;
-      transform: translateY(-4px);
-    }
+  .map-style-list .style-rule-tooltip {
+    right: 0;
+    left: 0;
+    width: auto;
+    max-width: 100%;
+    transform: translateY(-4px);
+  }
 
-    .map-style-list .style-rule-tooltip::before {
-      display: none;
-    }
+  .map-style-list .style-rule-tooltip::before {
+    display: none;
+  }
 
-    .map-style-list .style-chip-with-tooltip:hover .style-rule-tooltip,
-    .map-style-list .style-chip-with-tooltip:focus-visible .style-rule-tooltip {
-      transform: translateY(0);
-    }
+  .map-style-list .style-chip-with-tooltip:hover .style-rule-tooltip,
+  .map-style-list .style-chip-with-tooltip:focus-visible .style-rule-tooltip {
+    transform: translateY(0);
   }
 
   .style-offer {
