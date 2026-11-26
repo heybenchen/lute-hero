@@ -97,6 +97,7 @@ export function CombatModal() {
   const [soul, setSoul] = useState(false)
   // Victory rewards stay unresolved while the player briefly checks the board.
   const [previewingMap, setPreviewingMap] = useState(false)
+  const [rollDisplayDismissed, setRollDisplayDismissed] = useState(false)
 
   const handlePopupComplete = useCallback((id: string) => {
     setPopups((prev) => prev.filter((p) => p.id !== id))
@@ -118,6 +119,12 @@ export function CombatModal() {
       setChosenTargetId(alive[0]?.id ?? null)
     }
   }, [isActive, monsters, chosenTargetId, lockedTarget])
+
+  // A fresh result is relevant again. Choosing another target below dismisses
+  // the old result for good rather than letting it reappear when switching back.
+  useEffect(() => {
+    setRollDisplayDismissed(false)
+  }, [rolls])
 
   // Any new play (or a new fight) drops a pending retreat confirmation
   useEffect(() => {
@@ -166,6 +173,8 @@ export function CombatModal() {
   const canContinue = ownSongsRemaining > 0 || featurableSongs.length > 0
 
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
+  const rollMatchesSelectedTarget =
+    !rollDisplayDismissed && selectedTargetId !== null && selectedTargetId === lastTargetMonsterId
   const totalExp = rewards.totalExp
   const isCombatOver = allMonstersDefeated || !canContinue
   const stageBackdrop = COMBAT_STAGE_BACKDROPS[Math.min(15, Math.max(0, spaceId ?? 0))]
@@ -188,6 +197,12 @@ export function CombatModal() {
   const canCall = player.styles.includes('staccato') && !stylesUsed.includes('staccato')
   const canSoul = player.styles.includes('inspired-play') && !soulActive &&
     (turnStartInspiration ?? 0) >= t.inspiredPlayMin && player.inspiration >= t.inspiredPlayCost
+
+  const handleSelectTarget = (monsterId: string) => {
+    if (monsterId !== selectedTargetId) setRollDisplayDismissed(true)
+    setChosenTargetId(monsterId)
+  }
+
   const handlePlaySong = async (songId: string) => {
     if (!canRoll || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
     const result = await dispatch({
@@ -479,7 +494,7 @@ export function CombatModal() {
                       index={idx}
                       fameValue={calculateMonsterFameValue(monster.level)}
                       isSelected={selectedTargetId === monster.id}
-                      onSelect={canRoll && !lockedTarget && monster.currentHP > 0 ? () => setChosenTargetId(monster.id) : undefined}
+                      onSelect={canRoll && !lockedTarget && monster.currentHP > 0 ? () => handleSelectTarget(monster.id) : undefined}
                       lastDamage={
                         monster.id === lastTargetMonsterId
                           ? lastDamageCalculations[idx]?.totalDamage
@@ -532,8 +547,8 @@ export function CombatModal() {
                     onPlay={() => handlePlaySong(song.id)}
                     disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
                     index={idx}
-                    rolls={currentSongId === song.id ? rolls : undefined}
-                    reroll={reroll && lastPlayedSong?.id === song.id ? reroll : undefined}
+                    rolls={rollMatchesSelectedTarget && currentSongId === song.id ? rolls : undefined}
+                    reroll={rollMatchesSelectedTarget && reroll && lastPlayedSong?.id === song.id ? reroll : undefined}
                     {...refreshFor(song)}
                   />
                 ))}
@@ -551,7 +566,7 @@ export function CombatModal() {
               featureRequest={featureRequest}
               monsters={monsters}
               currentSongId={currentSongId}
-              rolls={rolls}
+              rolls={rollMatchesSelectedTarget ? rolls : []}
               canFeature={canRoll && hasLiveTarget}
               online={online}
               myPlayerId={myPlayerId}
