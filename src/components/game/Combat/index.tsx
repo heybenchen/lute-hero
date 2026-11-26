@@ -309,7 +309,7 @@ export function CombatModal() {
         <button
           type="button"
           onClick={() => setPreviewingMap(false)}
-          className="fixed right-3 top-20 z-50 flex items-center gap-2 rounded-lg border border-gold-500/50 bg-wood-950/95 px-4 py-3 font-medieval text-sm font-bold text-gold-200 shadow-xl shadow-black/60 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-gold-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300 sm:right-5"
+          className="fixed left-1/2 top-20 z-50 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-lg border border-gold-500/50 bg-wood-950/95 px-4 py-3 font-medieval text-sm font-bold text-gold-200 shadow-xl shadow-black/60 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-gold-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
         >
           <ArrowLeft size={16} aria-hidden="true" />
           Return to Fame &amp; Glory
