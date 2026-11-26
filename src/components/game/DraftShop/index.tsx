@@ -151,7 +151,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
             <section
-              className="rounded-xl p-4 sm:p-5"
+              className="flex h-full flex-col rounded-xl p-4 sm:p-5"
               style={{
                 background: 'rgba(17, 12, 8, 0.42)',
                 border: '1px solid rgba(212, 168, 83, 0.18)',
@@ -162,7 +162,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               />
 
               {/* Element chips drawn from the bag */}
-              <div>
+              <div className="flex min-h-0 flex-1 flex-col">
                 <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                   <div className="flex items-center gap-3">
                     <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
@@ -181,7 +181,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     No chips on display — draw new ones from the bag
                   </div>
                 ) : (
-                  <div className="grid h-full w-full auto-rows-fr grid-cols-2 gap-2 [&>*]:h-full">
+                  <div className="grid min-h-0 w-full flex-1 auto-rows-fr grid-cols-2 gap-2">
                     {elementOffers.map((genre, offerIdx) => {
                       const { emoji, rgb } = GENRE_THEME[genre]
                       const isSelected = selectedOfferIdx === offerIdx
