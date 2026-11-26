@@ -42,8 +42,7 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
           border: '1px solid rgba(212, 168, 83, 0.18)',
         }}
       >
-        <h3 className="font-display text-lg text-gold-300">Genres to Learn</h3>
-        <p className="mb-3 text-sm text-parchment-400">Buy a genre to change how every song in your setlist plays.</p>
+        <h3 className="mb-3 font-display text-lg text-gold-300">Genres</h3>
         <div className="grid grid-cols-1 gap-3">
           {offers.map((id) => (
             <button key={id} type="button" aria-pressed={selected === id}
@@ -51,7 +50,6 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
               onClick={() => setSelected(selected === id ? null : id)}
               className="style-offer text-left disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
               <span className="flex justify-between gap-2"><strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong><span>{styleCost(id)} EXP</span></span>
-              <span className="block text-xs italic text-parchment-400">{STYLES[id].flavor}</span>
               <span className="mt-2 block text-sm">{styleRule(id)}</span>
             </button>
           ))}
@@ -67,10 +65,12 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
         }}
       >
         <h3 className="font-display text-lg text-gold-300">Your Genres · {player.styles.length}/{cap}</h3>
-        <p className="mb-3 text-sm text-parchment-300">{ready
-          ? full ? 'Choose the genre to replace.' : 'Choose the empty slot to learn this genre.'
-          : 'Select a genre for sale on the left.'}</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {ready && (
+          <p className="mb-3 text-sm text-parchment-300">
+            {full ? 'Choose the genre to replace.' : 'Choose the empty slot to learn this genre.'}
+          </p>
+        )}
+        <div className="mt-3 grid grid-cols-1 gap-3">
           {player.styles.map((id) => (
             <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer text-left enabled:ring-1 enabled:ring-gold-400">
               <strong className="font-display text-lg text-gold-300">{STYLES[id].name}</strong>

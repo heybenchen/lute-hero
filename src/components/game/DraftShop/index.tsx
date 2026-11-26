@@ -123,19 +123,19 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 >
                   Buy &#x2728; <span className="font-normal opacity-80">({inspirationCost} EXP)</span>
                 </button>
+                <span className="whitespace-nowrap pl-1" title="Inspiration you hold">
+                  &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span>
+                </span>
                 <button
                   onClick={handleRefreshOffers}
                   disabled={!canInteract || player.inspiration < inspirationSpend()}
-                  className="btn-secondary flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-sm"
+                  className="btn-secondary ml-auto flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-sm"
                   title={player.inspiration >= inspirationSpend()
                     ? `Spend ${inspirationSpend()} Inspiration to draw new element cubes and new genre offers`
                     : 'Requires Inspiration'}
                 >
                   <RefreshCw size={13} aria-hidden="true" /> Refresh <span className="font-normal opacity-80">(&#x2728;{inspirationSpend()})</span>
                 </button>
-                <span className="ml-auto whitespace-nowrap pl-1 sm:ml-1" title="Inspiration you hold">
-                  &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span>
-                </span>
               </div>
             </div>
             {canInteract && (
@@ -158,8 +158,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               }}
             >
               <StudioSection
-                title="Available to Buy"
-                subtitle="Choose an element to add or upgrade a die in your setlist."
+                title="Available to Learn"
               />
 
               {/* Element chips drawn from the bag */}
@@ -235,16 +234,14 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 )}
 
                 {/* With an element chosen, the song slots themselves become the shop */}
-                {canInteract && !activeDie && (
+                {canInteract && !activeDie && selectedElement && (
                   <div className="rounded-lg px-3 py-3 mt-3 animate-slide-up flex flex-wrap items-center gap-2 text-sm text-parchment-200"
                     style={{
-                      background: selectedElement ? 'rgba(212, 168, 83, 0.05)' : 'rgba(255, 255, 255, 0.02)',
-                      border: selectedElement ? '1px solid rgba(212, 168, 83, 0.25)' : '1px dashed rgba(212, 168, 83, 0.15)',
+                      background: 'rgba(212, 168, 83, 0.05)',
+                      border: '1px solid rgba(212, 168, 83, 0.25)',
                     }}
                   >
-                    {!selectedElement ? (
-                      <span className="text-parchment-400">Choose an element, then buy or upgrade it in your setlist on the right.</span>
-                    ) : setlistFull ? (
+                    {setlistFull ? (
                       <>
                         <span>{replaceMode ? `Choose the die to replace with a ${selectedElement} d4 (${newD4Cost()} EXP).` : `Choose a matching die to upgrade, or buy a new ${selectedElement} d4.`}</span>
                         <button className="btn-secondary" aria-pressed={replaceMode} onClick={() => setReplaceMode(!replaceMode)}>
@@ -276,7 +273,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
             >
               <StudioSection
                 title="Your Collection"
-                subtitle="Everything this bard already owns or has waiting to be placed."
               />
 
               {/* Pending rewards tray — queued purchases waiting to be placed */}
@@ -332,7 +328,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   </div>
                   <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
                 </div>
-                <div className={`grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3 ${player.songs.length > 6 ? 'lg:grid-cols-7' : 'lg:grid-cols-6'}`}>
+                <div className={`grid grid-cols-3 gap-2 sm:gap-3 ${player.songs.length > 6 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
                   {player.songs.map((song, songIndex) => (
                     <div
                       key={song.id}
