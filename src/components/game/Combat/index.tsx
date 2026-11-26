@@ -272,6 +272,9 @@ export function CombatModal() {
   // (Featured songs roll without styles, so Dissonance doesn't soften theirs.)
   const remainingSongs = playableSongs.filter((s) => !isSongSpent(s.id))
   const target = monsters.find((monster) => monster.id === selectedTargetId)
+  const lastTargetIndex = monsters.findIndex((monster) => monster.id === lastTargetMonsterId)
+  const lastHitMonster = lastTargetIndex >= 0 ? monsters[lastTargetIndex] : undefined
+  const lastHitCalculation = lastTargetIndex >= 0 ? lastDamageCalculations[lastTargetIndex] : undefined
   const availableTargets = lockedTarget ? [lockedTarget] : monsters
   const damageOptions = {
     immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false, elementCount: 0 }),
@@ -345,12 +348,20 @@ export function CombatModal() {
                   {player.name}{!canAct ? ' · watching live' : ''}
                 </p>
               </div>
-              {canContinue && (
-                <p className="flex items-center gap-2 text-sm text-parchment-300">
-                  <Target size={15} className="shrink-0 text-gold-400" aria-hidden="true" />
-                  {lockedTarget ? 'Win over the monster you moved, or end the concert.' : 'Pick a monster, then play a song.'}
-                </p>
-              )}
+              <div className="pixel-last-hit-slot">
+                {lastHitMonster && lastHitCalculation ? (
+                  <DamageCell
+                    calc={lastHitCalculation}
+                    monster={lastHitMonster}
+                    styleNotes={styleNotes}
+                  />
+                ) : canContinue ? (
+                  <p className="flex h-full items-center justify-end gap-2 text-sm text-parchment-300">
+                    <Target size={15} className="shrink-0 text-gold-400" aria-hidden="true" />
+                    {lockedTarget ? 'Win over the monster you moved, or end the concert.' : 'Pick a monster, then play a song.'}
+                  </p>
+                ) : null}
+              </div>
             </div>
           )}
 
@@ -442,19 +453,12 @@ export function CombatModal() {
                       fameValue={calculateMonsterFameValue(monster.level)}
                       isSelected={selectedTargetId === monster.id}
                       onSelect={canRoll && !lockedTarget && monster.currentHP > 0 ? () => setChosenTargetId(monster.id) : undefined}
+                      lastDamage={
+                        monster.id === lastTargetMonsterId
+                          ? lastDamageCalculations[idx]?.totalDamage
+                          : undefined
+                      }
                     />
-                    {monster.id === lastTargetMonsterId && lastDamageCalculations[idx] && (
-                      <div className="flex flex-col gap-1.5">
-                        <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
-                        {styleNotes.length > 0 && (
-                          <div className="flex flex-wrap justify-end gap-1" aria-label="Genres that shaped this play">
-                            {styleNotes.map((name) => (
-                              <span key={name} className="style-chip">&#x266A; {name}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

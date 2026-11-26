@@ -32,7 +32,9 @@
 
 - Made the main tabletop feel more dynamic with drifting candlelight and dust, a subtly moving realm map, twinkling title accents, tactile tile art/chip hover responses, and reduced-motion fallbacks.
 
-- Reimagined combat as a retro pixel-art dungeon encounter: monsters now appear as elemental sprites in a torchlit arena with compact live stat plates, target reticles, HP, rewards, weaknesses, and immunities; the existing dice-song command flow remains intact in a pixel-styled action deck.
+- Stabilized the retro combat layout after attacks: the latest damage now appears as a trailing red segment in the target's HP bar, while its roll math and style details use a permanently reserved readout in the fight header instead of expanding a monster column.
+
+- Reimagined combat as a retro pixel-art dungeon encounter: monsters now appear as elemental sprites in a torchlit arena with compact live stat plates, elemental selection glows, Resolve, rewards, weaknesses, and immunities; the existing dice-song command flow remains intact in a pixel-styled action deck.
 
 - Language pass: every style's rule text is shorter and plainer (flat bonuses end with "Can't crit."). The rulebook was cut from 19 pages to 10: one section per topic, an Edge Cases appendix (B) and a one-page Quick Reference as the last page (C); the Glossary and six lightly-used diagrams were dropped.
 

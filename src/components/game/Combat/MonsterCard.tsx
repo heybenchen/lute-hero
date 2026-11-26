@@ -16,6 +16,8 @@ interface MonsterCardProps {
   isSelected?: boolean
   /** When set, the card is clickable to become the combat target. */
   onSelect?: () => void
+  /** Most recent damage dealt to this monster, shown as a trailing HP-loss segment. */
+  lastDamage?: number
 }
 
 const spriteByGenre: Record<Genre, string> = {
@@ -32,8 +34,11 @@ const glowByGenre: Record<Genre, string> = {
   Shanty: 'rgba(41, 121, 255, .55)',
 }
 
-export function MonsterCard({ monster, index = 0, fameValue, isSelected = false, onSelect }: MonsterCardProps) {
+export function MonsterCard({ monster, index = 0, fameValue, isSelected = false, onSelect, lastDamage }: MonsterCardProps) {
   const hpPercent = Math.max(0, (monster.currentHP / monster.maxHP) * 100)
+  const lastDamagePercent = lastDamage
+    ? Math.min(lastDamage, monster.maxHP - Math.max(0, monster.currentHP)) / monster.maxHP * 100
+    : 0
   const isDefeated = monster.currentHP <= 0
   const spriteGenre = monster.vulnerability ?? monster.resistance ?? 'Ballad'
   const selectable = !!onSelect && !isDefeated
@@ -81,7 +86,14 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
         </div>
 
         <div className="pixel-hp-track" aria-label={`${Math.max(0, monster.currentHP)} of ${monster.maxHP} Resolve`}>
-          <span style={{ width: `${hpPercent}%` }} />
+          <span className="pixel-hp-current" style={{ width: `${hpPercent}%` }} />
+          {lastDamagePercent > 0 && (
+            <span
+              className="pixel-hp-last-hit"
+              style={{ left: `${hpPercent}%`, width: `${lastDamagePercent}%` }}
+              title={`${lastDamage} Resolve lost from the last song`}
+            />
+          )}
         </div>
 
         <div className="pixel-matchups">

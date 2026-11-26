@@ -597,8 +597,22 @@
   }
 
   .pixel-combat-header {
+    min-height: 72px;
     padding: 2px 2px 10px;
     border-bottom: 1px solid rgba(212, 168, 83, 0.22);
+  }
+
+  .pixel-last-hit-slot {
+    width: min(100%, 360px);
+    min-height: 52px;
+  }
+
+  .pixel-last-hit {
+    width: 100%;
+    min-height: 52px;
+    padding: 6px 9px;
+    background: rgba(17, 11, 10, .76);
+    border-right: 2px solid rgba(232, 80, 80, .55);
   }
 
   .combat-battlefield {
@@ -748,6 +762,7 @@
   }
 
   .pixel-hp-track {
+    position: relative;
     display: block;
     height: 8px;
     margin-top: 7px;
@@ -757,11 +772,24 @@
   }
 
   .pixel-hp-track > span {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
     display: block;
-    height: 100%;
+  }
+
+  .pixel-hp-current {
+    left: 1px;
     background: #55bd5d;
     box-shadow: inset -2px -2px 0 #2d7533;
     transition: width 240ms steps(5);
+  }
+
+  .pixel-hp-last-hit {
+    margin-left: 1px;
+    background: #d94b45;
+    box-shadow: inset -2px -2px 0 #842c29;
+    animation: pixel-last-hit-pulse 1.2s steps(2, end) infinite;
   }
 
   .pixel-matchups {
@@ -825,7 +853,20 @@
     50% { transform: translateY(-4px); }
   }
 
+  @keyframes pixel-last-hit-pulse {
+    0%, 100% { filter: brightness(.9); }
+    50% { filter: brightness(1.25); }
+  }
+
   @media (max-width: 639px) {
+    .pixel-combat-header {
+      min-height: 132px;
+    }
+
+    .pixel-last-hit-slot {
+      width: 100%;
+    }
+
     .combat-battlefield {
       min-height: 340px;
       padding-inline: 8px;
