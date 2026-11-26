@@ -64,7 +64,7 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
           border: '1px solid rgba(212, 168, 83, 0.24)',
         }}
       >
-        <h3 className="mb-3 font-display text-lg text-gold-300">Your Genres · {player.styles.length}/{cap}</h3>
+        <h3 className="mb-3 font-display text-lg text-gold-300">Genres · {player.styles.length}/{cap}</h3>
         <div className="grid flex-1 auto-rows-fr grid-cols-1 gap-3">
           {player.styles.map((id) => (
             <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer flex min-h-28 flex-col text-left enabled:ring-1 enabled:ring-gold-400">

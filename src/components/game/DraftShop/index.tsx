@@ -272,7 +272,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               }}
             >
               <StudioSection
-                title="Your Collection"
+                title="Your collection"
               />
 
               {/* Pending rewards tray — queued purchases waiting to be placed */}
@@ -324,7 +324,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
-                    Your Setlist
+                    Songs
                   </div>
                   <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
                 </div>
