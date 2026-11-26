@@ -32,6 +32,8 @@
 
 - Made the main tabletop feel more dynamic with drifting candlelight and dust, a subtly moving realm map, twinkling title accents, tactile tile art/chip hover responses, and reduced-motion fallbacks.
 
+- Made Simulate the first and default tab in the Playtest Console.
+
 - Redesigned the Studio around a clear market/collection split: dice and styles available to buy now sit on the left, while the bard's setlist, unclaimed purchases, and learned styles sit on the right.
 
 - Replaced generic monster rank names with a visual-growth progression that matches the level sprites: Lesser (Lv1), untitled (Lv2), Greater (Lv3), Elder (Lv4), and Apex (Lv5).

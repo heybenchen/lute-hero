@@ -32,7 +32,7 @@ export function DebugPanel() {
   const open = useGameStore((state) => state.debugOpen)
   const _setUi = useGameStore((state) => state._setUi)
   const isHost = useGameStore(selectIsHost)
-  const [tab, setTab] = useState<Tab>('values')
+  const [tab, setTab] = useState<Tab>('simulate')
 
   // Ctrl/Cmd+Shift+D toggles the panel from anywhere; Escape closes it. The
   // panel is the topmost surface (z-80), so it claims Escape first — GameView's
@@ -86,7 +86,7 @@ export function DebugPanel() {
 
       {/* Tabs */}
       <div className="flex gap-1 px-3 py-2 flex-shrink-0" style={{ borderBottom: '1px solid rgba(212, 168, 83, 0.12)' }}>
-        {(['values', 'players', 'board', 'simulate', 'presets'] as Tab[]).map((t) => (
+        {(['simulate', 'values', 'players', 'board', 'presets'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
