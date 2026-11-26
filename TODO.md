@@ -32,6 +32,8 @@
 
 - Made the main tabletop feel more dynamic with drifting candlelight and dust, a subtly moving realm map, twinkling title accents, tactile tile art/chip hover responses, and reduced-motion fallbacks.
 
+- Replaced generic monster rank names with a visual-growth progression that matches the level sprites: Lesser (Lv1), untitled (Lv2), Greater (Lv3), Elder (Lv4), and Apex (Lv5).
+
 - Added sixteen distinct pixel-art combat arenas mapped one-to-one with the board spaces, so every location now opens its own named dungeon backdrop instead of sharing a single battlefield.
 
 - Added level-specific pixel art for combat monsters: every elemental family now has five distinct silhouettes mapped directly to monster levels 1–5, progressing from minor creatures to boss-scale forms.
