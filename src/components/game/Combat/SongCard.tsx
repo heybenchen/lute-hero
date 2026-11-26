@@ -95,9 +95,9 @@ export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, r
         }}
       >
         <div className="p-2">
-          {/* Dice: click them to perform the song. A reroll button sits on the
-              dice just rolled, hanging off their lower edge so the numbers stay visible. */}
-          <div className={`relative ${reroll ? 'mb-6' : onRefresh ? 'mb-2.5' : ''}`}>
+          {/* Dice: click them to perform the song. Reroll overlays the last
+              roll so its appearance never changes the card's footprint. */}
+          <div className={`relative ${onRefresh ? 'mb-2.5' : ''}`}>
           <button
             type="button"
             onClick={playable ? onPlay : undefined}
