@@ -19,7 +19,7 @@ import { counterpointMultiplier, fermataCanRefresh, rubatoCanReroll, rubatoUsesL
 import { getTunables } from '@/data/tunables'
 import { songIsImmune, songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
-import { ArrowLeft, Flag, Map as MapIcon, RotateCcw, Target } from 'lucide-react'
+import { ArrowLeft, Flag, Map as MapIcon, RotateCcw, Sparkles, Target } from 'lucide-react'
 import { COMBAT_STAGE_BACKDROPS } from '@/assets/combat/stages'
 
 export function CombatModal() {
@@ -378,9 +378,13 @@ export function CombatModal() {
               <div>
                 <div className="font-['Cinzel:Bold'] text-[9px] uppercase tracking-[0.3em] text-[#a88953]">Combat encounter</div>
                 <div className="font-['MedievalSharp:Regular'] text-2xl leading-none text-[#f0d78c] sm:text-3xl">The Mashup</div>
-                <p className="mt-1 font-['Spectral:Regular'] text-sm text-parchment-400">
-                  {player.name}{!canAct ? ' · watching live' : ''}
-                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-['Spectral:Regular'] text-sm text-parchment-400">
+                  <span>{player.name}{!canAct ? ' · watching live' : ''}</span>
+                  <span className="inline-flex items-center gap-1 border-l border-gold-700/30 pl-2 text-violet-200" title="Current Inspiration">
+                    <Sparkles size={12} aria-hidden="true" />
+                    {player.inspiration} Inspiration
+                  </span>
+                </div>
               </div>
               <div className="pixel-last-hit-slot">
                 {lastHitMonster && lastHitCalculation ? (
