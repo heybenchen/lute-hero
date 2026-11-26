@@ -245,7 +245,7 @@ export function PlayerPanel() {
           <ResourceTile icon={<Lightbulb size={14} />} label="Inspiration" value={currentPlayer.inspiration} />
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <div className="map-style-list mt-3 flex flex-wrap items-center gap-1.5">
           <span className="module-label mb-0 mr-1">Genres</span>
           {currentPlayer.styles.length > 0
             ? currentPlayer.styles.map((id) => <StyleChip key={id} id={id} showTooltip />)

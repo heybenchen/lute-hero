@@ -459,6 +459,33 @@
     transform: translate(-50%, 0);
   }
 
+  @media (max-width: 639px) {
+    .map-style-list {
+      position: relative;
+    }
+
+    .map-style-list .style-chip-with-tooltip {
+      position: static;
+    }
+
+    .map-style-list .style-rule-tooltip {
+      right: 0;
+      left: 0;
+      width: auto;
+      max-width: 100%;
+      transform: translateY(-4px);
+    }
+
+    .map-style-list .style-rule-tooltip::before {
+      display: none;
+    }
+
+    .map-style-list .style-chip-with-tooltip:hover .style-rule-tooltip,
+    .map-style-list .style-chip-with-tooltip:focus-visible .style-rule-tooltip {
+      transform: translateY(0);
+    }
+  }
+
   .style-offer {
     @apply rounded-lg p-3 sm:p-4;
     background: linear-gradient(160deg, rgba(212, 168, 83, 0.09) 0%, rgba(42, 33, 24, 0.92) 100%);
