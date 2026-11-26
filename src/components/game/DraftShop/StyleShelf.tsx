@@ -34,35 +34,53 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
   }
 
   return (
-    <section>
-      <h3 className="module-label">On the shelf</h3>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {offers.map((id) => (
-          <button key={id} type="button" aria-pressed={selected === id}
-            disabled={!canInteract || player.exp < styleCost(id)}
-            onClick={() => setSelected(selected === id ? null : id)}
-            className="style-offer text-left disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
-            <span className="flex justify-between gap-2"><strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong><span>{styleCost(id)} EXP</span></span>
-            <span className="block text-xs italic text-parchment-400">{STYLES[id].flavor}</span>
-            <span className="mt-2 block text-sm">{styleRule(id)}</span>
-          </button>
-        ))}
+    <section className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
+      <div
+        className="rounded-xl p-4 sm:p-5"
+        style={{
+          background: 'rgba(17, 12, 8, 0.42)',
+          border: '1px solid rgba(212, 168, 83, 0.18)',
+        }}
+      >
+        <h3 className="font-display text-lg text-gold-300">Genres to Learn</h3>
+        <p className="mb-3 text-sm text-parchment-400">Buy a genre to change how every song in your setlist plays.</p>
+        <div className="grid grid-cols-1 gap-3">
+          {offers.map((id) => (
+            <button key={id} type="button" aria-pressed={selected === id}
+              disabled={!canInteract || player.exp < styleCost(id)}
+              onClick={() => setSelected(selected === id ? null : id)}
+              className="style-offer text-left disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
+              <span className="flex justify-between gap-2"><strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong><span>{styleCost(id)} EXP</span></span>
+              <span className="block text-xs italic text-parchment-400">{STYLES[id].flavor}</span>
+              <span className="mt-2 block text-sm">{styleRule(id)}</span>
+            </button>
+          ))}
+        </div>
+        {!offers.length && <p className="text-sm text-parchment-400">Genres refill after the turn or when you refresh.</p>}
       </div>
-      {!offers.length && <p>Genres refill after the turn or when you refresh.</p>}
-      <h3 className="module-label mt-5">Your genres · {player.styles.length}/{cap}</h3>
-      <p className="mb-2 text-sm text-parchment-300">{ready
-        ? full ? 'Choose the genre to replace.' : 'Choose the empty slot to learn this genre.'
-        : 'Select a genre on the shelf.'}</p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {player.styles.map((id) => (
-          <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer text-left enabled:ring-1 enabled:ring-gold-400">
-            <strong className="font-display text-lg text-gold-300">{STYLES[id].name}</strong>
-            <span className="block text-sm">{styleRule(id)}</span>
-          </button>
-        ))}
-        {!full && <button type="button" disabled={!ready} onClick={() => place()} className="rounded-lg border border-dashed border-gold-700 p-4 enabled:ring-1 enabled:ring-gold-400">
-          Empty genre slot
-        </button>}
+
+      <div
+        className="rounded-xl p-4 sm:p-5"
+        style={{
+          background: 'rgba(58, 43, 27, 0.3)',
+          border: '1px solid rgba(212, 168, 83, 0.24)',
+        }}
+      >
+        <h3 className="font-display text-lg text-gold-300">Your Genres · {player.styles.length}/{cap}</h3>
+        <p className="mb-3 text-sm text-parchment-300">{ready
+          ? full ? 'Choose the genre to replace.' : 'Choose the empty slot to learn this genre.'
+          : 'Select a genre for sale on the left.'}</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {player.styles.map((id) => (
+            <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer text-left enabled:ring-1 enabled:ring-gold-400">
+              <strong className="font-display text-lg text-gold-300">{STYLES[id].name}</strong>
+              <span className="block text-sm">{styleRule(id)}</span>
+            </button>
+          ))}
+          {!full && <button type="button" disabled={!ready} onClick={() => place()} className="rounded-lg border border-dashed border-gold-700 p-4 enabled:ring-1 enabled:ring-gold-400">
+            Empty genre slot
+          </button>}
+        </div>
       </div>
       {givingUp && ready && (
         <div className="mt-4 rounded-lg border border-gold-700/40 p-3" role="group" aria-label="Choose a song to give up">
