@@ -72,39 +72,46 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
               </div>
               <div className="mt-0.5 flex items-center gap-2 font-['Spectral:Bold'] text-[9px] uppercase tracking-[0.12em] text-[#d4b77d]">
                 {monster.isBoss && <span className="flex items-center gap-1"><Crown size={9} /> Boss</span>}
-                {!!fameValue && <span>{fameValue} Fame</span>}
+                {!!fameValue && (
+                  <span className="rounded-sm border border-gold-400/45 bg-gold-500/15 px-1.5 py-0.5 text-gold-200 shadow-[0_0_8px_rgba(212,168,83,0.16)]">
+                    {fameValue} Fame
+                  </span>
+                )}
                 <span>{calculateMonsterExp(monster.level)} EXP</span>
               </div>
             </div>
-            <span className="font-['MedievalSharp:Regular'] text-lg tabular-nums text-[#f8f3e8]">
-              {Math.max(0, monster.currentHP)}<small className="text-[10px] text-[#b9a47f]">/{monster.maxHP}</small>
+            <span className="shrink-0 font-['Cinzel:Bold'] text-[10px] uppercase tracking-[0.12em] text-[#f0d78c]">
+              Lv {monster.level}
             </span>
           </div>
 
-          <div className="pixel-hp-track" aria-label={`${Math.max(0, monster.currentHP)} of ${monster.maxHP} Resolve`}>
-            <span className="pixel-hp-current" style={{ width: `${hpPercent}%` }} />
-            {lastDamagePercent > 0 && (
-              <span
-                className="pixel-hp-last-hit"
-                style={{ left: `${hpPercent}%`, width: `${lastDamagePercent}%` }}
-                title={`${lastDamage} Resolve lost from the last song`}
-              />
-            )}
+          <div className="mt-2 flex items-center gap-2">
+            <div className="pixel-hp-track !mt-0 flex-1" aria-label={`${Math.max(0, monster.currentHP)} of ${monster.maxHP} Resolve`}>
+              <span className="pixel-hp-current" style={{ width: `${hpPercent}%` }} />
+              {lastDamagePercent > 0 && (
+                <span
+                  className="pixel-hp-last-hit"
+                  style={{ left: `${hpPercent}%`, width: `${lastDamagePercent}%` }}
+                  title={`${lastDamage} Resolve lost from the last song`}
+                />
+              )}
+            </div>
+            <span className="shrink-0 font-['MedievalSharp:Regular'] text-base tabular-nums text-[#f8f3e8]">
+              {Math.max(0, monster.currentHP)}<small className="text-[9px] text-[#b9a47f]">/{monster.maxHP}</small>
+            </span>
           </div>
 
           <div className="pixel-matchups">
             {monster.vulnerability && (
               <div title="Weak — songs of this element count double">
-                <span className="pixel-matchup-label">Weak</span>
+                <strong className="!ml-0 text-[#9af0a2]">×2</strong>
                 <GenreBadge genre={monster.vulnerability} className="rounded-none px-1.5 py-0.5 text-[10px]" />
-                <strong className="text-[#9af0a2]">×2</strong>
               </div>
             )}
             {monster.resistance && (
               <div title="Immune — songs of this element count for nothing">
-                <span className="pixel-matchup-label">Null</span>
+                <strong className="!ml-0 text-[#d8e0ea]">×0</strong>
                 <GenreBadge genre={monster.resistance} className="rounded-none px-1.5 py-0.5 text-[10px]" />
-                <strong className="text-[#d8e0ea]">×0</strong>
               </div>
             )}
           </div>
