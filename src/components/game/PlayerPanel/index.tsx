@@ -248,7 +248,7 @@ export function PlayerPanel() {
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <span className="module-label mb-0 mr-1">Genres</span>
           {currentPlayer.styles.length > 0
-            ? currentPlayer.styles.map((id) => <StyleChip key={id} id={id} />)
+            ? currentPlayer.styles.map((id) => <StyleChip key={id} id={id} showTooltip />)
             : <span className="text-[10px] italic text-parchment-500">None yet — learn them in the Studio</span>}
         </div>
       </section>

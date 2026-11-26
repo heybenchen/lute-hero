@@ -392,6 +392,73 @@
     text-decoration: line-through;
   }
 
+  .style-chip-with-tooltip {
+    position: relative;
+    cursor: help;
+    outline: none;
+  }
+
+  .style-chip-with-tooltip:focus-visible {
+    box-shadow: 0 0 0 2px #17110b, 0 0 0 3px #f0d78c;
+  }
+
+  .style-rule-tooltip {
+    position: absolute;
+    z-index: 60;
+    top: calc(100% + 8px);
+    left: 50%;
+    display: flex;
+    width: min(250px, calc(100vw - 32px));
+    flex-direction: column;
+    gap: 3px;
+    padding: 9px 10px;
+    color: #e8d9b8;
+    background: #17110c;
+    border: 1px solid rgba(212, 168, 83, .48);
+    border-radius: 3px;
+    box-shadow: 4px 5px 0 rgba(0, 0, 0, .48), 0 10px 24px rgba(0, 0, 0, .4);
+    font-family: "Spectral:Regular", Spectral, serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.35;
+    text-align: left;
+    text-decoration: none;
+    text-transform: none;
+    white-space: normal;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -4px);
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+
+  .style-rule-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    border: 5px solid transparent;
+    border-bottom-color: rgba(212, 168, 83, .48);
+    transform: translateX(-50%);
+  }
+
+  .style-rule-tooltip strong {
+    color: #f0d78c;
+    font-family: "Cinzel:Bold", Cinzel, serif;
+    font-size: 11px;
+    letter-spacing: .05em;
+  }
+
+  .style-rule-tooltip em {
+    color: #a08d6c;
+    font-size: 10px;
+  }
+
+  .style-chip-with-tooltip:hover .style-rule-tooltip,
+  .style-chip-with-tooltip:focus-visible .style-rule-tooltip {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
   .style-offer {
     @apply rounded-lg p-3 sm:p-4;
     background: linear-gradient(160deg, rgba(212, 168, 83, 0.09) 0%, rgba(42, 33, 24, 0.92) 100%);
