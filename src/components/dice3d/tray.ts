@@ -23,6 +23,10 @@ const CRIT_PAUSE_MS = 650
 const FADE_MS = 360
 const CAMERA_TILT = THREE.MathUtils.degToRad(17)
 const FOV = 30
+const CRIT_HALO_START_SCALE = 1.6
+const CRIT_HALO_MAX_SCALE = 4.8
+/** Keep a fully expanded crit halo inside the camera frustum at every edge. */
+const CRIT_HALO_EDGE_MARGIN = CRIT_HALO_MAX_SCALE / 2 + 0.35
 /** Longest stretch of throw time one animation frame may cover. */
 const MAX_STEP_S = 2.5 / FRAME_RATE
 
@@ -307,11 +311,13 @@ export class DiceTray {
       return raycaster.ray.intersectPlane(floorPlane, new THREE.Vector3()) ?? new THREE.Vector3()
     }
     const topLeft = hit(-1, 1), topRight = hit(1, 1), bottomLeft = hit(-1, -1), bottomRight = hit(1, -1)
-    const margin = 1.05
+    // The physics walls sit far enough inside the visible floor that the
+    // largest crit bloom cannot be clipped by the WebGL canvas.
+    const margin = CRIT_HALO_EDGE_MARGIN
     this.arena = {
       minX: Math.max(topLeft.x, bottomLeft.x) + margin,
       maxX: Math.min(topRight.x, bottomRight.x) - margin,
-      minZ: Math.max(topLeft.z, topRight.z) + margin * 1.4,
+      minZ: Math.max(topLeft.z, topRight.z) + margin,
       maxZ: Math.min(bottomLeft.z, bottomRight.z) - margin,
     }
 
@@ -479,7 +485,7 @@ export class DiceTray {
         const pulse = Math.sin(t * Math.PI)
         halos.forEach(({ halo, light }) => {
           halo.material.opacity = pulse * 0.9
-          halo.scale.setScalar(1.6 + t * 3.2)
+          halo.scale.setScalar(CRIT_HALO_START_SCALE + t * (CRIT_HALO_MAX_SCALE - CRIT_HALO_START_SCALE))
           light.intensity = pulse * 14
         })
         dice.forEach((die) => die.materials.forEach((m) => { m.emissiveIntensity = pulse * 0.22 }))
