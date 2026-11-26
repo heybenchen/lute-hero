@@ -18,12 +18,12 @@ function formatMultiplier(multiplier: number): string {
 export function DamageCell({ calc, monster, styleNotes = [] }: DamageCellProps) {
   return (
     <div className="pixel-last-hit animate-fade-in">
-      <div className="flex min-w-0 items-center justify-between gap-3">
-        <div className="min-w-0 text-right">
-          <div className="font-['Cinzel:Bold'] text-[8px] uppercase tracking-[0.2em] text-[#a88953]">Last hit</div>
-          <div className="truncate font-['Spectral:Regular'] text-xs text-[#d9c49f]">{monster.name}</div>
+      <div className="flex min-w-0 items-center justify-between gap-4">
+        <div className="min-w-0 flex-1 text-left">
+          <div className="font-['Cinzel:Bold'] text-[10px] uppercase tracking-[0.18em] text-[#a88953]">Last hit</div>
+          <div className="mt-0.5 truncate font-['Spectral:Bold'] text-sm leading-tight text-[#e8d9b8]">{monster.name}</div>
         </div>
-        <span className="shrink-0 font-['MedievalSharp:Regular'] text-xl leading-none tabular-nums text-red-400"
+        <span className="shrink-0 text-right font-['MedievalSharp:Regular'] text-2xl leading-none tabular-nums text-red-400"
           style={{ textShadow: '0 0 6px rgba(232, 80, 80, 0.2)' }}
         >
           -{calc.totalDamage} Resolve
@@ -31,9 +31,9 @@ export function DamageCell({ calc, monster, styleNotes = [] }: DamageCellProps) 
       </div>
 
       {/* Per-die math — numbers only, no genre tags */}
-      <div className="mt-1 flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5">
+      <div className="mt-2 flex flex-wrap items-center justify-end gap-x-2.5 gap-y-1 border-t border-gold-700/20 pt-1.5">
         {(calc.perDie ?? []).map((die, dieIdx) => (
-          <div key={dieIdx} className="flex items-center justify-end gap-1 text-[11px] tabular-nums">
+          <div key={dieIdx} className="flex items-center justify-end gap-1 text-xs tabular-nums">
             <span className="text-parchment-300">{die.value}</span>
             {/* Flat style bonus (Fortissimo, Overture, Tutti) */}
             {!!die.bonus && <span className="text-amber-300" title="Genre bonus">+{die.bonus}</span>}
@@ -54,7 +54,7 @@ export function DamageCell({ calc, monster, styleNotes = [] }: DamageCellProps) 
           </div>
         ))}
         {styleNotes.map((name) => (
-          <span key={name} className="text-[9px] text-gold-300/80">&#x266A; {name}</span>
+          <span key={name} className="text-[11px] text-gold-300/80">&#x266A; {name}</span>
         ))}
       </div>
     </div>
