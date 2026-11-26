@@ -181,7 +181,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     No chips on display — draw new ones from the bag
                   </div>
                 ) : (
-                  <div className="grid w-full grid-cols-2 gap-2">
+                  <div className="grid h-full w-full auto-rows-fr grid-cols-2 gap-2 [&>*]:h-full">
                     {elementOffers.map((genre, offerIdx) => {
                       const { emoji, rgb } = GENRE_THEME[genre]
                       const isSelected = selectedOfferIdx === offerIdx
