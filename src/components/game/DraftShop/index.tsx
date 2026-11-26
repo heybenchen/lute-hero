@@ -189,7 +189,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                         <button
                           key={`${genre}-${offerIdx}`}
                           disabled={!canInteract}
-                          className={`group relative w-full min-w-0 rounded-lg px-1 py-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer' : 'cursor-default'}`}
+                          className={`group relative flex h-full w-full min-w-0 self-stretch items-center justify-center rounded-lg px-1 py-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer' : 'cursor-default'}`}
                           style={{
                             background: isSelected
                               ? `linear-gradient(160deg, rgba(${rgb}, 0.22) 0%, rgba(${rgb}, 0.06) 100%)`
