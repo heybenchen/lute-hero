@@ -20,6 +20,7 @@ import { getTunables } from '@/data/tunables'
 import { songIsImmune, songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
 import { Flag, RotateCcw, Target } from 'lucide-react'
+import dungeonBackdrop from '@/assets/combat/pixel-dungeon.png'
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
@@ -299,8 +300,8 @@ export function CombatModal() {
   return (
     <div className="modal-overlay">
       <DamagePopups entries={popups} onComplete={handlePopupComplete} />
-      <div className="modal-content max-w-7xl animate-scale-in">
-        <div className="p-4 sm:p-5">
+      <div className="modal-content combat-pixel-modal max-w-7xl animate-scale-in">
+        <div className="p-3 sm:p-5">
           {/* Header — once the concert is over it becomes the rewards summary */}
           {isCombatOver ? (
             <div
@@ -336,10 +337,11 @@ export function CombatModal() {
               ))}
             </div>
           ) : (
-            <div className="mb-4 flex flex-col gap-2 animate-fade-in sm:flex-row sm:items-end sm:justify-between">
+            <div className="pixel-combat-header mb-3 flex flex-col gap-2 animate-fade-in sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="font-display text-2xl leading-none text-gold-300 sm:text-3xl">The Mashup</div>
-                <p className="mt-1 text-sm text-parchment-400">
+                <div className="font-['Cinzel:Bold'] text-[9px] uppercase tracking-[0.3em] text-[#a88953]">Combat encounter</div>
+                <div className="font-['MedievalSharp:Regular'] text-2xl leading-none text-[#f0d78c] sm:text-3xl">The Mashup</div>
+                <p className="mt-1 font-['Spectral:Regular'] text-sm text-parchment-400">
                   {player.name}{!canAct ? ' · watching live' : ''}
                 </p>
               </div>
@@ -421,11 +423,19 @@ export function CombatModal() {
               </button>
             </div>
           ) : (
-            <section className="mb-4">
-              <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-x-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
+            <section
+              className="combat-battlefield mb-4"
+              style={{ backgroundImage: `linear-gradient(180deg, rgba(8,6,12,.08), rgba(8,5,3,.42)), url(${dungeonBackdrop})` }}
+            >
+              <div className="pixel-stage-header">
+                <span>Chamber {(spaceId ?? 0) + 1}</span>
+                <span>{monsters.filter((monster) => monster.currentHP > 0).length} hostiles remain</span>
+              </div>
+              <div className="pixel-stage-scanlines" aria-hidden="true" />
+              <div className="pixel-monster-grid">
                 {monsters.map((monster: Monster, idx: number) => (
                   // One column per monster: the card, with its damage lined up right below
-                  <div key={monster.id} className="flex w-[min(82vw,320px)] shrink-0 snap-center flex-col gap-2.5 sm:w-full">
+                  <div key={monster.id} className="flex min-w-0 flex-col gap-2">
                     <MonsterCard
                       monster={monster}
                       index={idx}
@@ -453,7 +463,7 @@ export function CombatModal() {
 
           {/* Songs Section */}
           {!allMonstersDefeated && (
-            <section className="mb-4 border-t border-gold-700/15 pt-4">
+            <section className="pixel-command-deck mb-4 pt-3">
               <SectionHeader
                 label={`Choose a song · ${ownSongsRemaining} ready`}
               />
