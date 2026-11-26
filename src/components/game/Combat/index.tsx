@@ -19,7 +19,7 @@ import { counterpointMultiplier, fermataCanRefresh, rubatoCanReroll, rubatoUsesL
 import { getTunables } from '@/data/tunables'
 import { songIsImmune, songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
-import { Flag, RotateCcw, Target } from 'lucide-react'
+import { ArrowLeft, Flag, Map as MapIcon, RotateCcw, Target } from 'lucide-react'
 import dungeonBackdrop from '@/assets/combat/pixel-dungeon.png'
 
 export function CombatModal() {
@@ -95,6 +95,8 @@ export function CombatModal() {
   // Choices for the next song (Gospel's call, Soul's paid bonus); reset after each play
   const [callIt, setCallIt] = useState(false)
   const [soul, setSoul] = useState(false)
+  // Victory rewards stay unresolved while the player briefly checks the board.
+  const [previewingMap, setPreviewingMap] = useState(false)
 
   const handlePopupComplete = useCallback((id: string) => {
     setPopups((prev) => prev.filter((p) => p.id !== id))
@@ -300,6 +302,22 @@ export function CombatModal() {
     dispatch({ type: 'END_COMBAT' })
   }
 
+  if (previewingMap && allMonstersDefeated) {
+    return (
+      <>
+        <div className="pointer-events-none fixed inset-0 z-40 ring-inset ring-2 ring-gold-500/20" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={() => setPreviewingMap(false)}
+          className="fixed right-3 top-20 z-50 flex items-center gap-2 rounded-lg border border-gold-500/50 bg-wood-950/95 px-4 py-3 font-medieval text-sm font-bold text-gold-200 shadow-xl shadow-black/60 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-gold-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300 sm:right-5"
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+          Return to Fame &amp; Glory
+        </button>
+      </>
+    )
+  }
+
   return (
     <div className="modal-overlay">
       <DamagePopups entries={popups} onComplete={handlePopupComplete} />
@@ -373,6 +391,14 @@ export function CombatModal() {
                 <p className="mt-1 text-sm sm:text-base text-parchment-400">
                   Choose an element. Every bordering space gains 1 chip of it.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setPreviewingMap(true)}
+                  className="btn-secondary mt-3 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm"
+                >
+                  <MapIcon size={15} aria-hidden="true" />
+                  View map before choosing
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
