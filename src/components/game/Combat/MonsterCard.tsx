@@ -1,7 +1,7 @@
 import { Monster, Genre } from '@/types'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { calculateMonsterExp } from '@/game-logic/fame/calculator'
-import { Crown, Target } from 'lucide-react'
+import { Crown } from 'lucide-react'
 import emberSprite from '@/assets/combat/ember.png'
 import golemSprite from '@/assets/combat/golem.png'
 import harpySprite from '@/assets/combat/harpy.png'
@@ -42,21 +42,19 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
   return (
     <div
       className="pixel-monster-slot animate-slide-up"
-      style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
+      style={{
+        animationDelay: `${index * 80}ms`,
+        animationFillMode: 'both',
+        '--monster-glow': glowByGenre[spriteGenre],
+      } as React.CSSProperties}
     >
       <TargetCard
         onClick={selectable ? onSelect : undefined}
         type={selectable ? 'button' : undefined}
         aria-pressed={selectable ? isSelected : undefined}
         className={`pixel-monster-target ${selectable ? 'cursor-pointer' : ''} ${isSelected ? 'is-targeted' : ''} ${isDefeated ? 'is-defeated' : ''}`}
-        style={{ '--monster-glow': glowByGenre[spriteGenre] } as React.CSSProperties}
       >
         <span className="pixel-monster-level">LV {monster.level}</span>
-        {isSelected && !isDefeated && (
-          <span className="pixel-target-reticle" aria-label="Selected target" title="Selected target">
-            <Target size={16} strokeWidth={2.5} aria-hidden="true" />
-          </span>
-        )}
         <img
           className="pixel-monster-sprite"
           src={spriteByGenre[spriteGenre]}
