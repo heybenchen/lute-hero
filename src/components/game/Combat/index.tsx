@@ -20,7 +20,7 @@ import { getTunables } from '@/data/tunables'
 import { songIsImmune, songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
 import { ArrowLeft, Flag, Map as MapIcon, RotateCcw, Target } from 'lucide-react'
-import dungeonBackdrop from '@/assets/combat/pixel-dungeon.png'
+import { COMBAT_STAGE_BACKDROPS } from '@/assets/combat/stages'
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
@@ -168,6 +168,7 @@ export function CombatModal() {
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
   const totalExp = rewards.totalExp
   const isCombatOver = allMonstersDefeated || !canContinue
+  const stageBackdrop = COMBAT_STAGE_BACKDROPS[Math.min(15, Math.max(0, spaceId ?? 0))]
 
   /**
    * Reroll is offered only for a song whose dice are SPENT — it damaged without
@@ -462,7 +463,7 @@ export function CombatModal() {
           ) : (
             <section
               className="combat-battlefield mb-4"
-              style={{ backgroundImage: `linear-gradient(180deg, rgba(8,6,12,.08), rgba(8,5,3,.42)), url(${dungeonBackdrop})` }}
+              style={{ backgroundImage: `linear-gradient(180deg, rgba(8,6,12,.08), rgba(8,5,3,.42)), url(${stageBackdrop})` }}
             >
               <div className="pixel-stage-header">
                 <span>Chamber {(spaceId ?? 0) + 1}</span>
