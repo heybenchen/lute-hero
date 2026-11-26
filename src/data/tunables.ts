@@ -147,16 +147,16 @@ export interface Tunables {
   streetPerformerExp: number
   /** Studio Regular: EXP off every upgrade. */
   studioRegularDiscount: number
-  /** Inspired Play: bonus to every die while holding enough Inspiration. */
+  /** Inspired Play: bonus to every song while holding enough Inspiration. */
   inspiredPlayBonus: number
   inspiredPlayMin: number
   /** Chain Reaction: bonus per same-element song played in a row before this one, and its cap. */
   chainReactionBonus: number
   chainReactionCap: number
-  /** Swarm Singer: bonus to every die in fights with enough monsters. */
+  /** Swarm Singer: bonus to every song in fights with enough monsters. */
   swarmSingerBonus: number
   swarmSingerMin: number
-  /** Jam Session: bonus to every die while sharing a space with another bard. */
+  /** Jam Session: bonus to every song while sharing a space with another bard. */
   jamSessionBonus: number
 }
 
@@ -332,7 +332,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'styleCostIspirato', label: 'Muse\'s Favor cost', group: 'Styles', min: 0, max: 30, step: 1 },
   { key: 'fortissimoBonus', label: "Dragon's Roar: d20 bonus", group: 'Styles', min: 0, max: 20, step: 1 },
   { key: 'overtureBonus', label: 'Fanfare: first-roll bonus', group: 'Styles', min: 0, max: 20, step: 1 },
-  { key: 'tuttiBonus', label: 'Harmony: bonus per die', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'tuttiBonus', label: 'Harmony: bonus to the song', group: 'Styles', min: 0, max: 10, step: 1 },
   { key: 'ostinatoCritFace', label: 'War Drums: d4 crits from', group: 'Styles', min: 1, max: 4, step: 1 },
   { key: 'counterpointMultiplier', label: 'Dissonance: immune ×', group: 'Styles', min: 0, max: 2, step: 0.25 },
   { key: 'bravoFamePerTame', label: 'Crowd Favorite: Fame per monster won over', group: 'Styles', min: 0, max: 20, step: 1 },
@@ -362,13 +362,13 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'steadyHandsFloor', label: 'Steady Hands: lowest a die can show', group: 'Styles', min: 1, max: 12, step: 1 },
   { key: 'streetPerformerExp', label: 'Street Performer: EXP per turn', group: 'Styles', min: 0, max: 5, step: 1 },
   { key: 'studioRegularDiscount', label: 'Studio Regular: EXP off upgrades', group: 'Styles', min: 0, max: 5, step: 1 },
-  { key: 'inspiredPlayBonus', label: 'Inspired Play: bonus per die', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'inspiredPlayBonus', label: 'Inspired Play: bonus to the song', group: 'Styles', min: 0, max: 10, step: 1 },
   { key: 'inspiredPlayMin', label: 'Inspired Play: Inspiration needed', group: 'Styles', min: 1, max: 10, step: 1 },
   { key: 'chainReactionBonus', label: 'Chain Reaction: bonus per link', group: 'Styles', min: 0, max: 10, step: 1 },
   { key: 'chainReactionCap', label: 'Chain Reaction: bonus cap', group: 'Styles', min: 0, max: 20, step: 1 },
-  { key: 'swarmSingerBonus', label: 'Swarm Singer: bonus per die', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'swarmSingerBonus', label: 'Swarm Singer: bonus to the song', group: 'Styles', min: 0, max: 10, step: 1 },
   { key: 'swarmSingerMin', label: 'Swarm Singer: monsters needed', group: 'Styles', min: 2, max: 6, step: 1 },
-  { key: 'jamSessionBonus', label: 'Jam Session: bonus per die', group: 'Styles', min: 0, max: 10, step: 1 },
+  { key: 'jamSessionBonus', label: 'Jam Session: bonus to the song', group: 'Styles', min: 0, max: 10, step: 1 },
 ]
 
 const LEVEL_COUNT = 5

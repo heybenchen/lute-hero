@@ -134,18 +134,18 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 | **Dragon's Roar** | 2 | Increases the face value of every d20 by 2. Reaching 20 crits. |
 | **Lingering Note** | 3 | Once per turn, a d20 song that doesn't win over its monster isn't spent. Costs 1 Inspiration. |
 | **Dissonance** | 2 | Once per turn, a song counts in full against an immune monster. |
-| **Harmony** | 2 | With all four elements in your setlist, adds +1 to the value of the song per die. Can't crit. |
+| **Harmony** | 2 | With all four elements in your setlist, adds +1 to the value of the song. Can't crit. |
 | **Fanfare** | 2 | Adds +3 to the value of your first song each turn. Can't crit. |
 | **Crowd Favorite** | 3 | +10 Fame for every Lv3+ monster you win over. |
 | **Muse's Favor** | 1 | Gain 1 Inspiration at the start of each turn. |
 | **Hometown Hero** | 1 | Increases the face value of your starting element's dice by 1. Reaching the crit face crits. |
 | **Studio Regular** | 3 | Upgrades cost 1 less EXP. |
-| **Inspired Play** | 3 | With 3+ Inspiration, adds +2 to the value of the song per die. Can't crit. |
+| **Inspired Play** | 3 | With 3+ Inspiration, adds +2 to the value of the song. Can't crit. |
 | **Steady Hands** | 1 | Increases the face value of any die below 3 to 3. The raised face can crit. |
 | **Street Performer** | 1 | Gain 1 EXP at the start of each turn. |
-| **Chain Reaction** | 2 | Adds +2 to the value of the song per die, for each same-element song played just before it (max +6). Can't crit. |
-| **Swarm Singer** | 2 | In concerts with 3+ monsters, adds +1 to the value of the song per die. Can't crit. |
-| **Jam Session** | 3 | While sharing a space with another bard, adds +2 to the value of the song per die. Can't crit. |
+| **Chain Reaction** | 2 | Adds +2 to the value of the song, for each same-element song played just before it (max +6). Can't crit. |
+| **Swarm Singer** | 2 | In concerts with 3+ monsters, adds +1 to the value of the song. Can't crit. |
+| **Jam Session** | 3 | While sharing a space with another bard, adds +2 to the value of the song. Can't crit. |
 <!-- STYLES:END -->
 
 ## Appendix B: Edge Cases

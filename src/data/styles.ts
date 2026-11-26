@@ -77,7 +77,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'tutti',
     name: 'Harmony',
     flavor: 'Fire, earth, wind and wave, singing as one.',
-    rule: "With all four elements in your setlist, adds +1 to the value of the song per die. Can't crit.",
+    rule: "With all four elements in your setlist, adds +1 to the value of the song. Can't crit.",
   },
   overture: {
     id: 'overture',
@@ -113,7 +113,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'inspired-play',
     name: 'Inspired Play',
     flavor: 'A head full of ideas makes every note ring truer.',
-    rule: "With 3+ Inspiration, adds +2 to the value of the song per die. Can't crit.",
+    rule: "With 3+ Inspiration, adds +2 to the value of the song. Can't crit.",
   },
   'steady-hands': {
     id: 'steady-hands',
@@ -131,19 +131,19 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'chain-reaction',
     name: 'Chain Reaction',
     flavor: 'One verse sparks the next, and the next.',
-    rule: '+2 per same-element song played in a row before this one (max +6).',
+    rule: "Adds +2 to the value of the song, for each same-element song played just before it (max +6). Can't crit.",
   },
   'swarm-singer': {
     id: 'swarm-singer',
     name: 'Swarm Singer',
     flavor: 'The bigger the crowd, the louder the song.',
-    rule: '+2 to every die in concerts with 3+ monsters.',
+    rule: "In concerts with 3+ monsters, adds +1 to the value of the song. Can't crit.",
   },
   'jam-session': {
     id: 'jam-session',
     name: 'Jam Session',
     flavor: 'Music is better with friends.',
-    rule: '+2 to every die while you share a space with another bard.',
+    rule: "While sharing a space with another bard, adds +2 to the value of the song. Can't crit.",
   },
 }
 
@@ -208,8 +208,8 @@ export function styleRule(id: StyleId): string {
     case 'fortissimo': return `Increases the face value of every d20 by ${t.fortissimoBonus}. Reaching 20 crits.`
     case 'overture': return `Adds +${t.overtureBonus} to the value of your first song each turn. ${NO_CRIT}`
     case 'tutti': return t.tuttiElements >= 4
-      ? `With all four elements in your setlist, adds +${t.tuttiBonus} to the value of the song per die. ${NO_CRIT}`
-      : `With ${t.tuttiElements}+ elements in your setlist, adds +${t.tuttiBonus} to the value of the song per die. ${NO_CRIT}`
+      ? `With all four elements in your setlist, adds +${t.tuttiBonus} to the value of the song. ${NO_CRIT}`
+      : `With ${t.tuttiElements}+ elements in your setlist, adds +${t.tuttiBonus} to the value of the song. ${NO_CRIT}`
     case 'ostinato': {
       const lower = 4 - t.ostinatoCritFace
       const by = lower === 1 ? 'one number' : `${lower} numbers`
@@ -252,10 +252,10 @@ export function styleRule(id: StyleId): string {
     case 'steady-hands': return `Increases the face value of any die below ${t.steadyHandsFloor} to ${t.steadyHandsFloor}. The raised face can crit.`
     case 'street-performer': return `Gain ${t.streetPerformerExp} EXP at the start of each turn.`
     case 'studio-regular': return `Upgrades cost ${t.studioRegularDiscount} less EXP.`
-    case 'inspired-play': return `With ${t.inspiredPlayMin}+ Inspiration, adds +${t.inspiredPlayBonus} to the value of the song per die. ${NO_CRIT}`
-    case 'chain-reaction': return `Adds +${t.chainReactionBonus} to the value of the song per die, for each same-element song played just before it (max +${t.chainReactionCap}). ${NO_CRIT}`
-    case 'swarm-singer': return `In concerts with ${t.swarmSingerMin}+ monsters, adds +${t.swarmSingerBonus} to the value of the song per die. ${NO_CRIT}`
-    case 'jam-session': return `While sharing a space with another bard, adds +${t.jamSessionBonus} to the value of the song per die. ${NO_CRIT}`
+    case 'inspired-play': return `With ${t.inspiredPlayMin}+ Inspiration, adds +${t.inspiredPlayBonus} to the value of the song. ${NO_CRIT}`
+    case 'chain-reaction': return `Adds +${t.chainReactionBonus} to the value of the song, for each same-element song played just before it (max +${t.chainReactionCap}). ${NO_CRIT}`
+    case 'swarm-singer': return `In concerts with ${t.swarmSingerMin}+ monsters, adds +${t.swarmSingerBonus} to the value of the song. ${NO_CRIT}`
+    case 'jam-session': return `While sharing a space with another bard, adds +${t.jamSessionBonus} to the value of the song. ${NO_CRIT}`
     default: return STYLES[id].rule
   }
 }

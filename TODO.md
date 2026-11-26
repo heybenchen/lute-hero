@@ -6,6 +6,8 @@
 
 ## Medium Priority
 
+- Styles become **genres** (Figma spec "Lute Hero — Styles as Musical Genres"): rename all 20 to real-world genres (Bebop, Blues, New Age, Opera, Indie, Orchestra, Mariachi, Disco, Lo-fi, Barbershop, Crossover, House, Soul, Country, Screamo, Gospel, Baroque, Pop, Bluegrass, Hip-Hop) with new flavour lines; call styles "genres" and dice "elements" everywhere players read, and label the Studio shelf "Genres". The spec also changes rules and prices: Blues refreshes a spent d20 for 1 Inspiration, Orchestra counts monsters at the start of the concert, Mariachi costs 2, House loses its cap and drops to +1 in the Final Showdown, Soul spends 1 Inspiration (needs 3+ at the start of the turn) and costs 2, Gospel calls its target before rolling and refreshes a spent d12-or-smaller song, Pop (Muse's Favor) gives its Inspiration after each concert. Needs engine work, tunables, bot valuation, a style-audit re-run, and updates to `songStyles.md`, the Songbook and the rulebook.
+
 - Styles are balanced against shopping rivals (see `songStyles.md`): all 20 win 28.8–37.7% against a 33.3% parity. Possible follow-ups: test style pairs at real timing (`PAIRS=1`), and a wider-than-3-seat table.
 
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string

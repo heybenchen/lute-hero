@@ -41,7 +41,7 @@ Earlier rounds of this work judged styles with rivals who had no styles, or with
 | **Dragon's Roar** | `fortissimo` | 2 (2) | Increases the face value of every d20 by 2. Reaching 20 crits. | `fortissimoBonus` (2) | 33.3 |
 | **Lingering Note** | `fermata` | 3 (3) | Once per turn, a d20 song that doesn't win over its monster isn't spent. Costs 1 Inspiration. Without the Inspiration, the song is spent as usual. | `fermataMinFaces` (20), `fermataInspirationCost` (1) | 35.5 |
 | **Dissonance** | `counterpoint` | 2 (2) | Once per turn, a song counts in full against an immune monster. | `counterpointMultiplier` (1) | 31.5 |
-| **Harmony** | `tutti` | 2 (1) | With all four elements in your setlist, adds +1 to the value of the song per die. Can't crit. | `tuttiBonus` (1), `tuttiElements` (4) | 31.7 |
+| **Harmony** | `tutti` | 2 (1) | With all four elements in your setlist, adds +1 to the value of the song. Can't crit. | `tuttiBonus` (1), `tuttiElements` (4) | 31.7 |
 | **Fanfare** | `overture` | 2 (2) | Adds +3 to the value of your first song each turn. Can't crit. | `overtureBonus` (3) | 31.6 |
 | **Crowd Favorite** | `bravo` | 3 (3) | +10 Fame for every Lv3+ monster you win over. | `bravoFamePerTame` (10), `bravoMinLevel` (3) | 35.4 |
 | **Muse's Favor** | `ispirato` | 1 (2) | Gain 1 Inspiration at the start of each turn. | `ispiratoPerTurn` (1), `ispiratoMin` (1, the floor it tops up to) | 33.1 |
@@ -56,10 +56,10 @@ These keep kebab-case ids. Their effects are data-defined specs that `studioSpec
 | **Steady Hands** | `steady-hands` | 1 (1) | Increases the face value of any die below 3 to 3. The raised face can crit. New. | `steadyHandsFloor` (3) | 34.8 |
 | **Street Performer** | `street-performer` | 1 (1) | Gain 1 EXP at the start of each turn. New. | `streetPerformerExp` (1) | 33.3 |
 | **Studio Regular** | `studio-regular` | 3 (3) | Upgrades cost 1 less EXP. | `studioRegularDiscount` (1) | 35.9 |
-| **Inspired Play** | `inspired-play` | 3 (3) | With 3+ Inspiration, adds +2 to the value of the song per die. Can't crit. | `inspiredPlayBonus` (2), `inspiredPlayMin` (3) | 31.9 |
-| **Chain Reaction** | `chain-reaction` | 2 (2) | Adds +2 to the value of the song per die, for each same-element song played just before it (max +6). Can't crit. | `chainReactionBonus` (2), `chainReactionCap` (6) | 31.3 |
-| **Swarm Singer** | `swarm-singer` | 2 (2) | In concerts with 3+ monsters, adds +1 to the value of the song per die. Can't crit. | `swarmSingerBonus` (1), `swarmSingerMin` (3) | 34.4 |
-| **Jam Session** | `jam-session` | 3 (4) | While sharing a space with another bard, adds +2 to the value of the song per die. Can't crit. | `jamSessionBonus` (2) | 32.5 |
+| **Inspired Play** | `inspired-play` | 3 (3) | With 3+ Inspiration, adds +2 to the value of the song. Can't crit. | `inspiredPlayBonus` (2), `inspiredPlayMin` (3) | 31.9 |
+| **Chain Reaction** | `chain-reaction` | 2 (2) | Adds +2 to the value of the song, for each same-element song played just before it (max +6). Can't crit. | `chainReactionBonus` (2), `chainReactionCap` (6) | 31.3 |
+| **Swarm Singer** | `swarm-singer` | 2 (2) | In concerts with 3+ monsters, adds +1 to the value of the song. Can't crit. | `swarmSingerBonus` (1), `swarmSingerMin` (3) | 34.4 |
+| **Jam Session** | `jam-session` | 3 (4) | While sharing a space with another bard, adds +2 to the value of the song. Can't crit. | `jamSessionBonus` (2) | 32.5 |
 
 All 20 land between **29.5% and 36.1%** (Extra Verse lowest, Hometown Hero highest).
 
