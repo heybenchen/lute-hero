@@ -57,62 +57,67 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
         onClick={selectable ? onSelect : undefined}
         type={selectable ? 'button' : undefined}
         aria-pressed={selectable ? isSelected : undefined}
-        className={`pixel-monster-target ${selectable ? 'cursor-pointer' : ''} ${isSelected ? 'is-targeted' : ''} ${isDefeated ? 'is-defeated' : ''}`}
+        className={`pixel-monster-card-target ${selectable ? 'cursor-pointer' : ''} ${isSelected ? 'is-targeted' : ''} ${isDefeated ? 'is-defeated' : ''}`}
       >
-        <span className="pixel-monster-level">LV {monster.level}</span>
-        <img
-          className="pixel-monster-sprite"
-          src={spriteByGenre[spriteGenre]}
-          alt={`${monster.name}, level ${monster.level}`}
-        />
-        {isDefeated && <span className="pixel-defeated-label">TAMED</span>}
-      </TargetCard>
+        <div className="pixel-monster-target">
+          <span className="pixel-monster-level">LV {monster.level}</span>
+          <img
+            className="pixel-monster-sprite"
+            src={spriteByGenre[spriteGenre]}
+            alt={`${monster.name}, level ${monster.level}`}
+          />
+          {isDefeated && <span className="pixel-defeated-label">TAMED</span>}
+        </div>
 
-      <div className={`pixel-stat-panel ${isSelected ? 'is-targeted' : ''}`}>
-        <div className="pixel-stat-heading">
-          <div className="min-w-0">
-            <div className="truncate font-['MedievalSharp:Regular'] text-base leading-tight text-[#fff0c2] sm:text-lg">
-              {monster.name}
+        <div className={`pixel-stat-panel ${isSelected ? 'is-targeted' : ''}`}>
+          <div className="pixel-stat-heading">
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="truncate font-['MedievalSharp:Regular'] text-base leading-tight text-[#fff0c2] sm:text-lg">
+                  {monster.name}
+                </div>
+                {isSelected && !isDefeated && <span className="pixel-selected-label">Target</span>}
+              </div>
+              <div className="mt-0.5 flex items-center gap-2 font-['Spectral:Bold'] text-[9px] uppercase tracking-[0.12em] text-[#d4b77d]">
+                {monster.isBoss && <span className="flex items-center gap-1"><Crown size={9} /> Boss</span>}
+                {!!fameValue && <span>{fameValue} Fame</span>}
+                <span>{calculateMonsterExp(monster.level)} EXP</span>
+              </div>
             </div>
-            <div className="mt-0.5 flex items-center gap-2 font-['Spectral:Bold'] text-[9px] uppercase tracking-[0.12em] text-[#d4b77d]">
-              {monster.isBoss && <span className="flex items-center gap-1"><Crown size={9} /> Boss</span>}
-              {!!fameValue && <span>{fameValue} Fame</span>}
-              <span>{calculateMonsterExp(monster.level)} EXP</span>
-            </div>
+            <span className="font-['MedievalSharp:Regular'] text-lg tabular-nums text-[#f8f3e8]">
+              {Math.max(0, monster.currentHP)}<small className="text-[10px] text-[#b9a47f]">/{monster.maxHP}</small>
+            </span>
           </div>
-          <span className="font-['MedievalSharp:Regular'] text-lg tabular-nums text-[#f8f3e8]">
-            {Math.max(0, monster.currentHP)}<small className="text-[10px] text-[#b9a47f]">/{monster.maxHP}</small>
-          </span>
-        </div>
 
-        <div className="pixel-hp-track" aria-label={`${Math.max(0, monster.currentHP)} of ${monster.maxHP} Resolve`}>
-          <span className="pixel-hp-current" style={{ width: `${hpPercent}%` }} />
-          {lastDamagePercent > 0 && (
-            <span
-              className="pixel-hp-last-hit"
-              style={{ left: `${hpPercent}%`, width: `${lastDamagePercent}%` }}
-              title={`${lastDamage} Resolve lost from the last song`}
-            />
-          )}
-        </div>
+          <div className="pixel-hp-track" aria-label={`${Math.max(0, monster.currentHP)} of ${monster.maxHP} Resolve`}>
+            <span className="pixel-hp-current" style={{ width: `${hpPercent}%` }} />
+            {lastDamagePercent > 0 && (
+              <span
+                className="pixel-hp-last-hit"
+                style={{ left: `${hpPercent}%`, width: `${lastDamagePercent}%` }}
+                title={`${lastDamage} Resolve lost from the last song`}
+              />
+            )}
+          </div>
 
-        <div className="pixel-matchups">
-          {monster.vulnerability && (
-            <div title="Weak — songs of this element count double">
-              <span className="pixel-matchup-label">Weak</span>
-              <GenreBadge genre={monster.vulnerability} className="rounded-none px-1.5 py-0.5 text-[10px]" />
-              <strong className="text-[#9af0a2]">×2</strong>
-            </div>
-          )}
-          {monster.resistance && (
-            <div title="Immune — songs of this element count for nothing">
-              <span className="pixel-matchup-label">Null</span>
-              <GenreBadge genre={monster.resistance} className="rounded-none px-1.5 py-0.5 text-[10px]" />
-              <strong className="text-[#d8e0ea]">×0</strong>
-            </div>
-          )}
+          <div className="pixel-matchups">
+            {monster.vulnerability && (
+              <div title="Weak — songs of this element count double">
+                <span className="pixel-matchup-label">Weak</span>
+                <GenreBadge genre={monster.vulnerability} className="rounded-none px-1.5 py-0.5 text-[10px]" />
+                <strong className="text-[#9af0a2]">×2</strong>
+              </div>
+            )}
+            {monster.resistance && (
+              <div title="Immune — songs of this element count for nothing">
+                <span className="pixel-matchup-label">Null</span>
+                <GenreBadge genre={monster.resistance} className="rounded-none px-1.5 py-0.5 text-[10px]" />
+                <strong className="text-[#d8e0ea]">×0</strong>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </TargetCard>
     </div>
   )
 }
