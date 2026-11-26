@@ -4,10 +4,23 @@ import { Player, StyleId } from '@/types'
 import { STYLES, styleCost, styleRule, maxStyles } from '@/data/styles'
 import { Music } from 'lucide-react'
 
-export function StyleShelf({ player, canInteract }: { player: Player; canInteract: boolean }) {
+interface StyleShelfProps {
+  player: Player
+  canInteract: boolean
+  view: 'offers' | 'owned'
+  selected: StyleId | null
+  onSelectedChange: (styleId: StyleId | null) => void
+}
+
+export function StyleShelf({
+  player,
+  canInteract,
+  view,
+  selected,
+  onSelectedChange,
+}: StyleShelfProps) {
   const dispatch = useGameStore((state) => state.dispatch)
   const offers = useGameStore((state) => state.styleOffers)
-  const [selected, setSelected] = useState<StyleId | null>(null)
   const cap = maxStyles()
   const full = player.styles.length >= cap
   const ready = canInteract && selected !== null && offers.includes(selected) && player.exp >= styleCost(selected)
@@ -22,7 +35,7 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
       setGivingUp(true)
       return
     }
-    setSelected(null)
+    onSelectedChange(null)
     setGivingUp(false)
     await dispatch({
       type: 'BUY_STYLE',
@@ -33,21 +46,15 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
     })
   }
 
-  return (
-    <section className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
-      <div
-        className="flex h-full flex-col rounded-xl p-4 sm:p-5"
-        style={{
-          background: 'rgba(58, 43, 27, 0.3)',
-          border: '1px solid rgba(212, 168, 83, 0.24)',
-        }}
-      >
+  if (view === 'offers') {
+    return (
+      <div className="mt-4 border-t border-gold-700/20 pt-4">
         <h3 className="mb-3 font-display text-lg text-gold-300">Genres</h3>
-        <div className="grid flex-1 auto-rows-fr grid-cols-1 gap-3">
+        <div className="grid auto-rows-fr grid-cols-1 gap-3">
           {offers.map((id) => (
             <button key={id} type="button" aria-pressed={selected === id}
               disabled={!canInteract || player.exp < styleCost(id)}
-              onClick={() => setSelected(selected === id ? null : id)}
+              onClick={() => onSelectedChange(selected === id ? null : id)}
               className="style-offer flex min-h-28 flex-col text-left disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
               <span className="flex justify-between gap-2"><strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong><span>{styleCost(id)} EXP</span></span>
               <span className="mt-2 block text-sm">{styleRule(id)}</span>
@@ -56,16 +63,13 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
         </div>
         {!offers.length && <p className="text-sm text-parchment-400">Genres refill after the turn or when you refresh.</p>}
       </div>
+    )
+  }
 
-      <div
-        className="flex h-full flex-col rounded-xl p-4 sm:p-5"
-        style={{
-          background: 'rgba(58, 43, 27, 0.3)',
-          border: '1px solid rgba(212, 168, 83, 0.24)',
-        }}
-      >
+  return (
+    <div className="mt-4 border-t border-gold-700/20 pt-4">
         <h3 className="mb-3 font-display text-lg text-gold-300">Genres · {player.styles.length}/{cap}</h3>
-        <div className="grid flex-1 auto-rows-fr grid-cols-1 gap-3">
+        <div className="grid auto-rows-fr grid-cols-1 gap-3">
           {player.styles.map((id) => (
             <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer flex min-h-28 flex-col text-left enabled:ring-1 enabled:ring-gold-400">
               <strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong>
@@ -76,7 +80,6 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
             Empty genre slot
           </button>}
         </div>
-      </div>
       {givingUp && ready && (
         <div className="mt-4 rounded-lg border border-gold-700/40 p-3" role="group" aria-label="Choose a song to give up">
           <p className="mb-2 text-sm text-parchment-200">
@@ -96,7 +99,7 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
           </div>
         </div>
       )}
-    </section>
+    </div>
   )
 }
 

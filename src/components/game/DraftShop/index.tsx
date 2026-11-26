@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
-import { Genre, Dice, PendingReward } from '@/types'
+import { Genre, Dice, PendingReward, StyleId } from '@/types'
 import { getMaxValue } from '@/game-logic/dice/roller'
 import { GenreBadge } from '@/components/ui/GenreBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
@@ -27,6 +27,7 @@ const EMPTY_REWARDS: PendingReward[] = []
 
 export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
   const [replaceMode, setReplaceMode] = useState(false)
+  const [selectedStyle, setSelectedStyle] = useState<StyleId | null>(null)
   const buyingIntoSlot = useRef(false)
   const player = useGameStore(selectPlayerById(playerId))
   const dispatch = useGameStore((state) => state.dispatch)
@@ -162,7 +163,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               />
 
               {/* Element chips drawn from the bag */}
-              <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex min-h-0 flex-col">
                 <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                   <div className="flex items-center gap-3">
                     <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
@@ -181,7 +182,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     No chips on display — draw new ones from the bag
                   </div>
                 ) : (
-                  <div className="grid min-h-0 w-full flex-1 auto-rows-fr grid-cols-2 gap-2">
+                  <div className="grid min-h-64 w-full auto-rows-fr grid-cols-2 gap-2 sm:min-h-80">
                     {elementOffers.map((genre, offerIdx) => {
                       const { emoji, rgb } = GENRE_THEME[genre]
                       const isSelected = selectedOfferIdx === offerIdx
@@ -262,10 +263,18 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   </div>
                 )}
               </div>
+
+              <StyleShelf
+                player={player}
+                canInteract={canInteract}
+                view="offers"
+                selected={selectedStyle}
+                onSelectedChange={setSelectedStyle}
+              />
             </section>
 
             <section
-              className="rounded-xl p-4 sm:p-5"
+              className="flex h-full flex-col rounded-xl p-4 sm:p-5"
               style={{
                 background: 'rgba(58, 43, 27, 0.3)',
                 border: '1px solid rgba(212, 168, 83, 0.24)',
@@ -464,12 +473,15 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   ))}
                 </div>
               </div>
-            </section>
 
-            {/* ===== Genres: offers on the left, learned genres on the right ===== */}
-            <div className="lg:col-span-2">
-              <StyleShelf player={player} canInteract={canInteract} />
-            </div>
+              <StyleShelf
+                player={player}
+                canInteract={canInteract}
+                view="owned"
+                selected={selectedStyle}
+                onSelectedChange={setSelectedStyle}
+              />
+            </section>
           </div>
         </div>
       </div>
