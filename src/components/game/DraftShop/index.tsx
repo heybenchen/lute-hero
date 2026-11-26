@@ -312,7 +312,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </div>
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
             </div>
-            <div className={`grid grid-cols-3 ${player.songs.length === 6 ? 'sm:grid-cols-6' : 'sm:grid-cols-7'} gap-2 sm:gap-3`}>
+            <div className={`grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3 ${player.songs.length > 6 ? 'lg:grid-cols-7' : 'lg:grid-cols-6'}`}>
               {player.songs.map((song, songIndex) => (
                 <div
                   key={song.id}
