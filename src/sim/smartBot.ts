@@ -1101,6 +1101,13 @@ export class SmartBot {
       const hasFree = me.styles.includes('rubato') && !now.showdownUndo?.rubatoUsed &&
         me.songs.some((sg) => (now.showdownUndo?.songIds ?? []).includes(sg.id) && (songDie(sg) ? isRubatoDie(songDie(sg)!) : false))
       if (hasFree && this.act({ type: 'REROLL_SHOWDOWN_SONG', rubato: true })) continue
+      // The crown: once its holder has performed, beating their verse pays a bonus.
+      // Keep a verse that beats it; encore one that falls short while the odds pay for the Inspiration.
+      const chase = this.crownChase(me, got)
+      if (chase) {
+        if (got > chase.toBeat) return
+        if (me.inspiration >= 1 && chase.pBeat * chase.gain > this.p.inspirationValue && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
+      }
       // Spread spare Inspiration over the verses still to come
       const budget = versesLeft === 0 ? me.inspiration : Math.floor(me.inspiration / (versesLeft + 1)) || (me.inspiration > versesLeft ? 1 : 0)
       if (this.p.showdownStop === 'optimal') {
@@ -1126,6 +1133,26 @@ export class SmartBot {
    * Optimal stopping with `k` rerolls left: keep a roll at or above this value. With one reroll it is
    * the mean; each extra reroll raises it to E[max(X, previous)].
    */
+  /**
+   * Chasing the crown this verse: the crown holder's verse to beat (once they have
+   * performed), the chance a fresh roll beats it, and the bonus that would add.
+   * Null when this bard holds the crown or there is nothing to chase yet.
+   */
+  private crownChase(me: Player, got: number): { toBeat: number; pBeat: number; gain: number } | null {
+    const s = this.state
+    if (s.showdownCrownIds.length === 0 || s.showdownCrownIds.includes(me.id)) return null
+    const crownPerfs = s.showdownTurnPerformances.filter((perf) => s.showdownCrownIds.includes(perf.playerId))
+    if (crownPerfs.length === 0) return null
+    const toBeat = Math.max(...crownPerfs.map((perf) => perf.fandom))
+    const dist = this.currentPerformanceDist(me)
+    if (!dist) return null
+    let pBeat = 0
+    for (const [x, p] of dist) if (x > toBeat) pBeat += p
+    const { showdownCrownBeatBonus, showdownCrownTieBonus } = getTunables()
+    const held = got === toBeat && got > 0 ? showdownCrownTieBonus : 0
+    return { toBeat, pBeat, gain: showdownCrownBeatBonus - held }
+  }
+
   private stopThreshold(d: Dist, k: number): number {
     let t = mean(d)
     for (let j = 2; j <= k; j++) {

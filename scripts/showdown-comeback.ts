@@ -405,6 +405,27 @@ const VARIANTS: Variant[] = [
     },
   })),
   {
+    // The shipped rule: verse fandom x1 rounded down to 5s; beating the crown holder's
+    // verse (most Fame at the start of the verse) pays 50, matching it 25
+    name: '[shipped] crown: fandom x1 rounded to 5s, beat the crown +50, match +25',
+    kind: 'scoring',
+    score: (fame, p) => {
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const top = Math.max(...Object.values(total))
+        const crown = Object.keys(total).filter((id) => total[id] === top)
+        const toBeat = Math.max(...crown.map((id) => p.verses[id][v] ?? 0))
+        for (const id of Object.keys(fame)) {
+          const perf = p.verses[id][v] ?? 0
+          const bonus = crown.includes(id) ? 0 : perf > toBeat ? 50 : perf === toBeat && perf > 0 ? 25 : 0
+          total[id] += Math.floor(perf / 5) * 5 + bonus
+        }
+      }
+      return total
+    },
+  },
+  {
     name: 'Fandom x2 + catch-up Inspiration',
     kind: 'replay',
     prepare: (s) => {

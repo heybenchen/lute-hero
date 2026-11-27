@@ -50,6 +50,10 @@ describe('rulebook', () => {
     expect(md).toContain(`| **Buy Inspiration** | ${T.inspirationBaseCost} EXP each |`)
     expect(md).toContain(`**${T.maxTagsPerGenre} chips of the same element**`)
     expect(T.showdownTurns).toBe(3) // the book says "three verses" throughout
+    expect(md).toContain(`**rounded down to a multiple of ${T.showdownFameRounding}**`)
+    expect(md).toContain(`- **Beat it:** take **+${T.showdownCrownBeatBonus} Fame**.`)
+    expect(md).toContain(`- **Match it exactly:** take **+${T.showdownCrownTieBonus} Fame**.`)
+    expect(T.showdownFandomMultiplier).toBe(1) // "take their fandom as Fame"
     expect(T.maxStyles).toBe(2) // "hold 2 genres"
   })
 

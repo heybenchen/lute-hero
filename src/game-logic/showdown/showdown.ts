@@ -14,6 +14,10 @@ export interface ShowdownPerformance {
   fandom: number
   /** Dominant element of the song played — drives the boss's adaptation. */
   genre: Genre | null
+  /** Fame this verse paid, crown bonus included (filled in when the verse is settled). */
+  earned?: number
+  /** The crown bonus inside `earned`: beat or matched the crown holder's verse. */
+  crownBonus?: number
 }
 
 /**
@@ -92,6 +96,49 @@ export function computeBossAdaptation(performances: ShowdownPerformance[]): Boss
     if (perf.fandom > strongest.fandom) strongest = perf
   }
   return { resistGenre: strongest.genre }
+}
+
+/**
+ * The crown: whoever has the most Fame (tour Fame plus Showdown Fame so far)
+ * when a verse begins. Tied bards share it.
+ */
+export function crownHolders(players: { id: string; fame: number }[], earned: Record<string, number>): string[] {
+  if (players.length === 0) return []
+  const total = (p: { id: string; fame: number }) => p.fame + (earned[p.id] ?? 0)
+  const top = Math.max(...players.map(total))
+  return players.filter((p) => total(p) === top).map((p) => p.id)
+}
+
+/** Fame for a verse's fandom: multiplied, then rounded down to whole Fame chips. */
+export function verseFame(fandom: number): number {
+  const { showdownFandomMultiplier, showdownFameRounding } = getTunables()
+  const step = Math.max(1, showdownFameRounding)
+  return Math.floor((fandom * showdownFandomMultiplier) / step) * step
+}
+
+/**
+ * Crown bonus for one performance: beating the crown holder's verse pays the
+ * beat bonus, matching it the tie bonus. The crown holders themselves never
+ * earn one, and a verse of 0 can't match. With several holders, the best of
+ * their verses is the one to beat.
+ */
+export function crownBonus(perf: ShowdownPerformance, performances: ShowdownPerformance[], crownIds: string[]): number {
+  if (crownIds.length === 0 || crownIds.includes(perf.playerId)) return 0
+  const crownPerfs = performances.filter((p) => crownIds.includes(p.playerId))
+  if (crownPerfs.length === 0) return 0
+  const toBeat = Math.max(...crownPerfs.map((p) => p.fandom))
+  const { showdownCrownBeatBonus, showdownCrownTieBonus } = getTunables()
+  if (perf.fandom > toBeat) return showdownCrownBeatBonus
+  if (perf.fandom === toBeat && perf.fandom > 0) return showdownCrownTieBonus
+  return 0
+}
+
+/** Pay out a finished verse: each performance's Fame (rounded fandom + crown bonus). */
+export function settleVerse(performances: ShowdownPerformance[], crownIds: string[]): ShowdownPerformance[] {
+  return performances.map((perf) => {
+    const bonus = crownBonus(perf, performances, crownIds)
+    return { ...perf, crownBonus: bonus, earned: verseFame(perf.fandom) + bonus }
+  })
 }
 
 /** Songs a player can actually perform (at least one die slotted). */

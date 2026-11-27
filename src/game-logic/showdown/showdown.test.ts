@@ -6,7 +6,12 @@ import {
   computeBossAdaptation,
   getPlayableSongs,
   ShowdownPerformance,
+  crownHolders,
+  crownBonus,
+  settleVerse,
+  verseFame,
 } from './showdown'
+import { withTunables, DEFAULT_TUNABLES } from '@/data/tunables'
 import { Genre, Song, DiceRoll } from '@/types'
 
 function perf(playerId: string, fandom: number, genre: Genre | null): ShowdownPerformance {
@@ -106,5 +111,43 @@ describe('getPlayableSongs', () => {
     const withDice = song('Ballad')
     const empty = { ...song(null), id: 's2' }
     expect(getPlayableSongs([withDice, empty])).toEqual([withDice])
+  })
+})
+
+describe('the crown', () => {
+  it('goes to the most Fame, counting Showdown Fame, and is shared on a tie', () => {
+    const players = [{ id: 'a', fame: 200 }, { id: 'b', fame: 150 }, { id: 'c', fame: 120 }]
+    expect(crownHolders(players, {})).toEqual(['a'])
+    expect(crownHolders(players, { b: 60 })).toEqual(['b'])
+    expect(crownHolders(players, { b: 50 })).toEqual(['a', 'b'])
+  })
+
+  it('rounds verse Fame down to whole chips', () => {
+    expect(verseFame(23)).toBe(20)
+    expect(verseFame(4)).toBe(0)
+    expect(verseFame(45)).toBe(45)
+    expect(withTunables({ ...DEFAULT_TUNABLES, showdownFameRounding: 1, showdownFandomMultiplier: 2 }, () => verseFame(23))).toBe(46)
+  })
+
+  it('pays 50 for beating the crown holder, 25 for matching, nothing to the holder', () => {
+    const verse = [perf('a', 14, 'Ballad'), perf('b', 14, 'Folk'), perf('c', 22, 'Hymn'), perf('d', 9, 'Shanty')]
+    expect(crownBonus(verse[0], verse, ['a'])).toBe(0)
+    expect(crownBonus(verse[1], verse, ['a'])).toBe(25)
+    expect(crownBonus(verse[2], verse, ['a'])).toBe(50)
+    expect(crownBonus(verse[3], verse, ['a'])).toBe(0)
+  })
+
+  it('compares against the best verse of tied crown holders, and a 0 never matches', () => {
+    const verse = [perf('a', 10, 'Ballad'), perf('b', 18, 'Folk'), perf('c', 15, 'Hymn')]
+    expect(crownBonus(verse[2], verse, ['a', 'b'])).toBe(0)
+    const silent = [perf('a', 0, null), perf('b', 0, null)]
+    expect(crownBonus(silent[1], silent, ['a'])).toBe(0)
+  })
+
+  it('settles a verse into earned Fame', () => {
+    const settled = settleVerse([perf('a', 44, 'Ballad'), perf('b', 17, 'Folk'), perf('c', 24, 'Hymn')], ['a'])
+    expect(settled.map((s) => s.earned)).toEqual([40, 15, 20])
+    const comeback = settleVerse([perf('a', 14, 'Folk'), perf('b', 14, 'Folk'), perf('c', 22, 'Folk')], ['a'])
+    expect(comeback.map((s) => [s.earned, s.crownBonus])).toEqual([[10, 0], [35, 25], [70, 50]])
   })
 })

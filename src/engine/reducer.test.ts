@@ -783,7 +783,7 @@ describe('showdown actions', () => {
     expect(state.showdownHistory).toHaveLength(1)
   })
 
-  it('completes after 3 verses, banks fandom into fame, allows summary advance', () => {
+  it('completes after 3 verses, banks the Showdown Fame, allows summary advance', () => {
     let state = showdownState()
     for (let verse = 1; verse <= 3; verse++) {
       for (const pid of ['player-1', 'player-2']) {
@@ -795,11 +795,47 @@ describe('showdown actions', () => {
     }
     expect(state.showdownComplete).toBe(true)
     for (const p of state.players) {
-      expect(p.fame).toBe(state.showdownFandom[p.id])
+      const earned = state.showdownHistory.flat().filter((h) => h.playerId === p.id).reduce((sum, h) => sum + (h.earned ?? 0), 0)
+      expect(state.showdownEarned[p.id]).toBe(earned)
+      // Both bards started on 0 Fame, so the Showdown is all of it, in whole 5s
+      expect(p.fame).toBe(earned)
+      expect(p.fame % 5).toBe(0)
       expect(p.totalBossDamage).toBe(state.showdownFandom[p.id])
     }
     state = apply(state, { type: 'ADVANCE_TO_SUMMARY' }).state
     expect(state.phase).toBe('gameOver')
+  })
+
+  it('crowns the Fame leader, pays the crown bonus, and passes the crown between verses', () => {
+    let state = showdownState()
+    // Alba leads on Fame, so she holds the crown for verse 1
+    state = { ...state, players: state.players.map((p) => ({ ...p, fame: p.id === 'player-1' ? 100 : 60 })) }
+    state = { ...state, showdownCrownIds: ['player-1'] }
+    // Verse 1: Alba 12, Bryn 17 — finished by hand so the rolls are known
+    state = { ...state, showdownCurrentFandom: 12, showdownCurrentGenre: 'Ballad', showdownSongsUsed: ['x'] }
+    state = apply(state, { type: 'FINISH_SHOWDOWN_PERFORMANCE' }).state
+    state = { ...state, showdownCurrentFandom: 17, showdownCurrentGenre: 'Folk', showdownSongsUsed: ['y'] }
+    const result = apply(state, { type: 'FINISH_SHOWDOWN_PERFORMANCE' })
+    state = result.state
+    const verse = state.showdownHistory[0]
+    expect(verse.find((h) => h.playerId === 'player-1')).toMatchObject({ earned: 10, crownBonus: 0 })
+    // Bryn beat the crown: 17 rounds down to 15, +50
+    expect(verse.find((h) => h.playerId === 'player-2')).toMatchObject({ earned: 65, crownBonus: 50 })
+    expect(state.showdownEarned).toEqual({ 'player-1': 10, 'player-2': 65 })
+    // Fame is banked at the end; the crown already follows tour + Showdown Fame (110 vs 125)
+    expect(state.players.find((p) => p.id === 'player-2')!.fame).toBe(60)
+    expect(state.showdownCrownIds).toEqual(['player-2'])
+    const advance = result.events.find((e) => e.type === 'showdownAdvance')
+    expect(advance?.type === 'showdownAdvance' && advance.recap?.[1].earned).toBe(65)
+  })
+
+  it('starts the Showdown with the Fame leader crowned', () => {
+    let state = startTwoPlayerGame()
+    state = { ...state, players: state.players.map((p) => ({ ...p, fame: p.id === 'player-2' ? 210 : 150 })) }
+    state = { ...state, pendingPhase: 'finalBoss' as const, finalTurnGranted: true, currentTurnPlayerIndex: 1 }
+    state = apply(state, { type: 'END_TURN' }).state
+    expect(state.showdownActive).toBe(true)
+    expect(state.showdownCrownIds).toEqual(['player-2'])
   })
 })
 

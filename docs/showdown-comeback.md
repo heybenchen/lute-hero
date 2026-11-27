@@ -1,5 +1,7 @@
 # Can a bard who is behind still win the Final Showdown?
 
+> **Decision (shipped):** verse fandom ×1 as Fame, rounded down to 5s; beating the crown holder's verse (most Fame at the start of the verse) pays +50, matching it +25. See "The shipped rule" at the end.
+
 Measured with `npx tsx scripts/showdown-comeback.ts` (smart bots; each game is played to the Showdown once, then every variant replays or re-scores the Showdown from that same state with the same dice seed). "Leader wins" is how often the bard with the most Fame going into the Showdown wins; parity is 33% at a 3-bard table.
 
 ## Findings
@@ -118,3 +120,12 @@ Each verse's performance is rounded down to a multiple of 5 and scored at ×1 or
 | Fandom ×2 + 75 crown | 64% (12%) | 69% (7%) | 80% (20%) | 66% (8%) |
 
 Crowns are a little weaker than "beat the leader's verse" bonuses of the same size: the leader also has the best dice, so they often take the crown themselves.
+
+## The shipped rule
+
+Verse fandom ×1 as Fame, rounded down to a multiple of 5; the crown is held by whoever has the most Fame (tour + Showdown so far) when the verse begins; every other bard who beats the holder's verse takes +50, one who matches it +25 (a 0 never matches). Simulated with the smart bot encoring to chase the crown. Leader win % (last-place win %):
+
+| | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| Old rules | 95% (0%) | 92% (0%) | 96% (5%) | 95% (0%) |
+| **Crown rule** | **64% (10%)** | **66% (4%)** | **76% (25%)** | **65% (3%)** |

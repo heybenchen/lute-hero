@@ -8,6 +8,8 @@ interface AdaptBannerProps {
   performances: ShowdownPerformance[]
   players: Player[]
   resistGenre: Genre | null
+  /** Who holds the crown for the next verse. */
+  crownIds?: string[]
   onContinue: () => void
 }
 
@@ -17,6 +19,7 @@ export function AdaptBanner({
   performances,
   players,
   resistGenre,
+  crownIds = [],
   onContinue,
 }: AdaptBannerProps) {
   const byId = new Map(players.map((p) => [p.id, p]))
@@ -66,9 +69,17 @@ export function AdaptBanner({
                       )}
                     </span>
                     <span className="text-sm font-bold text-gold-400 tabular-nums flex-shrink-0">
-                      +{perf.fandom} fandom
+                      {perf.earned !== undefined ? `+${perf.earned} Fame` : `+${perf.fandom} fandom`}
                     </span>
                   </div>
+                  {perf.earned !== undefined && (
+                    <div className="flex justify-between text-[11px] text-parchment-500 mb-0.5">
+                      <span>{perf.fandom} fandom</span>
+                      {(perf.crownBonus ?? 0) > 0 && (
+                        <span className="text-gold-300 font-bold">👑 +{perf.crownBonus} from the crown</span>
+                      )}
+                    </div>
+                  )}
                   <div className="hp-bar h-1.5">
                     <div
                       className="hp-fill rounded-full"
@@ -84,6 +95,12 @@ export function AdaptBanner({
             )
           })}
         </div>
+
+        {crownIds.length > 0 && players.length > 1 && (
+          <div className="text-sm text-gold-300 font-bold mb-4 animate-slide-up" style={{ animationDelay: '450ms', animationFillMode: 'both' }}>
+            👑 {crownIds.map((id) => byId.get(id)?.name).filter(Boolean).join(' & ')} {crownIds.length > 1 ? 'share' : 'holds'} the crown next verse
+          </div>
+        )}
 
         {/* Adaptation announcement */}
         <div className="divider-ornate" />
