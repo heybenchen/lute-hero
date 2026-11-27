@@ -55,7 +55,7 @@ export function StyleShelf({
             <button key={id} type="button" aria-pressed={selected === id}
               disabled={!canInteract || player.exp < styleCost(id)}
               onClick={() => onSelectedChange(selected === id ? null : id)}
-              className="style-offer flex min-h-28 flex-col text-left disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
+              className="style-offer flex h-32 flex-col text-left disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
               <span className="flex justify-between gap-2"><strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong><span>{styleCost(id)} EXP</span></span>
               <span className="mt-2 block text-sm">{styleRule(id)}</span>
             </button>
