@@ -6,6 +6,8 @@
 
 ## Medium Priority
 
+- Decide whether the Final Showdown should allow comebacks: the Fame leader going in wins 94–97% of bot games (they lead 2nd place by 84–99 Fame; a bard earns ~70 fandom in the Showdown). Options and simulated results in `docs/showdown-comeback.md` (`scripts/showdown-comeback.ts`); the most promising are "Fame becomes a head start" (20/10/0 by rank → leader wins ~67%) and Silence targets the leader.
+
 - Styles are balanced against shopping rivals (see `songStyles.md`): all 20 win 28.8–37.7% against a 33.3% parity. Possible follow-ups: test style pairs at real timing (`PAIRS=1`), and a wider-than-3-seat table.
 
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
