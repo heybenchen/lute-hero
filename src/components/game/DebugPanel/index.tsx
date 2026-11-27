@@ -1,4 +1,5 @@
-import { SHOWDOWN_ROUND_STATS } from '@/data/roundProfiles'
+import { ROUND_HOLDINGS, SHOWDOWN_ROUND_STATS } from '@/data/roundProfiles'
+import { DEFAULT_SIMULATION_PACE, SIMULATION_PACES, SimulationPace } from '@/data/simulationPaces'
 import { MAX_SIMULATED_ROUND } from '@/engine/reducer'
 import { useCallback, useEffect, useState } from 'react'
 import { useGameStore, unflattenEngineState, selectIsHost, type GameStore } from '@/store'
@@ -527,13 +528,18 @@ function DiceEditor({ player }: { player: Player }) {
  * from a fresh deal through round N — every turn is real engine play, so the
  * board, dice, genres, Fame, EXP and Inspiration are realistic and consistent.
  * Then either keep playing from the next round or start the Final Showdown.
- * The round is picked with a large-target stepper so it works on phones.
+ * The pace sets how well the bots play (the expert bot is far ahead of people
+ * learning the game). The round is picked with a large-target stepper so it
+ * works on phones.
  */
 function SimulateTab() {
   const dispatch = useGameStore((state) => state.dispatch)
   const playerCount = useGameStore((state) => state.players.length)
-  const stats = SHOWDOWN_ROUND_STATS[playerCount] ?? SHOWDOWN_ROUND_STATS[3]
-  const [round, setRound] = useState(() => stats?.median ?? 8)
+  const [pace, setPace] = useState<SimulationPace>(DEFAULT_SIMULATION_PACE)
+  const stats = SHOWDOWN_ROUND_STATS[pace][playerCount] ?? SHOWDOWN_ROUND_STATS[pace][3]
+  const [round, setRound] = useState(5)
+  const paceInfo = SIMULATION_PACES.find((p) => p.id === pace)!
+  const holdings = ROUND_HOLDINGS[pace][round - 1]
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
 
@@ -547,7 +553,7 @@ function SimulateTab() {
     setBusy(true)
     // Let the "Simulating…" state paint before the (synchronous, 1–2 s) bot run
     await new Promise((resolve) => setTimeout(resolve, 30))
-    const result = await dispatch({ type: 'DEBUG_SIMULATE', round, showdown })
+    const result = await dispatch({ type: 'DEBUG_SIMULATE', round, showdown, pace })
     setBusy(false)
     if (!result.ok) return setNote(result.error ?? 'Simulation failed')
     const reached = useGameStore.getState().currentRound - 1
@@ -575,6 +581,26 @@ function SimulateTab() {
         Bots play every turn of this table — same bards, elements and values — from a fresh deal, so the board, dice, genres, Fame, EXP and Inspiration all come from real play.
       </p>
 
+      <div className="mb-1 text-center text-[11px] uppercase tracking-wider text-parchment-500">Bots play like</div>
+      <div className="mb-1 grid grid-cols-3 gap-1" role="radiogroup" aria-label="Simulation pace">
+        {SIMULATION_PACES.map((p) => (
+          <button
+            key={p.id}
+            role="radio"
+            aria-checked={pace === p.id}
+            onClick={() => setPace(p.id)}
+            disabled={busy}
+            className={`min-h-10 rounded-lg text-xs font-bold transition-colors ${pace === p.id ? 'text-wood-700' : 'text-parchment-300 hover:text-gold-300'}`}
+            style={pace === p.id
+              ? { background: 'rgba(212, 168, 83, 0.9)', border: '1px solid rgba(212, 168, 83, 1)' }
+              : { background: 'rgba(61, 48, 32, 0.5)', border: '1px solid rgba(212, 168, 83, 0.2)' }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <p className="mb-3 text-center text-[11px] leading-snug text-parchment-500">{paceInfo.help}</p>
+
       <div className="mb-1 text-center text-[11px] uppercase tracking-wider text-parchment-500">Through round</div>
       <div className="mb-2 flex items-center justify-center gap-4">
         {stepButton('−', -1)}
@@ -584,6 +610,11 @@ function SimulateTab() {
       {stats && (
         <p className="mb-3 text-center text-[11px] text-parchment-500">
           {playerCount}-bard games usually reach the showdown after round {stats.p10}–{stats.p90} (median {stats.median}).
+        </p>
+      )}
+      {holdings && (
+        <p className="mb-3 text-center text-[11px] text-parchment-500">
+          After round {round} a bard typically has {holdings.dice} dice in {holdings.elements} elements and {holdings.fame} Fame.
         </p>
       )}
 

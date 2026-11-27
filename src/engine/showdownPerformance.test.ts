@@ -106,6 +106,22 @@ describe('DEBUG_SIMULATE', () => {
     expect(state.currentRound).toBeLessThanOrEqual(31)
   })
 
+  it('plays slower at a learning pace than at the expert pace', () => {
+    // Summed over a few seeds so one lucky game can't flip it
+    let learning = 0
+    let expert = 0
+    for (const seed of [3, 4, 5]) {
+      learning += dice(apply(fresh(), { type: 'DEBUG_SIMULATE', round: 5, showdown: false, pace: 'learning' }, ctx(seed)).state).length
+      expert += dice(apply(fresh(), { type: 'DEBUG_SIMULATE', round: 5, showdown: false, pace: 'expert' }, ctx(seed)).state).length
+    }
+    expect(learning).toBeLessThan(expert)
+  })
+
+  it('rejects an unknown pace', () => {
+    const action = { type: 'DEBUG_SIMULATE', round: 5, showdown: false, pace: 'godlike' } as unknown as GameAction
+    expect(applyAction(fresh(), action, ctx()).ok).toBe(false)
+  })
+
   it('is host-only online', () => {
     const seat: ActionCtx = { rng: mulberry32(1), actor: { kind: 'seat', playerId: 'player-2', isHost: false } }
     expect(applyAction(fresh(), { type: 'DEBUG_SIMULATE', round: 5, showdown: false }, seat).ok).toBe(false)

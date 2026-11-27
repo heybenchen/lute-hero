@@ -6,6 +6,8 @@
 
 ## Medium Priority
 
+- Decide whether the Final Showdown should allow comebacks: the Fame leader going in wins 94–97% of bot games (they lead 2nd place by 84–99 Fame; a bard earns ~70 fandom in the Showdown). Options and simulated results in `docs/showdown-comeback.md` (`scripts/showdown-comeback.ts`); the most promising are "Fame becomes a head start" (20/10/0 by rank → leader wins ~67%) and Silence targets the leader.
+
 - Genre balance after the spec's rule update (see `songStyles.md`): 16 of 30 win 31–37% against a 33.3% parity (baseline 31.9%), rows swing ~5 points between runs. Low: Emo 24.2% (+3 on the last song rarely comes up), Pop 26.1%, Dubstep 26.3%, Gospel 27.3%, Trance 27.8%, New Age 28.3%, Soul 28.6%, Opera 29.1% (flat +2 can't crit), K-Pop 29.8%. High: Orchestra 38.8%, Disco 38.7%, Bluegrass 38.1% (d8 only). Playtest the choice genres (Gospel, Soul, Blues) before re-pricing; the bot plays them with simple rules. A 1,200-game run per genre would halve the noise. Possible follow-ups: genre pairs at real timing (`PAIRS=1`), a wider table.
 
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
@@ -15,6 +17,8 @@
 (none)
 
 ## Completed
+
+- The playtest Simulate tab has a pace: Learning / Typical (default) / Expert. The expert smart bot fought and won nearly every turn and spent every EXP at once, so by round 5 bards held 6 dice in ~3.8 elements — far ahead of real playtests. Slower paces make it slip like a person (`SmartParams.skill`); by round 5 Typical holds ~4.9 dice in ~3.2 elements, Learning ~3.4 in ~2.5. The panel shows the expected holdings for the chosen pace and round. Paces are calibrated by guesswork — retune `SIMULATION_PACES` skills against real playtest numbers.
 
 - Retreating before any dice are rolled is now free: it does not consume the bard's concert for the turn, alter monster chips, trigger retreat rewards, or show the damage-forfeit confirmation.
 

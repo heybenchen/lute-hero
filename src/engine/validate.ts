@@ -1,4 +1,5 @@
 import { EngineCombatState, EngineState } from './state.js'
+import { isSimulationPace } from '../data/simulationPaces.js'
 import { GameAction, ActorSeat } from './actions.js'
 import { getPlayableSongs, mergeSongs } from '../game-logic/showdown/showdown.js'
 import { areSpacesConnected } from '../game-logic/board/graphBuilder.js'
@@ -557,6 +558,7 @@ export function validateAction(
     case 'DEBUG_SIMULATE': {
       if (!isHost) return forbidden('Only the host can use debug mode')
       if (!Number.isInteger(action.round) || action.round < 1) return illegal('Choose a round of 1 or more')
+      if (action.pace !== undefined && !isSimulationPace(action.pace)) return illegal('Unknown simulation pace')
       if (state.players.length === 0) return illegal('Start a game first')
       return ok
     }

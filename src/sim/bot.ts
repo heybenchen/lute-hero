@@ -29,7 +29,7 @@ import { getTunables, withTunables } from '../data/tunables.js'
 import { getUpgradeCost, newD4Cost, getInspirationCost } from '../data/draftCards.js'
 import { styleCost, maxStyles } from '../data/styles.js'
 import { ALL_GENRES } from '../data/genreTheme.js'
-import { SmartBot } from './smartBot.js'
+import { SmartBot, SmartParams } from './smartBot.js'
 
 const FACES: Record<DiceType, number> = { d4: 4, d8: 8, d12: 12, d20: 20 }
 
@@ -334,7 +334,8 @@ export function simulateGame(
   playerCount: number,
   rng: Rng,
   onRoundEnd: (roundsCompleted: number, state: EngineState) => void = () => {},
-  maxRounds = 40
+  maxRounds = 40,
+  params: Partial<SmartParams> = {}
 ): { showdownAfterRound: number | null; state: EngineState } {
   const genres = shuffleGenres(rng).slice(0, playerCount)
   const started = applyAction(
@@ -343,7 +344,7 @@ export function simulateGame(
     { rng, actor: { kind: 'hotseat' } }
   )
   if (!started.ok) throw new Error(started.message)
-  const bot = new SmartBot(started.state, rng)
+  const bot = new SmartBot(started.state, rng, params)
 
   let round = bot.state.currentRound
   for (let turns = 0; turns < maxRounds * playerCount + playerCount; turns++) {
@@ -375,9 +376,10 @@ function shuffleGenres(rng: Rng): Genre[] {
 export function simulateRounds(
   start: EngineState,
   rounds: number,
-  rng: Rng
+  rng: Rng,
+  params: Partial<SmartParams> = {}
 ): { state: EngineState; completed: number } {
-  const bot = new SmartBot(start, rng)
+  const bot = new SmartBot(start, rng, params)
   let best = { state: start, completed: 0 }
   let round = start.currentRound
   const playerCount = Math.max(1, start.players.length)
