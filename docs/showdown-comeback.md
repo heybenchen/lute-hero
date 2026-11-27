@@ -53,3 +53,17 @@ Fame from the whole game still counts in full; only the Showdown is made bigger 
 | Fandom ×2 + verse crowns (+50 Fame) | 68% (8%) | 73% (4%) | 67% (4%) |
 
 Underdog boosts overshoot once fandom is multiplied (last place wins most games). The two that land near a leader win rate of 55–65% at every table size are **fandom ×3 + Silence targets the leader** (no one ever loses Fame) and **fandom ×2 + stolen fans** (the leader can lose some Fame to the bard who out-performs them).
+
+## Stolen fans: variants
+
+Leader win % (last-place win %). "Leader" for a steal is whoever has the most Fame at the start of that verse.
+
+| Variant | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| Current rules | 93% (0%) | 92% (0%) | 94% (7%) | 93% (0%) |
+| Fandom ×2 + verse best steals half its Fame from the leader | 56% (10%) | 60% (8%) | 72% (29%) | 51% (7%) |
+| Fandom ×2 + everyone who outplays the leader steals the margin (×2) | 63% (9%) | 64% (8%) | 74% (27%) | 51% (7%) |
+| Fandom ×2 + outplay steals half the margin | 70% (6%) | 75% (4%) | 79% (22%) | 64% (4%) |
+| Fandom ×1 + outplay steals the margin | 75% (3%) | 79% (3%) | 83% (17%) | 66% (4%) |
+| Fandom ×3 + outplay steals half the margin | 63% (9%) | 67% (7%) | 75% (25%) | 55% (5%) |
+| Fandom ×2 + verse best steals half from everyone ahead of them | 53% (17%) | 56% (15%) | 72% (29%) | 47% (13%) |
