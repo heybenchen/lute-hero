@@ -33,7 +33,7 @@ import { getElementMultiplier } from '../game-logic/combat/damageCalculator.js'
 import { monsterSpawnHp } from '../game-logic/combat/monsterSpawner.js'
 import { calculateMonsterExp, calculateMonsterFameValue } from '../game-logic/fame/calculator.js'
 import { getValidMoves } from '../game-logic/board/graphBuilder.js'
-import { GenreContext, discoFameFor, builtinRollOptions, elementCount, bluesCanRefresh, bebopUsesLeft, gospelCanRefresh } from '../game-logic/genres/genreEffects.js'
+import { GenreContext, discoFameFor, builtinRollOptions, elementCount, bluesCanRefresh, bebopUsesLeft, gospelCanRefresh, substitutedDice } from '../game-logic/genres/genreEffects.js'
 import { getMaxValue } from '../game-logic/dice/roller.js'
 import { getTunables, withTunables } from '../data/tunables.js'
 import { inspirationSpend } from '../data/draftCards.js'
@@ -151,9 +151,6 @@ const GENRE_PRIOR: Partial<Record<GenreId, number>> = {
   'new-age': 1.0,
   crossover: 0.4,
   pop: 0.6,
-  // Genres whose triggers the odds' typical play can't see (after a miss; Fame for a moved monster)
-  grunge: 1.5,
-  dubstep: 1.0,
   // K-Pop pays at the end of a big concert
   'k-pop': 1.5,
   // Trip-Hop's reach is a movement choice the fight odds never see
@@ -260,9 +257,14 @@ export class SmartBot {
       allElements: opts.allElements,
       elementCount: opts.allElements ? 99 : 0,
     }
-    let roll = builtinRollOptions(die, ctx, true, [])
-    if (specs.length && play) roll = applySpecRollModifiers(specs, die, play, roll).opts
-    return rollDist(die.type, roll)
+    let combined: Dist | null = null
+    for (const physicalDie of substitutedDice(die, genres)) {
+      let roll = builtinRollOptions(physicalDie, ctx, true, [])
+      if (specs.length && play) roll = applySpecRollModifiers(specs, physicalDie, play, roll).opts
+      const next = rollDist(physicalDie.type, roll)
+      combined = combined ? convolve(combined, next) : next
+    }
+    return combined!
   }
 
   /** What data-defined genre conditions see for a play at `target` (mirrors the engine). */

@@ -73,7 +73,7 @@ export interface EngineCombatState {
    * over, so they may refresh one spent song of their choice (RALLY_SONG).
    */
   rallyReady: boolean
-  /** How the last play went: won its monster over, moved it, or neither (Grunge, Dubstep). */
+  /** How the last play went: won its monster over, moved it, or neither (Dubstep). */
   lastPlayResult?: 'won' | 'moved' | 'missed' | null
   /** Gospel's call and Emo's final-song declaration on the last own play, replayed by an encore. */
   lastPlayFlags?: { gospelCall?: boolean; emoFinale?: boolean }

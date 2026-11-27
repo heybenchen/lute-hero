@@ -54,9 +54,16 @@ export function calculateDamage(
 
   rolls.forEach((roll) => {
     // Find the slot that created this roll
-    const slotIdx = song.slots.findIndex((s) => s.dice?.id === roll.diceId);
+    const sourceDiceId = roll.sourceDiceId ?? roll.diceId;
+    const slotIdx = song.slots.findIndex((s) => s.dice?.id === sourceDiceId);
     const slot = slotIdx >= 0 ? song.slots[slotIdx] : undefined;
-    const dice = slot?.dice;
+    const dice = slot?.dice
+      ? {
+          ...slot.dice,
+          ...(roll.rolledType ? { type: roll.rolledType } : {}),
+          ...(roll.element ? { element: roll.element } : {}),
+        }
+      : undefined;
 
     const bonus = roll.bonus ?? 0;
     if (dice) {

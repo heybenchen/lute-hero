@@ -114,6 +114,16 @@ function rollGenreDie(dice: Dice, ctx: GenreContext, isFirstDie: boolean, dieInd
   return roll
 }
 
+/** Grunge replaces each slotted d20 with two physical d12s of the same element. */
+export function substitutedDice(dice: Dice, genres: readonly GenreId[]): Dice[] {
+  if (dice.type !== 'd20' || !genres.includes('grunge')) return [dice]
+  return [1, 2].map((n) => ({
+    ...dice,
+    id: `${dice.id}:grunge:${n}`,
+    type: 'd12' as const,
+  }))
+}
+
 /** Roll every die in a song with the performer's genres applied. */
 export function rollSongWithGenres(song: Song, ctx: GenreContext, rng: Rng): GenreRolls {
   const triggered: GenreId[] = []
@@ -126,10 +136,20 @@ export function rollSongWithGenres(song: Song, ctx: GenreContext, rng: Rng): Gen
   let lastElement: Dice['element'] | null = null
   for (const slot of song.slots) {
     if (!slot.dice) continue
-    combo = slot.dice.element === lastElement ? combo + 1 : 0
-    lastElement = slot.dice.element
-    rolls.push(rollGenreDie(slot.dice, ctx, first, index, combo, triggered, specFired, specApplied, rng))
-    first = false
+    const physicalDice = substitutedDice(slot.dice, ctx.genres)
+    if (physicalDice.length > 1) triggered.push('grunge')
+    for (const physicalDie of physicalDice) {
+      combo = physicalDie.element === lastElement ? combo + 1 : 0
+      lastElement = physicalDie.element
+      const roll = rollGenreDie(physicalDie, ctx, first, index, combo, triggered, specFired, specApplied, rng)
+      rolls.push(physicalDie.id === slot.dice.id ? roll : {
+        ...roll,
+        sourceDiceId: slot.dice.id,
+        rolledType: physicalDie.type,
+        element: physicalDie.element,
+      })
+      first = false
+    }
     index++
   }
   return { rolls, triggered: [...new Set(triggered)], specFired: [...new Set(specFired)], specApplied: [...new Set(specApplied)] }

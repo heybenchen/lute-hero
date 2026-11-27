@@ -30,6 +30,12 @@ export interface Dice {
 
 export interface DiceRoll {
   diceId: string;
+  /** Original slotted die when a genre substitutes another die for it. */
+  sourceDiceId?: string;
+  /** Physical die type rolled when it differs from the slotted die. */
+  rolledType?: DiceType;
+  /** Element carried by a substituted die. */
+  element?: Element;
   value: number;
   isCrit: boolean; // True if the roll crit (max face, or a genre's crit rule)
   critBonus: number; // Sum of cascade roll values

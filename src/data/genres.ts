@@ -122,7 +122,7 @@ export const GENRES: Record<GenreId, GenreDef> = {
     id: 'baroque',
     name: 'Baroque',
     flavor: 'Practised until it can\'t go wrong.',
-    rule: 'Whenever a die roll is 3 or less, increase its rolled value by 1. Does not affect bonus dice.',
+    rule: 'Whenever a die roll is less than 3, change its rolled value to 3.',
   },
   'rap': {
     id: 'rap',
@@ -164,7 +164,7 @@ export const GENRES: Record<GenreId, GenreDef> = {
     id: 'prog-rock',
     name: 'Prog Rock',
     flavor: 'Side two is one song. So is side three.',
-    rule: 'Your 4th and later songs in a concert add +2.',
+    rule: 'Your 3rd and later songs in a concert add +2.',
   },
   ska: {
     id: 'ska',
@@ -193,14 +193,14 @@ export const GENRES: Record<GenreId, GenreDef> = {
   grunge: {
     id: 'grunge',
     name: 'Grunge',
-    flavor: 'Ugly, loud, and better after a stumble.',
-    rule: 'Every time a song moves a monster without winning it over, add +1 to your next song.',
+    flavor: 'Trade precision for a wall of sound.',
+    rule: 'You may roll two d12s in place of your d20s.',
   },
   dubstep: {
     id: 'dubstep',
     name: 'Dubstep',
-    flavor: 'Wait for it. Wait for it.',
-    rule: "Once per turn, after winning over a monster, your next song rolls twice and keeps the higher, then adds +3.",
+    flavor: 'The drop hits harder after a stumble.',
+    rule: 'Every time a song moves a monster without winning it over, add +1 to your next song.',
   },
   'trip-hop': {
     id: 'trip-hop',
@@ -340,7 +340,7 @@ export function genreRule(id: GenreId): string {
       return t.popMin > t.popPerTurn ? `${gain} (and start it with at least ${t.popMin}).` : `${gain}.`
     }
     case 'country': return `Increase the rolled value of all dice matching your starting element by ${t.countryBonus}.`
-    case 'baroque': return `Whenever a die roll is ${t.baroqueAtMost} or less, increase its rolled value by ${t.baroqueBonus}. Does not affect bonus dice.`
+    case 'baroque': return `Whenever a die roll is less than ${t.baroqueFloor}, change its rolled value to ${t.baroqueFloor}.`
     case 'rap': return `Gain ${t.rapExp} EXP at the start of each turn.`
     case 'lo-fi': return `Upgrades cost ${t.loFiDiscount} less EXP.`
     case 'soul': return `If you started this turn with ${t.soulMin}+ Inspiration, spend ${t.soulCost} Inspiration to add +${t.soulBonus} to every song.`
@@ -360,16 +360,8 @@ export function genreRule(id: GenreId): string {
     case 'k-pop': return `Gain +${t.kPopFame3} Fame for winning over 3 monsters or +${t.kPopFame4} Fame for winning 4 monsters in one concert.`
     case 'emo': return `Declare that this is your last song of the concert: add +${t.emoBonus} to it. The concert ends after this song.`
     case 'trance': return `While you have 0 Inspiration, add +${t.tranceBonus} to each song.`
-    case 'grunge': return `Every time a song moves a monster without winning it over, add +${t.grungeBonus} to your next song.`
-    case 'dubstep': {
-      const parts = [
-        t.dubstepAdvantage ? 'rolls twice and keeps the higher' : '',
-        t.dubstepBonus ? `adds +${t.dubstepBonus}` : '',
-        t.dubstepMultiplier === 2 ? 'counts double' : t.dubstepMultiplier !== 1 ? `counts ×${t.dubstepMultiplier}` : '',
-      ].filter(Boolean)
-      const what = parts.length > 1 ? `${parts.slice(0, -1).join(', ')}, then ${parts[parts.length - 1]}` : parts[0] ?? 'is unchanged'
-      return `${t.dubstepOncePerTurn ? 'Once per turn, after' : 'After'} winning over a monster, your next song ${what}.`
-    }
+    case 'grunge': return 'You may roll two d12s in place of your d20s.'
+    case 'dubstep': return `Every time a song moves a monster without winning it over, add +${t.dubstepBonus} to your next song.`
     case 'trip-hop': return 'Once per turn, move to any space on the board.'
     default: return GENRES[id].rule
   }
