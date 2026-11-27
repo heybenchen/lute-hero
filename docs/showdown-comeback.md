@@ -67,3 +67,19 @@ Leader win % (last-place win %). "Leader" for a steal is whoever has the most Fa
 | Fandom ×1 + outplay steals the margin | 75% (3%) | 79% (3%) | 83% (17%) | 66% (4%) |
 | Fandom ×3 + outplay steals half the margin | 63% (9%) | 67% (7%) | 75% (25%) | 55% (5%) |
 | Fandom ×2 + verse best steals half from everyone ahead of them | 53% (17%) | 56% (15%) | 72% (29%) | 47% (13%) |
+
+## Bonus for bards who are behind (no stealing)
+
+Showdown fandom is multiplied by a bard's Fame rank. "At start" uses the ranking going into the Showdown; "each verse" re-ranks at the start of every verse, so a bard who climbs loses their bonus. Leader win % (last-place win %).
+
+| Variant | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| Current rules | 93% (0%) | 92% (0%) | 94% (7%) | 93% (0%) |
+| Last place ×2 (at start) | 79% (16%) | 87% (8%) | 65% (36%) | 88% (5%) |
+| Last place ×2 (each verse) | 85% (6%) | 89% (3%) | 76% (24%) | 92% (1%) |
+| Last place ×3 (at start) | 58% (37%) | 67% (31%) | 47% (54%) | 76% (18%) |
+| Last place ×3 (each verse) | 73% (11%) | 80% (8%) | 64% (36%) | 84% (6%) |
+| Last place ×4, others ×2 (each verse) | 66% (17%) | 76% (11%) | 66% (35%) | 78% (6%) |
+| Last place ×6, others ×2 (each verse) | 45% (25%) | 54% (23%) | 52% (49%) | 63% (13%) |
+| **By rank each verse: leader ×1, then evenly up to last ×3** | **56% (16%)** | **64% (11%)** | **64% (37%)** | **62% (9%)** |
+| By rank each verse: leader ×2 … last ×4 | 56% (17%) | 64% (12%) | 66% (35%) | 59% (9%) |

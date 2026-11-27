@@ -296,6 +296,46 @@ const VARIANTS: Variant[] = [
       return total
     },
   },
+  ...([[1, 2], [1, 3], [2, 2], [2, 3]] as const).flatMap(([base, boost]): Variant[] => [
+    {
+      // Last place going into the Showdown scores boost x; everyone else base x
+      name: `Last place (at start) x${base * boost}, others x${base}`,
+      kind: 'scoring',
+      score: (fame, p) => {
+        const last = Object.keys(fame).sort((a, b) => fame[a] - fame[b])[0]
+        return Object.fromEntries(Object.keys(fame).map((id) => [id, fame[id] + (id === last ? base * boost : base) * sum(p.verses[id])]))
+      },
+    },
+    {
+      // Re-checked at the start of every verse
+      name: `Last place (each verse) x${base * boost}, others x${base}`,
+      kind: 'scoring',
+      score: (fame, p) => {
+        const total = { ...fame }
+        const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+        for (let v = 0; v < verses; v++) {
+          const last = Object.keys(total).sort((a, b) => total[a] - total[b])[0]
+          for (const id of Object.keys(fame)) total[id] += (id === last ? base * boost : base) * (p.verses[id][v] ?? 0)
+        }
+        return total
+      },
+    },
+  ]),
+  ...([[1, 3], [2, 4]] as const).map(([lo, hi]): Variant => ({
+    // Multiplier by Fame rank at the start of each verse: the leader lo x, last place hi x, evenly between
+    name: `By rank each verse: leader x${lo} ... last x${hi}`,
+    kind: 'scoring',
+    score: (fame, p) => {
+      const total = { ...fame }
+      const n = Object.keys(fame).length
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const order = Object.keys(total).sort((a, b) => total[b] - total[a])
+        order.forEach((id, i) => { total[id] += (lo + ((hi - lo) * i) / Math.max(1, n - 1)) * (p.verses[id][v] ?? 0) })
+      }
+      return total
+    },
+  })),
   {
     name: 'Fandom x2 + catch-up Inspiration',
     kind: 'replay',
