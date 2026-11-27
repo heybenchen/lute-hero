@@ -7,7 +7,9 @@ import {
 import {
   BESTIARY_TYPES,
   buildLevels,
+  mergeGameMonsters,
   hpAtLevel,
+  seedMonsters,
   type BestiaryType,
   type Monster,
 } from './data'
@@ -57,7 +59,17 @@ const TYPES: Record<BestiaryType, TypeTheme> = {
 type NewMonster = Pick<Monster, 'name' | 'type' | 'baseHp' | 'tagline'>
 
 const api = {
-  list: (): Promise<Monster[]> => fetch('/api/monsters').then((r) => r.json()),
+  list: (): Promise<Monster[]> =>
+    fetch('/api/monsters')
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Bestiary request failed (${response.status})`)
+        const data: unknown = await response.json()
+        if (!Array.isArray(data)) throw new Error('Bestiary response was not a roster')
+        return mergeGameMonsters(data as Monster[])
+      })
+      // The Make preview may not have its API harness. Keep the manual usable
+      // there while production continues to persist edits through the API.
+      .catch(() => seedMonsters()),
   create: (m: NewMonster): Promise<Monster> =>
     fetch('/api/monsters', {
       method: 'POST',
