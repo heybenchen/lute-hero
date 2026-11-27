@@ -70,7 +70,7 @@ Your **setlist** is up to six songs, each holding one die. **To play a song**, c
 **Song total = (roll + crits + bonuses) × element**, rounded down. Subtract it from the monster's Resolve.
 
 - **Crit.** A die showing its highest face crits: roll it again and add the result. Keep going while it crits (up to 10 times).
-- **Bonuses** come from genres. "Adds +N to the song" is added on top and can't crit. "Increases the face value of a die" changes the face, so it can crit.
+- **Bonuses** come from genres. "Add +N to the song" is added on top and can't crit. "Increase the rolled value" changes the die's face, so it can crit.
 - **Element.** Use the cross below.
 
 <p align="center"><img src="img/elements.svg" width="340" alt="Element cross"></p>
@@ -126,35 +126,35 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 <!-- GENRES:START -->
 | Genre | EXP | What it does |
 |---|---|---|
-| **Gospel** | 2 | Once per turn, before rolling, call which monster this song will win over. If it does, refresh a spent d12 or smaller song. A wrong call does nothing. |
-| **New Age** | 1 | Gain a 7th song slot. |
+| **Gospel** | 2 | Once per turn before rolling, declare that the next roll will win over a monster. If you're right, refresh a spent d4/d8/d12. |
+| **New Age** | 1 | Gain a 7th song slot. If you replace this genre, you must pick a song to give up. |
 | **Indie** | 2 | All your dice crit one number lower. Does not affect bonus dice. |
 | **Bebop** | 1 | Once per turn, re-roll the die you just rolled and keep the higher result. |
-| **Bluegrass** | 2 | Once per turn, roll your first d4, d8 or d12 die twice and keep the higher roll. |
-| **Opera** | 2 | Increases the face value of every d20 by 2. Can crit. |
+| **Bluegrass** | 2 | You may roll your d8 dice twice and keep the higher roll. Does not affect bonus dice. |
+| **Opera** | 2 | Add +2 to every d20 song. |
 | **Blues** | 3 | Once per turn, you may refresh a spent d20 song for 1 Inspiration. |
 | **Crossover** | 2 | Once per turn, a song ignores immunity. |
-| **Barbershop** | 2 | With all four elements in your setlist, adds +1 to each song. |
-| **Screamo** | 2 | Adds +3 to your first song each turn. |
-| **Disco** | 3 | +10 Fame for every Lv3+ monster you win over. |
-| **Pop** | 1 | Gain 1 Inspiration after each concert. |
-| **Country** | 1 | Increases the face value of your starting element's dice by 1. Can crit. |
+| **Barbershop** | 2 | When you have all four elements in your setlist, add +1 to each song. |
+| **Screamo** | 2 | Add +3 to your first song each turn. |
+| **Disco** | 3 | Gain +10 Fame for every Lv3+ monster you win over. |
+| **Pop** | 1 | Gain 1 Inspiration before each concert. |
+| **Country** | 1 | Increase the rolled value of all dice matching your starting element by 1. |
 | **Lo-fi** | 3 | Upgrades cost 1 less EXP. |
-| **Soul** | 2 | If you started this turn with 3+ Inspiration, spend 1 Inspiration to add +2 to a song. |
-| **Baroque** | 1 | Whenever a die roll is less than 3, change it to 3. |
-| **Hip-Hop** | 1 | Gain 1 EXP at the start of each turn. |
-| **House** | 2 | Adds +2 to each song for each same-element song played just before it. Reduced to +1 in the Final Showdown. |
-| **Orchestra** | 2 | In concerts with 3+ monsters at the start, adds +1 to each song. |
-| **Mariachi** | 2 | While sharing a space with another bard, adds +2 to each song. |
-| **Punk** | 1 | Your d4 songs add +1. |
-| **Soft Rock** | 2 | Increases the face value of your d8s and d12s by 1. Can crit. |
+| **Soul** | 3 | If you started this turn with 3+ Inspiration, spend 1 Inspiration to add +2 to every song. |
+| **Baroque** | 1 | Whenever a die roll is 3 or less, increase its rolled value by 1. Does not affect bonus dice. |
+| **Rap** | 2 | Gain 2 EXP at the start of each turn. |
+| **House** | 2 | Add +2 to each song for each same-element song played just before it. Reduced to +1 in the Final Showdown. |
+| **Orchestra** | 2 | While there are 3+ monsters remaining, increase the rolled value of all dice by 1. |
+| **Mariachi** | 2 | While sharing a space with another bard, add +2 to each song. |
+| **Punk** | 2 | Whenever you crit, add +4 to the song. |
+| **Soft Rock** | 2 | Increase the rolled value of your d8s and d12s by 1. |
 | **Prog Rock** | 2 | Your 4th and later songs in a concert add +2. |
-| **Ska** | 4 | Dice that land on an odd number add +2. |
-| **K-Pop** | 2 | Whenever you move a monster without winning it over, +2 Fame. |
-| **Emo** | 2 | While you have a spent song, +1 to each song. |
-| **Trance** | 1 | While you have 0 Inspiration, +2 to each song. |
-| **Grunge** | 2 | After a song misses, your next song adds +1. |
-| **Dubstep** | 1 | Once per turn, after a song misses, your next song rolls twice and keeps the higher. |
+| **Ska** | 2 | Whenever you roll an odd number, add +1 to the song. |
+| **K-Pop** | 2 | Gain +10 Fame for winning over 3 monsters or +15 Fame for winning 4 monsters in one concert. |
+| **Emo** | 2 | When you're down to your last song, add +3. |
+| **Trance** | 2 | While you have 0 Inspiration, add +2 to each song. |
+| **Grunge** | 2 | Every time a song moves a monster without winning it over, add +1 to your next song. |
+| **Dubstep** | 2 | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher. |
 | **Trip-Hop** | 1 | Once per turn, move to any space on the board. |
 <!-- GENRES:END -->
 

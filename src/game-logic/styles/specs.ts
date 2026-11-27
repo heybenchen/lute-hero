@@ -68,6 +68,12 @@ export interface SpecCondition {
   inspirationAtMost?: number
   /** The previous song this fight didn't win its monster over. */
   afterMiss?: boolean
+  /** The previous song this fight moved its monster without winning it over. */
+  afterMove?: boolean
+  /** The previous song this fight won its monster over. */
+  afterWin?: boolean
+  /** This is the bard's last unspent song this fight. */
+  lastSong?: boolean
   /** Fires at most once per turn (tracked per spec). */
   oncePerTurn?: boolean
 }
@@ -98,6 +104,11 @@ export interface RollModifier {
   times?: number
   /** Flat bonus when the die lands on an odd face. Never crits. */
   oddBonus?: number
+  /** Flat bonus when the die crits. */
+  critFlat?: number
+  /** A face at or below `lowFaceAtMost` is raised by this much (it can crit). */
+  lowFaceBonus?: number
+  lowFaceAtMost?: number
   /** +this per song already spent this fight. */
   perSpentSong?: number
   /** +this per song already played this fight. */
@@ -205,8 +216,10 @@ export interface PlayContext {
   used: string[]
   /** Songs already spent this fight. */
   spentSongs?: number
-  /** The previous song this fight didn't win its monster over. */
-  lastPlayMissed?: boolean
+  /** How the previous song this fight went: won its monster over, moved it, or neither. */
+  lastPlayResult?: 'won' | 'moved' | 'missed' | null
+  /** Unspent songs left, counting the one being played. */
+  songsLeft?: number
 }
 
 /** Generic roll options: the built-in styles and specs both reduce to these. */
@@ -224,6 +237,11 @@ export interface GenericRollOptions {
   times?: number
   /** Added when the die's face (after floor) is odd. Never crits. */
   oddBonus?: number
+  /** Added when the die crits. */
+  critFlat?: number
+  /** A face at or below `lowFaceAtMost` counts this much higher (it can crit). */
+  lowFaceBonus?: number
+  lowFaceAtMost?: number
   maxCascades: number
   /** Bonus dice chain on this face or higher (default: the die's top face). */
   cascadeFace?: number
@@ -252,7 +270,10 @@ export function conditionHolds(c: SpecCondition | undefined, die: Dice, ctx: Pla
   if (c.showdown !== undefined && c.showdown !== ctx.showdown) return false
   if (c.monstersAtLeast !== undefined && ctx.monstersInFight < c.monstersAtLeast) return false
   if (c.inspirationAtMost !== undefined && ctx.inspiration > c.inspirationAtMost) return false
-  if (c.afterMiss && !ctx.lastPlayMissed) return false
+  if (c.afterMiss && ctx.lastPlayResult !== 'moved' && ctx.lastPlayResult !== 'missed') return false
+  if (c.afterMove && ctx.lastPlayResult !== 'moved') return false
+  if (c.afterWin && ctx.lastPlayResult !== 'won') return false
+  if (c.lastSong && ctx.songsLeft !== 1) return false
   if (c.monstersAtStartAtLeast !== undefined && (ctx.monstersAtStart ?? ctx.monstersInFight) < c.monstersAtStartAtLeast) return false
   if (c.inspirationAtLeast !== undefined && ctx.inspiration < c.inspirationAtLeast) return false
   if (c.oncePerTurn && ctx.used.includes(specId)) return false
@@ -286,7 +307,7 @@ export function applySpecRollModifiers(
       if (mod.bonusCap !== undefined) scaled = Math.min(scaled, mod.bonusCap)
       flat += scaled
       const changes = !!(flat || mod.critBonus || mod.advantage || mod.disadvantage || mod.critFaceDelta || mod.floor ||
-        mod.rerollAtMost || mod.flipAtMost || mod.cascadeBonus || mod.noCrit || mod.oddBonus || (mod.times && mod.times !== 1))
+        mod.rerollAtMost || mod.flipAtMost || mod.cascadeBonus || mod.noCrit || mod.oddBonus || mod.critFlat || mod.lowFaceBonus || (mod.times && mod.times !== 1))
       if (changes && !applied.includes(spec.id)) applied.push(spec.id)
       if (flat) opts.flat = (opts.flat ?? 0) + flat
       if (mod.critBonus) opts.critBonus = (opts.critBonus ?? 0) + mod.critBonus
@@ -300,6 +321,11 @@ export function applySpecRollModifiers(
       if (mod.noCrit) opts.noCrit = true
       if (mod.times) opts.times = (opts.times ?? 1) * mod.times
       if (mod.oddBonus) opts.oddBonus = (opts.oddBonus ?? 0) + mod.oddBonus
+      if (mod.critFlat) opts.critFlat = (opts.critFlat ?? 0) + mod.critFlat
+      if (mod.lowFaceBonus) {
+        opts.lowFaceBonus = (opts.lowFaceBonus ?? 0) + mod.lowFaceBonus
+        opts.lowFaceAtMost = Math.max(opts.lowFaceAtMost ?? 0, mod.lowFaceAtMost ?? 0)
+      }
     }
   }
   return { opts, fired: [...new Set(fired)], applied }
@@ -344,7 +370,8 @@ export function rollWithOptions(die: Dice, opts: GenericRollOptions, rng: Rng): 
   if (opts.rerollAtMost && v <= opts.rerollAtMost) v = rollDie(die.type, rng)
   if (opts.flipAtMost && v <= opts.flipAtMost) v = n + 1 - v
   if (opts.floor && v < opts.floor) v = Math.min(n, opts.floor)
-  const critBonus = opts.critBonus ?? 0
+  // A low face raised by a low-face bonus counts higher, so it can crit
+  const critBonus = (opts.critBonus ?? 0) + (opts.lowFaceBonus && v <= (opts.lowFaceAtMost ?? 0) ? opts.lowFaceBonus : 0)
   const isCrit = !opts.noCrit && v + critBonus >= effectiveCritFace(die.type, opts)
   const cascadeRolls: number[] = []
   if (isCrit) {
@@ -357,7 +384,7 @@ export function rollWithOptions(die: Dice, opts: GenericRollOptions, rng: Rng): 
     }
   }
   const cascade = cascadeRolls.reduce((s, x) => s + x, 0) + cascadeRolls.length * (opts.cascadeBonus ?? 0)
-  const flat = (opts.flat ?? 0) + (opts.oddBonus && v % 2 === 1 ? opts.oddBonus : 0)
+  const flat = (opts.flat ?? 0) + (opts.oddBonus && v % 2 === 1 ? opts.oddBonus : 0) + (isCrit && opts.critFlat ? opts.critFlat : 0)
   const pre = v + critBonus + flat + cascade
   const extra = opts.times && opts.times !== 1 ? Math.round(pre * (opts.times - 1)) : 0
   const bonus = critBonus + flat + extra

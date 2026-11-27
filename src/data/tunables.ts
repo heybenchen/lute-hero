@@ -142,7 +142,9 @@ export interface Tunables {
   /** Hometown Hero: bonus (can crit) to dice of the bard's starting element. */
   hometownHeroBonus: number
   /** Steady Hands: a die that lands below this counts as showing it. */
-  steadyHandsFloor: number
+  /** Baroque: a roll at or below this face is raised by steadyHandsBonus (it can crit). */
+  steadyHandsAtMost: number
+  steadyHandsBonus: number
   /** Street Performer: EXP gained at the start of each of the bard's turns. */
   streetPerformerExp: number
   /** Studio Regular: EXP off every upgrade. */
@@ -182,10 +184,12 @@ export interface Tunables {
   /** Ska: bonus when a die lands on an odd face. */
   skaBonus: number
   /** K-Pop: Fame for a song that moves its monster without winning it over. */
-  kPopFame: number
+  /** K-Pop: Fame for winning over 3 / 4+ monsters in one concert. */
+  kPopFame3: number
+  kPopFame4: number
   /** Emo: bonus per spent song, and its cap. */
+  /** Emo: bonus to your last unspent song. */
   emoBonus: number
-  emoCap: number
   /** Trance: bonus while holding no Inspiration. */
   tranceBonus: number
   /** Grunge: bonus to the song after a miss. */
@@ -251,8 +255,8 @@ export const DEFAULT_TUNABLES: Tunables = {
   fermataMinFaces: 20,
   staccatoMaxFaces: 12,
   rubatoMaxFaces: 20,
-  virtuosoMinFaces: 4,
-  virtuosoMaxFaces: 12,
+  virtuosoMinFaces: 8,
+  virtuosoMaxFaces: 8,
   tuttiElements: 4,
   retreatLevelsUpAll: 0,
   ispiratoMin: 1,
@@ -267,14 +271,15 @@ export const DEFAULT_TUNABLES: Tunables = {
   styleCostHometownHero: 1,
   styleCostSteadyHands: 1,
   styleCostStudioRegular: 3,
-  styleCostInspiredPlay: 2,
-  styleCostStreetPerformer: 1,
+  styleCostInspiredPlay: 3,
+  styleCostStreetPerformer: 2,
   styleCostChainReaction: 2,
   styleCostSwarmSinger: 2,
   styleCostJamSession: 2,
   hometownHeroBonus: 1,
-  steadyHandsFloor: 3,
-  streetPerformerExp: 1,
+  steadyHandsAtMost: 3,
+  steadyHandsBonus: 1,
+  streetPerformerExp: 2,
   studioRegularDiscount: 1,
   inspiredPlayBonus: 2,
   inspiredPlayMin: 3,
@@ -285,24 +290,24 @@ export const DEFAULT_TUNABLES: Tunables = {
   swarmSingerBonus: 1,
   swarmSingerMin: 3,
   jamSessionBonus: 2,
-  styleCostPunk: 1,
+  styleCostPunk: 2,
   styleCostSoftRock: 2,
   styleCostProgRock: 2,
-  styleCostSka: 4,
+  styleCostSka: 2,
   styleCostKPop: 2,
   styleCostEmo: 2,
-  styleCostTrance: 1,
+  styleCostTrance: 2,
   styleCostGrunge: 2,
-  styleCostDubstep: 1,
+  styleCostDubstep: 2,
   styleCostTripHop: 1,
-  punkBonus: 1,
+  punkBonus: 4,
   softRockBonus: 1,
   progRockFrom: 4,
   progRockBonus: 2,
-  skaBonus: 2,
-  kPopFame: 2,
-  emoBonus: 1,
-  emoCap: 1,
+  skaBonus: 1,
+  kPopFame3: 10,
+  kPopFame4: 15,
+  emoBonus: 3,
   tranceBonus: 2,
   grungeBonus: 1,
 }
@@ -408,13 +413,14 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'styleCostSteadyHands', label: 'Baroque cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'styleCostStudioRegular', label: 'Lo-fi cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'styleCostInspiredPlay', label: 'Soul cost', group: 'Genres', min: 0, max: 30, step: 1 },
-  { key: 'styleCostStreetPerformer', label: 'Hip-Hop cost', group: 'Genres', min: 0, max: 30, step: 1 },
+  { key: 'styleCostStreetPerformer', label: 'Rap cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'styleCostChainReaction', label: 'House cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'styleCostSwarmSinger', label: 'Orchestra cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'styleCostJamSession', label: 'Mariachi cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'hometownHeroBonus', label: 'Country: starting-element bonus', group: 'Genres', min: 0, max: 10, step: 1 },
-  { key: 'steadyHandsFloor', label: 'Baroque: lowest a die can show', group: 'Genres', min: 1, max: 12, step: 1 },
-  { key: 'streetPerformerExp', label: 'Hip-Hop: EXP per turn', group: 'Genres', min: 0, max: 5, step: 1 },
+  { key: 'steadyHandsAtMost', label: 'Baroque: highest roll it raises', group: 'Genres', min: 1, max: 12, step: 1 },
+  { key: 'steadyHandsBonus', label: 'Baroque: amount a low roll is raised', group: 'Genres', min: 0, max: 10, step: 1 },
+  { key: 'streetPerformerExp', label: 'Rap: EXP per turn', group: 'Genres', min: 0, max: 5, step: 1 },
   { key: 'studioRegularDiscount', label: 'Lo-fi: EXP off upgrades', group: 'Genres', min: 0, max: 5, step: 1 },
   { key: 'inspiredPlayBonus', label: 'Soul: bonus to the song', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'inspiredPlayMin', label: 'Soul: Inspiration needed', group: 'Genres', min: 1, max: 10, step: 1 },
@@ -435,14 +441,14 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'styleCostGrunge', label: 'Grunge cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'styleCostDubstep', label: 'Dubstep cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'styleCostTripHop', label: 'Trip-Hop cost', group: 'Genres', min: 0, max: 30, step: 1 },
-  { key: 'punkBonus', label: 'Punk: bonus to d4 songs', group: 'Genres', min: 0, max: 10, step: 1 },
+  { key: 'punkBonus', label: 'Punk: bonus on a crit', group: 'Genres', min: 0, max: 20, step: 1 },
   { key: 'softRockBonus', label: 'Soft Rock: d8/d12 face bonus', group: 'Genres', min: 0, max: 5, step: 1 },
   { key: 'progRockFrom', label: 'Prog Rock: from song number', group: 'Genres', min: 2, max: 7, step: 1 },
   { key: 'progRockBonus', label: 'Prog Rock: bonus to the song', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'skaBonus', label: 'Ska: bonus on odd faces', group: 'Genres', min: 0, max: 10, step: 1 },
-  { key: 'kPopFame', label: 'K-Pop: Fame per monster moved', group: 'Genres', min: 0, max: 10, step: 1 },
-  { key: 'emoBonus', label: 'Emo: bonus per spent song', group: 'Genres', min: 0, max: 5, step: 1 },
-  { key: 'emoCap', label: 'Emo: bonus cap', group: 'Genres', min: 0, max: 10, step: 1 },
+  { key: 'kPopFame3', label: 'K-Pop: Fame for 3 monsters in a concert', group: 'Genres', min: 0, max: 50, step: 1 },
+  { key: 'kPopFame4', label: 'K-Pop: Fame for 4+ monsters in a concert', group: 'Genres', min: 0, max: 50, step: 1 },
+  { key: 'emoBonus', label: 'Emo: bonus to your last song', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'tranceBonus', label: 'Trance: bonus at 0 Inspiration', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'grungeBonus', label: 'Grunge: bonus after a miss', group: 'Genres', min: 0, max: 10, step: 1 },
 ]

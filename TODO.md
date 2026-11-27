@@ -6,7 +6,7 @@
 
 ## Medium Priority
 
-- Genre balance after the rename (see `songStyles.md`): 19 of 30 win 31–37% against a 33.3% parity (baseline 34.6%), and rows swing up to ~5 points between runs. Low, left as designed: Gospel 26.4% and Soul 28.3% (price isn't the lever: 1 EXP only reaches ~27–29%; consider a cheaper Soul or a Gospel call that refreshes any song), Blues 29.7% (33.0% at 2 EXP), Pop 29.6%; Bluegrass 27.7% and Hip-Hop 29.9% are unchanged rules that measured higher last run. High: Barbershop 39.1%, Disco 38.0%, Mariachi 37.8%, Orchestra 37.3%. Trip-Hop sits at 31.7% even at 1 EXP (moving anywhere adds little on a 16-space board); a buff would be an arrival bonus. The bot's Gospel/Soul/Blues play is simple, so playtest those before re-pricing. A 1,200-game run per genre would halve the noise. Possible follow-ups: test genre pairs at real timing (`PAIRS=1`), and a wider-than-3-seat table.
+- Genre balance after the spec's rule update (see `songStyles.md`): 16 of 30 win 31–37% against a 33.3% parity (baseline 31.9%), rows swing ~5 points between runs. Low: Emo 24.2% (+3 on the last song rarely comes up), Pop 26.1%, Dubstep 26.3%, Gospel 27.3%, Trance 27.8%, New Age 28.3%, Soul 28.6%, Opera 29.1% (flat +2 can't crit), K-Pop 29.8%. High: Orchestra 38.8%, Disco 38.7%, Bluegrass 38.1% (d8 only). Playtest the choice genres (Gospel, Soul, Blues) before re-pricing; the bot plays them with simple rules. A 1,200-game run per genre would halve the noise. Possible follow-ups: genre pairs at real timing (`PAIRS=1`), a wider table.
 
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
 
@@ -15,6 +15,8 @@
 (none)
 
 ## Completed
+
+- Spec rule update applied: Gospel/K-Pop/Emo/Grunge/Dubstep/Punk/Ska/Pop/Soul/Opera/Orchestra/Baroque/Bluegrass/New Age rules, Hip-Hop renamed Rap, new wording ("add +N to the song", "increase the rolled value"). Baroque shipped at +1 (54% at +2) and Bluegrass on d8s only (44% on d4 and d8).
 
 - Styles became **genres**: all 20 renamed to real-world genres with new flavour lines, and "genre" replaces "style" everywhere players read (Studio shelf, Songbook, rulebook). Rule and price changes: Blues refreshes a spent d20 song for 1 Inspiration (a button), Orchestra counts monsters at the start of the concert, Mariachi costs 2, House has no cap and builds within a showdown verse at +1, Soul spends 1 Inspiration per use (3+ at the start of the turn) and costs 2, Gospel calls its target before rolling and refreshes a spent d12-or-smaller song, Pop gives its Inspiration after each concert. Ten new genres: Punk, Soft Rock, Prog Rock, Ska, K-Pop, Emo, Trance, Grunge, Dubstep and Trip-Hop (once per turn, move to any space), tuned with the audit. The smart bot learned the new choices (calls, Soul, Blues) and values the genres its odds can't see. Engine, bot, concert UI, tests, `songStyles.md`, Songbook, rulebook and PDF updated, and every genre re-measured with the style audit.
 

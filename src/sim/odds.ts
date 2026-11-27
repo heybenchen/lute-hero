@@ -110,9 +110,10 @@ export function rollDist(type: DiceType, opts: RollOptions): Dist {
   const finish = (pre: number) => pre + (times !== 1 ? Math.round(pre * (times - 1)) : 0)
   const out: Dist = new Map()
   for (const [v, pv] of face) {
-    const base = v + bonus + flat + (opts.oddBonus && v % 2 === 1 ? opts.oddBonus : 0)
-    if (!opts.noCrit && v + bonus >= critFace) {
-      for (const [c, q] of cascadeDist(n, opts.maxCascades, opts.cascadeBonus ?? 0, Math.max(2, Math.min(n, opts.cascadeFace ?? n)))) add(out, finish(base + c), pv * q)
+    const faceBonus = bonus + (opts.lowFaceBonus && v <= (opts.lowFaceAtMost ?? 0) ? opts.lowFaceBonus : 0)
+    const base = v + faceBonus + flat + (opts.oddBonus && v % 2 === 1 ? opts.oddBonus : 0)
+    if (!opts.noCrit && v + faceBonus >= critFace) {
+      for (const [c, q] of cascadeDist(n, opts.maxCascades, opts.cascadeBonus ?? 0, Math.max(2, Math.min(n, opts.cascadeFace ?? n)))) add(out, finish(base + (opts.critFlat ?? 0) + c), pv * q)
     } else {
       add(out, finish(base), pv)
     }

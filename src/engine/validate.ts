@@ -174,8 +174,8 @@ export function validateAction(
       const song = fighter.songs.find((s) => s.id === action.songId)
       if (!song) return illegal('Unknown song')
       if (!song.slots.some((slot) => slot.dice)) return illegal('Song has no dice')
-      if (action.inspiredPlay) {
-        // Soul: needs enough Inspiration at the start of the turn, and pays for each use
+      if (action.inspiredPlay && !state.combat.soulActive) {
+        // Soul: needs enough Inspiration at the start of the turn, and pays once for the concert
         const t = getTunables()
         if (!fighter.styles.includes('inspired-play')) return illegal(`${STYLES['inspired-play'].name} is not one of your genres`)
         if ((state.turnStartInspiration ?? 0) < t.inspiredPlayMin) return illegal(`${STYLES['inspired-play'].name} needs ${t.inspiredPlayMin}+ Inspiration at the start of your turn`)
@@ -457,6 +457,11 @@ export function validateAction(
         }
       } else if (action.replaceStyleId) {
         return illegal('You have room for another genre')
+      }
+      // New Age: giving it up with its 7th song in use means naming a song to give up
+      if (action.replaceStyleId === 'coda' && player.songs.some((sg) => sg.id === `${player.id}-coda` && sg.slots[0]?.dice)) {
+        const song = player.songs.find((sg) => sg.id === action.giveUpSongId)
+        if (!song || !song.slots[0]?.dice) return illegal(`Choose a song to give up with ${STYLES.coda.name}`)
       }
       return ok
     }

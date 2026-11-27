@@ -53,6 +53,7 @@ export function CombatModal() {
       rallyReady: state.rallyReady,
       featuredPlayerIds: state.featuredPlayerIds,
       turnStartInspiration: state.turnStartInspiration,
+      soulActive: state.soulActive,
     }))
   )
   const {
@@ -72,6 +73,7 @@ export function CombatModal() {
     rallyReady,
     featuredPlayerIds,
     turnStartInspiration,
+    soulActive,
   } = useHeldWhileRolling(liveView)
   const diceBusy = useDiceTrayBusy()
 
@@ -180,7 +182,7 @@ export function CombatModal() {
   // Choices for the next song: Gospel's call and Soul's paid bonus. Both reset after a play.
   const t = getTunables()
   const canCall = player.styles.includes('staccato') && !stylesUsed.includes('staccato')
-  const canSoul = player.styles.includes('inspired-play') &&
+  const canSoul = player.styles.includes('inspired-play') && !soulActive &&
     (turnStartInspiration ?? 0) >= t.inspiredPlayMin && player.inspiration >= t.inspiredPlayCost
   const handlePlaySong = async (songId: string) => {
     if (!canRoll || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
@@ -461,6 +463,9 @@ export function CombatModal() {
                   <span><strong>{STYLES.staccato.name}</strong>: your call came true. Choose a spent song to refresh.</span>
                 </div>
               )}
+              {soulActive && player.styles.includes('inspired-play') && (
+                <p className="mb-2 text-center text-xs text-amber-200"><strong>{STYLES['inspired-play'].name}</strong>: +{t.inspiredPlayBonus} on every song this concert</p>
+              )}
               {canRoll && (canCall || canSoul) && (
                 <div className="mb-3 flex flex-wrap items-center justify-center gap-2 text-xs" role="group" aria-label="Choices for your next song">
                   {canCall && (
@@ -472,7 +477,7 @@ export function CombatModal() {
                   {canSoul && (
                     <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-gold-700/30 px-3 py-1 text-parchment-200 hover:bg-white/5">
                       <input type="checkbox" checked={soul} onChange={(e) => setSoul(e.target.checked)} />
-                      <span><strong>{STYLES['inspired-play'].name}</strong>: +{t.inspiredPlayBonus} for {t.inspiredPlayCost} Inspiration</span>
+                      <span><strong>{STYLES['inspired-play'].name}</strong>: +{t.inspiredPlayBonus} on every song this concert, for {t.inspiredPlayCost} Inspiration</span>
                     </label>
                   )}
                 </div>

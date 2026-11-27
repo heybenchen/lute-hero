@@ -38,7 +38,7 @@ import { getMaxValue } from '../game-logic/dice/roller.js'
 import { getTunables, withTunables } from '../data/tunables.js'
 import { inspirationSpend } from '../data/draftCards.js'
 import { canAfford, d4CostFor, inspirationCostFor, movesFor, upgradeCostFor } from '../engine/economy.js'
-import { inspiredPlaySpec, specsOf, specsForStyles } from '../data/styleSpecs.js'
+import { specsOf, specsForStyles } from '../data/styleSpecs.js'
 import { PlayContext, SpecReward, StyleSpec, applySpecRollModifiers, conditionHolds, inspirationRules, specMultiplier } from '../game-logic/styles/specs.js'
 import { styleCost, maxStyles } from '../data/styles.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
@@ -144,7 +144,8 @@ const STYLE_PRIOR: Partial<Record<StyleId, number>> = {
   // Genres whose triggers the odds' typical play can't see (after a miss; Fame for a moved monster)
   grunge: 1.5,
   dubstep: 1.0,
-  'k-pop': 1.2,
+  // K-Pop pays at the end of a big concert
+  'k-pop': 1.5,
   // Trip-Hop's reach is a movement choice the fight odds never see
   'trip-hop': 2.0,
   // Economy the odds can't see: cheaper upgrades keep paying all game
@@ -184,6 +185,12 @@ export class SmartBot {
   }
 
   act(action: GameAction): boolean {
+    // Replacing New Age with its 7th song in use: give up the song with the smallest die
+    if (action.type === 'BUY_STYLE' && action.replaceStyleId === 'coda' && !action.giveUpSongId) {
+      const songs = this.me.songs.filter((sg) => songDie(sg))
+      const weakest = songs.sort((x, y) => getMaxValue(songDie(x)!.type) - getMaxValue(songDie(y)!.type))[0]
+      if (weakest) action = { ...action, giveUpSongId: weakest.id }
+    }
     const result = applyAction(this.state, action, this.ctx)
     if (!result.ok) return false
     this.state = result.state
@@ -261,7 +268,10 @@ export class SmartBot {
       monstersInFight: (combat.isActive ? combat.monsters : [target]).filter((m) => m.currentHP > 0).length,
       monstersAtStart: (combat.isActive ? combat.monsters : [target]).length,
       spentSongs: combat.isActive ? combat.spentSongIds.length : 0,
-      lastPlayMissed: combat.isActive && !!combat.lastPlayMissed,
+      lastPlayResult: combat.isActive ? combat.lastPlayResult ?? null : null,
+      songsLeft: combat.isActive
+        ? fighter.songs.filter((sg) => songDie(sg) && !combat.spentSongIds.includes(sg.id)).length
+        : fighter.songs.filter((sg) => songDie(sg)).length,
       used: combat.specFired ?? [],
     }
   }
@@ -365,24 +375,18 @@ export class SmartBot {
       flags.staccatoCall = true
     }
     const t = getTunables()
+    // Soul: paying once puts +bonus on every song this concert, so switch it on early in a
+    // concert with more than one song still to play, when Inspiration can be spared
     if (
       fighter.styles.includes('inspired-play') &&
+      !combat.soulActive &&
       (this.state.turnStartInspiration ?? 0) >= t.inspiredPlayMin &&
       fighter.inspiration >= t.inspiredPlayCost &&
-      this.spareInspiration(fighter) >= t.inspiredPlayCost &&
-      pick.pk < 1
+      this.spareInspiration(fighter) >= t.inspiredPlayCost
     ) {
-      const die = songDie(pick.song)!
-      const specs = specsOf(fighter)
-      const play = this.playCtx(fighter, pick.monster, die)
-      const opts = { firstRoll: combat.songsUsed.length === 0, advantage: false, allElements: hasHarmony(fighter.songs) }
-      const mult = this.multiplier(die, pick.monster, false, specs, play)
-      if (mult > 0) {
-        const plain = killChance(this.dist(die, fighter.styles, opts, specs, play), mult, pick.monster.currentHP)
-        const boosted = killChance(this.dist(die, fighter.styles, opts, [...specs, inspiredPlaySpec()], play), mult, pick.monster.currentHP)
-        const worth = this.monsterWorth(pick.monster, pick.monster.currentHP >= pick.monster.maxHP)
-        if ((boosted - plain) * worth > this.p.inspirationValue * t.inspiredPlayCost) flags.inspiredPlay = true
-      }
+      const songsLeft = fighter.songs.filter((sg) => songDie(sg) && !combat.spentSongIds.includes(sg.id)).length
+      const alive = combat.monsters.filter((m) => m.currentHP > 0).length
+      if (songsLeft >= 2 && alive >= 1) flags.inspiredPlay = true
     }
     return flags
   }
@@ -801,7 +805,7 @@ export class SmartBot {
     const fit: Record<StyleId, number> = {
       bravo: 1, staccato: 1, overture: 1, counterpoint: 1, coda: 1,
       fermata: Math.min(1, count(BIG) / 2),
-      virtuoso: Math.min(1, count(BIG) / 2),
+      virtuoso: Math.min(1, count(SMALL) / 2),
       fortissimo: Math.min(1, count(['d20']) / 2),
       ostinato: Math.min(1, dice.filter((d) => getMaxValue(d.type) <= getTunables().ostinatoMaxFaces).length / 3),
       rubato: Math.min(1, dice.filter(isRubatoDie).length / 3),

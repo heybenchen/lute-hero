@@ -161,8 +161,14 @@ function reduce(
     case 'START_COMBAT': {
       const player = state.players.find((p) => p.id === action.playerId)!
       const space = state.spaces.find((s) => s.id === player.position)!
+      // Pop (Muse's Favor): Inspiration before every concert
+      const { ispiratoPerTurn: popGain, ispiratoMin: popFloor } = getTunables()
       const players = state.players.map((p) =>
-        p.id === player.id ? { ...p, fightsThisTurn: p.fightsThisTurn + 1 } : p
+        p.id !== player.id ? p : {
+          ...p,
+          fightsThisTurn: p.fightsThisTurn + 1,
+          ...(p.styles.includes('ispirato') ? { inspiration: Math.max(p.inspiration + popGain, popFloor) } : {}),
+        }
       )
       const combat: EngineCombatState = {
         ...createInitialCombatState(),
@@ -189,15 +195,18 @@ function reduce(
         specFired: state.combat.specFired,
         playLog: state.combat.playLog,
         specRewards: state.combat.specRewards,
-        lastPlayMissed: state.combat.lastPlayMissed,
+        lastPlayResult: state.combat.lastPlayResult,
       }
-      // Soul pays its Inspiration up front; Gospel's call rides on the play. An encore replays both.
-      const flags = { inspiredPlay: !!action.inspiredPlay, staccatoCall: !!action.staccatoCall }
-      const players = flags.inspiredPlay
+      // Soul: paying once switches its bonus on for every song this concert.
+      // Gospel's call rides on the play, and an encore replays it.
+      const activateSoul = !!action.inspiredPlay && !state.combat.soulActive
+      const soulActive = !!state.combat.soulActive || activateSoul
+      const flags = { staccatoCall: !!action.staccatoCall }
+      const players = activateSoul
         ? adjustInspiration(state.players, fighter.id, -getTunables().inspiredPlayCost)
         : state.players
-      const extra = flags.inspiredPlay ? [inspiredPlaySpec()] : []
-      const combat = performCombatPlay(state.combat, snapshot, song, action.targetMonsterId, fighter, rng, events, state.players, extra, flags)
+      const extra = soulActive ? [inspiredPlaySpec()] : []
+      const combat = performCombatPlay({ ...state.combat, soulActive }, snapshot, song, action.targetMonsterId, fighter, rng, events, state.players, extra, flags)
       return { ...state, players, combat: { ...combat, undoSnapshot: snapshot, lastPlayedSongId: song.id, lastPlayFlags: flags } }
     }
 
@@ -223,7 +232,7 @@ function reduce(
         ? [{ id: '_reroll-bonus', name: '', rule: '', theme: '', cost: 0, roll: [{ flat: insp.bonus }] }]
         : []
       const flags = state.combat.lastPlayFlags ?? {}
-      const replayed = flags.inspiredPlay ? [...rerollBonus, inspiredPlaySpec()] : rerollBonus
+      const replayed = state.combat.soulActive ? [...rerollBonus, inspiredPlaySpec()] : rerollBonus
       let combat = performCombatPlay(state.combat, snapshot, song, targetId, updatedFighter, rng, events, state.players, replayed, flags)
       // Keep-the-better rerolls (Nimble Fingers always, plus any style-lab spec that grants
       // it): if the new roll charms the target less, the old result stands
@@ -475,7 +484,7 @@ function reduce(
     }
 
     case 'BUY_STYLE':
-      return buyStyle(state, action.offerIndex, action.replaceStyleId, newId)
+      return buyStyle(state, action.offerIndex, action.replaceStyleId, newId, action.giveUpSongId)
 
     case 'REFRESH_STYLE_OFFERS': {
       const player = state.players[state.currentTurnPlayerIndex]
@@ -772,14 +781,27 @@ const codaSongId = (playerId: string) => `${playerId}-coda`
 
 /**
  * Buy an offered style. At the cap, the named style is given up (no refund).
- * Gaining Coda adds a 7th empty song; giving it up removes that song and
- * queues any die in it as an unclaimed reward, so nothing is lost.
+ * Gaining Coda (New Age) adds a 7th empty song. Replacing it with that song in
+ * use means giving up a song the bard names: its die is lost, and the 7th
+ * song's die moves into its place so the six songs keep their ids.
  */
-function buyStyle(state: EngineState, offerIndex: number, replaceStyleId: StyleId | undefined, newId: NewId): EngineState {
-  const player = state.players[state.currentTurnPlayerIndex]
+function buyStyle(state: EngineState, offerIndex: number, replaceStyleId: StyleId | undefined, newId: NewId, giveUpSongId?: string): EngineState {
+  let player = state.players[state.currentTurnPlayerIndex]
   const styleId = state.styleOffers[offerIndex]
   const styles = replaceStyleId ? player.styles.map((id) => id === replaceStyleId ? styleId : id) : [...player.styles, styleId]
-  const paid = { ...state, players: payFor(state.players, player.id, styleCost(styleId)) }
+  let players = state.players
+  const codaSong = player.songs.find((sg) => sg.id === codaSongId(player.id))
+  if (replaceStyleId === 'coda' && codaSong?.slots[0]?.dice && giveUpSongId) {
+    const kept = codaSong.slots[0].dice
+    // Empty the 7th song, so losing New Age below leaves no reward behind
+    const songs = player.songs.map((sg) =>
+      sg.id === codaSong.id ? { ...sg, slots: [{ dice: null }] as Song['slots'] }
+        : sg.id === giveUpSongId ? { ...sg, slots: [{ dice: kept }] as Song['slots'] }
+        : sg)
+    player = { ...player, songs }
+    players = players.map((p) => (p.id === player.id ? player : p))
+  }
+  const paid = { ...state, players: payFor(players, player.id, styleCost(styleId)) }
   return {
     ...setPlayerStyles(paid, player.id, styles, newId),
     styleOffers: state.styleOffers.filter((_, i) => i !== offerIndex),
@@ -994,7 +1016,7 @@ function performCombatPlay(
       ...specApplied.flatMap((id) => (id in STYLES ? [STYLES[id as StyleId].name] : [])),
     ],
     rallyReady,
-    lastPlayMissed: !defeatedTarget,
+    lastPlayResult: defeatedTarget ? 'won' : totalDamageDealt > 0 ? 'moved' : 'missed',
     specFired: [...new Set([...(base.specFired ?? []), ...firedNow])],
     playLog: die ? [...(base.playLog ?? []), die.genre] : base.playLog ?? [],
     specRewards,
@@ -1030,7 +1052,9 @@ function combatPlayContext(
     // Every monster the concert started with stays in the list (won-over ones at 0 Resolve)
     monstersAtStart: base.monsters.length,
     spentSongs: base.spentSongIds.length,
-    lastPlayMissed: !!base.lastPlayMissed,
+    lastPlayResult: base.lastPlayResult ?? null,
+    // Unspent songs left, counting the one being played (Emo)
+    songsLeft: fighter.songs.filter((sg) => sg.slots.some((sl) => sl.dice) && !base.spentSongIds.includes(sg.id)).length,
     used: base.specFired ?? [],
   }
 }
@@ -1074,7 +1098,7 @@ function playFeaturedSong(state: EngineState, feature: FeatureRequest, rng: Rng,
         : combat.killCredits,
       featuredPlayerIds: [...combat.featuredPlayerIds, guest.id],
       // A guest song counts as the previous song for "after a miss" genres
-      lastPlayMissed: !defeatedTarget,
+      lastPlayResult: defeatedTarget ? 'won' : damage > 0 ? 'moved' : 'missed',
       currentSongId: song.id,
       lastTargetMonsterId: feature.targetMonsterId,
       lockedTargetMonsterId: defeatedTarget
@@ -1172,10 +1196,12 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
   if (success) {
     players = players.map((p) => (p.id === fighterId ? { ...p, inspiration: p.inspiration + 1 } : p))
   }
-  // Pop (Muse's Favor): Inspiration after every concert, win or not
-  if (fighterStyles.includes('ispirato')) {
-    const { ispiratoPerTurn: gain, ispiratoMin: floor } = getTunables()
-    players = players.map((p) => (p.id === fighterId ? { ...p, inspiration: Math.max(p.inspiration + gain, floor) } : p))
+  // K-Pop: Fame for winning over 3, or 4+, monsters in one concert (guest songs' wins don't count)
+  if (fighterStyles.includes('k-pop')) {
+    const wins = combat.killCredits.filter((k) => !k.featuredPlayerId).length
+    const { kPopFame3, kPopFame4 } = getTunables()
+    const bonus = wins >= 4 ? kPopFame4 : wins === 3 ? kPopFame3 : 0
+    if (bonus) players = players.map((p) => (p.id === fighterId ? { ...p, fame: p.fame + bonus } : p))
   }
   // Data-defined styles: rewards earned in the fight, plus clear / take-a-bow rewards
   const fighterSpecs = specsOf(state.players.find((p) => p.id === fighterId))

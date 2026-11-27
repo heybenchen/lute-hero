@@ -69,8 +69,8 @@ export type GameAction =
   | { type: 'UNDO_MOVE'; playerId: string }
   | { type: 'START_COMBAT'; playerId: string }
   /**
-   * Play a song at one monster. `inspiredPlay`: Soul pays Inspiration for a bonus on this song.
-   * `staccatoCall`: Gospel calls this target before rolling (once per turn).
+   * Play a song at one monster. `inspiredPlay`: Soul pays Inspiration once for a bonus on every
+   * song this concert. `staccatoCall`: Gospel declares this roll will win its monster over (once per turn).
    */
   | { type: 'PLAY_SONG'; songId: string; targetMonsterId: string; inspiredPlay?: boolean; staccatoCall?: boolean }
   /** Spend Inspiration to reroll the last song; `rubato` makes it free (once per turn, d4/d8). */
@@ -101,7 +101,8 @@ export type GameAction =
   | { type: 'SLOT_DIE_REWARD'; rewardId: string; songId: string; slotIndex: number }
   | { type: 'BUY_INSPIRATION' }
   /** Buy an offered style; at the cap, `replaceStyleId` names the one to give up. */
-  | { type: 'BUY_STYLE'; offerIndex: number; expectedStyleId?: StyleId; replaceStyleId?: StyleId }
+  /** `giveUpSongId`: replacing New Age with a 7th song in use names the song to give up. */
+  | { type: 'BUY_STYLE'; offerIndex: number; expectedStyleId?: StyleId; replaceStyleId?: StyleId; giveUpSongId?: string }
   | { type: 'REFRESH_STYLE_OFFERS' }
   | { type: 'PLAY_SHOWDOWN_SONG'; songId: string }
   | { type: 'REROLL_SHOWDOWN_SONG'; rubato?: boolean }

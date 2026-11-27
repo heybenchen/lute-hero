@@ -57,7 +57,7 @@ export interface EngineCombatState {
     specFired?: string[]
     playLog?: Genre[]
     specRewards?: SpecReward
-    lastPlayMissed?: boolean
+    lastPlayResult?: 'won' | 'moved' | 'missed' | null
   } | null
   /**
    * "Once per turn" styles already spent this turn. A bard fights at most once
@@ -72,13 +72,12 @@ export interface EngineCombatState {
    * over, so they may refresh one spent song of their choice (RALLY_SONG).
    */
   rallyReady: boolean
-  /** The last play didn't win its monster over (Grunge, Dubstep). */
-  lastPlayMissed?: boolean
-  /**
-   * Choices made for the last own play, replayed by an encore: Soul's paid bonus
-   * (`inspiredPlay`) and Gospel's call (`staccatoCall`).
-   */
-  lastPlayFlags?: { inspiredPlay?: boolean; staccatoCall?: boolean }
+  /** How the last play went: won its monster over, moved it, or neither (Grunge, Dubstep). */
+  lastPlayResult?: 'won' | 'moved' | 'missed' | null
+  /** Gospel's call on the last own play, replayed by an encore. */
+  lastPlayFlags?: { staccatoCall?: boolean }
+  /** Soul is paid for this concert: every song gets its bonus. */
+  soulActive?: boolean
   lastPlayedSongId: string | null
   /** Shared victory choice so spectators see the element being considered. */
   selectedSpreadGenre: Genre | null
@@ -231,8 +230,9 @@ export function createInitialCombatState(): EngineCombatState {
     stylesUsed: [],
     styleNotes: [],
     rallyReady: false,
-    lastPlayMissed: false,
+    lastPlayResult: null,
     lastPlayFlags: {},
+    soulActive: false,
     featuredPlayerIds: [],
     featureRequest: null,
     specFired: [],

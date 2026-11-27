@@ -115,12 +115,12 @@ describe('Ostinato', () => {
   })
 })
 
-describe('Fortissimo', () => {
-  it('adds +2 to a d20, and an 18 reaching 20 crits', () => {
+describe('Fortissimo (Opera)', () => {
+  it('adds a flat +2 to every d20 song, which never crits', () => {
     const state = fight(['fortissimo'], [['d20', 'Hymn']], [{}])
-    const { state: after } = play(state, 1, faces([18, 20], [5, 20]))
-    expect(after.combat.rolls[0]).toMatchObject({ value: 18, bonus: 2, isCrit: true, cascadeRolls: [5] })
-    expect(hp(after)).toBe(50 - (18 + 2 + 5))
+    const { state: after } = play(state, 1, faces([18, 20]))
+    expect(after.combat.rolls[0]).toMatchObject({ value: 18, bonus: DEFAULT_TUNABLES.fortissimoBonus, isCrit: false })
+    expect(hp(after)).toBe(50 - (18 + DEFAULT_TUNABLES.fortissimoBonus))
   })
 
   it('does nothing for smaller dice', () => {
@@ -153,31 +153,22 @@ describe('Overture and Tutti', () => {
   })
 })
 
-describe('Virtuoso', () => {
-  it('rolls the first d12-or-smaller roll of the turn twice and keeps the higher, once', () => {
-    const state = fight(['virtuoso'], [['d12', 'Hymn'], ['d12', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
-    const first = play(state, 1, faces([4, 12], [10, 12])).state
-    expect(first.combat.rolls[0].value).toBe(10)
-    expect(first.combat.stylesUsed).toContain('virtuoso')
-    // The second roll this turn is a normal single roll
-    const second = play(first, 2, faces([4, 12], [10, 12])).state
-    expect(second.combat.rolls[0].value).toBe(4)
+describe('Virtuoso (Bluegrass)', () => {
+  it('rolls every d8 twice and keeps the higher, not just once a turn', () => {
+    const state = fight(['virtuoso'], [['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
+    const first = play(state, 1, faces([4, 8], [7, 8])).state
+    expect(first.combat.rolls[0].value).toBe(7)
+    const second = play(first, 2, faces([6, 8], [2, 8])).state
+    expect(second.combat.rolls[0].value).toBe(6)
   })
 
-  it('covers d4s and d8s, but not a d20', () => {
-    const small = play(fight(['virtuoso'], [['d4', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([1, 4], [3, 4])).state
-    expect(small.combat.rolls[0].value).toBe(3)
-    const big = play(fight(['virtuoso'], [['d20', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([4, 20], [15, 20])).state
-    expect(big.combat.rolls[0].value).toBe(4)
-    expect(big.combat.stylesUsed).not.toContain('virtuoso')
-  })
-
-  it('waits for the first die in its range (a d20 rolled first does not spend it)', () => {
-    const state = fight(['virtuoso'], [['d20', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
-    const afterBig = play(state, 1, faces([4, 20])).state
-    expect(afterBig.combat.stylesUsed).not.toContain('virtuoso')
-    const afterSmall = play(afterBig, 2, faces([2, 8], [7, 8])).state
-    expect(afterSmall.combat.rolls[0].value).toBe(7)
+  it('covers d8s only: not a d4, d12 or d20', () => {
+    const d4 = play(fight(['virtuoso'], [['d4', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([1, 4], [3, 4])).state
+    expect(d4.combat.rolls[0].value).toBe(1)
+    const d12 = play(fight(['virtuoso'], [['d12', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([4, 12], [10, 12])).state
+    expect(d12.combat.rolls[0].value).toBe(4)
+    const d20 = play(fight(['virtuoso'], [['d20', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([4, 20], [15, 20])).state
+    expect(d20.combat.rolls[0].value).toBe(4)
   })
 })
 
@@ -387,7 +378,7 @@ describe('Buying styles', () => {
     expect(applyAction(studio([], ['fortissimo'], 1), { type: 'BUY_STYLE', offerIndex: 0 }, seeded()).ok).toBe(false)
   })
 
-  it('Coda adds a 7th song, and giving it up keeps that song\'s die as a reward', () => {
+  it('Coda (New Age) adds a 7th song; giving it up with that song in use means naming a song to give up', () => {
     let state = apply(studio([], ['coda']), { type: 'BUY_STYLE', offerIndex: 0 }).state
     const player = state.players[0]
     expect(player.songs).toHaveLength(7)
@@ -398,12 +389,23 @@ describe('Buying styles', () => {
       players: state.players.map((p) => (p.id === 'player-1' ? {
         ...p,
         styles: ['coda', 'tutti'],
-        songs: p.songs.map((sg) => (sg.id === codaSong.id ? { ...sg, slots: [{ dice: { id: 'coda-die', type: 'd4', genre: 'Hymn' } }] as Song['slots'] } : sg)),
+        songs: p.songs.map((sg) => (sg.id === codaSong.id ? { ...sg, slots: [{ dice: { id: 'coda-die', type: 'd12', genre: 'Hymn' } }] as Song['slots'] } : sg)),
       } : p)),
     }
+    expect(applyAction(state, { type: 'BUY_STYLE', offerIndex: 0, replaceStyleId: 'coda' }, seeded()).ok).toBe(false) // must name a song
+    const firstSong = state.players[0].songs[0]
+    state = apply(state, { type: 'BUY_STYLE', offerIndex: 0, replaceStyleId: 'coda', giveUpSongId: firstSong.id }).state
+    const songs = state.players[0].songs
+    expect(songs).toHaveLength(6)
+    expect(songs[0].slots[0].dice?.id).toBe('coda-die') // the 7th song's die took the given-up song's place
+    expect(state.pendingRewards['player-1'] ?? []).toHaveLength(0) // the given-up die is lost
+  })
+
+  it('Coda (New Age) leaves without a choice when its 7th song is empty', () => {
+    let state = apply(studio([], ['coda']), { type: 'BUY_STYLE', offerIndex: 0 }).state
+    state = { ...state, styleOffers: ['bravo'], players: state.players.map((p) => (p.id === 'player-1' ? { ...p, styles: ['coda', 'tutti'] } : p)) }
     state = apply(state, { type: 'BUY_STYLE', offerIndex: 0, replaceStyleId: 'coda' }).state
     expect(state.players[0].songs).toHaveLength(6)
-    expect(state.pendingRewards['player-1'].some((r) => r.dice.id === 'coda-die')).toBe(true)
   })
 
   it('refreshes the shelf for 1 Inspiration with styles you do not own', () => {
@@ -442,17 +444,16 @@ describe('Turn starts', () => {
     expect(next.styleOffers[1]).not.toBe('bravo')
   })
 
-  it("Muse's Favor (Pop) gives Inspiration after each concert, not at the start of the turn", () => {
+  it("Muse's Favor (Pop) gives Inspiration before each concert, not at the start of the turn", () => {
     let state = startGame()
     state = { ...state, players: state.players.map((p) => (p.id === 'player-2' ? { ...p, styles: ['ispirato'], inspiration: 0 } : p)) }
     state = apply(state, { type: 'END_TURN' }).state
     expect(state.players[1].inspiration).toBe(0)
 
-    let concert = fight(['ispirato'], [['d4', 'Hymn']], [{ currentHP: 50, maxHP: 50 }])
-    concert = { ...concert, players: concert.players.map((p, i) => (i === 0 ? { ...p, inspiration: 0 } : p)) }
-    concert = play(concert, 1, faces([2, 4])).state
-    concert = apply(concert, { type: 'END_COMBAT' }).state // ended early: still counts
-    expect(concert.players[0].inspiration).toBe(DEFAULT_TUNABLES.ispiratoPerTurn)
+    let before = startGame()
+    before = { ...before, players: before.players.map((p, i) => (i === 0 ? { ...p, styles: ['ispirato'], inspiration: 0 } : p)) }
+    const started = apply(before, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    expect(started.players[0].inspiration).toBe(DEFAULT_TUNABLES.ispiratoPerTurn) // already there for the concert
   })
 
   it('remembers the Inspiration a bard started their turn with (for Soul)', () => {
@@ -476,12 +477,15 @@ describe('Studio spec styles', () => {
     expect(after.combat.styleNotes).toContain(STYLES['hometown-hero'].name)
   })
 
-  it('Steady Hands raises a die that lands low to the floor, and leaves higher dice alone', () => {
-    const floor = DEFAULT_TUNABLES.steadyHandsFloor
+  it('Steady Hands (Baroque) raises a low roll, which can then crit, and leaves higher rolls alone', () => {
+    const { steadyHandsBonus: up, steadyHandsAtMost: atMost } = DEFAULT_TUNABLES
     const low = play(fight(['steady-hands'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([1, 8])).state
-    expect(low.combat.rolls[0].value).toBe(floor)
+    expect(low.combat.rolls[0]).toMatchObject({ value: 1, bonus: up, isCrit: false })
+    const d4 = play(fight(['steady-hands'], [['d4', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([4 - up, 4], [1, 4])).state
+    expect(4 - up).toBeLessThanOrEqual(atMost)
+    expect(d4.combat.rolls[0].isCrit).toBe(true) // raised to 4 on a d4: a crit
     const high = play(fight(['steady-hands'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([6, 8])).state
-    expect(high.combat.rolls[0].value).toBe(6)
+    expect(high.combat.rolls[0].bonus).toBeUndefined()
   })
 
   it('Street Performer pays EXP at the start of each of your turns', () => {
@@ -524,30 +528,34 @@ describe('Genre rule changes', () => {
   const soulPlay = (state: EngineState, c: ActionCtx) =>
     applyAction(state, { type: 'PLAY_SONG', songId: 'player-1-song-1', targetMonsterId: 'm1', inspiredPlay: true }, c)
 
-  it('Soul (Inspired Play) pays Inspiration for a bonus, only after starting the turn with enough', () => {
-    let state = fight(['inspired-play'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
+  it('Soul (Inspired Play) pays once for a bonus on every song this concert, only after starting the turn with enough', () => {
+    let state = fight(['inspired-play'], [['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 3 } : p)), turnStartInspiration: 2 }
     expect(soulPlay(state, faces([2, 8])).ok).toBe(false) // started the turn with too little
+    expect(play(state, 1, faces([2, 8])).state.combat.rolls[0].bonus).toBeUndefined() // not paid: nothing
     state = { ...state, turnStartInspiration: DEFAULT_TUNABLES.inspiredPlayMin }
     const paid = soulPlay(state, faces([2, 8]))
     expect(paid.ok).toBe(true)
     if (!paid.ok) return
     expect(paid.state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.inspiredPlayBonus)
     expect(paid.state.players[0].inspiration).toBe(3 - DEFAULT_TUNABLES.inspiredPlayCost)
-    // An encore keeps the bonus without paying for it again (only the encore's own Inspiration)
+    // An encore keeps the bonus without paying again (only the encore's own Inspiration)
     const encore = apply(paid.state, { type: 'REROLL_SONG' }, faces([3, 8])).state
     expect(encore.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.inspiredPlayBonus)
     expect(encore.players[0].inspiration).toBe(3 - DEFAULT_TUNABLES.inspiredPlayCost - 1)
-    // A plain play gets nothing
-    expect(play(state, 1, faces([2, 8])).state.combat.rolls[0].bonus).toBeUndefined()
+    // The next song gets it too, at no further cost
+    const next = play(encore, 2, faces([2, 8])).state
+    expect(next.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.inspiredPlayBonus)
+    expect(next.players[0].inspiration).toBe(encore.players[0].inspiration)
   })
 
-  it('Orchestra (Swarm Singer) counts the monsters the concert started with', () => {
+  it('Orchestra (Swarm Singer) raises every die while 3+ monsters remain, and it can crit', () => {
+    const many = fight(['swarm-singer'], [['d4', 'Hymn']], [{ currentHP: 200, maxHP: 200 }, {}, {}])
+    const crit = play(many, 1, faces([3, 4], [1, 4])).state
+    expect(crit.combat.rolls[0].isCrit).toBe(true) // a 3 on a d4 counts as 4
     const won = { currentHP: 0, maxHP: 8 }
-    const state = fight(['swarm-singer'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }, won, won])
-    expect(play(state, 1, faces([2, 8])).state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.swarmSingerBonus)
-    const small = fight(['swarm-singer'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }, won])
-    expect(play(small, 1, faces([2, 8])).state.combat.rolls[0].bonus).toBeUndefined()
+    const fewLeft = fight(['swarm-singer'], [['d4', 'Hymn']], [{ currentHP: 200, maxHP: 200 }, won, won])
+    expect(play(fewLeft, 1, faces([3, 4])).state.combat.rolls[0].isCrit).toBe(false) // won-over monsters don't count
   })
 
   it('House (Chain Reaction) has no cap in concerts', () => {
@@ -581,11 +589,11 @@ describe('Genre rule changes', () => {
 })
 
 describe('New genres', () => {
-  it('Punk adds its bonus to d4 songs only', () => {
-    const d4 = play(fight(['punk'], [['d4', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([2, 4])).state
-    expect(d4.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.punkBonus)
-    const d8 = play(fight(['punk'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([2, 8])).state
-    expect(d8.combat.rolls[0].bonus).toBeUndefined()
+  it('Punk adds its bonus whenever the song crits', () => {
+    const crit = play(fight(['punk'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([8, 8], [2, 8])).state
+    expect(crit.combat.rolls[0]).toMatchObject({ isCrit: true, bonus: DEFAULT_TUNABLES.punkBonus })
+    const plain = play(fight(['punk'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([5, 8])).state
+    expect(plain.combat.rolls[0].bonus).toBeUndefined()
   })
 
   it('Soft Rock raises d8 and d12 faces, so a 7 on a d8 crits', () => {
@@ -613,23 +621,28 @@ describe('New genres', () => {
     expect(even.combat.rolls[0].bonus).toBeUndefined()
   })
 
-  it('K-Pop pays Fame for a song that moves its monster without winning it over', () => {
-    let state = fight(['k-pop'], [['d8', 'Hymn'], ['d8', 'Ballad']], [{ currentHP: 200, maxHP: 200 }, { currentHP: 200, maxHP: 200, resistance: 'Ballad' }])
-    state = play(state, 2, faces([3, 8]), 'm2').state // immune: moved nothing
-    expect(state.combat.specRewards.fame ?? 0).toBe(0)
-    state = play(state, 1, faces([3, 8]), 'm1').state
-    expect(state.combat.specRewards.fame).toBe(DEFAULT_TUNABLES.kPopFame)
+  it('K-Pop pays Fame for winning over 3, or 4+, monsters in one concert', () => {
+    const tiny = { currentHP: 1, maxHP: 1 }
+    const fameGained = (styles: StyleId[], n: number) => {
+      let state = fight(styles, [['d20', 'Hymn']], Array.from({ length: n }, () => ({ ...tiny })))
+      for (let i = 1; i <= n; i++) state = play(state, 1, faces([10, 20]), `m${i}`).state
+      const before = state.players[0].fame
+      return apply(state, { type: 'END_COMBAT', spreadGenre: 'Hymn' }).state.players[0].fame - before
+    }
+    const extra = (n: number) => fameGained(['k-pop'], n) - fameGained([], n)
+    expect(extra(2)).toBe(0)
+    expect(extra(3)).toBe(DEFAULT_TUNABLES.kPopFame3)
+    expect(extra(4)).toBe(DEFAULT_TUNABLES.kPopFame4)
   })
 
-  it('Emo adds its bonus while the bard has spent songs, up to its cap', () => {
-    const dice: DieSpec[] = Array.from({ length: 6 }, () => ['d4', 'Hymn'] as DieSpec)
-    let state = fight(['emo'], dice, [{ currentHP: 500, maxHP: 500 }])
-    for (let i = 1; i <= 2; i++) state = play(state, i, faces([1, 4])).state
-    state = play(state, 3, faces([1, 4])).state
-    expect(state.combat.rolls[0].bonus).toBe(Math.min(2 * DEFAULT_TUNABLES.emoBonus, DEFAULT_TUNABLES.emoCap))
-    state = play(state, 4, faces([1, 4])).state
-    state = play(state, 5, faces([1, 4])).state
-    expect(state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.emoCap)
+  it('Emo adds its bonus to the last unspent song', () => {
+    let state = fight(['emo'], [['d4', 'Hymn'], ['d4', 'Hymn'], ['d4', 'Hymn']], [{ currentHP: 500, maxHP: 500 }])
+    state = play(state, 1, faces([1, 4])).state
+    expect(state.combat.rolls[0].bonus).toBeUndefined()
+    state = play(state, 2, faces([1, 4])).state
+    expect(state.combat.rolls[0].bonus).toBeUndefined()
+    state = play(state, 3, faces([1, 4])).state // the last one left
+    expect(state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.emoBonus)
   })
 
   it('Trance adds its bonus only while the bard holds no Inspiration', () => {
@@ -640,21 +653,22 @@ describe('New genres', () => {
     expect(play(holding, 1, faces([2, 8])).state.combat.rolls[0].bonus).toBeUndefined()
   })
 
-  it('Grunge adds its bonus to the song after a miss', () => {
-    let state = fight(['grunge'], [['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
-    state = play(state, 1, faces([2, 8])).state
-    expect(state.combat.rolls[0].bonus).toBeUndefined()
-    state = play(state, 2, faces([2, 8])).state
+  it('Grunge adds its bonus to the song after one moves a monster without winning it over', () => {
+    let state = fight(['grunge'], [['d8', 'Hymn'], ['d8', 'Hymn'], ['d8', 'Ballad']], [{ currentHP: 200, maxHP: 200 }, { currentHP: 200, maxHP: 200, resistance: 'Ballad' }])
+    state = play(state, 3, faces([2, 8]), 'm2').state // immune: moved nothing
+    state = play(state, 1, faces([2, 8]), 'm1').state
+    expect(state.combat.rolls[0].bonus).toBeUndefined() // the last song moved nothing
+    state = play(state, 2, faces([2, 8]), 'm1').state
     expect(state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.grungeBonus)
   })
 
-  it('Dubstep rolls the song after a miss twice and keeps the higher, once per turn', () => {
-    let state = fight(['dubstep'], [['d8', 'Hymn'], ['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
-    state = play(state, 1, faces([2, 8])).state
-    state = play(state, 2, faces([2, 8], [6, 8])).state
+  it('Dubstep rolls the song after a win twice and keeps the higher, once per turn', () => {
+    let state = fight(['dubstep'], [['d20', 'Hymn'], ['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 1, maxHP: 1 }, { currentHP: 1, maxHP: 1 }, { currentHP: 200, maxHP: 200 }])
+    state = play(state, 1, faces([10, 20]), 'm1').state // a win
+    state = play(state, 2, faces([1, 8], [6, 8]), 'm2').state // rolls twice: 6, and wins again
     expect(state.combat.rolls[0].value).toBe(6)
-    state = play(state, 3, faces([2, 8], [6, 8])).state
-    expect(state.combat.rolls[0].value).toBe(2) // used up this turn
+    state = play(state, 3, faces([2, 8], [6, 8]), 'm3').state // after a win, but used up this turn
+    expect(state.combat.rolls[0].value).toBe(2)
   })
 })
 

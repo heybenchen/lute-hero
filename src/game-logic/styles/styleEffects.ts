@@ -63,17 +63,18 @@ export function builtinRollOptions(dice: Dice, ctx: StyleContext, isFirstDie: bo
   const t = getTunables()
   const max = getMaxValue(dice.type)
   const opts: GenericRollOptions = { maxCascades: t.maxCritCascades }
-  if (max >= t.virtuosoMinFaces && max <= t.virtuosoMaxFaces && available(ctx, 'virtuoso') && !triggered.includes('virtuoso')) {
+  // Bluegrass: every die in its range rolls twice and keeps the higher (bonus dice roll once)
+  if (max >= t.virtuosoMinFaces && max <= t.virtuosoMaxFaces && has(ctx, 'virtuoso')) {
     opts.advantage = true
     triggered.push('virtuoso')
   }
-  // Bonuses that can push a die to its top face (and so crit)
-  if (dice.type === 'd20' && has(ctx, 'fortissimo') && t.fortissimoBonus > 0) {
-    opts.critBonus = t.fortissimoBonus
-    triggered.push('fortissimo')
-  }
   // Flat bonuses that never crit
   let flat = 0
+  // Opera: a flat bonus on every d20 song
+  if (dice.type === 'd20' && has(ctx, 'fortissimo') && t.fortissimoBonus > 0) {
+    flat += t.fortissimoBonus
+    triggered.push('fortissimo')
+  }
   if (isFirstDie && ctx.firstRoll && has(ctx, 'overture') && t.overtureBonus > 0) {
     flat += t.overtureBonus
     triggered.push('overture')
@@ -180,4 +181,4 @@ export function elementCount(songs: Song[]): number {
 }
 
 /** Once-per-turn styles (marked used when they fire). */
-export const ONCE_PER_TURN: StyleId[] = ['staccato', 'rubato', 'virtuoso', 'fermata', 'counterpoint']
+export const ONCE_PER_TURN: StyleId[] = ['staccato', 'rubato', 'fermata', 'counterpoint']
