@@ -386,7 +386,7 @@ export function CombatModal() {
                   </span>
                 </div>
               </div>
-              <div className="pixel-last-hit-slot">
+              <div className="pixel-last-hit-slot h-[52px]">
                 {lastHitMonster && lastHitCalculation ? (
                   <DamageCell
                     calc={lastHitCalculation}
@@ -395,7 +395,6 @@ export function CombatModal() {
                   />
                 ) : canContinue ? (
                   <p className="flex h-full items-end justify-end gap-2 text-sm text-parchment-300">
-                    <Target size={15} className="shrink-0 text-gold-400" aria-hidden="true" />
                     {lockedTarget ? 'Win over the monster you moved, or end the concert.' : 'Pick a monster, then play a song.'}
                   </p>
                 ) : null}
