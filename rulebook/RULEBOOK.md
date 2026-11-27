@@ -126,7 +126,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 <!-- GENRES:START -->
 | Genre | EXP | What it does |
 |---|---|---|
-| **Gospel** | 2 | Once per turn before rolling, declare that the next roll will win over a monster. If you're right, refresh a spent d4/d8/d12. |
+| **Gospel** | 2 | Once per turn before rolling, declare that the next roll will win over a monster. If you're right, refresh any spent song. |
 | **New Age** | 1 | Gain a 7th song slot. If you replace this genre, you must pick a song to give up. |
 | **Indie** | 2 | All your dice crit one number lower. Does not affect bonus dice. |
 | **Bebop** | 1 | Once per turn, re-roll the die you just rolled and keep the higher result. |
@@ -137,10 +137,10 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 | **Barbershop** | 2 | When you have all four elements in your setlist, add +1 to each song. |
 | **Screamo** | 2 | Add +3 to your first song each turn. |
 | **Disco** | 3 | Gain +10 Fame for every Lv3+ monster you win over. |
-| **Pop** | 1 | Gain 1 Inspiration before each concert. |
+| **Pop** | 1 | Gain 2 Inspiration before each concert. |
 | **Country** | 1 | Increase the rolled value of all dice matching your starting element by 1. |
 | **Lo-fi** | 3 | Upgrades cost 1 less EXP. |
-| **Soul** | 3 | If you started this turn with 3+ Inspiration, spend 1 Inspiration to add +2 to every song. |
+| **Soul** | 2 | If you started this turn with 2+ Inspiration, spend 1 Inspiration to add +2 to every song. |
 | **Baroque** | 1 | Whenever a die roll is 3 or less, increase its rolled value by 1. Does not affect bonus dice. |
 | **Rap** | 2 | Gain 2 EXP at the start of each turn. |
 | **House** | 2 | Add +2 to each song for each same-element song played just before it. Reduced to +1 in the Final Showdown. |
@@ -150,11 +150,11 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 | **Soft Rock** | 2 | Increase the rolled value of your d8s and d12s by 1. |
 | **Prog Rock** | 2 | Your 4th and later songs in a concert add +2. |
 | **Ska** | 2 | Whenever you roll an odd number, add +1 to the song. |
-| **K-Pop** | 2 | Gain +10 Fame for winning over 3 monsters or +15 Fame for winning 4 monsters in one concert. |
-| **Emo** | 2 | When you're down to your last song, add +5. |
-| **Trance** | 2 | While you have 0 Inspiration, add +2 to each song. |
+| **K-Pop** | 2 | Gain +15 Fame for winning over 3 monsters or +25 Fame for winning 4 monsters in one concert. |
+| **Emo** | 2 | When you're down to your last song, double its value. |
+| **Trance** | 2 | While you have 0 Inspiration, add +3 to each song. |
 | **Grunge** | 2 | Every time a song moves a monster without winning it over, add +1 to your next song. |
-| **Dubstep** | 2 | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher. |
+| **Dubstep** | 2 | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher, then adds +3. |
 | **Trip-Hop** | 1 | Once per turn, move to any space on the board. |
 <!-- GENRES:END -->
 

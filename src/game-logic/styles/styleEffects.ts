@@ -70,9 +70,10 @@ export function builtinRollOptions(dice: Dice, ctx: StyleContext, isFirstDie: bo
   }
   // Flat bonuses that never crit
   let flat = 0
-  // Opera: a flat bonus on every d20 song
+  // Opera: a bonus on every d20 song, flat or on the rolled value (which can crit)
   if (dice.type === 'd20' && has(ctx, 'fortissimo') && t.fortissimoBonus > 0) {
-    flat += t.fortissimoBonus
+    if (t.fortissimoRaisesFace) opts.critBonus = (opts.critBonus ?? 0) + t.fortissimoBonus
+    else flat += t.fortissimoBonus
     triggered.push('fortissimo')
   }
   if (isFirstDie && ctx.firstRoll && has(ctx, 'overture') && t.overtureBonus > 0) {

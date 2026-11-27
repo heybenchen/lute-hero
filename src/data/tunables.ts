@@ -191,6 +191,14 @@ export interface Tunables {
   /** Emo: bonus to a song when you're down to this many unspent songs (1 = your last). */
   emoBonus: number
   emoSongsLeft: number
+  /** Emo: multiply the last song's value (1 = off). */
+  emoMultiplier: number
+  /** Opera: 1 = its bonus raises the d20's rolled value (it can crit), 0 = a flat bonus. */
+  fortissimoRaisesFace: number
+  /** Dubstep: the song after a win rolls twice (1/0), adds this, and is multiplied by this. */
+  dubstepAdvantage: number
+  dubstepBonus: number
+  dubstepMultiplier: number
   /** Dubstep: 1 = once per turn, 0 = after every win. */
   dubstepOncePerTurn: number
   /** Trance: bonus while holding no Inspiration. */
@@ -256,14 +264,14 @@ export const DEFAULT_TUNABLES: Tunables = {
   counterpointMultiplier: 1,
   bravoFamePerTame: 10,
   fermataMinFaces: 20,
-  staccatoMaxFaces: 12,
+  staccatoMaxFaces: 20,
   rubatoMaxFaces: 20,
   virtuosoMinFaces: 8,
   virtuosoMaxFaces: 8,
   tuttiElements: 4,
   retreatLevelsUpAll: 0,
   ispiratoMin: 1,
-  ispiratoPerTurn: 1,
+  ispiratoPerTurn: 2,
   fermataInspirationCost: 1,
   ostinatoMaxFaces: 20,
   rubatoUsesPerTurn: 1,
@@ -274,7 +282,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   styleCostHometownHero: 1,
   styleCostSteadyHands: 1,
   styleCostStudioRegular: 3,
-  styleCostInspiredPlay: 3,
+  styleCostInspiredPlay: 2,
   styleCostStreetPerformer: 2,
   styleCostChainReaction: 2,
   styleCostSwarmSinger: 2,
@@ -285,7 +293,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   streetPerformerExp: 2,
   studioRegularDiscount: 1,
   inspiredPlayBonus: 2,
-  inspiredPlayMin: 3,
+  inspiredPlayMin: 2,
   inspiredPlayCost: 1,
   chainReactionBonus: 2,
   chainReactionCap: 0,
@@ -308,12 +316,17 @@ export const DEFAULT_TUNABLES: Tunables = {
   progRockFrom: 4,
   progRockBonus: 2,
   skaBonus: 1,
-  kPopFame3: 10,
-  kPopFame4: 15,
-  emoBonus: 5,
+  kPopFame3: 15,
+  kPopFame4: 25,
+  emoBonus: 0,
   emoSongsLeft: 1,
+  emoMultiplier: 2,
+  fortissimoRaisesFace: 0,
+  dubstepAdvantage: 1,
+  dubstepBonus: 3,
+  dubstepMultiplier: 1,
   dubstepOncePerTurn: 1,
-  tranceBonus: 2,
+  tranceBonus: 3,
   grungeBonus: 1,
 }
 
@@ -455,6 +468,11 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'kPopFame4', label: 'K-Pop: Fame for 4+ monsters in a concert', group: 'Genres', min: 0, max: 50, step: 1 },
   { key: 'emoBonus', label: 'Emo: bonus to your last songs', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'emoSongsLeft', label: 'Emo: songs left that count as "last"', group: 'Genres', min: 1, max: 6, step: 1 },
+  { key: 'emoMultiplier', label: 'Emo: multiplies the last song (1 = off)', group: 'Genres', min: 1, max: 3, step: 0.5 },
+  { key: 'fortissimoRaisesFace', label: 'Opera: raises the rolled value (1) or flat bonus (0)', group: 'Genres', min: 0, max: 1, step: 1 },
+  { key: 'dubstepAdvantage', label: 'Dubstep: next song rolls twice (1/0)', group: 'Genres', min: 0, max: 1, step: 1 },
+  { key: 'dubstepBonus', label: 'Dubstep: bonus to the next song', group: 'Genres', min: 0, max: 10, step: 1 },
+  { key: 'dubstepMultiplier', label: 'Dubstep: multiplies the next song (1 = off)', group: 'Genres', min: 1, max: 3, step: 0.5 },
   { key: 'dubstepOncePerTurn', label: 'Dubstep: once per turn (1) or every win (0)', group: 'Genres', min: 0, max: 1, step: 1 },
   { key: 'tranceBonus', label: 'Trance: bonus at 0 Inspiration', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'grungeBonus', label: 'Grunge: bonus after a miss', group: 'Genres', min: 0, max: 10, step: 1 },

@@ -32,7 +32,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'staccato',
     name: 'Gospel',
     flavor: 'Believe it, sing it, and it comes to pass.',
-    rule: 'Once per turn before rolling, declare that the next roll will win over a monster. If you\'re right, refresh a spent d4/d8/d12.',
+    rule: "Once per turn before rolling, declare that the next roll will win over a monster. If you're right, refresh any spent song.",
   },
   coda: {
     id: 'coda',
@@ -98,7 +98,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'ispirato',
     name: 'Pop',
     flavor: 'That hook won\'t leave your head.',
-    rule: 'Gain 1 Inspiration before each concert.',
+    rule: "Gain 2 Inspiration before each concert.",
   },
   'hometown-hero': {
     id: 'hometown-hero',
@@ -116,7 +116,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'inspired-play',
     name: 'Soul',
     flavor: 'Play it like you mean it.',
-    rule: 'If you started this turn with 3+ Inspiration, spend 1 Inspiration to add +2 to every song.',
+    rule: "If you started this turn with 2+ Inspiration, spend 1 Inspiration to add +2 to every song.",
   },
   'steady-hands': {
     id: 'steady-hands',
@@ -176,19 +176,19 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'k-pop',
     name: 'K-Pop',
     flavor: 'Every fan counts, even the ones still deciding.',
-    rule: 'Gain +10 Fame for winning over 3 monsters or +15 Fame for winning 4 monsters in one concert.',
+    rule: "Gain +15 Fame for winning over 3 monsters or +25 Fame for winning 4 monsters in one concert.",
   },
   emo: {
     id: 'emo',
     name: 'Emo',
     flavor: 'Every song you lose makes the next one hurt more.',
-    rule: 'When you\'re down to your last song, add +5.',
+    rule: "When you're down to your last song, double its value.",
   },
   trance: {
     id: 'trance',
     name: 'Trance',
     flavor: 'Nothing left in the tank, nothing held back.',
-    rule: 'While you have 0 Inspiration, add +2 to each song.',
+    rule: "While you have 0 Inspiration, add +3 to each song.",
   },
   grunge: {
     id: 'grunge',
@@ -200,7 +200,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'dubstep',
     name: 'Dubstep',
     flavor: 'Wait for it. Wait for it.',
-    rule: 'Once per turn, after winning over a monster, your next song rolls twice and keeps the higher.',
+    rule: "Once per turn, after winning over a monster, your next song rolls twice and keeps the higher, then adds +3.",
   },
   'trip-hop': {
     id: 'trip-hop',
@@ -356,14 +356,26 @@ export function styleRule(id: StyleId): string {
     case 'prog-rock': return `Your ${ordinal(t.progRockFrom)} and later songs in a concert add +${t.progRockBonus}.`
     case 'ska': return `Whenever you roll an odd number, add +${t.skaBonus} to the song.`
     case 'k-pop': return `Gain +${t.kPopFame3} Fame for winning over 3 monsters or +${t.kPopFame4} Fame for winning 4 monsters in one concert.`
-    case 'emo': return t.emoSongsLeft <= 1
-      ? `When you're down to your last song, add +${t.emoBonus}.`
-      : `When you're down to your last ${t.emoSongsLeft} songs, add +${t.emoBonus} to each.`
+    case 'emo': {
+      const what = [
+        t.emoMultiplier === 2 ? 'double its value' : t.emoMultiplier !== 1 ? `multiply its value by ${t.emoMultiplier}` : '',
+        t.emoBonus ? `add +${t.emoBonus}` : '',
+      ].filter(Boolean).join(' and ')
+      return t.emoSongsLeft <= 1
+        ? `When you're down to your last song, ${what}.`
+        : `When you're down to your last ${t.emoSongsLeft} songs, ${what.replace('its value', 'their value')} for each.`
+    }
     case 'trance': return `While you have 0 Inspiration, add +${t.tranceBonus} to each song.`
     case 'grunge': return `Every time a song moves a monster without winning it over, add +${t.grungeBonus} to your next song.`
-    case 'dubstep': return t.dubstepOncePerTurn
-      ? 'Once per turn, after winning over a monster, your next song rolls twice and keeps the higher.'
-      : 'After winning over a monster, your next song rolls twice and keeps the higher.'
+    case 'dubstep': {
+      const parts = [
+        t.dubstepAdvantage ? 'rolls twice and keeps the higher' : '',
+        t.dubstepBonus ? `adds +${t.dubstepBonus}` : '',
+        t.dubstepMultiplier === 2 ? 'counts double' : t.dubstepMultiplier !== 1 ? `counts ×${t.dubstepMultiplier}` : '',
+      ].filter(Boolean)
+      const what = parts.length > 1 ? `${parts.slice(0, -1).join(', ')}, then ${parts[parts.length - 1]}` : parts[0] ?? 'is unchanged'
+      return `${t.dubstepOncePerTurn ? 'Once per turn, after' : 'After'} winning over a monster, your next song ${what}.`
+    }
     case 'trip-hop': return 'Once per turn, move to any space on the board.'
     default: return STYLES[id].rule
   }

@@ -246,13 +246,13 @@ describe('Staccato (Gospel)', () => {
     expect(state.combat.stylesUsed).toContain('staccato')
   })
 
-  it('refreshes d12 or smaller songs only, and only your own spent ones', () => {
+  it('refreshes any spent song of your own, d20 included', () => {
     let state = fight(['staccato'], [['d20', 'Hymn'], ['d4', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 12, maxHP: 12 }, { currentHP: 80, maxHP: 80 }])
     state = play(state, 1, faces([5, 20]), 'm1').state // the d20 is spent, m1 is moved
     state = call(state, 3, faces([8, 8], [1, 8]), 'm1').state // called win
-    expect(rally(state, 1).ok).toBe(false) // a d20 is too large
     expect(rally(state, 2).ok).toBe(false) // never spent
     expect(applyAction(state, { type: 'RALLY_SONG', songId: 'player-2-song-1' }, seeded()).ok).toBe(false)
+    expect(rally(state, 1).ok).toBe(true) // the d20 comes back
   })
 
   it('an encore of a called play replays the call, and a refresh survives an earlier encore', () => {
@@ -530,7 +530,7 @@ describe('Genre rule changes', () => {
 
   it('Soul (Inspired Play) pays once for a bonus on every song this concert, only after starting the turn with enough', () => {
     let state = fight(['inspired-play'], [['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
-    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 3 } : p)), turnStartInspiration: 2 }
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 3 } : p)), turnStartInspiration: DEFAULT_TUNABLES.inspiredPlayMin - 1 }
     expect(soulPlay(state, faces([2, 8])).ok).toBe(false) // started the turn with too little
     expect(play(state, 1, faces([2, 8])).state.combat.rolls[0].bonus).toBeUndefined() // not paid: nothing
     state = { ...state, turnStartInspiration: DEFAULT_TUNABLES.inspiredPlayMin }
@@ -582,9 +582,9 @@ describe('Genre rule changes', () => {
     expect(rolls.map((r) => r.bonus ?? 0)).toEqual([0, 1, 2].map((n) => n * DEFAULT_TUNABLES.chainReactionShowdownBonus))
   })
 
-  it('Mariachi costs 2 EXP and Gospel refreshes d12 or smaller by default', () => {
+  it('Mariachi costs 2 EXP and Gospel refreshes any die by default', () => {
     expect(DEFAULT_TUNABLES.styleCostJamSession).toBe(2)
-    expect(DEFAULT_TUNABLES.staccatoMaxFaces).toBe(12)
+    expect(DEFAULT_TUNABLES.staccatoMaxFaces).toBe(20)
   })
 })
 
@@ -635,14 +635,15 @@ describe('New genres', () => {
     expect(extra(4)).toBe(DEFAULT_TUNABLES.kPopFame4)
   })
 
-  it('Emo adds its bonus to the last unspent song', () => {
+  it('Emo doubles the value of the last unspent song', () => {
     let state = fight(['emo'], [['d4', 'Hymn'], ['d4', 'Hymn'], ['d4', 'Hymn']], [{ currentHP: 500, maxHP: 500 }])
-    state = play(state, 1, faces([1, 4])).state
+    state = play(state, 1, faces([2, 4])).state
     expect(state.combat.rolls[0].bonus).toBeUndefined()
-    state = play(state, 2, faces([1, 4])).state
+    state = play(state, 2, faces([2, 4])).state
     expect(state.combat.rolls[0].bonus).toBeUndefined()
-    state = play(state, 3, faces([1, 4])).state // the last one left
-    expect(state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.emoBonus)
+    const before = hp(state)
+    state = play(state, 3, faces([3, 4])).state // the last one left
+    expect(before - hp(state)).toBe(3 * DEFAULT_TUNABLES.emoMultiplier + DEFAULT_TUNABLES.emoBonus)
   })
 
   it('Trance adds its bonus only while the bard holds no Inspiration', () => {
@@ -666,9 +667,10 @@ describe('New genres', () => {
     let state = fight(['dubstep'], [['d20', 'Hymn'], ['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 1, maxHP: 1 }, { currentHP: 1, maxHP: 1 }, { currentHP: 200, maxHP: 200 }])
     state = play(state, 1, faces([10, 20]), 'm1').state // a win
     state = play(state, 2, faces([1, 8], [6, 8]), 'm2').state // rolls twice: 6, and wins again
-    expect(state.combat.rolls[0].value).toBe(6)
+    expect(state.combat.rolls[0]).toMatchObject({ value: 6, bonus: DEFAULT_TUNABLES.dubstepBonus })
     state = play(state, 3, faces([2, 8], [6, 8]), 'm3').state // after a win, but used up this turn
     expect(state.combat.rolls[0].value).toBe(2)
+    expect(state.combat.rolls[0].bonus).toBeUndefined()
   })
 })
 
