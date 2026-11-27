@@ -20,6 +20,7 @@
 
 - Code now uses the player-facing words: Studio purchases are `genres` (`GenreId`, `player.genres`, `BUY_GENRE`, `genreCost*` tunables) and the four colours are `elements` (`Element`, `die.element`, `elementTags`, `starterElement`). Genre ids are the genre names (`opera`, `new-age`, `lo-fi`, ...). Old saves, presets and online games are migrated on load (`src/engine/legacyNames.ts`). `songStyles.md` is now `genres.md`; the style scripts are `scripts/genre-*.ts`.
 - The playtest Simulate tab has a pace: Learning / Typical (default) / Expert. The expert smart bot fought and won nearly every turn and spent every EXP at once, so by round 5 bards held 6 dice in ~3.8 elements — far ahead of real playtests. Slower paces make it slip like a person (`SmartParams.skill`); by round 5 Typical holds ~4.9 dice in ~3.2 elements, Learning ~3.4 in ~2.5. The panel shows the expected holdings for the chosen pace and round. Paces are calibrated by guesswork — retune `SIMULATION_PACES` skills against real playtest numbers.
+- Added all sixteen spawnable Lute Hero monsters to `/bestiary` with their bundled Lv1–Lv5 pixel-art evolutions, live game HP and matchups, plus a one-time migration that preserves existing bestiary edits.
 
 - Retreating before any dice are rolled is now free: it does not consume the bard's concert for the turn, alter monster chips, trigger retreat rewards, or show the damage-forfeit confirmation.
 

@@ -10,6 +10,7 @@ import {
 import {
   BESTIARY_TYPES,
   buildLevels,
+  mergeGameMonsters,
   seedMonsters,
   slug,
   type BestiaryType,
@@ -17,6 +18,8 @@ import {
 } from '../../src/bestiary/data.js'
 
 const BESTIARY_KEY = 'bestiary:monsters'
+const BESTIARY_SEED_VERSION_KEY = 'bestiary:seed-version'
+const BESTIARY_SEED_VERSION = '2'
 
 /**
  * Read the roster from storage, seeding it from the shared roster on first
@@ -27,13 +30,21 @@ async function loadMonsters(): Promise<Monster[]> {
   const raw = await redis.get(BESTIARY_KEY)
   if (raw) {
     try {
-      return JSON.parse(raw) as Monster[]
+      const stored = JSON.parse(raw) as Monster[]
+      if (await redis.get(BESTIARY_SEED_VERSION_KEY) !== BESTIARY_SEED_VERSION) {
+        const migrated = mergeGameMonsters(stored)
+        await redis.set(BESTIARY_KEY, JSON.stringify(migrated))
+        await redis.set(BESTIARY_SEED_VERSION_KEY, BESTIARY_SEED_VERSION)
+        return migrated
+      }
+      return stored
     } catch {
       /* corrupt value — reseed below */
     }
   }
   const seeded = seedMonsters()
   await redis.set(BESTIARY_KEY, JSON.stringify(seeded))
+  await redis.set(BESTIARY_SEED_VERSION_KEY, BESTIARY_SEED_VERSION)
   return seeded
 }
 

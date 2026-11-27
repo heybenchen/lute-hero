@@ -4,6 +4,8 @@
  * and the serverless API (api/monsters/*), so it uses only plain data and
  * relative imports.
  */
+import { MONSTER_TEMPLATES } from '../data/monsters.js'
+import type { Genre } from '../types/index.js'
 
 export type BestiaryType = 'fire' | 'sea' | 'sky' | 'forest'
 
@@ -13,6 +15,7 @@ export interface MonsterLevel {
   level: number
   hp: number
   effect: string
+  imageUrl?: string
 }
 
 export interface Monster {
@@ -77,6 +80,54 @@ export const slug = (s: string): string =>
     .replace(/(^-|-$)/g, '')
 
 type RosterEntry = [name: string, type: BestiaryType, baseHp: number, tagline: string]
+
+const GAME_TYPE_BY_GENRE: Record<Genre, BestiaryType> = {
+  Ballad: 'fire',
+  Folk: 'forest',
+  Hymn: 'sky',
+  Shanty: 'sea',
+}
+
+const GAME_LEVEL_HP = [8, 14, 24, 40, 60] as const
+
+/** Stable reference resolved to a bundled sprite by the browser UI. */
+export const gameMonsterImage = (genre: Genre, level: number): string =>
+  `game-monster://${genre}/${level}`
+
+/** The sixteen spawnable monsters used by Lute Hero, with their five evolutions. */
+export function gameMonsters(): Monster[] {
+  return MONSTER_TEMPLATES.filter(
+    (template): template is typeof template & { vulnerability: Genre } =>
+      !template.isBoss && template.vulnerability !== null
+  ).map((template) => {
+    const genre = template.vulnerability
+    const type = GAME_TYPE_BY_GENRE[genre]
+    const matchup = `Weak to ${genre} · Immune to ${template.resistance}`
+
+    return {
+      id: `lute-hero-${template.id}`,
+      name: template.name,
+      type,
+      baseHp: GAME_LEVEL_HP[0],
+      tagline: template.description,
+      imageUrl: gameMonsterImage(genre, 1),
+      hidden: false,
+      levels: GAME_LEVEL_HP.map((hp, index) => ({
+        level: index + 1,
+        hp,
+        effect: matchup,
+        imageUrl: gameMonsterImage(genre, index + 1),
+      })),
+    }
+  })
+}
+
+/** Add missing built-in game monsters without replacing saved user edits. */
+export function mergeGameMonsters(monsters: Monster[]): Monster[] {
+  const existingIds = new Set(monsters.map((monster) => monster.id))
+  const missing = gameMonsters().filter((monster) => !existingIds.has(monster.id))
+  return [...missing, ...monsters]
+}
 
 const ROSTER: RosterEntry[] = [
   ['Spice Ghouls', 'forest', 45, 'Ghoul power!'],
@@ -164,7 +215,7 @@ const ROSTER: RosterEntry[] = [
 ]
 
 export function seedMonsters(): Monster[] {
-  return ROSTER.map(([name, type, baseHp, tagline], i) => ({
+  const musicianMonsters = ROSTER.map(([name, type, baseHp, tagline], i) => ({
     id: `${slug(name)}-${i}`,
     name,
     type,
@@ -174,4 +225,5 @@ export function seedMonsters(): Monster[] {
     hidden: false,
     levels: buildLevels(baseHp, type),
   }))
+  return [...gameMonsters(), ...musicianMonsters]
 }
