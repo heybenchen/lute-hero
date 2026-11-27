@@ -74,8 +74,10 @@ export interface EngineCombatState {
   rallyReady: boolean
   /** How the last play went: won its monster over, moved it, or neither (Grunge, Dubstep). */
   lastPlayResult?: 'won' | 'moved' | 'missed' | null
-  /** Gospel's call on the last own play, replayed by an encore. */
-  lastPlayFlags?: { staccatoCall?: boolean }
+  /** Gospel's call and Emo's final-song declaration on the last own play, replayed by an encore. */
+  lastPlayFlags?: { staccatoCall?: boolean; emoFinale?: boolean }
+  /** Emo: the bard declared their final song, so no song can follow (the concert must end). */
+  finaleDeclared?: boolean
   /** Soul is paid for this concert: every song gets its bonus. */
   soulActive?: boolean
   lastPlayedSongId: string | null
@@ -233,6 +235,7 @@ export function createInitialCombatState(): EngineCombatState {
     lastPlayResult: null,
     lastPlayFlags: {},
     soulActive: false,
+    finaleDeclared: false,
     featuredPlayerIds: [],
     featureRequest: null,
     specFired: [],

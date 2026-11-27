@@ -58,6 +58,7 @@ export function CombatModal() {
       featuredPlayerIds: state.featuredPlayerIds,
       turnStartInspiration: state.turnStartInspiration,
       soulActive: state.soulActive,
+      finaleDeclared: state.finaleDeclared,
     }))
   )
   const {
@@ -78,6 +79,7 @@ export function CombatModal() {
     featuredPlayerIds,
     turnStartInspiration,
     soulActive,
+    finaleDeclared,
   } = useHeldWhileRolling(liveView)
   const diceBusy = useDiceTrayBusy()
 
@@ -98,6 +100,7 @@ export function CombatModal() {
   // Choices for the next song (Gospel's call, Soul's paid bonus); reset after each play
   const [callIt, setCallIt] = useState(false)
   const [soul, setSoul] = useState(false)
+  const [finale, setFinale] = useState(false)
   // Victory rewards stay unresolved while the player briefly checks the board.
   const [previewingMap, setPreviewingMap] = useState(false)
   const [rollDisplayDismissed, setRollDisplayDismissed] = useState(false)
@@ -173,7 +176,8 @@ export function CombatModal() {
   // No fixed song cap now: fight on while you have unspent songs (defeating a
   // monster returns that song's dice; a song that only wounds is spent) or a
   // featured song still to borrow.
-  const canContinue = ownSongsRemaining > 0 || featurableSongs.length > 0
+  // Emo's declared final song ends the concert: nothing can follow it
+  const canContinue = !finaleDeclared && (ownSongsRemaining > 0 || featurableSongs.length > 0)
 
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
   const hasRolledDice = rolls.length > 0
@@ -199,6 +203,7 @@ export function CombatModal() {
   // Choices for the next song: Gospel's call and Soul's paid bonus. Both reset after a play.
   const t = getTunables()
   const canCall = player.styles.includes('staccato') && !stylesUsed.includes('staccato')
+  const canFinale = player.styles.includes('emo') && !finaleDeclared
   const canSoul = player.styles.includes('inspired-play') && !soulActive &&
     (turnStartInspiration ?? 0) >= t.inspiredPlayMin && player.inspiration >= t.inspiredPlayCost
 
@@ -208,16 +213,18 @@ export function CombatModal() {
   }
 
   const handlePlaySong = async (songId: string) => {
-    if (!canRoll || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
+    if (!canRoll || finaleDeclared || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
     const result = await dispatch({
       type: 'PLAY_SONG',
       songId,
       targetMonsterId: selectedTargetId,
       ...(callIt && canCall ? { staccatoCall: true } : {}),
       ...(soul && canSoul ? { inspiredPlay: true } : {}),
+      ...(finale && canFinale ? { emoFinale: true } : {}),
     })
     setCallIt(false)
     setSoul(false)
+    setFinale(false)
     if (result.ok) void showDamageEvents(result.events)
   }
 
@@ -529,12 +536,21 @@ export function CombatModal() {
               {soulActive && player.styles.includes('inspired-play') && (
                 <p className="mb-2 text-center text-xs text-amber-200"><strong>{STYLES['inspired-play'].name}</strong>: +{t.inspiredPlayBonus} on every song this concert</p>
               )}
-              {canRoll && (canCall || canSoul) && (
+              {finaleDeclared && (
+                <p className="mb-2 text-center text-xs text-amber-200"><strong>{STYLES.emo.name}</strong>: that was your final song. End the concert.</p>
+              )}
+              {canRoll && !finaleDeclared && (canCall || canSoul || canFinale) && (
                 <div className="mb-3 flex flex-wrap items-center justify-center gap-2 text-xs" role="group" aria-label="Choices for your next song">
                   {canCall && (
                     <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-gold-700/30 px-3 py-1 text-parchment-200 hover:bg-white/5">
                       <input type="checkbox" checked={callIt} onChange={(e) => setCallIt(e.target.checked)} />
                       <span><strong>{STYLES.staccato.name}</strong>: call it (this song wins over {target?.name ?? 'the target'})</span>
+                    </label>
+                  )}
+                  {canFinale && (
+                    <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-gold-700/30 px-3 py-1 text-parchment-200 hover:bg-white/5">
+                      <input type="checkbox" checked={finale} onChange={(e) => setFinale(e.target.checked)} />
+                      <span><strong>{STYLES.emo.name}</strong>: make this my final song (+{t.emoBonus}, then the concert ends)</span>
                     </label>
                   )}
                   {canSoul && (
@@ -552,7 +568,7 @@ export function CombatModal() {
                     song={{ ...song, used: isSongSpent(song.id) }}
                     resisted={!!target && songIsImmune(song, target, damageOptions)}
                     onPlay={() => handlePlaySong(song.id)}
-                    disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
+                    disabled={!canRoll || !!finaleDeclared || isSongSpent(song.id) || !hasLiveTarget}
                     index={idx}
                     rolls={rollMatchesSelectedTarget && currentSongId === song.id ? rolls : undefined}
                     reroll={rollMatchesSelectedTarget && reroll && lastPlayedSong?.id === song.id ? reroll : undefined}
@@ -574,7 +590,7 @@ export function CombatModal() {
               monsters={monsters}
               currentSongId={currentSongId}
               rolls={rollMatchesSelectedTarget ? rolls : []}
-              canFeature={canRoll && hasLiveTarget}
+              canFeature={canRoll && hasLiveTarget && !finaleDeclared}
               online={online}
               myPlayerId={myPlayerId}
               onFeature={handleFeature}

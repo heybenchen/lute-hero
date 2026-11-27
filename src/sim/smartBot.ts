@@ -38,7 +38,7 @@ import { getMaxValue } from '../game-logic/dice/roller.js'
 import { getTunables, withTunables } from '../data/tunables.js'
 import { inspirationSpend } from '../data/draftCards.js'
 import { canAfford, d4CostFor, inspirationCostFor, movesFor, upgradeCostFor } from '../engine/economy.js'
-import { specsOf, specsForStyles } from '../data/styleSpecs.js'
+import { emoFinaleSpec, specsOf, specsForStyles } from '../data/styleSpecs.js'
 import { PlayContext, SpecReward, StyleSpec, applySpecRollModifiers, conditionHolds, inspirationRules, specMultiplier } from '../game-logic/styles/specs.js'
 import { styleCost, maxStyles } from '../data/styles.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
@@ -386,9 +386,9 @@ export class SmartBot {
    * Choices riding on an own play. Gospel: call a likely win while a spent song is
    * waiting to come back. Soul: pay Inspiration when +2 lifts the win chance enough.
    */
-  private playFlags(fighter: Player, pick: Candidate): { staccatoCall?: boolean; inspiredPlay?: boolean } {
+  private playFlags(fighter: Player, pick: Candidate): { staccatoCall?: boolean; inspiredPlay?: boolean; emoFinale?: boolean } {
     const combat = this.state.combat
-    const flags: { staccatoCall?: boolean; inspiredPlay?: boolean } = {}
+    const flags: { staccatoCall?: boolean; inspiredPlay?: boolean; emoFinale?: boolean } = {}
     const refreshable = fighter.songs.some((s) => combat.spentSongIds.includes(s.id) && songDie(s) && staccatoCanRefresh(s))
     if (fighter.styles.includes('staccato') && !combat.stylesUsed.includes('staccato') && refreshable && pick.pk >= 0.6) {
       flags.staccatoCall = true
@@ -406,6 +406,27 @@ export class SmartBot {
       const songsLeft = fighter.songs.filter((sg) => songDie(sg) && !combat.spentSongIds.includes(sg.id)).length
       const alive = combat.monsters.filter((m) => m.currentHP > 0).length
       if (songsLeft >= 2 && alive >= 1) flags.inspiredPlay = true
+    }
+    // Emo: declare this the final song when it's the last one anyway, or when the target is the only
+    // monster left and the bonus makes winning it over clearly likelier
+    if (fighter.styles.includes('emo') && !combat.finaleDeclared) {
+      const songsLeft = fighter.songs.filter((sg) => songDie(sg) && !combat.spentSongIds.includes(sg.id)).length
+      if (songsLeft <= 1) {
+        flags.emoFinale = true
+      } else {
+        const die = songDie(pick.song)!
+        const specs = specsOf(fighter)
+        const play = this.playCtx(fighter, pick.monster, die)
+        const opts = { firstRoll: combat.songsUsed.length === 0, advantage: false, allElements: hasHarmony(fighter.songs) }
+        const mult = this.multiplier(die, pick.monster, false, specs, play)
+        if (mult > 0) {
+          const plain = killChance(this.dist(die, fighter.styles, opts, specs, play), mult, pick.monster.currentHP)
+          const boosted = killChance(this.dist(die, fighter.styles, opts, [...specs, emoFinaleSpec()], play), mult, pick.monster.currentHP)
+          // Only when nothing else is left to win: ending the concert then costs just the later tries at this monster
+          const othersLeft = combat.monsters.some((m) => m.currentHP > 0 && m.id !== pick.monster.id)
+          if (!othersLeft && boosted >= 0.5 && boosted - plain >= 0.2) flags.emoFinale = true
+        }
+      }
     }
     return flags
   }

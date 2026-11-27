@@ -72,8 +72,9 @@ export type GameAction =
   /**
    * Play a song at one monster. `inspiredPlay`: Soul pays Inspiration once for a bonus on every
    * song this concert. `staccatoCall`: Gospel declares this roll will win its monster over (once per turn).
+   * `emoFinale`: Emo declares this the last song of the concert for a bonus; no song can follow it.
    */
-  | { type: 'PLAY_SONG'; songId: string; targetMonsterId: string; inspiredPlay?: boolean; staccatoCall?: boolean }
+  | { type: 'PLAY_SONG'; songId: string; targetMonsterId: string; inspiredPlay?: boolean; staccatoCall?: boolean; emoFinale?: boolean }
   /** Spend Inspiration to reroll the last song; `rubato` makes it free (once per turn, d4/d8). */
   | { type: 'REROLL_SONG'; rubato?: boolean }
   /** Rallying Cry: after a tame this turn, refresh one of your spent songs. */
