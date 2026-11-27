@@ -225,17 +225,17 @@ function wrap(s: string, n: number): string[] {
   write('dice-ladder.svg', svg(760, 274, b, 'Dice ladder from d4 to d20 with EXP prices'))
 }
 
-// ===================================================== Appendix A (styles)
+// ===================================================== Appendix A (genres)
 {
   const md = new URL('../rulebook/RULEBOOK.md', import.meta.url).pathname
   const text = readFileSync(md, 'utf8')
-  const start = '<!-- STYLES:START -->'
-  const end = '<!-- STYLES:END -->'
+  const start = '<!-- GENRES:START -->'
+  const end = '<!-- GENRES:END -->'
   const rows = ALL_STYLE_IDS.map((id) => `| **${STYLES[id].name}** | ${styleCost(id)} | ${styleRule(id)} |`)
-  const table = ['| Style | EXP | What it does |', '|---|---|---|', ...rows].join('\n')
+  const table = ['| Genre | EXP | What it does |', '|---|---|---|', ...rows].join('\n')
   const a = text.indexOf(start)
   const b = text.indexOf(end)
-  if (a === -1 || b === -1) throw new Error('RULEBOOK.md is missing the STYLES markers')
+  if (a === -1 || b === -1) throw new Error('RULEBOOK.md is missing the GENRES markers')
   writeFileSync(md, `${text.slice(0, a + start.length)}\n${table}\n${text.slice(b)}`)
 }
 

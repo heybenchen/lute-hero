@@ -128,7 +128,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   disabled={!canInteract || player.inspiration < inspirationSpend()}
                   className="btn-secondary flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-sm"
                   title={player.inspiration >= inspirationSpend()
-                    ? `Spend ${inspirationSpend()} Inspiration to draw new element cubes and new style offers`
+                    ? `Spend ${inspirationSpend()} Inspiration to draw new element cubes and new genre offers`
                     : 'Requires Inspiration'}
                 >
                   <RefreshCw size={13} aria-hidden="true" /> Refresh <span className="font-normal opacity-80">(&#x2728;{inspirationSpend()})</span>
@@ -453,7 +453,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
           </div>
 
           {/* ===== Styles: change how every song in the setlist plays ===== */}
-          <StudioSection title="Styles" subtitle="Add to your repertoire — each style changes how every song in your setlist plays." />
+          <StudioSection title="Genres" subtitle="Add to your repertoire — each genre changes how every song in your setlist plays." />
           <StyleShelf player={player} canInteract={canInteract} />
         </div>
       </div>

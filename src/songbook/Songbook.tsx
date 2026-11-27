@@ -15,9 +15,10 @@ type GroupFilter = 'all' | StyleGroup
 type SortKey = 'catalog' | 'price' | 'strength' | 'name'
 
 const GROUP_FILTERS: { key: GroupFilter; label: string }[] = [
-  { key: 'all', label: 'All styles' },
+  { key: 'all', label: 'All genres' },
   { key: 'original', label: GROUP_LABEL.original },
   { key: 'lab', label: GROUP_LABEL.lab },
+  { key: 'new', label: GROUP_LABEL.new },
 ]
 
 const SORTS: { key: SortKey; label: string }[] = [
@@ -132,6 +133,7 @@ export function Songbook() {
       all: entries.length,
       original: entries.filter((e) => e.group === 'original').length,
       lab: entries.filter((e) => e.group === 'lab').length,
+      new: entries.filter((e) => e.group === 'new').length,
     }),
     [entries],
   )
@@ -154,21 +156,21 @@ export function Songbook() {
           </div>
           <h1 className="mt-2 font-serif text-4xl font-black tracking-tight text-amber-100 sm:text-5xl">Songbook</h1>
           <p className="mt-2 max-w-xl text-sm text-stone-400">
-            Every play style a bard can learn in the Studio: what it does, what it costs, the settings behind it, and
+            Every genre a bard can learn in the Studio: what it does, what it costs, the settings behind it, and
             how strong it is in simulation.
           </p>
         </header>
 
         <section aria-labelledby="how" className="mb-8 rounded-xl border border-white/10 bg-stone-900/40 p-4 sm:p-5">
-          <h2 id="how" className="font-serif text-lg font-bold text-amber-100">How styles work</h2>
+          <h2 id="how" className="font-serif text-lg font-bold text-amber-100">How genres work</h2>
           <ul className="mt-2 grid gap-x-8 gap-y-1.5 text-sm text-stone-300 sm:grid-cols-2">
-            <li>A style changes how <strong className="text-stone-100">every</strong> song a bard plays.</li>
-            <li>A bard holds at most <strong className="text-stone-100">2</strong> styles; buying a third replaces one.</li>
-            <li>The Studio shelf offers 2 styles at a time. Inspiration redraws it.</li>
-            <li>Prices are in EXP, and bards usually have a first style by round 5.</li>
-            <li><strong className="text-stone-100">Once per turn</strong> styles fire on their own the first time they apply.</li>
-            <li>A bonus like <strong className="text-stone-100">+2</strong> is added to the roll&apos;s <strong className="text-stone-100">value</strong>, not to the die&apos;s face, so it can&apos;t crit unless the style says so.</li>
-            <li>Guest songs borrowed from another bard play without styles.</li>
+            <li>A genre changes how <strong className="text-stone-100">every</strong> song a bard plays.</li>
+            <li>A bard holds at most <strong className="text-stone-100">2</strong> genres; buying a third replaces one.</li>
+            <li>The Studio&apos;s Genres shelf offers 2 at a time. Inspiration redraws it.</li>
+            <li>Prices are in EXP, and bards usually have a first genre by round 5.</li>
+            <li><strong className="text-stone-100">Once per turn</strong> genres fire on their own the first time they apply, unless they&apos;re a button you press.</li>
+            <li>A bonus like <strong className="text-stone-100">+2</strong> is added to the roll&apos;s <strong className="text-stone-100">value</strong>, not to the die&apos;s face, so it can&apos;t crit unless the genre says so.</li>
+            <li>Guest songs borrowed from another bard play without genres.</li>
             <li>Every number here is a setting in the playtest console, so the game can be re-tuned.</li>
           </ul>
         </section>
@@ -180,8 +182,8 @@ export function Songbook() {
               type="search"
               value={query}
               onChange={(ev) => setQuery(ev.target.value)}
-              placeholder="Search styles, rules, Inspiration, crit…"
-              aria-label="Search styles"
+              placeholder="Search genres, rules, Inspiration, crit…"
+              aria-label="Search genres"
               className="w-full rounded-lg border border-white/10 bg-stone-900/60 py-2.5 pl-9 pr-3 text-sm text-stone-100 placeholder:text-stone-600 focus:border-amber-500/40 focus:outline-none"
             />
           </div>
@@ -219,7 +221,7 @@ export function Songbook() {
 
         {shown.length === 0 ? (
           <p className="rounded-xl border border-white/10 bg-stone-900/40 p-8 text-center text-sm text-stone-500">
-            No style matches &ldquo;{query}&rdquo;.
+            No genre matches &ldquo;{query}&rdquo;.
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -236,7 +238,7 @@ export function Songbook() {
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-stone-900/60 text-xs uppercase tracking-wider text-stone-500">
-                    <th className="py-3 pl-4 pr-2 font-medium">Style</th>
+                    <th className="py-3 pl-4 pr-2 font-medium">Genre</th>
                     <th className="px-2 py-3 text-right font-medium">Price</th>
                     <th className="px-2 py-3 font-medium">Triggers</th>
                     <th className="px-2 py-3 font-medium">Group</th>
@@ -264,14 +266,14 @@ export function Songbook() {
         <section aria-labelledby="strength" className="mt-10 rounded-xl border border-white/10 bg-stone-900/40 p-4 sm:p-5">
           <h2 id="strength" className="font-serif text-lg font-bold text-amber-100">How strength is measured</h2>
           <p className="mt-2 text-sm leading-relaxed text-stone-300">
-            Smart-bot players play {AUDIT_GAMES} three-bard games per style through the real rules and the Final Showdown.
-            The tested bard buys the style in round 5 at its real price. That is when bots really buy their first one.
-            The other two bards shop for styles too, so a style is judged against what bots naturally buy.
+            Smart-bot players play {AUDIT_GAMES} three-bard games per genre through the real rules and the Final Showdown.
+            The tested bard buys the genre in round 5 at its real price. That is when bots really buy their first one.
+            The other two bards shop for genres too, so a genre is judged against what bots naturally buy.
           </p>
           <p className="mt-2 text-sm leading-relaxed text-stone-300">
-            A fair share at a three-bard table is {PARITY.toFixed(1)}% of games (a bard with no style wins{' '}
+            A fair share at a three-bard table is {PARITY.toFixed(1)}% of games (a bard with no genre wins{' '}
             {BASELINE_WIN.toFixed(1)}%). Results move by about ±3.5 points from run to run, so only gaps larger than about
-            4 points mean anything. Today the styles span {Math.min(...wins).toFixed(1)}% ({low.name}) to{' '}
+            4 points mean anything. Today the genres span {Math.min(...wins).toFixed(1)}% ({low.name}) to{' '}
             {Math.max(...wins).toFixed(1)}% ({high.name}).
           </p>
           <p className="mt-2 text-xs text-stone-500">

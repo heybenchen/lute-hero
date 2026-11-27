@@ -401,7 +401,7 @@ function StyleEditor({ player }: { player: Player }) {
   }
   return (
     <div className="mt-2">
-      <span className="text-[10px] font-medieval uppercase tracking-widest text-parchment-500">Styles</span>
+      <span className="text-[10px] font-medieval uppercase tracking-widest text-parchment-500">Genres</span>
       <div className="mt-1 flex flex-wrap gap-1">
         {ALL_STYLE_IDS.map((id) => {
           const on = player.styles.includes(id)
@@ -525,7 +525,7 @@ function DiceEditor({ player }: { player: Player }) {
 /**
  * Simulate tab: bots replay this table (same bards, elements and tunables)
  * from a fresh deal through round N — every turn is real engine play, so the
- * board, dice, styles, Fame, EXP and Inspiration are realistic and consistent.
+ * board, dice, genres, Fame, EXP and Inspiration are realistic and consistent.
  * Then either keep playing from the next round or start the Final Showdown.
  * The round is picked with a large-target stepper so it works on phones.
  */
@@ -572,7 +572,7 @@ function SimulateTab() {
     <div>
       <SectionTitle>Simulate the game</SectionTitle>
       <p className="mb-3 text-xs leading-snug text-parchment-400">
-        Bots play every turn of this table — same bards, elements and values — from a fresh deal, so the board, dice, styles, Fame, EXP and Inspiration all come from real play.
+        Bots play every turn of this table — same bards, elements and values — from a fresh deal, so the board, dice, genres, Fame, EXP and Inspiration all come from real play.
       </p>
 
       <div className="mb-1 text-center text-[11px] uppercase tracking-wider text-parchment-500">Through round</div>

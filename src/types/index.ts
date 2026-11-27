@@ -60,7 +60,17 @@ export type StyleId =
   | "street-performer"
   | "chain-reaction"
   | "swarm-singer"
-  | "jam-session";
+  | "jam-session"
+  // Genres added with the rename from styles to genres (also data-defined specs)
+  | "punk"
+  | "soft-rock"
+  | "prog-rock"
+  | "ska"
+  | "k-pop"
+  | "emo"
+  | "trance"
+  | "grunge"
+  | "dubstep";
 
 export interface SongSlot {
   dice: Dice | null;

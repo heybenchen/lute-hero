@@ -68,11 +68,17 @@ export type GameAction =
   /** Take back the last move this turn (only before any combat since). */
   | { type: 'UNDO_MOVE'; playerId: string }
   | { type: 'START_COMBAT'; playerId: string }
-  | { type: 'PLAY_SONG'; songId: string; targetMonsterId: string }
+  /**
+   * Play a song at one monster. `inspiredPlay`: Soul pays Inspiration for a bonus on this song.
+   * `staccatoCall`: Gospel calls this target before rolling (once per turn).
+   */
+  | { type: 'PLAY_SONG'; songId: string; targetMonsterId: string; inspiredPlay?: boolean; staccatoCall?: boolean }
   /** Spend Inspiration to reroll the last song; `rubato` makes it free (once per turn, d4/d8). */
   | { type: 'REROLL_SONG'; rubato?: boolean }
   /** Rallying Cry: after a tame this turn, refresh one of your spent songs. */
   | { type: 'RALLY_SONG'; songId: string }
+  /** Blues (Lingering Note): pay Inspiration to refresh one spent d20 song, once per turn. */
+  | { type: 'LINGER_SONG'; songId: string }
   /**
    * Play a featured song: one song from another bard sharing the space, once
    * per bard per fight. Hotseat only — online the fighter asks first

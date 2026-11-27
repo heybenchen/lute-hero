@@ -6,9 +6,7 @@
 
 ## Medium Priority
 
-- Styles become **genres** (Figma spec "Lute Hero — Styles as Musical Genres"): rename all 20 to real-world genres (Bebop, Blues, New Age, Opera, Indie, Orchestra, Mariachi, Disco, Lo-fi, Barbershop, Crossover, House, Soul, Country, Screamo, Gospel, Baroque, Pop, Bluegrass, Hip-Hop) with new flavour lines; call styles "genres" and dice "elements" everywhere players read, and label the Studio shelf "Genres". The spec also changes rules and prices: Blues refreshes a spent d20 for 1 Inspiration, Orchestra counts monsters at the start of the concert, Mariachi costs 2, House loses its cap and drops to +1 in the Final Showdown, Soul spends 1 Inspiration (needs 3+ at the start of the turn) and costs 2, Gospel calls its target before rolling and refreshes a spent d12-or-smaller song, Pop (Muse's Favor) gives its Inspiration after each concert. Needs engine work, tunables, bot valuation, a style-audit re-run, and updates to `songStyles.md`, the Songbook and the rulebook.
-
-- Styles are balanced against shopping rivals (see `songStyles.md`): all 20 win 28.8–37.7% against a 33.3% parity. Possible follow-ups: test style pairs at real timing (`PAIRS=1`), and a wider-than-3-seat table.
+- Genre balance after the rename (see `songStyles.md`): 18 of 29 win 31–37% against a 33.3% parity (baseline 34.6%), and rows swing up to ~5 points between runs. Low, left as designed: Gospel 26.4% and Soul 28.3% (price isn't the lever: 1 EXP only reaches ~27–29%; consider a cheaper Soul or a Gospel call that refreshes any song), Blues 29.7% (33.0% at 2 EXP), Pop 29.6%; Bluegrass 27.7% and Hip-Hop 29.9% are unchanged rules that measured higher last run. High: Barbershop 39.1%, Disco 38.0%, Mariachi 37.8%, Orchestra 37.3%. The bot's Gospel/Soul/Blues play is simple, so playtest those before re-pricing. A 1,200-game run per genre would halve the noise. Possible follow-ups: test genre pairs at real timing (`PAIRS=1`), and a wider-than-3-seat table.
 
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
 
@@ -17,6 +15,8 @@
 (none)
 
 ## Completed
+
+- Styles became **genres**: all 20 renamed to real-world genres with new flavour lines, and "genre" replaces "style" everywhere players read (Studio shelf, Songbook, rulebook). Rule and price changes: Blues refreshes a spent d20 song for 1 Inspiration (a button), Orchestra counts monsters at the start of the concert, Mariachi costs 2, House has no cap and builds within a showdown verse at +1, Soul spends 1 Inspiration per use (3+ at the start of the turn) and costs 2, Gospel calls its target before rolling and refreshes a spent d12-or-smaller song, Pop gives its Inspiration after each concert. Nine new genres: Punk, Soft Rock, Prog Rock, Ska, K-Pop, Emo, Trance, Grunge, Dubstep, tuned with the audit. The smart bot learned the new choices (calls, Soul, Blues) and values the genres its odds can't see. Engine, bot, concert UI, tests, `songStyles.md`, Songbook, rulebook and PDF updated, and every genre re-measured with the style audit.
 
 - Simulated the ending-early rule (`scripts/retreat-rule-sim.ts`, 300 smart-bot games per rule per table): levelling up every monster left instead of only moved ones gives ~5–8% more EXP, ~2–3 times as many chips added by early endings, 50–80% more Lv4+ monsters by round 4–8, and games about 0.25–0.4 rounds shorter. Kept "only moved" as default; `retreatLevelsUpAll` tunable switches.
 

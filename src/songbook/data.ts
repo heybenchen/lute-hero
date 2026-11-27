@@ -15,12 +15,13 @@ import type { StyleId } from '../types/index.js'
 import { ALL_STYLE_IDS, STYLES, styleCost, styleCostKey, styleRule } from '../data/styles.js'
 import { DEFAULT_TUNABLES, TUNABLE_FIELDS, withTunables } from '../data/tunables.js'
 
-export type StyleGroup = 'original' | 'lab'
+export type StyleGroup = 'original' | 'lab' | 'new'
 export type StyleTiming = 'always' | 'once-per-turn' | 'button'
 
 export const GROUP_LABEL: Record<StyleGroup, string> = {
   original: 'Original',
-  lab: 'From the style lab',
+  lab: 'From the lab',
+  new: 'New',
 }
 
 export const TIMING_LABEL: Record<StyleTiming, string> = {
@@ -43,48 +44,63 @@ interface StyleMeta {
 }
 
 /** The no-style baseline in the same simulation (everyone shopping for styles). */
-export const BASELINE_WIN = 33.4
+export const BASELINE_WIN = 34.6
 /** A third of games, the fair share at a three-bard table. */
 export const PARITY = 33.3
 /** Games per style in the latest audit. */
-export const AUDIT_GAMES = 800
+export const AUDIT_GAMES = 600
 
 export const STYLE_META: Record<StyleId, StyleMeta> = {
   staccato: {
-    group: 'original', timing: 'button', was: 1, win: 32.5, tunables: ['staccatoMaxFaces'],
-    note: 'After you win a monster over, a prompt lets you choose a spent song to refresh. Once per turn.',
+    group: 'original', timing: 'button', was: 2, win: 26.4, tunables: ['staccatoMaxFaces'],
+    note: 'Tick "Call it" before you play a song. If that song wins its monster over, choose a spent song to refresh. The call is used up either way.',
   },
   coda: {
-    group: 'original', timing: 'always', was: 1, win: 29.5, tunables: [],
-    note: "Losing the style returns that song's die as an unclaimed reward.",
+    group: 'original', timing: 'always', was: 1, win: 32.8, tunables: [],
+    note: "Losing the genre returns that song's die as an unclaimed reward.",
   },
   ostinato: {
-    group: 'original', timing: 'always', was: 2, win: 36.0,
+    group: 'original', timing: 'always', was: 2, win: 33.3,
     tunables: ['ostinatoCritFace', 'ostinatoMaxFaces', 'ostinatoCascadeBonus', 'ostinatoChainFace'],
   },
   rubato: {
-    group: 'original', timing: 'button', was: 1, win: 33.8, tunables: ['rubatoMaxFaces', 'rubatoUsesPerTurn'],
+    group: 'original', timing: 'button', was: 1, win: 36.5, tunables: ['rubatoMaxFaces', 'rubatoUsesPerTurn'],
     note: 'A free encore button, never costs Inspiration. If the new roll is lower, your first roll stands (the use is still spent).',
   },
-  virtuoso: { group: 'original', timing: 'once-per-turn', was: 2, win: 32.3, tunables: ['virtuosoMinFaces', 'virtuosoMaxFaces'] },
-  fortissimo: { group: 'original', timing: 'always', was: 2, win: 33.3, tunables: ['fortissimoBonus'] },
+  virtuoso: { group: 'original', timing: 'once-per-turn', was: 2, win: 27.7, tunables: ['virtuosoMinFaces', 'virtuosoMaxFaces'] },
+  fortissimo: { group: 'original', timing: 'always', was: 2, win: 36.0, tunables: ['fortissimoBonus'] },
   fermata: {
-    group: 'original', timing: 'once-per-turn', was: 3, win: 35.5, tunables: ['fermataMinFaces', 'fermataInspirationCost'],
-    note: 'Without the Inspiration to pay for it, the song is spent as usual.',
+    group: 'original', timing: 'button', was: 3, win: 29.7, tunables: ['fermataMinFaces', 'fermataInspirationCost'],
+    note: 'A button on a spent d20 song during a concert. Songs refresh at the start of every concert anyway.',
   },
-  counterpoint: { group: 'original', timing: 'once-per-turn', was: 2, win: 31.5, tunables: ['counterpointMultiplier'] },
-  tutti: { group: 'original', timing: 'always', was: 1, win: 31.7, tunables: ['tuttiBonus', 'tuttiElements'] },
-  overture: { group: 'original', timing: 'once-per-turn', was: 2, win: 31.6, tunables: ['overtureBonus'] },
-  bravo: { group: 'original', timing: 'always', was: 3, win: 35.4, tunables: ['bravoFamePerTame', 'bravoMinLevel'] },
-  ispirato: { group: 'original', timing: 'always', was: 2, win: 33.1, tunables: ['ispiratoPerTurn', 'ispiratoMin'] },
-  'hometown-hero': { group: 'lab', timing: 'always', was: 1, win: 36.1, tunables: ['hometownHeroBonus'] },
-  'studio-regular': { group: 'lab', timing: 'always', was: 3, win: 35.9, tunables: ['studioRegularDiscount'] },
-  'inspired-play': { group: 'lab', timing: 'always', was: 3, win: 31.9, tunables: ['inspiredPlayBonus', 'inspiredPlayMin'] },
-  'steady-hands': { group: 'lab', timing: 'always', was: 1, win: 34.8, tunables: ['steadyHandsFloor'], note: 'Changes the die\'s face, so a raised die counts for crits as well.' },
-  'street-performer': { group: 'lab', timing: 'always', was: 1, win: 33.3, tunables: ['streetPerformerExp'] },
-  'chain-reaction': { group: 'lab', timing: 'always', was: 2, win: 31.3, tunables: ['chainReactionBonus', 'chainReactionCap'] },
-  'swarm-singer': { group: 'lab', timing: 'always', was: 2, win: 34.4, tunables: ['swarmSingerBonus', 'swarmSingerMin'] },
-  'jam-session': { group: 'lab', timing: 'always', was: 4, win: 32.5, tunables: ['jamSessionBonus'] },
+  counterpoint: { group: 'original', timing: 'once-per-turn', was: 2, win: 36.5, tunables: ['counterpointMultiplier'] },
+  tutti: { group: 'original', timing: 'always', was: 2, win: 39.1, tunables: ['tuttiBonus', 'tuttiElements'] },
+  overture: { group: 'original', timing: 'once-per-turn', was: 2, win: 33.9, tunables: ['overtureBonus'] },
+  bravo: { group: 'original', timing: 'always', was: 3, win: 38.0, tunables: ['bravoFamePerTame', 'bravoMinLevel'] },
+  ispirato: {
+    group: 'original', timing: 'always', was: 1, win: 29.6, tunables: ['ispiratoPerTurn', 'ispiratoMin'],
+    note: 'Comes after every concert, including one you end early. A turn without a concert gives nothing.',
+  },
+  'hometown-hero': { group: 'lab', timing: 'always', was: 1, win: 35.2, tunables: ['hometownHeroBonus'] },
+  'studio-regular': { group: 'lab', timing: 'always', was: 3, win: 34.9, tunables: ['studioRegularDiscount'] },
+  'inspired-play': {
+    group: 'lab', timing: 'button', was: 3, win: 28.3, tunables: ['inspiredPlayBonus', 'inspiredPlayMin', 'inspiredPlayCost'],
+    note: 'Tick it before you play a song; it can be used on any number of songs while you can pay. Checks the Inspiration you had when your turn began.',
+  },
+  'steady-hands': { group: 'lab', timing: 'always', was: 1, win: 34.3, tunables: ['steadyHandsFloor'], note: 'Changes the die\'s face, so a raised die counts for crits as well.' },
+  'street-performer': { group: 'lab', timing: 'always', was: 1, win: 29.9, tunables: ['streetPerformerExp'] },
+  'chain-reaction': { group: 'lab', timing: 'always', was: 2, win: 35.7, tunables: ['chainReactionBonus', 'chainReactionCap', 'chainReactionShowdownBonus'] },
+  'swarm-singer': { group: 'lab', timing: 'always', was: 2, win: 37.3, tunables: ['swarmSingerBonus', 'swarmSingerMin'] },
+  'jam-session': { group: 'lab', timing: 'always', was: 3, win: 37.8, tunables: ['jamSessionBonus'] },
+  punk: { group: 'new', timing: 'always', was: 1, win: 33.8, tunables: ['punkBonus'] },
+  'soft-rock': { group: 'new', timing: 'always', was: 2, win: 34.9, tunables: ['softRockBonus'] },
+  'prog-rock': { group: 'new', timing: 'always', was: 2, win: 33.8, tunables: ['progRockFrom', 'progRockBonus'] },
+  ska: { group: 'new', timing: 'always', was: 2, win: 34.7, tunables: ['skaBonus'], note: 'Reads the face the die lands on, before any bonus.' },
+  'k-pop': { group: 'new', timing: 'always', was: 2, win: 32.1, tunables: ['kPopFame'], note: 'Paid at the end of the concert.' },
+  emo: { group: 'new', timing: 'always', was: 2, win: 32.1, tunables: ['emoBonus', 'emoCap'] },
+  trance: { group: 'new', timing: 'always', was: 2, win: 30.3, tunables: ['tranceBonus'] },
+  grunge: { group: 'new', timing: 'always', was: 1, win: 34.8, tunables: ['grungeBonus'], note: 'A guest song that misses counts too.' },
+  dubstep: { group: 'new', timing: 'once-per-turn', was: 2, win: 33.5, tunables: [] },
 }
 
 export interface SongbookSetting {

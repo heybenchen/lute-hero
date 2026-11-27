@@ -93,12 +93,14 @@ export function builtinRollOptions(dice: Dice, ctx: StyleContext, isFirstDie: bo
   return opts
 }
 
-function rollStyledDie(dice: Dice, ctx: StyleContext, isFirstDie: boolean, dieIndex: number, triggered: StyleId[], specFired: string[], specApplied: string[], rng: Rng): DiceRoll {
+function rollStyledDie(dice: Dice, ctx: StyleContext, isFirstDie: boolean, dieIndex: number, verseCombo: number, triggered: StyleId[], specFired: string[], specApplied: string[], rng: Rng): DiceRoll {
   const max = getMaxValue(dice.type)
   let opts = builtinRollOptions(dice, ctx, isFirstDie, triggered)
   // Data-defined styles stack their modifiers on top
   if (ctx.specs?.length && ctx.play) {
-    const play = { ...ctx.play, playIndex: ctx.play.playIndex + dieIndex, used: [...ctx.play.used, ...specFired] }
+    // A showdown verse rolls many dice at once: each counts the same-element dice rolled just before it
+    const comboCount = ctx.play.showdown ? verseCombo : ctx.play.comboCount
+    const play = { ...ctx.play, playIndex: ctx.play.playIndex + dieIndex, comboCount, used: [...ctx.play.used, ...specFired] }
     const applied = applySpecRollModifiers(ctx.specs, dice, play, opts)
     opts = applied.opts
     specFired.push(...applied.fired)
@@ -118,9 +120,13 @@ export function rollSongWithStyles(song: Song, ctx: StyleContext, rng: Rng): Sty
   const rolls: DiceRoll[] = []
   let first = true
   let index = 0
+  let combo = 0
+  let lastGenre: Dice['genre'] | null = null
   for (const slot of song.slots) {
     if (!slot.dice) continue
-    rolls.push(rollStyledDie(slot.dice, ctx, first, index, triggered, specFired, specApplied, rng))
+    combo = slot.dice.genre === lastGenre ? combo + 1 : 0
+    lastGenre = slot.dice.genre
+    rolls.push(rollStyledDie(slot.dice, ctx, first, index, combo, triggered, specFired, specApplied, rng))
     first = false
     index++
   }
@@ -132,11 +138,10 @@ export function counterpointMultiplier(ctx: StyleContext): number | undefined {
   return available(ctx, 'counterpoint') ? getTunables().counterpointMultiplier : undefined
 }
 
-/** Fermata: a d12/d20 song that fails to tame stays unspent, once per turn. */
-export function fermataHolds(song: Song, ctx: StyleContext): boolean {
-  const t = getTunables()
-  if ((ctx.inspiration ?? 0) < t.fermataInspirationCost) return false
-  return available(ctx, 'fermata') && song.slots.some((s) => !!s.dice && getMaxValue(s.dice.type) >= t.fermataMinFaces)
+/** Blues (Fermata) can refresh this spent song: its die is at least `fermataMinFaces` (a d20 by default). */
+export function fermataCanRefresh(song: Song): boolean {
+  const min = getTunables().fermataMinFaces
+  return song.slots.some((s) => !!s.dice && getMaxValue(s.dice.type) >= min)
 }
 
 /** War Drums: the crit face for a die with this many faces (a d4 crits from `ostinatoCritFace`). */
@@ -153,11 +158,6 @@ export function bravoFameFor(level: number): number {
 /** Free Nimble Fingers rerolls still available this turn. */
 export function rubatoUsesLeft(used: StyleId[]): number {
   return getTunables().rubatoUsesPerTurn - used.filter((id) => id === 'rubato').length
-}
-
-/** Staccato (Rallying Cry): a tame lets the bard refresh one spent song of their choice, once per turn. */
-export function staccatoArms(ctx: StyleContext): boolean {
-  return available(ctx, 'staccato')
 }
 
 /** Rubato's free reroll works on d4 and d8 songs. */

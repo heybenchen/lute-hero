@@ -41,6 +41,7 @@ describe('songbook data', () => {
     }
     expect(entries.filter((e) => e.group === 'original')).toHaveLength(12)
     expect(entries.filter((e) => e.group === 'lab')).toHaveLength(8)
+    expect(entries.filter((e) => e.group === 'new')).toHaveLength(9)
   })
 })
 
@@ -71,7 +72,7 @@ describe('Songbook page', () => {
 
   const cards = (container: HTMLElement) => [...container.querySelectorAll('article')].map((a) => a.id)
 
-  it('shows every style with its rule and price', () => {
+  it('shows every genre with its rule and price', () => {
     const { container, unmount } = mount()
     expect(container.querySelector('h1')?.textContent).toBe('Songbook')
     expect(cards(container).sort()).toEqual([...ALL_STYLE_IDS].sort())
@@ -88,20 +89,24 @@ describe('Songbook page', () => {
     const { container, unmount } = mount()
     const search = container.querySelector('input[type="search"]') as HTMLInputElement
 
-    typeInto(search, 'immune')
+    typeInto(search, 'immunity')
     expect(cards(container)).toContain('counterpoint')
     expect(cards(container)).not.toContain('jam-session')
 
     typeInto(search, 'zzzz-no-match')
     expect(cards(container)).toHaveLength(0)
-    expect(container.textContent).toContain('No style matches')
+    expect(container.textContent).toContain('No genre matches')
 
     typeInto(search, '')
-    const lab = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('From the style lab'))!
+    const lab = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('From the lab'))!
     act(() => lab.click())
     expect(cards(container)).toContain('jam-session')
     expect(cards(container)).not.toContain('staccato')
     expect(cards(container)).toHaveLength(8)
+    const fresh = [...container.querySelectorAll('button')].find((b) => b.textContent?.startsWith('New'))!
+    act(() => fresh.click())
+    expect(cards(container)).toContain('dubstep')
+    expect(cards(container)).toHaveLength(9)
     unmount()
   })
 })

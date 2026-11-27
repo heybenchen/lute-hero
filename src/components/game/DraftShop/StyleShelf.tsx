@@ -33,11 +33,11 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
           </button>
         ))}
       </div>
-      {!offers.length && <p>Styles refill after the turn or when you refresh.</p>}
+      {!offers.length && <p>Genres refill after the turn or when you refresh.</p>}
       <h3 className="module-label mt-5">Your styles · {player.styles.length}/{cap}</h3>
       <p className="mb-2 text-sm text-parchment-300">{ready
-        ? full ? 'Choose the style to replace.' : 'Choose the empty slot to learn this style.'
-        : 'Select a style on the shelf.'}</p>
+        ? full ? 'Choose the genre to replace.' : 'Choose the empty slot to learn this genre.'
+        : 'Select a genre on the shelf.'}</p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {player.styles.map((id) => (
           <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer text-left enabled:ring-1 enabled:ring-gold-400">
@@ -46,7 +46,7 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
           </button>
         ))}
         {!full && <button type="button" disabled={!ready} onClick={() => place()} className="rounded-lg border border-dashed border-gold-700 p-4 enabled:ring-1 enabled:ring-gold-400">
-          Empty style slot
+          Empty genre slot
         </button>}
       </div>
     </section>

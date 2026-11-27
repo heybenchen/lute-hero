@@ -32,7 +32,7 @@ export function DamageCell({ calc }: DamageCellProps) {
           <div key={dieIdx} className="flex flex-wrap items-center justify-end gap-1 text-xs tabular-nums">
             <span className="text-parchment-300">{die.value}</span>
             {/* Flat style bonus (Fortissimo, Overture, Tutti) */}
-            {!!die.bonus && <span className="text-amber-300" title="Style bonus">+{die.bonus}</span>}
+            {!!die.bonus && <span className="text-amber-300" title="Genre bonus">+{die.bonus}</span>}
             {/* Each cascading crit shown separately */}
             {(die.cascadeRolls ?? []).map((crit, critIdx) => (
               <span key={critIdx} className="text-gold-400">+{crit}</span>

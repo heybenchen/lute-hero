@@ -33,12 +33,12 @@ import { getGenreMultiplier } from '../game-logic/combat/damageCalculator.js'
 import { monsterSpawnHp } from '../game-logic/combat/monsterSpawner.js'
 import { calculateMonsterExp, calculateMonsterFameValue } from '../game-logic/fame/calculator.js'
 import { getValidMoves } from '../game-logic/board/graphBuilder.js'
-import { StyleContext, bravoFameFor, builtinRollOptions, elementCount, rubatoUsesLeft, staccatoCanRefresh } from '../game-logic/styles/styleEffects.js'
+import { StyleContext, bravoFameFor, builtinRollOptions, elementCount, fermataCanRefresh, rubatoUsesLeft, staccatoCanRefresh } from '../game-logic/styles/styleEffects.js'
 import { getMaxValue } from '../game-logic/dice/roller.js'
 import { getTunables, withTunables } from '../data/tunables.js'
 import { inspirationSpend } from '../data/draftCards.js'
 import { canAfford, d4CostFor, inspirationCostFor, movesFor, upgradeCostFor } from '../engine/economy.js'
-import { specsOf, specsForStyles } from '../data/styleSpecs.js'
+import { inspiredPlaySpec, specsOf, specsForStyles } from '../data/styleSpecs.js'
 import { PlayContext, SpecReward, StyleSpec, applySpecRollModifiers, conditionHolds, inspirationRules, specMultiplier } from '../game-logic/styles/specs.js'
 import { styleCost, maxStyles } from '../data/styles.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
@@ -119,21 +119,31 @@ export const DEFAULT_SMART_PARAMS: SmartParams = {
  * × ~32 Fame per turn). Used by the 'measured' style valuation.
  */
 const STYLE_MEASURED: Record<StyleId, number> = {
-  bravo: 5.8, fermata: 4.8, staccato: 3.5, tutti: 2.6, fortissimo: 1.9, overture: 1.9,
+  // Blues, Gospel and Soul re-measured after the genre rename (29.3%, 26.5%, 24.9%)
+  bravo: 5.8, fermata: 2.5, staccato: 1.0, tutti: 2.6, fortissimo: 1.9, overture: 1.9,
   coda: 1.6, counterpoint: 1.6, virtuoso: 1.0, ostinato: 1.0, rubato: 0.3, ispirato: 0,
   // Studio styles from the style lab: approximate, from their style-lab win rates
-  'hometown-hero': 2.3, 'steady-hands': 2.0, 'studio-regular': 2.4, 'inspired-play': 2.4,
+  'hometown-hero': 2.3, 'steady-hands': 2.0, 'studio-regular': 2.4, 'inspired-play': 0.6,
   'street-performer': 2.0, 'chain-reaction': 2.4, 'swarm-singer': 1.9, 'jam-session': 2.4,
+  // Genres added with the rename: approximate, from their style-lab win rates
+  punk: 2.0, 'soft-rock': 2.2, 'prog-rock': 2.0, ska: 2.0, 'k-pop': 2.0, emo: 2.0, trance: 1.6, grunge: 1.6, dubstep: 1.8,
 }
 
 const STYLE_PRIOR: Partial<Record<StyleId, number>> = {
-  staccato: 3.2,
-  fermata: 3.5,
+  // Gospel and Blues are weaker as genres (a called win; a paid refresh): re-measured after the rename
+  staccato: 1.0,
+  // Soul is a paid choice per play, so the odds never see it: value it from the audit
+  'inspired-play': 0.6,
+  fermata: 2.0,
   bravo: 0, // computed from expected tames
   rubato: 1.2,
   coda: 1.0,
   counterpoint: 0.4,
   ispirato: 0.6,
+  // Genres whose triggers the odds' typical play can't see (after a miss; Fame for a moved monster)
+  grunge: 1.5,
+  dubstep: 1.0,
+  'k-pop': 1.2,
   // Economy the odds can't see: cheaper upgrades keep paying all game
   'studio-regular': 1.2,
   // An EXP a turn is worth the bot's EXP weight in Fame the odds can't see
@@ -246,6 +256,9 @@ export class SmartBot {
       inspiration: fighter.inspiration,
       starter: fighter.starterGenre,
       monstersInFight: (combat.isActive ? combat.monsters : [target]).filter((m) => m.currentHP > 0).length,
+      monstersAtStart: (combat.isActive ? combat.monsters : [target]).length,
+      spentSongs: combat.isActive ? combat.spentSongIds.length : 0,
+      lastPlayMissed: combat.isActive && !!combat.lastPlayMissed,
       used: combat.specFired ?? [],
     }
   }
@@ -257,6 +270,8 @@ export class SmartBot {
       showdown: false, playIndex: 1, lastElement: null, comboCount: 0, elementsPlayed: [], target,
       sharingSpace, trailingFame: player.fame <= Math.min(...fames), leadingFame: player.fame >= Math.max(...fames),
       inspiration: player.inspiration, starter: player.starterGenre, monstersInFight,
+      // A typical mid-fight play: one song already spent
+      spentSongs: 1,
       // Plan without once-per-turn effects: they help one die a fight, not every one
       used: specs.map((sp) => sp.id),
     }
@@ -308,8 +323,8 @@ export class SmartBot {
       const lockedTarget = alive.find((m) => m.id === combat.lockedTargetMonsterId)
       const targets = lockedTarget ? [lockedTarget] : alive
 
-      // Rallying Cry: bring back the spent song worth the most against what's left
-      if (combat.rallyReady && fighter.styles.includes('staccato') && !combat.stylesUsed.includes('staccato')) {
+      // Gospel (a called win): bring back the spent song worth the most against what's left
+      if (combat.rallyReady && fighter.styles.includes('staccato')) {
         const spent = fighter.songs.filter((s) => combat.spentSongIds.includes(s.id) && songDie(s) && staccatoCanRefresh(s))
         if (spent.length > 0) {
           const best = spent
@@ -319,17 +334,69 @@ export class SmartBot {
         }
       }
 
+      // Blues: pay Inspiration to bring back a spent d20 song while monsters remain
+      if (this.considerLinger(fighter, targets, alive)) continue
+
       const pick = this.bestCandidate(fighter, alive, targets)
       if (!pick) break
       const hpBefore = pick.monster.currentHP
       const ok = pick.featuredFrom
         ? this.act({ type: 'PLAY_FEATURED_SONG', guestPlayerId: pick.featuredFrom, songId: pick.song.id, targetMonsterId: pick.monster.id })
-        : this.act({ type: 'PLAY_SONG', songId: pick.song.id, targetMonsterId: pick.monster.id })
+        : this.act({ type: 'PLAY_SONG', songId: pick.song.id, targetMonsterId: pick.monster.id, ...this.playFlags(fighter, pick) })
       if (!ok) break
       if (!pick.featuredFrom) this.considerReroll(pick, hpBefore)
     }
 
     this.act({ type: 'END_COMBAT', spreadGenre: this.spreadChoice(this.me) })
+  }
+
+  /**
+   * Choices riding on an own play. Gospel: call a likely win while a spent song is
+   * waiting to come back. Soul: pay Inspiration when +2 lifts the win chance enough.
+   */
+  private playFlags(fighter: Player, pick: Candidate): { staccatoCall?: boolean; inspiredPlay?: boolean } {
+    const combat = this.state.combat
+    const flags: { staccatoCall?: boolean; inspiredPlay?: boolean } = {}
+    const refreshable = fighter.songs.some((s) => combat.spentSongIds.includes(s.id) && songDie(s) && staccatoCanRefresh(s))
+    if (fighter.styles.includes('staccato') && !combat.stylesUsed.includes('staccato') && refreshable && pick.pk >= 0.6) {
+      flags.staccatoCall = true
+    }
+    const t = getTunables()
+    if (
+      fighter.styles.includes('inspired-play') &&
+      (this.state.turnStartInspiration ?? 0) >= t.inspiredPlayMin &&
+      fighter.inspiration >= t.inspiredPlayCost &&
+      this.spareInspiration(fighter) >= t.inspiredPlayCost &&
+      pick.pk < 1
+    ) {
+      const die = songDie(pick.song)!
+      const specs = specsOf(fighter)
+      const play = this.playCtx(fighter, pick.monster, die)
+      const opts = { firstRoll: combat.songsUsed.length === 0, advantage: false, allElements: hasHarmony(fighter.songs) }
+      const mult = this.multiplier(die, pick.monster, false, specs, play)
+      if (mult > 0) {
+        const plain = killChance(this.dist(die, fighter.styles, opts, specs, play), mult, pick.monster.currentHP)
+        const boosted = killChance(this.dist(die, fighter.styles, opts, [...specs, inspiredPlaySpec()], play), mult, pick.monster.currentHP)
+        const worth = this.monsterWorth(pick.monster, pick.monster.currentHP >= pick.monster.maxHP)
+        if ((boosted - plain) * worth > this.p.inspirationValue * t.inspiredPlayCost) flags.inspiredPlay = true
+      }
+    }
+    return flags
+  }
+
+  /** Blues: refresh the best spent d20 song if it is worth more than the Inspiration. */
+  private considerLinger(fighter: Player, targets: Monster[], alive: Monster[]): boolean {
+    const combat = this.state.combat
+    const cost = getTunables().fermataInspirationCost
+    if (!fighter.styles.includes('fermata') || combat.stylesUsed.includes('fermata')) return false
+    if (fighter.inspiration < cost || this.spareInspiration(fighter) < cost) return false
+    const spent = fighter.songs.filter((s) => combat.spentSongIds.includes(s.id) && songDie(s) && fermataCanRefresh(s))
+    if (spent.length === 0) return false
+    const best = spent
+      .map((s) => ({ s, v: Math.max(...targets.map((m) => this.playValue(s, m, fighter, alive).score)) }))
+      .sort((a, b) => b.v - a.v)[0]
+    if (best.v <= this.p.inspirationValue * cost) return false
+    return this.act({ type: 'LINGER_SONG', songId: best.s.id })
   }
 
   private guestsAt(spaceId: number, fighterId: string): Player[] {
@@ -727,6 +794,10 @@ export class SmartBot {
       'steady-hands': Math.min(1, dice.filter((d) => getMaxValue(d.type) <= 8).length / 2),
       'studio-regular': 1, 'street-performer': 1, 'chain-reaction': 1, 'swarm-singer': 1, 'jam-session': 1,
       'inspired-play': player.inspiration >= getTunables().inspiredPlayMin ? 1 : 0.5,
+      punk: Math.min(1, count(['d4']) / 2),
+      'soft-rock': Math.min(1, count(['d8', 'd12']) / 3),
+      'prog-rock': 1, ska: 1, 'k-pop': 1, emo: 1, grunge: 1, dubstep: 1,
+      trance: player.inspiration < 1 ? 1 : 0.5,
     }
     const spaces = Math.max(1, this.state.spaces.filter((s) => s.monsters.length > 0).length)
     for (const st of styles) total += STYLE_MEASURED[st] * fit[st] * this.p.priorScale * spaces * 0.25

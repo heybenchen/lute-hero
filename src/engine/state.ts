@@ -57,6 +57,7 @@ export interface EngineCombatState {
     specFired?: string[]
     playLog?: Genre[]
     specRewards?: SpecReward
+    lastPlayMissed?: boolean
   } | null
   /**
    * "Once per turn" styles already spent this turn. A bard fights at most once
@@ -67,10 +68,17 @@ export interface EngineCombatState {
   /** Names of the styles that shaped the last play, for the damage report. */
   styleNotes: string[]
   /**
-   * Rallying Cry (`staccato`) is armed: a song tamed a monster this turn, so
-   * the bard may refresh one spent song of their choice (RALLY_SONG).
+   * Gospel (`staccato`) is armed: the bard called a monster and the song won it
+   * over, so they may refresh one spent song of their choice (RALLY_SONG).
    */
   rallyReady: boolean
+  /** The last play didn't win its monster over (Grunge, Dubstep). */
+  lastPlayMissed?: boolean
+  /**
+   * Choices made for the last own play, replayed by an encore: Soul's paid bonus
+   * (`inspiredPlay`) and Gospel's call (`staccatoCall`).
+   */
+  lastPlayFlags?: { inspiredPlay?: boolean; staccatoCall?: boolean }
   lastPlayedSongId: string | null
   /** Shared victory choice so spectators see the element being considered. */
   selectedSpreadGenre: Genre | null
@@ -147,6 +155,8 @@ export interface EngineState {
 
   /** This turn's moves, newest last, for UNDO_MOVE (see `MoveStep`). */
   moveTrail: MoveStep[]
+  /** The current bard's Inspiration when their turn began (Soul needs 3+). */
+  turnStartInspiration?: number
 
   // Combat (synced, unlike the old client-only slice)
   combat: EngineCombatState
@@ -217,6 +227,8 @@ export function createInitialCombatState(): EngineCombatState {
     stylesUsed: [],
     styleNotes: [],
     rallyReady: false,
+    lastPlayMissed: false,
+    lastPlayFlags: {},
     featuredPlayerIds: [],
     featureRequest: null,
     specFired: [],
