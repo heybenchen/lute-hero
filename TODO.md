@@ -18,6 +18,8 @@
 
 ## Completed
 
+- The smart bot plays Trance properly: while holding it, it keeps no Showdown Inspiration reserve, never buys Inspiration, treats encores as nearly free, spends leftover Inspiration on shelf redraws so concerts start at 0, and empties its Inspiration on Showdown encores. Trance measures 35.0% (was 22.2% with the old bot; parity 33.3%). Grunge re-measured after its rule change: 35.8%, slightly strong but close to parity. `genres.md` and `/songbook` updated.
+
 - The Final Showdown has a crown, so bards who are behind can come back without anyone losing Fame. Each verse pays its fandom as Fame, rounded down to a multiple of 5 (Fame chips come in 5s). Whoever has the most Fame when a verse begins holds the crown; every other bard who beats their verse takes +50 Fame, and one who matches it takes +25. The Fame leader going in now wins ~62–69% of 3-bard games (was ~93%), 78% at 2 bards and 65% at 4. Each verse is performed in order of Fame, most first, so the bard furthest behind plays last and knows every score before spending Inspiration. All four numbers are tunables in the Showdown group. The Showdown screen shows the crown, the standings and the verse to beat; the verse recap and the winner screen show the crown bonuses; the smart bot encores to beat the crown. Rulebook and PDF updated.
 
 - Updated four genre rules: Baroque floors rolls below 3 to 3, Prog Rock starts on the 3rd concert song, Dubstep adds +2 to the next song after moving a monster without winning it over, and Grunge replaces each d20 with two d12 rolls.
