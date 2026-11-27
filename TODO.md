@@ -6,6 +6,8 @@
 
 ## Medium Priority
 
+- Decide whether genres that can't trigger in the Final Showdown should (see `docs/showdown-genre-audit.md`, `scripts/showdown-genre-audit.ts`): 16 of 31 do nothing there. Mariachi (every bard shares the stage), Pop (Inspiration before each verse), Soul (a paid bonus on a performance) and Prog Rock (count dice within a performance) could reasonably apply; the rest are monster, concert or board genres whose value comes earlier. Screamo and Opera are the strongest Showdown genres (+15–17 Showdown Fame, +11–13 win points).
+
 - Genre balance after the buffs (see `songStyles.md`): 16 of 30 win 31–37% against a 33.3% parity (baseline 32.8%), rows swing ~5 points between runs. Low: Emo 24.8% (declared final song at +8; playtest whether players plan finales better than the bot), Trance 26.4% (bots bank Inspiration; playtest), Gospel 27.1% (the call is the lever), New Age 28.1%, Prog Rock 28.1%, Opera 30.4% (now +2 to the rolled value), Dubstep 28.8%, Trip-Hop 29.0%. High: Bluegrass 39.3%, Baroque 39.0%, Disco 37.5%, Barbershop 37.3%, House 37.1%. Playtest the choice genres (Gospel, Soul, Blues, Trance's spend-down) before re-pricing. A 1,200-game run per genre would halve the noise.
 
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string

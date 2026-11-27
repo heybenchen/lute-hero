@@ -170,6 +170,13 @@ const isFermataDie = (d: Dice) => getMaxValue(d.type) >= getTunables().fermataMi
 const isRubatoDie = (d: Dice) => getMaxValue(d.type) <= getTunables().rubatoMaxFaces
 const hasHarmony = (songs: Song[]) => elementCount(songs) >= getTunables().tuttiElements
 
+/**
+ * How much a bard's performance of the Silence's immune element still counts:
+ * nothing, unless Crossover lets it through (each Showdown performance is the
+ * bard's whole turn, so its once-per-turn use is always fresh).
+ */
+const immuneFactor = (p: Player) => (p.styles.includes('counterpoint') ? getTunables().counterpointMultiplier : 0)
+
 function songDie(song: Song): Dice | null {
   return song.slots.find((s) => s.dice)?.dice ?? null
 }
@@ -1046,16 +1053,16 @@ export class SmartBot {
       const versesLeft = getTunables().showdownTurns - s.showdownTurn
       const options = ALL_GENRES.map((g) => ({ g, d: this.performanceDist(performer, g) }))
         .filter((o): o is { g: Genre; d: Dist } => !!o.d)
-        .map((o) => ({ ...o, ev: o.g === resist ? 0 : mean(o.d) }))
+        .map((o) => ({ ...o, ev: mean(o.d) * (o.g === resist ? immuneFactor(performer) : 1) }))
       if (options.length === 0) {
         this.act({ type: 'FINISH_SHOWDOWN_PERFORMANCE' })
         return
       }
       // Rivals' best expected performance this verse, to judge whether ours will be the strongest
       const rivalBest = Math.max(0, ...s.players.filter((p) => p.id !== performer.id).flatMap((p) =>
-        ALL_GENRES.filter((g) => g !== resist).map((g) => {
+        ALL_GENRES.map((g) => {
           const d = this.performanceDist(p, g)
-          return d ? mean(d) : 0
+          return d ? mean(d) * (g === resist ? immuneFactor(p) : 1) : 0
         })
       ))
       if (this.p.showdownLookahead && versesLeft > 0) {
@@ -1193,7 +1200,7 @@ export class SmartBot {
         return
       }
       for (const g of mine) {
-        const ev = g === resist ? 0 : myEv.get(g) ?? 0
+        const ev = (myEv.get(g) ?? 0) * (g === resist ? immuneFactor(performer) : 1)
         // Strongest performance of this verse decides next verse's immunity
         let strongest = { ev, g: g as Genre | null }
         if (verse === 0) {
@@ -1202,7 +1209,10 @@ export class SmartBot {
         for (const r of rivals) {
           if (verse === 0 && r.idx < meIdx) continue // already played this verse
           let rb = { ev: 0, g: null as Genre | null }
-          for (const [rg, rev] of r.ev) if (rg !== resist && rev > rb.ev) rb = { ev: rev, g: rg }
+          for (const [rg, rawEv] of r.ev) {
+            const rev = rawEv * (rg === resist ? immuneFactor(r.p) : 1)
+            if (rev > rb.ev) rb = { ev: rev, g: rg }
+          }
           if (rb.ev > strongest.ev) strongest = rb
         }
         recurse(verse + 1, strongest.g, [...seq, g], total + ev)
