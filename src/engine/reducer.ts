@@ -36,6 +36,9 @@ import {
   getDominantElement,
   computeBossAdaptation,
   showdownElementSongs,
+  crownHolders,
+  performanceOrder,
+  settleVerse,
   mergeSongs,
 } from '../game-logic/showdown/showdown.js'
 import { DICE_UPGRADE_PATH } from '../data/startingData.js'
@@ -1400,7 +1403,7 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
   // Entering the showdown: start it right here so there is no client-side
   // auto-start race — every client just renders the started showdown.
   if (phase === 'finalBoss' && !state.showdownActive) {
-    showdownFields = startShowdownFields(state.players.map((p) => p.id))
+    showdownFields = startShowdownFields(state.players)
   }
 
   // Refill the shop for the first player of the new round.
@@ -1431,13 +1434,14 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
   return next.phase === 'main' ? beginTurn(next, rng) : next
 }
 
-/** Fresh showdown fields: verse 1, everyone at zero fandom, no adaptation yet. */
-function startShowdownFields(playerIds: string[]): Partial<EngineState> {
+/** Fresh showdown fields: verse 1, everyone at zero fandom, no adaptation yet, the Fame leader crowned and performing first. */
+function startShowdownFields(players: Player[]): Partial<EngineState> {
+  const playerIds = players.map((p) => p.id)
   return {
     showdownActive: true,
     showdownComplete: false,
     showdownTurn: 1,
-    showdownOrder: playerIds,
+    showdownOrder: performanceOrder(players, {}),
     showdownPerformerIdx: 0,
     showdownResistElement: null,
     showdownSongsUsed: [],
@@ -1446,6 +1450,8 @@ function startShowdownFields(playerIds: string[]): Partial<EngineState> {
     showdownTurnPerformances: [],
     showdownHistory: [],
     showdownFandom: Object.fromEntries(playerIds.map((id) => [id, 0])),
+    showdownEarned: Object.fromEntries(playerIds.map((id) => [id, 0])),
+    showdownCrownIds: crownHolders(players, {}),
     showdownBestHit: {},
     showdownCrits: Object.fromEntries(playerIds.map((id) => [id, 0])),
     showdownUndo: null,
@@ -1487,7 +1493,7 @@ function simulateToRound(state: EngineState, round: number, showdown: boolean, r
     combat: createInitialCombatState(),
     studio: createInitialStudioState(),
     moveTrail: [],
-    ...startShowdownFields(played.players.map((p) => p.id)),
+    ...startShowdownFields(played.players),
   }
 }
 
@@ -1691,20 +1697,28 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
     }
   }
 
-  const history = [...state.showdownHistory, turnPerformances]
+  // Verse over: pay each bard its Fame — fandom rounded down to whole chips,
+  // plus the crown bonus for beating or matching the crown holder's verse
+  const settled = settleVerse(turnPerformances, state.showdownCrownIds)
+  const showdownEarned = { ...state.showdownEarned }
+  for (const perf of settled) showdownEarned[perf.playerId] = (showdownEarned[perf.playerId] ?? 0) + (perf.earned ?? 0)
+  const history = [...state.showdownHistory, settled]
 
-  // Turn over — the boss adapts and the next verse begins
+  // Turn over — the boss adapts, the crown passes to whoever now leads, and the next verse begins
   if (state.showdownTurn < showdownTurns()) {
     const adaptation = computeBossAdaptation(turnPerformances)
     events.push({
       type: 'showdownAdvance',
       advance: 'bossAdapts',
       turnEnded: state.showdownTurn,
-      recap: turnPerformances,
+      recap: settled,
     })
     return {
       ...state,
       showdownHistory: history,
+      showdownEarned,
+      showdownCrownIds: crownHolders(state.players, showdownEarned),
+      showdownOrder: performanceOrder(state.players, showdownEarned),
       showdownTurnPerformances: [],
       showdownTurn: state.showdownTurn + 1,
       showdownPerformerIdx: 0,
@@ -1716,21 +1730,25 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
     }
   }
 
-  // Third verse complete — the boss falls. Bank fandom into fame.
+  // Third verse complete — the boss falls. Bank the Showdown's Fame.
   const players = state.players.map((p) => {
     // Data-defined genres may add an encore: flat fans, or fans per unspent Inspiration
     const encore = specsOf(p).reduce((sum, spec) =>
       sum + (spec.showdownEnd?.flat ?? 0) + (spec.showdownEnd?.perInspiration ?? 0) * p.inspiration, 0)
-    const fandom = (state.showdownFandom[p.id] || 0) + encore
-    return { ...p, fame: p.fame + fandom, totalBossDamage: fandom }
+    return {
+      ...p,
+      fame: p.fame + (showdownEarned[p.id] ?? 0) + encore,
+      totalBossDamage: (state.showdownFandom[p.id] || 0) + encore,
+    }
   })
 
-  events.push({ type: 'showdownAdvance', advance: 'showdownComplete', recap: turnPerformances })
+  events.push({ type: 'showdownAdvance', advance: 'showdownComplete', recap: settled })
 
   return {
     ...state,
     players,
     showdownHistory: history,
+    showdownEarned,
     showdownTurnPerformances: [],
     showdownSongsUsed: [],
     showdownCurrentFandom: 0,

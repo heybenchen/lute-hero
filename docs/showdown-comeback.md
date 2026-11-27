@@ -1,5 +1,7 @@
 # Can a bard who is behind still win the Final Showdown?
 
+> **Decision (shipped):** verse fandom ×1 as Fame, rounded down to 5s; beating the crown holder's verse (most Fame at the start of the verse) pays +50, matching it +25. See "The shipped rule" at the end.
+
 Measured with `npx tsx scripts/showdown-comeback.ts` (smart bots; each game is played to the Showdown once, then every variant replays or re-scores the Showdown from that same state with the same dice seed). "Leader wins" is how often the bard with the most Fame going into the Showdown wins; parity is 33% at a 3-bard table.
 
 ## Findings
@@ -83,3 +85,63 @@ Showdown fandom is multiplied by a bard's Fame rank. "At start" uses the ranking
 | Last place ×6, others ×2 (each verse) | 45% (25%) | 54% (23%) | 52% (49%) | 63% (13%) |
 | **By rank each verse: leader ×1, then evenly up to last ×3** | **56% (16%)** | **64% (11%)** | **64% (37%)** | **62% (9%)** |
 | By rank each verse: leader ×2 … last ×4 | 56% (17%) | 64% (12%) | 66% (35%) | 59% (9%) |
+
+## Outplay bonus without taking anything, and chip-friendly scoring
+
+Fame is tracked with chips of 5 / 10 / 25 / 50, so every Fame change must be a multiple of 5. "[chips]" variants round each verse's performance down to a multiple of 5 before scoring. The leader (most Fame at the start of the verse) never loses Fame in these. Leader win % (last-place win %).
+
+| Variant | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| Current rules | 95% (0%) | 92% (0%) | 96% (5%) | 95% (0%) |
+| Fandom ×2 + everyone who beats the leader's verse gains 2× the margin | 76% (6%) | 74% (3%) | 86% (15%) | 68% (5%) |
+| Fandom ×2 + 4× the margin | 65% (11%) | 66% (6%) | 81% (20%) | 62% (7%) |
+| [chips] rounded, current rules | 93% (0%) | 93% (0%) | 96% (5%) | 95% (0%) |
+| [chips] fandom ×2 + 2× margin | 76% (6%) | 74% (3%) | 86% (14%) | 68% (6%) |
+| [chips] fandom ×2 + 4× margin | 67% (10%) | 64% (7%) | 80% (20%) | 61% (7%) |
+| [chips] fandom ×2 + 25 for beating the leader | 75% (6%) | 77% (2%) | 86% (14%) | 70% (4%) |
+| [chips] fandom ×2 + 25, or 50 when beating by 10+ | 69% (8%) | 72% (5%) | 80% (20%) | 62% (6%) |
+| [chips] fandom ×2 + 50 for beating the leader | 64% (10%) | 69% (5%) | 78% (22%) | 60% (6%) |
+| [chips] fandom ×1 + 25, or 50 when beating by 10+ | 70% (6%) | 74% (2%) | 84% (16%) | 68% (3%) |
+
+Rounding to 5s barely changes anything. Bonuses that take nothing from the leader are a little weaker than the switch-over versions, and every option is weakest at 2 bards, where the trailing bard starts ~115 Fame behind.
+
+## Verse crowns (chip-friendly)
+
+Each verse's performance is rounded down to a multiple of 5 and scored at ×1 or ×2. The highest performance of the verse (ties all count) also earns a flat crown. Nobody loses Fame. Leader win % (last-place win %).
+
+| Variant | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| Current rules | 95% (0%) | 92% (0%) | 96% (5%) | 95% (0%) |
+| Fandom ×1 + 25 crown | 83% (3%) | 84% (0%) | 91% (9%) | 84% (3%) |
+| Fandom ×1 + 50 crown | 74% (6%) | 77% (2%) | 87% (14%) | 75% (4%) |
+| Fandom ×1 + 75 crown | 67% (10%) | 72% (6%) | 83% (18%) | 69% (5%) |
+| Fandom ×2 + 25 crown | 77% (6%) | 79% (2%) | 88% (12%) | 75% (4%) |
+| Fandom ×2 + 50 crown | 71% (8%) | 74% (4%) | 84% (17%) | 70% (5%) |
+| Fandom ×2 + 75 crown | 64% (12%) | 69% (7%) | 80% (20%) | 66% (8%) |
+
+Crowns are a little weaker than "beat the leader's verse" bonuses of the same size: the leader also has the best dice, so they often take the crown themselves.
+
+## The shipped rule
+
+Verse fandom ×1 as Fame, rounded down to a multiple of 5; the crown is held by whoever has the most Fame (tour + Showdown so far) when the verse begins; every other bard who beats the holder's verse takes +50, one who matches it +25 (a 0 never matches). Simulated with the smart bot encoring to chase the crown. Leader win % (last-place win %):
+
+| | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| Old rules | 95% (0%) | 92% (0%) | 96% (5%) | 95% (0%) |
+| **Crown rule** | **64% (10%)** | **66% (4%)** | **76% (25%)** | **65% (3%)** |
+
+Then performers went in order of Fame each verse (most first), so the crown holder sets the number to beat and the bard furthest behind plays last; the smart bot uses that to encore for the crown bonus:
+
+| | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| **Crown rule + Fame order** | **60% (8%)** | **67% (6%)** | **76% (24%)** | **59% (3%)** |
+
+### Smaller crown bonuses at 4 bards
+
+400 games per pace, replayed with each bonus size so the bots chase the crown knowing what it pays. Leader win % (last-place win %); parity is 25%.
+
+| | 4 bards, typical | 4 bards, expert |
+|---|---|---|
+| Old rules | 90% (0%) | 91% (0%) |
+| Crown: beat +50, match +25 (shipped) | 62% (1%) | 57% (2%) |
+| Crown: beat +25, match +10 | 74% (1%) | 72% (0%) |

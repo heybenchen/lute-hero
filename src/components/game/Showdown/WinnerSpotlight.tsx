@@ -8,6 +8,8 @@ interface WinnerSpotlightProps {
   history: ShowdownPerformance[][]
   players: Player[]
   showdownFandom: Record<string, number>
+  /** Fame each bard earned in the Showdown (rounded fandom + crown bonuses). */
+  showdownEarned: Record<string, number>
   onContinue: () => void
 }
 
@@ -48,7 +50,7 @@ function useCountUp(target: number, durationMs: number, start: boolean) {
   return value
 }
 
-export function WinnerSpotlight({ players, showdownFandom, history, onContinue }: WinnerSpotlightProps) {
+export function WinnerSpotlight({ players, showdownEarned, history, onContinue }: WinnerSpotlightProps) {
   const ranked = useMemo(() => calculateFinalRankings(players), [players])
   const winner = ranked[0]
   const confetti = useMemo(() => buildConfetti(28), [])
@@ -177,8 +179,9 @@ export function WinnerSpotlight({ players, showdownFandom, history, onContinue }
             <div className="text-xs font-medieval uppercase tracking-[0.3em] text-parchment-500 mb-4">Final Standings</div>
             <div className="space-y-2.5">
               {ranked.map((p, idx) => {
-                const fandom = showdownFandom[p.id] || 0
-                const tourFame = p.fame - fandom
+                const showdownFame = showdownEarned[p.id] || 0
+                const crownFame = history.flat().filter((h) => h.playerId === p.id).reduce((sum, h) => sum + (h.crownBonus ?? 0), 0)
+                const tourFame = p.fame - showdownFame
                 const topFame = ranked[0].fame || 1
                 return (
                   <div
@@ -198,7 +201,7 @@ export function WinnerSpotlight({ players, showdownFandom, history, onContinue }
                         <span className="text-sm font-bold text-gold-400 tabular-nums flex-shrink-0">{p.fame} fans</span>
                       </div>
                       <div className="flex justify-between items-baseline gap-2 text-[11px] text-parchment-500">
-                        <span>{tourFame} on tour · {fandom} in the showdown</span>
+                        <span>{tourFame} on tour · {showdownFame} in the showdown{crownFame > 0 ? ` (👑 ${crownFame} from the crown)` : ''}</span>
                       </div>
                       <div className="hp-bar h-1.5 mt-1">
                         <div

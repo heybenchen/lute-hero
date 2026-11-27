@@ -105,19 +105,28 @@ Monsters are rebuilt from their chips whenever a space is entered and at every r
 
 ## 8. The Final Showdown
 
-The **Eternal Silence** can't be won over, only outshone. There are **three verses**; in each, every bard performs once in seat order:
+The **Eternal Silence** can't be won over, only outshone. There are **three verses**; in each, every bard performs once, **most Fame first** (ties in seat order), so the bard furthest behind plays last and knows every score:
 
 1. **Pick one element.** Every die of that element in your setlist plays together.
 2. **Roll them** and total them as in a concert. That total is your **fandom** for the verse.
 3. **Encore** for 1 Inspiration if you like; the new roll replaces the old.
 
+**Fame for a verse.** When the verse ends, each bard takes their fandom as Fame, **rounded down to a multiple of 5** (23 fandom pays 20 Fame).
+
+**The crown.** The bard with the most Fame when a verse begins holds the **crown** for that verse (count Fame taken in earlier verses; tied bards share it). Every other bard compares their fandom with the crown holder's:
+
+- **Beat it:** take **+50 Fame**.
+- **Match it exactly:** take **+25 Fame**.
+
+The crown holder never takes this bonus, and a fandom of 0 never matches. With a shared crown, compare with the best of the holders' verses. Fame changes hands only by being earned, so after each verse check who holds the crown next.
+
 The Silence has no weakness (×1). After each verse it becomes **immune (×0) to the element of the strongest performance**, for the next verse only. Keep Inspiration for the finale: it is worth nothing after.
 
 ## 9. Scoring
 
-**Final Fame = Fame from monsters + Showdown fandom.** Most Fame wins. Ties go to the bard with more fandom.
+**Final Fame = Fame from monsters + Fame from the Showdown** (each verse's rounded fandom plus crown bonuses). Most Fame wins. Ties go to the bard with more fandom.
 
-> **Example.** Ava: 214 Fame + 61 fandom = 275. Ben: 201 + 84 = 285. **Ben wins**, though Ava led before the show.
+> **Example.** Ava leads Ben, 214 Fame to 201, so Ava holds the crown for verse 1. Ava rolls 18 (+15 Fame); Ben rolls 23 (+20 Fame, and +50 for beating the crown). Ben now has 271 to Ava's 229 and takes the crown for verse 2.
 
 ## Appendix A: The Genres
 
@@ -199,5 +208,5 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 **Limits:** 6 songs · 2 genres · 5 chips of one element per space.
 **Round end:** each bard adds one chip of every element, one per space.
 **Gate:** 200 Fame, then one more round, then the Showdown.
-**Showdown:** 3 verses · one element per performance · the Silence becomes immune to the strongest element.
-**Win:** most Fame (monsters + fandom); ties go to fandom.
+**Showdown:** 3 verses · most Fame performs first · one element per performance · fandom pays Fame, rounded down to 5 · beat the crown holder's verse +50, match it +25 · the Silence becomes immune to the strongest element.
+**Win:** most Fame (monsters + Showdown); ties go to fandom.

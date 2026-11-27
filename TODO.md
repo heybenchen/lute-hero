@@ -6,7 +6,7 @@
 
 ## Medium Priority
 
-- Decide whether the Final Showdown should allow comebacks: the Fame leader going in wins 94–97% of bot games (they lead 2nd place by 84–99 Fame; a bard earns ~70 fandom in the Showdown). Options and simulated results in `docs/showdown-comeback.md` (`scripts/showdown-comeback.ts`); the most promising are "Fame becomes a head start" (20/10/0 by rank → leader wins ~67%) and Silence targets the leader.
+- Decide whether genres that can't trigger in the Final Showdown should (see `docs/showdown-genre-audit.md`, `scripts/showdown-genre-audit.ts`): 15 of 31 do nothing there. Mariachi (every bard shares the stage), Pop (Inspiration before each verse), Soul (a paid bonus on a performance) and Prog Rock (count dice within a performance) could reasonably apply; the rest are monster, concert or board genres whose value comes earlier. Opera, Screamo and Grunge are the strongest Showdown genres (+14–19 Showdown Fame, +7–13 win points).
 
 - Re-run genre balance after the latest Baroque, Prog Rock, Grunge and Dubstep rule changes (see `genres.md`; their displayed rates are historical). Before those changes, 16 of 30 won 31–37% against a 33.3% parity (baseline 32.8%), with rows swinging ~5 points between runs. Playtest the choice genres (Gospel, Soul, Blues, Trance's spend-down) before re-pricing. A 1,200-game run per genre would halve the noise.
 
@@ -17,6 +17,8 @@
 (none)
 
 ## Completed
+
+- The Final Showdown has a crown, so bards who are behind can come back without anyone losing Fame. Each verse pays its fandom as Fame, rounded down to a multiple of 5 (Fame chips come in 5s). Whoever has the most Fame when a verse begins holds the crown; every other bard who beats their verse takes +50 Fame, and one who matches it takes +25. The Fame leader going in now wins ~62–69% of 3-bard games (was ~93%), 78% at 2 bards and 65% at 4. Each verse is performed in order of Fame, most first, so the bard furthest behind plays last and knows every score before spending Inspiration. All four numbers are tunables in the Showdown group. The Showdown screen shows the crown, the standings and the verse to beat; the verse recap and the winner screen show the crown bonuses; the smart bot encores to beat the crown. Rulebook and PDF updated.
 
 - Updated four genre rules: Baroque floors rolls below 3 to 3, Prog Rock starts on the 3rd concert song, Dubstep adds +2 to the next song after moving a monster without winning it over, and Grunge replaces each d20 with two d12 rolls.
 

@@ -14,7 +14,7 @@ import {
   DamageCalculation,
   GenreId,
 } from '../types/index.js'
-import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
+import { ShowdownPerformance, crownHolders } from '../game-logic/showdown/showdown.js'
 import type { SpecReward } from '../game-logic/genres/specs.js'
 import { SONGS_PER_BARD } from '../data/startingData.js'
 import { playerColorFor } from '../data/elementTheme.js'
@@ -186,6 +186,10 @@ export interface EngineState {
   showdownTurnPerformances: ShowdownPerformance[]
   showdownHistory: ShowdownPerformance[][]
   showdownFandom: Record<string, number>
+  /** Bards holding the crown this verse: the most Fame (tour + Showdown so far) when it began. */
+  showdownCrownIds: string[]
+  /** Fame earned in the Showdown so far (rounded fandom + crown bonuses), credited after each verse and banked at the end. */
+  showdownEarned: Record<string, number>
   showdownBestHit: Record<string, { damage: number }>
   showdownCrits: Record<string, number>
   /** Pre-play accumulators so the current performance can be rerolled. */
@@ -370,6 +374,9 @@ export function normalizeEngineState(saved: EngineState): EngineState {
       } : null,
     },
     showdownSongsUsed: migrateSongIds(state.showdownSongsUsed),
+    showdownEarned: state.showdownEarned ?? {},
+    showdownCrownIds: state.showdownCrownIds
+      ?? (state.showdownActive ? crownHolders(players, state.showdownEarned ?? {}) : []),
     showdownUndo: state.showdownUndo ? {
       ...state.showdownUndo,
       songIds: state.showdownUndo.songIds ?? [state.showdownUndo.songId],
@@ -417,6 +424,8 @@ export function createInitialEngineState(): EngineState {
     showdownTurnPerformances: [],
     showdownHistory: [],
     showdownFandom: {},
+    showdownCrownIds: [],
+    showdownEarned: {},
     showdownBestHit: {},
     showdownCrits: {},
     showdownUndo: null,

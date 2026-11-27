@@ -336,6 +336,117 @@ const VARIANTS: Variant[] = [
       return total
     },
   })),
+  ...([[1, 2], [2, 2], [1, 3], [2, 4]] as const).map(([k, bonus]): Variant => ({
+    // Outplay bonus, nothing taken: every bard whose performance beats the verse-start
+    // leader's gains bonus x the margin as extra Fame; the leader keeps everything
+    name: `Fandom x${k} + outplay bonus ${bonus}x margin (leader loses nothing)`,
+    kind: 'scoring',
+    score: (fame, p) => {
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const lead = leaderOf(total)
+        const leadPerf = p.verses[lead][v] ?? 0
+        for (const id of Object.keys(fame)) {
+          const perf = p.verses[id][v] ?? 0
+          total[id] += k * perf + (id === lead ? 0 : bonus * Math.max(0, perf - leadPerf))
+        }
+      }
+      return total
+    },
+  })),
+  ...(() => {
+    // Chip-friendly: each verse's performance is rounded down to a multiple of 5 first,
+    // so every Fame change is a multiple of 5 (Fame chips come in 5 / 10 / 25 / 50)
+    const r5 = (n: number) => Math.floor(n / 5) * 5
+    const chip = (name: string, k: number, bonus: (margin: number) => number): Variant => ({
+      name: `[chips] ${name}`,
+      kind: 'scoring',
+      score: (fame, p) => {
+        const total = { ...fame }
+        const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+        for (let v = 0; v < verses; v++) {
+          const lead = leaderOf(total)
+          const leadPerf = r5(p.verses[lead][v] ?? 0)
+          for (const id of Object.keys(fame)) {
+            const perf = r5(p.verses[id][v] ?? 0)
+            total[id] += k * perf + (id === lead ? 0 : bonus(perf - leadPerf))
+          }
+        }
+        return total
+      },
+    })
+    return [
+      chip('rounded, current rules', 1, () => 0),
+      chip('rounded, fandom x2', 2, () => 0),
+      chip('rounded, fandom x2 + 2x margin over the leader', 2, (m) => 2 * Math.max(0, m)),
+      chip('rounded, fandom x2 + 4x margin over the leader', 2, (m) => 4 * Math.max(0, m)),
+      chip('rounded, fandom x2 + 25 for beating the leader', 2, (m) => (m > 0 ? 25 : 0)),
+      chip('rounded, fandom x2 + 25 for beating the leader, 50 by 10+', 2, (m) => (m >= 10 ? 50 : m > 0 ? 25 : 0)),
+      chip('rounded, fandom x2 + 50 for beating the leader', 2, (m) => (m > 0 ? 50 : 0)),
+      chip('rounded, fandom x1 + 25 for beating the leader, 50 by 10+', 1, (m) => (m >= 10 ? 50 : m > 0 ? 25 : 0)),
+    ]
+  })(),
+  ...([[1, 25], [1, 50], [2, 25], [2, 50], [1, 75], [2, 75]] as const).map(([k, crown]): Variant => ({
+    // Chip-friendly verse crown: verses rounded down to 5s, fandom k x, and the verse's
+    // highest performance (ties all crowned) earns a flat crown
+    name: `[crown] rounded, fandom x${k} + ${crown} to each verse's top performance`,
+    kind: 'scoring',
+    score: (fame, p) => {
+      const r5 = (n: number) => Math.floor(n / 5) * 5
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const perf = Object.fromEntries(Object.keys(fame).map((id) => [id, r5(p.verses[id][v] ?? 0)]))
+        const top = Math.max(...Object.values(perf))
+        for (const id of Object.keys(fame)) total[id] += k * perf[id] + (perf[id] === top && top > 0 ? crown : 0)
+      }
+      return total
+    },
+  })),
+  {
+    // The shipped rule: verse fandom x1 rounded down to 5s; beating the crown holder's
+    // verse (most Fame at the start of the verse) pays 50, matching it 25
+    name: '[shipped] crown: fandom x1 rounded to 5s, beat the crown +50, match +25',
+    kind: 'scoring',
+    score: (fame, p) => {
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const top = Math.max(...Object.values(total))
+        const crown = Object.keys(total).filter((id) => total[id] === top)
+        const toBeat = Math.max(...crown.map((id) => p.verses[id][v] ?? 0))
+        for (const id of Object.keys(fame)) {
+          const perf = p.verses[id][v] ?? 0
+          const bonus = crown.includes(id) ? 0 : perf > toBeat ? 50 : perf === toBeat && perf > 0 ? 25 : 0
+          total[id] += Math.floor(perf / 5) * 5 + bonus
+        }
+      }
+      return total
+    },
+  },
+  ...([[50, 25], [25, 10]] as const).map(([beat, tie]): Variant => ({
+    // The crown rule at other bonus sizes: replayed with those tunables, so the bots
+    // chase the crown knowing what it pays, then scored the same way
+    name: `[crown ${beat}/${tie}] fandom x1 rounded to 5s, beat the crown +${beat}, match +${tie}`,
+    kind: 'replay',
+    prepare: (s) => ({ ...s, tunables: { ...s.tunables, showdownCrownBeatBonus: beat, showdownCrownTieBonus: tie } }),
+    score: (fame, p) => {
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const top = Math.max(...Object.values(total))
+        const crown = Object.keys(total).filter((id) => total[id] === top)
+        const toBeat = Math.max(...crown.map((id) => p.verses[id][v] ?? 0))
+        for (const id of Object.keys(fame)) {
+          const perf = p.verses[id][v] ?? 0
+          const bonus = crown.includes(id) ? 0 : perf > toBeat ? beat : perf === toBeat && perf > 0 ? tie : 0
+          total[id] += Math.floor(perf / 5) * 5 + bonus
+        }
+      }
+      return total
+    },
+  })),
   {
     name: 'Fandom x2 + catch-up Inspiration',
     kind: 'replay',

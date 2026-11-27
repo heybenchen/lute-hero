@@ -67,6 +67,14 @@ export interface Tunables {
 
   // --- Final Showdown ---
   showdownTurns: number
+  /** Fame from a verse is rounded down to a multiple of this (Fame chips come in 5s; 1 = no rounding). */
+  showdownFameRounding: number
+  /** Fame per point of fandom in a verse. */
+  showdownFandomMultiplier: number
+  /** Fame for beating the verse of the bard holding the crown (most Fame at the start of the verse). */
+  showdownCrownBeatBonus: number
+  /** Fame for matching the crown holder's verse exactly. */
+  showdownCrownTieBonus: number
 
   // --- Genres (see src/data/genres.ts) ---
   // KEEP IN SYNC: genres.md (repo root) documents every genre's rule, price, tunables and simulated strength. When you change genre logic, rule text, a price or a genre tunable's default, or add or remove a genre, update genres.md in the same change.
@@ -230,6 +238,10 @@ export const DEFAULT_TUNABLES: Tunables = {
   chipsPerElementPerPlayer: 6,
 
   showdownTurns: 3,
+  showdownFameRounding: 5,
+  showdownFandomMultiplier: 1,
+  showdownCrownBeatBonus: 50,
+  showdownCrownTieBonus: 25,
 
   maxGenres: 2,
   genreOfferCount: 2,
@@ -374,6 +386,10 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'chipsPerElementPerPlayer', label: 'Bag chips per element/player', group: 'Shop', min: 1, max: 30, step: 1 },
 
   { key: 'showdownTurns', label: 'Showdown verses', group: 'Showdown', min: 1, max: 10, step: 1 },
+  { key: 'showdownFameRounding', label: 'Verse Fame rounds down to', group: 'Showdown', min: 1, max: 25, step: 1, help: 'Fame chips come in 5s; 1 = no rounding.' },
+  { key: 'showdownFandomMultiplier', label: 'Fame per fandom', group: 'Showdown', min: 0, max: 10, step: 1 },
+  { key: 'showdownCrownBeatBonus', label: 'Beat the crown: bonus Fame', group: 'Showdown', min: 0, max: 200, step: 5, help: 'For beating the verse of the bard with the most Fame at the start of the verse.' },
+  { key: 'showdownCrownTieBonus', label: 'Match the crown: bonus Fame', group: 'Showdown', min: 0, max: 200, step: 5 },
 
   { key: 'maxGenres', label: 'Genres per bard', group: 'Genres', min: 0, max: 12, step: 1 },
   { key: 'genreOfferCount', label: 'Genres on offer', group: 'Genres', min: 0, max: 12, step: 1 },

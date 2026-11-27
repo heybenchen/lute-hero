@@ -13,7 +13,9 @@ import { WinnerSpotlight } from './WinnerSpotlight'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
 import { crossoverMultiplier, bebopCanReroll } from '@/game-logic/genres/genreEffects'
 import { songIsImmune } from '@/game-logic/combat/damageCalculator'
-import { createShowdownBoss, getPlayableSongs, mergeSongs, ShowdownPerformance } from '@/game-logic/showdown/showdown'
+import { createShowdownBoss, getPlayableSongs, mergeSongs, ShowdownPerformance, verseFame } from '@/game-logic/showdown/showdown'
+import { withTunables, type Tunables } from '@/data/tunables'
+import { Player } from '@/types'
 import { GENRES } from '@/data/genres'
 import { readableTextColor } from '@/data/elementTheme'
 
@@ -34,6 +36,10 @@ export function FinalShowdown() {
   const showdownCurrentFandom = useGameStore((state) => state.showdownCurrentFandom)
   const showdownFandom = useGameStore((state) => state.showdownFandom)
   const showdownHistory = useGameStore((state) => state.showdownHistory)
+  const showdownEarned = useGameStore((state) => state.showdownEarned)
+  const showdownCrownIds = useGameStore((state) => state.showdownCrownIds)
+  const showdownTurnPerformances = useGameStore((state) => state.showdownTurnPerformances)
+  const tunables = useGameStore((state) => state.tunables)
   const dispatch = useGameStore((state) => state.dispatch)
   const canPerform = useGameStore(selectCanPerform)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
@@ -188,7 +194,7 @@ export function FinalShowdown() {
   if (players.length === 0) return null
 
   if (stage === 'intro') {
-    return <ShowdownIntro onBegin={() => setStage('perform')} playerCount={players.length} />
+    return <ShowdownIntro onBegin={() => setStage('perform')} playerCount={players.length} tunables={tunables} />
   }
 
   if (stage === 'adapt') {
@@ -198,6 +204,7 @@ export function FinalShowdown() {
         performances={adaptRecap}
         players={players}
         resistElement={showdownResistElement}
+        crownIds={showdownCrownIds}
         onContinue={() => setStage('perform')}
       />
     )
@@ -212,6 +219,7 @@ export function FinalShowdown() {
       <WinnerSpotlight
         players={players}
         showdownFandom={showdownFandom}
+        showdownEarned={showdownEarned}
         history={showdownHistory}
         onContinue={() => dispatch({ type: 'ADVANCE_TO_SUMMARY' })}
       />
@@ -281,6 +289,16 @@ export function FinalShowdown() {
           )}
         </div>
 
+        <CrownBar
+          players={players}
+          earned={showdownEarned}
+          crownIds={showdownCrownIds}
+          performances={showdownTurnPerformances}
+          performerId={performerId}
+          beatBonus={tunables.showdownCrownBeatBonus}
+          tieBonus={tunables.showdownCrownTieBonus}
+        />
+
         {/* Performer panel */}
         {performer && (
           <div className="card-ornate p-4 sm:p-6" key={`${showdownTurn}-${performerId}`}>
@@ -304,6 +322,9 @@ export function FinalShowdown() {
                   +{held.showdownCurrentFandom}
                 </div>
                 <div className="text-[10px] text-parchment-500 uppercase tracking-wider">fandom this verse</div>
+                {hasPerformed && (
+                  <div className="text-[11px] text-parchment-400 tabular-nums">= {withTunables(tunables, () => verseFame(held.showdownCurrentFandom))} Fame</div>
+                )}
               </div>
             </div>
 
@@ -357,7 +378,9 @@ export function FinalShowdown() {
 }
 
 /** Cinematic opening: the boss reveal and the rules of the showdown. */
-function ShowdownIntro({ onBegin, playerCount }: { onBegin: () => void; playerCount: number }) {
+function ShowdownIntro({ onBegin, playerCount, tunables }: { onBegin: () => void; playerCount: number; tunables: Tunables }) {
+  const rounding = tunables.showdownFameRounding
+  const perFandom = tunables.showdownFandomMultiplier
   return (
     <div className="min-h-[100dvh] flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'radial-gradient(ellipse at 50% 30%, #1e1033 0%, #07050a 70%)' }}>
       <div
@@ -406,9 +429,12 @@ function ShowdownIntro({ onBegin, playerCount }: { onBegin: () => void; playerCo
           <div className="text-xs font-medieval uppercase tracking-[0.3em] text-gold-500 mb-3 text-center">How the Showdown Works</div>
           <ul className="space-y-2.5 text-sm text-parchment-300">
             <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Three verses. Each verse, every bard performs <span className="text-gold-300 font-bold">one element</span> — every die of it rolls together — against the Silence. Spend Inspiration for an encore.</span></li>
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Every point you score earns you <span className="text-gold-300 font-bold">1 fandom</span>.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Each verse, your score {perFandom === 1 ? 'is' : `×${perFandom} is`} the <span className="text-gold-300 font-bold">Fame</span> you earn{rounding > 1 ? <>, rounded down to a multiple of {rounding}</> : null}.</span></li>
+            {playerCount > 1 && (
+              <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">👑</span><span>The bard with the most Fame when a verse begins holds the <span className="text-gold-300 font-bold">crown</span> and performs first; the others follow in order of Fame, so whoever is furthest behind knows every score before they play. Beat the crown holder's verse for <span className="text-gold-300 font-bold">+{tunables.showdownCrownBeatBonus} Fame</span>; match it for <span className="text-gold-300 font-bold">+{tunables.showdownCrownTieBonus}</span>.</span></li>
+            )}
             <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>Between verses it adapts: it becomes <span className="text-red-300 font-bold">immune (0×)</span> to the element of the strongest performance. It has no weakness.</span></li>
-            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>After the third verse the Silence shatters — and the bard with the most fans is crowned <span className="text-gold-300 font-bold">Legend of the Realm</span>.</span></li>
+            <li className="flex gap-2.5"><span className="text-gold-400 flex-shrink-0">♪</span><span>After the third verse the Silence shatters — and the bard with the most Fame is crowned <span className="text-gold-300 font-bold">Legend of the Realm</span>.</span></li>
           </ul>
         </div>
 
@@ -476,6 +502,63 @@ function ShowdownFinale({
         >
           The crowd turns to its champion...
         </p>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The crown during a verse: Fame standings (tour Fame + Showdown Fame so far),
+ * who holds the crown, and — once they have performed — the verse to beat.
+ */
+function CrownBar({
+  players,
+  earned,
+  crownIds,
+  performances,
+  performerId,
+  beatBonus,
+  tieBonus,
+}: {
+  players: Player[]
+  earned: Record<string, number>
+  crownIds: string[]
+  performances: ShowdownPerformance[]
+  performerId: string | undefined
+  beatBonus: number
+  tieBonus: number
+}) {
+  if (players.length < 2 || crownIds.length === 0) return null
+  const standing = (p: Player) => p.fame + (earned[p.id] ?? 0)
+  const ranked = [...players].sort((a, b) => standing(b) - standing(a))
+  const holders = players.filter((p) => crownIds.includes(p.id))
+  const crownPerfs = performances.filter((perf) => crownIds.includes(perf.playerId))
+  const toBeat = crownPerfs.length > 0 ? Math.max(...crownPerfs.map((perf) => perf.fandom)) : null
+  const performerHolds = !!performerId && crownIds.includes(performerId)
+  const names = holders.map((p) => p.name).join(' & ')
+
+  return (
+    <div aria-label="The crown" className="card-ornate px-4 py-3 mb-4" style={{ background: 'rgba(20, 14, 28, 0.6)' }}>
+      <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 text-sm text-center">
+        <span className="text-gold-300 font-bold">👑 {names} {holders.length > 1 ? 'share' : 'holds'} the crown</span>
+        <span className="text-parchment-400">
+          {performerHolds
+            ? '— everyone else is chasing this verse.'
+            : toBeat === null
+              ? `— beat their verse for +${beatBonus} Fame, match it for +${tieBonus}.`
+              : <>— to beat: <span className="text-gold-300 font-bold tabular-nums">{toBeat}</span> (+{beatBonus}) · match it for +{tieBonus}</>}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+        {ranked.map((p) => (
+          <span key={p.id} className="flex items-center gap-1.5">
+            <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} aria-hidden="true" />
+            <span className={crownIds.includes(p.id) ? 'text-gold-300 font-bold' : 'text-parchment-300'}>
+              {crownIds.includes(p.id) ? '👑 ' : ''}{p.name}
+            </span>
+            <span className="text-gold-400 font-bold tabular-nums">{standing(p)}</span>
+          </span>
+        ))}
       </div>
     </div>
   )

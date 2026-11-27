@@ -167,6 +167,13 @@ const isBluesDie = (d: Dice) => getMaxValue(d.type) >= getTunables().bluesMinFac
 const isBebopDie = (d: Dice) => getMaxValue(d.type) <= getTunables().bebopMaxFaces
 const hasHarmony = (songs: Song[]) => elementCount(songs) >= getTunables().barbershopElements
 
+/**
+ * How much a bard's performance of the Silence's immune element still counts:
+ * nothing, unless Crossover lets it through (each Showdown performance is the
+ * bard's whole turn, so its once-per-turn use is always fresh).
+ */
+const immuneFactor = (p: Player) => (p.genres.includes('crossover') ? getTunables().crossoverMultiplier : 0)
+
 function songDie(song: Song): Dice | null {
   return song.slots.find((s) => s.dice)?.dice ?? null
 }
@@ -1048,16 +1055,16 @@ export class SmartBot {
       const versesLeft = getTunables().showdownTurns - s.showdownTurn
       const options = ALL_ELEMENTS.map((g) => ({ g, d: this.performanceDist(performer, g) }))
         .filter((o): o is { g: Element; d: Dist } => !!o.d)
-        .map((o) => ({ ...o, ev: o.g === resist ? 0 : mean(o.d) }))
+        .map((o) => ({ ...o, ev: mean(o.d) * (o.g === resist ? immuneFactor(performer) : 1) }))
       if (options.length === 0) {
         this.act({ type: 'FINISH_SHOWDOWN_PERFORMANCE' })
         return
       }
       // Rivals' best expected performance this verse, to judge whether ours will be the strongest
       const rivalBest = Math.max(0, ...s.players.filter((p) => p.id !== performer.id).flatMap((p) =>
-        ALL_ELEMENTS.filter((g) => g !== resist).map((g) => {
+        ALL_ELEMENTS.map((g) => {
           const d = this.performanceDist(p, g)
-          return d ? mean(d) : 0
+          return d ? mean(d) * (g === resist ? immuneFactor(p) : 1) : 0
         })
       ))
       if (this.p.showdownLookahead && versesLeft > 0) {
@@ -1103,6 +1110,13 @@ export class SmartBot {
       const hasFree = me.genres.includes('bebop') && !now.showdownUndo?.bebopUsed &&
         me.songs.some((sg) => (now.showdownUndo?.songIds ?? []).includes(sg.id) && (songDie(sg) ? isBebopDie(songDie(sg)!) : false))
       if (hasFree && this.act({ type: 'REROLL_SHOWDOWN_SONG', bebop: true })) continue
+      // The crown: once its holder has performed, beating their verse pays a bonus.
+      // Keep a verse that beats it; encore one that falls short while the odds pay for the Inspiration.
+      const chase = this.crownChase(me, got)
+      if (chase) {
+        if (got > chase.toBeat) return
+        if (me.inspiration >= 1 && chase.pBeat * chase.gain > this.p.inspirationValue && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
+      }
       // Spread spare Inspiration over the verses still to come
       const budget = versesLeft === 0 ? me.inspiration : Math.floor(me.inspiration / (versesLeft + 1)) || (me.inspiration > versesLeft ? 1 : 0)
       if (this.p.showdownStop === 'optimal') {
@@ -1128,6 +1142,26 @@ export class SmartBot {
    * Optimal stopping with `k` rerolls left: keep a roll at or above this value. With one reroll it is
    * the mean; each extra reroll raises it to E[max(X, previous)].
    */
+  /**
+   * Chasing the crown this verse: the crown holder's verse to beat (once they have
+   * performed), the chance a fresh roll beats it, and the bonus that would add.
+   * Null when this bard holds the crown or there is nothing to chase yet.
+   */
+  private crownChase(me: Player, got: number): { toBeat: number; pBeat: number; gain: number } | null {
+    const s = this.state
+    if (s.showdownCrownIds.length === 0 || s.showdownCrownIds.includes(me.id)) return null
+    const crownPerfs = s.showdownTurnPerformances.filter((perf) => s.showdownCrownIds.includes(perf.playerId))
+    if (crownPerfs.length === 0) return null
+    const toBeat = Math.max(...crownPerfs.map((perf) => perf.fandom))
+    const dist = this.currentPerformanceDist(me)
+    if (!dist) return null
+    let pBeat = 0
+    for (const [x, p] of dist) if (x > toBeat) pBeat += p
+    const { showdownCrownBeatBonus, showdownCrownTieBonus } = getTunables()
+    const held = got === toBeat && got > 0 ? showdownCrownTieBonus : 0
+    return { toBeat, pBeat, gain: showdownCrownBeatBonus - held }
+  }
+
   private stopThreshold(d: Dist, k: number): number {
     let t = mean(d)
     for (let j = 2; j <= k; j++) {
@@ -1168,7 +1202,7 @@ export class SmartBot {
         return
       }
       for (const g of mine) {
-        const ev = g === resist ? 0 : myEv.get(g) ?? 0
+        const ev = (myEv.get(g) ?? 0) * (g === resist ? immuneFactor(performer) : 1)
         // Strongest performance of this verse decides next verse's immunity
         let strongest = { ev, g: g as Element | null }
         if (verse === 0) {
@@ -1177,7 +1211,10 @@ export class SmartBot {
         for (const r of rivals) {
           if (verse === 0 && r.idx < meIdx) continue // already played this verse
           let rb = { ev: 0, g: null as Element | null }
-          for (const [rg, rev] of r.ev) if (rg !== resist && rev > rb.ev) rb = { ev: rev, g: rg }
+          for (const [rg, rawEv] of r.ev) {
+            const rev = rawEv * (rg === resist ? immuneFactor(r.p) : 1)
+            if (rev > rb.ev) rb = { ev: rev, g: rg }
+          }
           if (rb.ev > strongest.ev) strongest = rb
         }
         recurse(verse + 1, strongest.g, [...seq, g], total + ev)
