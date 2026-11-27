@@ -34,6 +34,8 @@
 - Reserved a permanent responsive-height row for the Studio purchase helper, so selecting, deselecting, or placing an element never shifts the surrounding layout.
 
 - Removed the outer border/background from the Studio purchase helper and aligned it in a separate row exactly to the Your collection column width.
+- Added a centered responsive max width to combat monster stat cards so single-monster encounters no longer stretch the cards across the full battlefield.
+
 - Removed the Studio's Replace a Die mode button. Full setlists now show direct per-song replacement offers for non-matching dice, using a recycle + d4 icon and the 1 EXP cost alongside matching upgrade offers.
 
 - Merged the Studio purchase helper into the header's Your collection-aligned column, eliminating the separate reserved row so hidden guidance takes no space.

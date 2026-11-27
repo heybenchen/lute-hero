@@ -60,7 +60,7 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
           {isDefeated && <span className="pixel-defeated-label">TAMED</span>}
         </div>
 
-        <div className={`pixel-stat-panel ${isSelected ? 'is-targeted' : ''}`}>
+        <div className={`pixel-stat-panel mx-auto w-full max-w-2xl ${isSelected ? 'is-targeted' : ''}`}>
           <div className="pixel-stat-heading">
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
