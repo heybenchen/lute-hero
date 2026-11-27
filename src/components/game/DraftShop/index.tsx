@@ -101,18 +101,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               <p className="text-base text-parchment-400">
                 {player.name} &mdash; <span className="text-gold-400 font-bold">{player.exp} EXP</span>
               </p>
-              {!canInteract && (
-                <div
-                  className="inline-flex mt-2 rounded-full px-3 py-1 text-xs font-medieval font-bold text-sky-200"
-                  style={{ background: 'rgba(80, 150, 220, 0.12)', border: '1px solid rgba(110, 180, 240, 0.35)' }}
-                >
-                  Watching {player.name}&rsquo;s Studio live
-                </div>
-              )}
-            </div>
-            {/* Inspiration helper UI */}
-            <div className="ml-auto flex shrink-0 flex-col items-end gap-2 pr-8 text-xs sm:text-sm">
-              <div className="flex items-center gap-2">
+              <div className="mt-2 flex items-center gap-2 text-xs sm:text-sm">
                 <button
                   onClick={handleBuyInspiration}
                   disabled={!canInteract || player.exp < inspirationCost}
@@ -130,8 +119,17 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
                 </span>
               </div>
-
-              {/* Contextual element-purchase guidance */}
+              {!canInteract && (
+                <div
+                  className="inline-flex mt-2 rounded-full px-3 py-1 text-xs font-medieval font-bold text-sky-200"
+                  style={{ background: 'rgba(80, 150, 220, 0.12)', border: '1px solid rgba(110, 180, 240, 0.35)' }}
+                >
+                  Watching {player.name}&rsquo;s Studio live
+                </div>
+              )}
+            </div>
+            {/* Contextual purchase guidance */}
+            <div className="ml-auto flex shrink-0 flex-col items-end gap-2 pr-8 text-xs sm:text-sm">
               {canInteract && !activeDie && selectedElement && (
                 <div
                   className="animate-slide-up flex max-w-md flex-wrap items-center justify-end gap-2 rounded-lg px-3 py-2 text-right text-sm text-parchment-200"
