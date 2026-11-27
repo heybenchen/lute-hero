@@ -23,7 +23,7 @@ Run `OPP=1 ROUND=5 GENRES=<id> npx tsx scripts/genre-audit.ts 600`. It plays 3-b
 - **Real timing.** Bots buy their first genre in **round 5** and a second in round 7 (`npx tsx scripts/genre-timing.ts`). The tested bard gets the genre on their shelf from round 5 and buys it at its **real price** the first turn they can afford it, ahead of dice upgrades.
 - **Shopping rivals.** The other two bards shop for genres like anyone (real prices, whatever the smart bot values).
 - **What "balanced" means.** Three seats means a third of games (**33.3%**). The no-genre row (everyone shopping naturally) won **32.8%** in the latest run. At 600 games one result carries about ±1.9 points of noise (±3.8 at two sigma), so only gaps over about 4 points mean anything. The goal is every genre within about 4 points of parity (roughly 31–37%).
-- **The bot values every genre.** Its odds model can't see "after a miss" or K-Pop's Fame, so Grunge, Dubstep and K-Pop carry audit priors (`GENRE_PRIOR` in `smartBot.ts`); without them the bot sold those genres off. Gospel, Blues and Soul are valued from this audit too.
+- **The bot values every genre.** Its odds model handles Grunge's replacement dice and Dubstep's follow-up bonus directly. K-Pop still carries an audit prior (`GENRE_PRIOR` in `smartBot.ts`) because its end-of-concert Fame is outside one-roll odds. Gospel, Blues and Soul are valued from this audit too.
 - **The bot plays the choices.** Gospel calls a play it expects to win (at least 60%) while a spent song is waiting; Soul pays when the +2 lifts the win chance by more than the Inspiration is worth; Blues refreshes a spent d20 song when it is worth more than the Inspiration. These heuristics are simple, so the two choice genres that measure low (Gospel, Soul) may play better in human hands.
 
 ## All genres (current values)
@@ -56,7 +56,7 @@ These keep kebab-case ids. Their effects are data-defined specs that `studioSpec
 | **Country** | `country` | 1 (1) | Increase the rolled value of all dice matching your starting element by 1. | `countryBonus` (1) | 33.9 |
 | **Lo-fi** | `lo-fi` | 3 (3) | Upgrades cost 1 less EXP. | `loFiDiscount` (1) | 30.9 |
 | **Soul** | `soul` | 2 (3) | If you started this turn with 2+ Inspiration, spend 1 Inspiration to add +2 to every song. | `soulBonus` (2), `soulMin` (2), `soulCost` (1) | 32.3 |
-| **Baroque** | `baroque` | 1 (1) | Whenever a die roll is 3 or less, increase its rolled value by 1. Does not affect bonus dice. | `baroqueAtMost` (3), `baroqueBonus` (1) | 39.0 |
+| **Baroque** | `baroque` | 1 (1) | Whenever a die roll is less than 3, change its rolled value to 3. | `baroqueFloor` (3) | 39.0† |
 | **Rap** | `rap` | 2 (1) | Gain 2 EXP at the start of each turn. | `rapExp` (2) | 31.6 |
 | **House** | `house` | 2 (2) | Add +2 to each song for each same-element song played just before it. Reduced to +1 in the Final Showdown. | `houseBonus` (2), `houseCap` (0), `houseShowdownBonus` (1) | 37.1 |
 | **Orchestra** | `orchestra` | 2 (2) | While there are 3+ monsters remaining, increase the rolled value of all dice by 1. | `orchestraBonus` (1), `orchestraMin` (3) | 36.6 |
@@ -70,20 +70,20 @@ Data-defined specs, except Trip-Hop, which the `MOVE` reducer handles (`anywhere
 |---|---|---|---|---|---|
 | **Punk** | `punk` | 2 (1) | Whenever you crit, add +4 to the song. | `punkBonus` (4) | 35.2 |
 | **Soft Rock** | `soft-rock` | 2 (2) | Increase the rolled value of your d8s and d12s by 1. | `softRockBonus` (1) | 35.0 |
-| **Prog Rock** | `prog-rock` | 2 (2) | Your 4th and later songs in a concert add +2. | `progRockFrom` (4), `progRockBonus` (2) | 28.1 |
+| **Prog Rock** | `prog-rock` | 2 (2) | Your 3rd and later songs in a concert add +2. | `progRockFrom` (3), `progRockBonus` (2) | 28.1† |
 | **Ska** | `ska` | 2 (4) | Whenever you roll an odd number, add +1 to the song. | `skaBonus` (1) | 32.1 |
 | **K-Pop** | `k-pop` | 2 (2) | Gain +15 Fame for winning over 3 monsters or +25 Fame for winning 4 monsters in one concert. | `kPopFame3` (15), `kPopFame4` (25) | 32.0 |
 | **Emo** | `emo` | 2 (2) | Declare that this is your last song of the concert: add +8 to it. The concert ends after this song. | `emoBonus` (8) | 24.8 |
 | **Trance** | `trance` | 2 (2) | While you have 0 Inspiration, add +3 to each song. | `tranceBonus` (3) | 26.4 |
-| **Grunge** | `grunge` | 2 (2) | Every time a song moves a monster without winning it over, add +1 to your next song. | `grungeBonus` (1) | 31.2 |
-| **Dubstep** | `dubstep` | 2 (2) | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher, then adds +3. | `dubstepAdvantage` (1), `dubstepBonus` (3), `dubstepMultiplier` (1), `dubstepOncePerTurn` (1) | 28.8 |
+| **Grunge** | `grunge` | 2 (2) | You may roll two d12s in place of your d20s. | — | 31.2† |
+| **Dubstep** | `dubstep` | 2 (2) | Every time a song moves a monster without winning it over, add +1 to your next song. | `dubstepBonus` (1) | 28.8† |
 | **Trip-Hop** | `trip-hop` | 1 (2) | Once per turn, move to any space on the board. | — | 29.0 |
 
 All 30 land between **24.8% (Emo) and 39.3% (Bluegrass)**. 16 sit inside the 31–37% band. Rows swing up to ~5 points between runs, so read single rows as ±4 at best.
 
 ## Outside the band
 
-Latest run (600 games each, baseline 32.8%), after the buffs: Pop +2 Inspiration, K-Pop +15/+25 Fame, Soul at 2 EXP needing 2+ Inspiration (all three now in the band), Gospel refreshing any die, Trance +3, Dubstep rolling twice and adding +3. Emo (declared final song, +8) and Opera (+2 to the rolled value of d20s) were changed afterwards; their rows come from their own 600-game runs.
+Latest run (600 games each, baseline 32.8%), after the earlier buffs. † Baroque, Prog Rock, Grunge and Dubstep changed afterward, so their listed rates are historical until the next audit.
 
 | Genre | Result | Notes |
 |---|---|---|
@@ -93,14 +93,14 @@ Latest run (600 games each, baseline 32.8%), after the buffs: Pop +2 Inspiration
 | **New Age** | 28.1% at 1 EXP | 34.9% at 0 EXP |
 | **Prog Rock** | 28.1% at 2 EXP | 31.4% last run, partly noise |
 | **Opera** | 30.4% at 2 EXP | Now raises the rolled value of d20s by 2 (was a flat +2: 28.5%); +3 flat 31.1%; +3 to the rolled value 36.7% |
-| **Dubstep** | 28.8% at 2 EXP | Up from 26.3% with the +3 |
+| **Dubstep** | 28.8% at 2 EXP | Historical result for the retired roll-twice-and-+3 rule |
 | **Trip-Hop** | 29.0% at 1 EXP | 32.1% at 0 EXP |
 | **Lo-fi** | 30.9% at 3 EXP | Edge of the band |
 | **House**, **Barbershop**, **Disco** | 37.1%, 37.3%, 37.5% | Edge of the band, rules unchanged |
-| **Baroque** | 39.0% at 1 EXP | +1 to rolls of 3 or less (36.5% last run) |
+| **Baroque** | 39.0% at 1 EXP | Historical result for the retired +1 rule |
 | **Bluegrass** | 39.3% at 2 EXP | d8s only; 1 EXP made no difference |
 
-**Adjusted after the first run:** Baroque as designed (+2 to a roll of 3 or less) measured **54.1%**, because a 2 or 3 on a d4 became a crit; at +1 it measures **36.5%**. Bluegrass on d4 and d8 measured **43.9%** (39.4% at 3 EXP, 37.4% at 4); it now covers d8s only.
+**Historical adjustments:** the previous Baroque rule (+2 to a roll of 3 or less) measured **54.1%**, because a 2 or 3 on a d4 became a crit; the later +1 version measured **36.5%**. Baroque now floors rolls below 3 to 3 and has not been remeasured. Bluegrass on d4 and d8 measured **43.9%** (39.4% at 3 EXP, 37.4% at 4); it now covers d8s only.
 
 ### Emo as a declared final song
 
@@ -125,7 +125,7 @@ Not applied unless noted; each is a tunable change (600 games, same seeds).
 | **New Age** | 0 EXP | **34.9** |
 | **Trip-Hop** | 0 EXP | **32.1** |
 | Lo-fi | 2 EXP | 37.4 (overshoots) |
-| **Dubstep** | rolls twice and +3 (**applied**) · doubles the next song · 1 EXP · every win | **30.6** · 26.3 · 27.5 · 23.8 |
+| **Dubstep (historical)** | rolls twice and +3 · doubles the next song · 1 EXP · every win | **30.6** · 26.3 · 27.5 · 23.8 |
 | **Gospel** | refresh any die (**applied**) · plus 1 EXP | 25.8 · 28.2 |
 | **Trance** | +3 (**applied**) · +3 at 1 EXP | 27.8 · 29.2 |
 

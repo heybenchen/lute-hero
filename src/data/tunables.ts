@@ -141,10 +141,8 @@ export interface Tunables {
   genreCostMariachi: number
   /** Country: bonus (can crit) to dice of the bard's starting element. */
   countryBonus: number
-  /** Baroque: a die that lands below this counts as showing it. */
-  /** Baroque: a roll at or below this face is raised by baroqueBonus (it can crit). */
-  baroqueAtMost: number
-  baroqueBonus: number
+  /** Baroque: a natural roll below this face counts as showing this face. */
+  baroqueFloor: number
   /** Rap: EXP gained at the start of each of the bard's turns. */
   rapExp: number
   /** Lo-fi: EXP off every upgrade. */
@@ -178,7 +176,7 @@ export interface Tunables {
   punkBonus: number
   /** Soft Rock: face value added to d8s and d12s (can crit). */
   softRockBonus: number
-  /** Prog Rock: bonus from this song of a concert on (4 = the 4th). */
+  /** Prog Rock: bonus from this song of a concert on (3 = the 3rd). */
   progRockFrom: number
   progRockBonus: number
   /** Ska: bonus when a die lands on an odd face. */
@@ -192,16 +190,10 @@ export interface Tunables {
   emoBonus: number
   /** Opera: 1 = its bonus raises the d20's rolled value (it can crit), 0 = a flat bonus. */
   operaRaisesFace: number
-  /** Dubstep: the song after a win rolls twice (1/0), adds this, and is multiplied by this. */
-  dubstepAdvantage: number
+  /** Dubstep: bonus to the song after moving a monster without winning it over. */
   dubstepBonus: number
-  dubstepMultiplier: number
-  /** Dubstep: 1 = once per turn, 0 = after every win. */
-  dubstepOncePerTurn: number
   /** Trance: bonus while holding no Inspiration. */
   tranceBonus: number
-  /** Grunge: bonus to the song after a miss. */
-  grungeBonus: number
 }
 
 export const DEFAULT_TUNABLES: Tunables = {
@@ -285,8 +277,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   genreCostOrchestra: 2,
   genreCostMariachi: 2,
   countryBonus: 1,
-  baroqueAtMost: 3,
-  baroqueBonus: 1,
+  baroqueFloor: 3,
   rapExp: 2,
   loFiDiscount: 1,
   soulBonus: 2,
@@ -310,19 +301,15 @@ export const DEFAULT_TUNABLES: Tunables = {
   genreCostTripHop: 1,
   punkBonus: 4,
   softRockBonus: 1,
-  progRockFrom: 4,
+  progRockFrom: 3,
   progRockBonus: 2,
   skaBonus: 1,
   kPopFame3: 15,
   kPopFame4: 25,
   emoBonus: 8,
   operaRaisesFace: 1,
-  dubstepAdvantage: 1,
-  dubstepBonus: 3,
-  dubstepMultiplier: 1,
-  dubstepOncePerTurn: 1,
+  dubstepBonus: 1,
   tranceBonus: 3,
-  grungeBonus: 1,
 }
 
 // ============================================================
@@ -431,8 +418,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'genreCostOrchestra', label: 'Orchestra cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'genreCostMariachi', label: 'Mariachi cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'countryBonus', label: 'Country: starting-element bonus', group: 'Genres', min: 0, max: 10, step: 1 },
-  { key: 'baroqueAtMost', label: 'Baroque: highest roll it raises', group: 'Genres', min: 1, max: 12, step: 1 },
-  { key: 'baroqueBonus', label: 'Baroque: amount a low roll is raised', group: 'Genres', min: 0, max: 10, step: 1 },
+  { key: 'baroqueFloor', label: 'Baroque: minimum rolled value', group: 'Genres', min: 1, max: 12, step: 1 },
   { key: 'rapExp', label: 'Rap: EXP per turn', group: 'Genres', min: 0, max: 5, step: 1 },
   { key: 'loFiDiscount', label: 'Lo-fi: EXP off upgrades', group: 'Genres', min: 0, max: 5, step: 1 },
   { key: 'soulBonus', label: 'Soul: bonus to the song', group: 'Genres', min: 0, max: 10, step: 1 },
@@ -463,12 +449,8 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'kPopFame4', label: 'K-Pop: Fame for 4+ monsters in a concert', group: 'Genres', min: 0, max: 50, step: 1 },
   { key: 'emoBonus', label: 'Emo: bonus on your declared final song', group: 'Genres', min: 0, max: 20, step: 1 },
   { key: 'operaRaisesFace', label: 'Opera: raises the rolled value (1) or flat bonus (0)', group: 'Genres', min: 0, max: 1, step: 1 },
-  { key: 'dubstepAdvantage', label: 'Dubstep: next song rolls twice (1/0)', group: 'Genres', min: 0, max: 1, step: 1 },
-  { key: 'dubstepBonus', label: 'Dubstep: bonus to the next song', group: 'Genres', min: 0, max: 10, step: 1 },
-  { key: 'dubstepMultiplier', label: 'Dubstep: multiplies the next song (1 = off)', group: 'Genres', min: 1, max: 3, step: 0.5 },
-  { key: 'dubstepOncePerTurn', label: 'Dubstep: once per turn (1) or every win (0)', group: 'Genres', min: 0, max: 1, step: 1 },
+  { key: 'dubstepBonus', label: 'Dubstep: bonus after moving a monster', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'tranceBonus', label: 'Trance: bonus at 0 Inspiration', group: 'Genres', min: 0, max: 10, step: 1 },
-  { key: 'grungeBonus', label: 'Grunge: bonus after a miss', group: 'Genres', min: 0, max: 10, step: 1 },
 ]
 
 const LEVEL_COUNT = 5

@@ -154,9 +154,14 @@ export function announceDiceEvents(events: EngineEvent[], players: Pick<Player, 
     const slots = songs.flatMap((s) => s.slots)
     const dice: TrayDie[] = []
     for (const roll of event.rolls) {
-      const die = slots.find((slot) => slot.dice?.id === roll.diceId)?.dice
+      const die = slots.find((slot) => slot.dice?.id === (roll.sourceDiceId ?? roll.diceId))?.dice
       if (!die) continue
-      dice.push({ dieId: die.id, type: die.type, element: die.element, values: [roll.value, ...roll.cascadeRolls] })
+      dice.push({
+        dieId: roll.diceId,
+        type: roll.rolledType ?? die.type,
+        element: roll.element ?? die.element,
+        values: [roll.value, ...roll.cascadeRolls],
+      })
     }
     diceBus.enqueue(dice)
   }

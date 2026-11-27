@@ -484,15 +484,14 @@ describe('Studio spec genres', () => {
     expect(after.combat.genreNotes).toContain(GENRES['country'].name)
   })
 
-  it('Baroque raises a low roll, which can then crit, and leaves higher rolls alone', () => {
-    const { baroqueBonus: up, baroqueAtMost: atMost } = DEFAULT_TUNABLES
+  it('Baroque changes rolls below 3 to 3 and leaves rolls of 3 or more alone', () => {
     const low = play(fight(['baroque'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([1, 8])).state
-    expect(low.combat.rolls[0]).toMatchObject({ value: 1, bonus: up, isCrit: false })
-    const d4 = play(fight(['baroque'], [['d4', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([4 - up, 4], [1, 4])).state
-    expect(4 - up).toBeLessThanOrEqual(atMost)
-    expect(d4.combat.rolls[0].isCrit).toBe(true) // raised to 4 on a d4: a crit
+    expect(low.combat.rolls[0]).toMatchObject({ value: DEFAULT_TUNABLES.baroqueFloor, isCrit: false })
+    expect(low.combat.rolls[0].bonus).toBeUndefined()
+    const three = play(fight(['baroque'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([3, 8])).state
+    expect(three.combat.rolls[0].value).toBe(3)
     const high = play(fight(['baroque'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([6, 8])).state
-    expect(high.combat.rolls[0].bonus).toBeUndefined()
+    expect(high.combat.rolls[0].value).toBe(6)
   })
 
   it('Rap pays EXP at the start of each of your turns', () => {
@@ -610,14 +609,14 @@ describe('New genres', () => {
     expect(d20.combat.rolls[0].isCrit).toBe(false)
   })
 
-  it('Prog Rock adds its bonus from the 4th song of a concert', () => {
-    const dice: DieSpec[] = [['d4', 'Hymn'], ['d4', 'Hymn'], ['d4', 'Hymn'], ['d4', 'Hymn']]
+  it('Prog Rock adds its bonus from the 3rd song of a concert', () => {
+    const dice: DieSpec[] = [['d4', 'Hymn'], ['d4', 'Hymn'], ['d4', 'Hymn']]
     let state = fight(['prog-rock'], dice, [{ currentHP: 500, maxHP: 500 }])
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 2; i++) {
       state = play(state, i, faces([1, 4])).state
       expect(state.combat.rolls[0].bonus).toBeUndefined()
     }
-    state = play(state, 4, faces([1, 4])).state
+    state = play(state, 3, faces([1, 4])).state
     expect(state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.progRockBonus)
   })
 
@@ -674,23 +673,28 @@ describe('New genres', () => {
     expect(play(holding, 1, faces([2, 8])).state.combat.rolls[0].bonus).toBeUndefined()
   })
 
-  it('Grunge adds its bonus to the song after one moves a monster without winning it over', () => {
-    let state = fight(['grunge'], [['d8', 'Hymn'], ['d8', 'Hymn'], ['d8', 'Ballad']], [{ currentHP: 200, maxHP: 200 }, { currentHP: 200, maxHP: 200, resistance: 'Ballad' }])
+  it('Dubstep adds its bonus to the song after one moves a monster without winning it over', () => {
+    let state = fight(['dubstep'], [['d8', 'Hymn'], ['d8', 'Hymn'], ['d8', 'Ballad']], [{ currentHP: 200, maxHP: 200 }, { currentHP: 200, maxHP: 200, resistance: 'Ballad' }])
     state = play(state, 3, faces([2, 8]), 'm2').state // immune: moved nothing
     state = play(state, 1, faces([2, 8]), 'm1').state
     expect(state.combat.rolls[0].bonus).toBeUndefined() // the last song moved nothing
     state = play(state, 2, faces([2, 8]), 'm1').state
-    expect(state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.grungeBonus)
+    expect(state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.dubstepBonus)
   })
 
-  it('Dubstep rolls the song after a win twice and keeps the higher, once per turn', () => {
-    let state = fight(['dubstep'], [['d20', 'Hymn'], ['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 1, maxHP: 1 }, { currentHP: 1, maxHP: 1 }, { currentHP: 200, maxHP: 200 }])
-    state = play(state, 1, faces([10, 20]), 'm1').state // a win
-    state = play(state, 2, faces([1, 8], [6, 8]), 'm2').state // rolls twice: 6, and wins again
-    expect(state.combat.rolls[0]).toMatchObject({ value: 6, bonus: DEFAULT_TUNABLES.dubstepBonus })
-    state = play(state, 3, faces([2, 8], [6, 8]), 'm3').state // after a win, but used up this turn
-    expect(state.combat.rolls[0].value).toBe(2)
-    expect(state.combat.rolls[0].bonus).toBeUndefined()
+  it('Grunge rolls two d12s in place of each d20', () => {
+    const state = fight(['grunge'], [['d20', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
+    const replaced = play(state, 1, faces([5, 12], [7, 12])).state
+    expect(replaced.combat.rolls).toHaveLength(2)
+    expect(replaced.combat.rolls.map((roll) => roll.value)).toEqual([5, 7])
+    expect(replaced.combat.rolls.map((roll) => roll.rolledType)).toEqual(['d12', 'd12'])
+    expect(replaced.combat.rolls.every((roll) => roll.sourceDiceId === 'die-1')).toBe(true)
+    expect(hp(replaced)).toBe(188)
+
+    const unchanged = play(fight(['grunge'], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }]), 1, faces([6, 8])).state
+    expect(unchanged.combat.rolls).toHaveLength(1)
+    expect(unchanged.combat.rolls[0]).toMatchObject({ diceId: 'die-1', value: 6 })
+    expect(unchanged.combat.rolls[0].rolledType).toBeUndefined()
   })
 })
 

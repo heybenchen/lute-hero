@@ -113,7 +113,7 @@ export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, r
                 <SlotDie
                   key={idx}
                   slot={slot}
-                  roll={slot.dice ? rolls?.find((r) => r.diceId === slot.dice!.id) : undefined}
+                  roll={slot.dice ? rolls?.find((r) => (r.sourceDiceId ?? r.diceId) === slot.dice!.id) : undefined}
                 />
               ))}
             </span>

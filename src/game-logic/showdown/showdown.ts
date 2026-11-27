@@ -61,7 +61,7 @@ export function getDominantElement(song: Song, rolls: DiceRoll[]): Element | nul
     const element = slot.dice.element
     if (!order.includes(element)) order.push(element)
     const contribution = rolls
-      .filter((r) => r.diceId === slot.dice!.id)
+      .filter((r) => (r.sourceDiceId ?? r.diceId) === slot.dice!.id)
       .reduce((sum, r) => sum + r.value + r.critBonus, 0)
     totals.set(element, (totals.get(element) || 0) + contribution)
   })

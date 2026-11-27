@@ -31,8 +31,7 @@ export function studioSpec(id: GenreId): GenreSpec | null {
     // Soul is a choice the bard makes per play (PLAY_SONG soul),
     // so the engine adds its bonus through soulSpec() rather than here
     case 'baroque':
-      // Baroque: a low roll is raised (bonus dice are rolled plain)
-      return { ...base, roll: [{ lowFaceBonus: t.baroqueBonus, lowFaceAtMost: t.baroqueAtMost }] }
+      return { ...base, roll: [{ floor: t.baroqueFloor }] }
     case 'rap':
       return { ...base, onTurnStart: [{ reward: { exp: t.rapExp } }] }
     case 'house': {
@@ -65,16 +64,10 @@ export function studioSpec(id: GenreId): GenreSpec | null {
     case 'trance':
       return { ...base, roll: [{ when: { inspirationAtMost: 0 }, flat: t.tranceBonus }] }
     case 'grunge':
-      // Grunge: after a song moves its monster without winning it over
-      return { ...base, roll: [{ when: { afterMove: true }, flat: t.grungeBonus }] }
+      // Grunge substitutes dice in rollSongWithGenres rather than modifying a face.
+      return null
     case 'dubstep':
-      // Dubstep: after a song wins its monster over, once per turn
-      return { ...base, roll: [{
-        when: { afterWin: true, ...(t.dubstepOncePerTurn ? { oncePerTurn: true } : {}) },
-        ...(t.dubstepAdvantage ? { advantage: true } : {}),
-        ...(t.dubstepBonus ? { flat: t.dubstepBonus } : {}),
-        ...(t.dubstepMultiplier !== 1 ? { times: t.dubstepMultiplier } : {}),
-      }] }
+      return { ...base, roll: [{ when: { afterMove: true }, flat: t.dubstepBonus }] }
     default:
       return null
   }
