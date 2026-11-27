@@ -142,7 +142,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
             {canInteract && (
               <button
                 onClick={onClose}
-                className="text-parchment-400 hover:text-parchment-200 transition-colors text-xl leading-none p-1"
+                className="relative z-10 -ml-7 flex h-7 w-7 shrink-0 items-center justify-center text-xl leading-none text-parchment-400 transition-colors hover:text-parchment-200"
                 title="Close Studio"
               >
                 &#x2715;
