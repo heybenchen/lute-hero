@@ -25,7 +25,7 @@ The Silence swallowed the world's music, and in the quiet, monsters woke. You ar
 
 **The bard with the most Fame after the Final Showdown wins.**
 
-You need the 16-space board, monster chips and element cubes in four elements (**Ballad**, **Folk**, **Hymn**, **Shanty**), d4/d8/d12/d20 dice in each element, a 6-song mat per bard, Fame/EXP/Inspiration counters and the 29 genre cards. The Lute Hero app does all of this for you.
+You need the 16-space board, monster chips and element cubes in four elements (**Ballad**, **Folk**, **Hymn**, **Shanty**), d4/d8/d12/d20 dice in each element, a 6-song mat per bard, Fame/EXP/Inspiration counters and the 30 genre cards. The Lute Hero app does all of this for you.
 
 ## 2. Setup
 
@@ -155,6 +155,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 | **Trance** | 1 | While you have 0 Inspiration, +2 to each song. |
 | **Grunge** | 2 | After a song misses, your next song adds +1. |
 | **Dubstep** | 1 | Once per turn, after a song misses, your next song rolls twice and keeps the higher. |
+| **Trip-Hop** | 1 | Once per turn, move to any space on the board. |
 <!-- GENRES:END -->
 
 ## Appendix B: Edge Cases

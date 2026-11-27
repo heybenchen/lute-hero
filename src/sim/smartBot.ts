@@ -127,6 +127,7 @@ const STYLE_MEASURED: Record<StyleId, number> = {
   'street-performer': 2.0, 'chain-reaction': 2.4, 'swarm-singer': 1.9, 'jam-session': 2.4,
   // Genres added with the rename: approximate, from their style-lab win rates
   punk: 2.0, 'soft-rock': 2.2, 'prog-rock': 2.0, ska: 2.0, 'k-pop': 2.0, emo: 2.0, trance: 1.6, grunge: 1.6, dubstep: 1.8,
+  'trip-hop': 2.0,
 }
 
 const STYLE_PRIOR: Partial<Record<StyleId, number>> = {
@@ -144,6 +145,8 @@ const STYLE_PRIOR: Partial<Record<StyleId, number>> = {
   grunge: 1.5,
   dubstep: 1.0,
   'k-pop': 1.2,
+  // Trip-Hop's reach is a movement choice the fight odds never see
+  'trip-hop': 2.0,
   // Economy the odds can't see: cheaper upgrades keep paying all game
   'studio-regular': 1.2,
   // An EXP a turn is worth the bot's EXP weight in Fame the odds can't see
@@ -700,6 +703,20 @@ export class SmartBot {
         bestScore = v
       }
     }
+    // Trip-Hop: once per turn, jump to any space when one beats everything in walking reach
+    if (me.styles.includes('trip-hop') && !this.state.tripHopUsed) {
+      let jump = -1
+      let jumpScore = bestScore
+      for (const space of this.state.spaces) {
+        if (space.id === me.position || reach.has(space.id)) continue
+        const v = valueAt(space.id)
+        if (v > jumpScore + 0.5) {
+          jump = space.id
+          jumpScore = v
+        }
+      }
+      if (jump >= 0 && this.act({ type: 'MOVE', playerId: me.id, toSpaceId: jump, anywhere: true })) return
+    }
     // Nothing worth fighting in reach: head for the best space two turns out
     if (bestScore < 1) {
       const far = this.reachable(me.position, maxMoves * 2)
@@ -796,7 +813,7 @@ export class SmartBot {
       'inspired-play': player.inspiration >= getTunables().inspiredPlayMin ? 1 : 0.5,
       punk: Math.min(1, count(['d4']) / 2),
       'soft-rock': Math.min(1, count(['d8', 'd12']) / 3),
-      'prog-rock': 1, ska: 1, 'k-pop': 1, emo: 1, grunge: 1, dubstep: 1,
+      'prog-rock': 1, ska: 1, 'k-pop': 1, emo: 1, grunge: 1, dubstep: 1, 'trip-hop': 1,
       trance: player.inspiration < 1 ? 1 : 0.5,
     }
     const spaces = Math.max(1, this.state.spaces.filter((s) => s.monsters.length > 0).length)

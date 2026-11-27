@@ -3,6 +3,7 @@ import { useGameStore, selectCurrentPlayer, selectCanAct } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getReachableMoves } from '@/game-logic/board/graphBuilder'
 import { movesFor } from '@/engine/economy'
+import { STYLES } from '@/data/styles'
 import realmMap from '@/imports/board-background.jpg'
 import realmMapMobile from '@/imports/board-background-mobile.jpg'
 import { Footprints, Map as MapIcon, Undo2 } from 'lucide-react'
@@ -16,6 +17,7 @@ export function Board() {
   const moveTrail = useGameStore((state) => state.moveTrail)
   const combatActive = useGameStore((state) => state.isActive)
   const studioOpen = useGameStore((state) => state.studio.playerId !== null)
+  const tripHopUsed = useGameStore((state) => state.tripHopUsed)
 
   const [hoveredSpaceId, setHoveredSpaceId] = useState<number | null>(null)
   // True while a multi-step trip is being taken, so a second click can't start another
@@ -28,6 +30,11 @@ export function Board() {
   const canMove = canAct && movesLeft > 0 && !travelling
   const reachable = canMove ? getReachableMoves(currentPlayer.position, spaces, movesLeft) : []
   const reachableById = new Map(reachable.map((r) => [r.space.id, r]))
+  // Trip-Hop: once per turn, any space beyond walking reach is one jump away (costs no regular move)
+  const canJump = canAct && !travelling && !combatActive && !studioOpen &&
+    currentPlayer.styles.includes('trip-hop') && !tripHopUsed
+  const isJumpTarget = (spaceId: number) =>
+    canJump && spaceId !== currentPlayer.position && !reachableById.has(spaceId)
 
   // The last move this turn can be taken back (refunding the move) until the
   // bard starts a fight.
@@ -45,6 +52,16 @@ export function Board() {
     // Stepping back onto the space you just came from takes the move back
     if (spaceId === backtrackSpaceId) {
       undoMove()
+      return
+    }
+
+    if (isJumpTarget(spaceId)) {
+      setTravelling(true)
+      try {
+        await dispatch({ type: 'MOVE', playerId: currentPlayer.id, toSpaceId: spaceId, anywhere: true })
+      } finally {
+        setTravelling(false)
+      }
       return
     }
 
@@ -89,7 +106,7 @@ export function Board() {
             <div className="font-medieval font-bold text-sm sm:text-base text-parchment-100">The Resonant Realm</div>
             <div className="flex items-center gap-1.5 text-[10px] text-parchment-500">
               <Footprints size={11} aria-hidden="true" />
-              {movesLeft} move{movesLeft === 1 ? '' : 's'} remaining
+              {movesLeft} move{movesLeft === 1 ? '' : 's'} remaining{canJump ? ` · ${STYLES['trip-hop'].name}: jump anywhere` : ''}
             </div>
           </div>
         </div>
@@ -127,7 +144,7 @@ export function Board() {
                   space={space}
                   players={players}
                   isCurrentPlayer={currentPlayer.position === space.id}
-                  canMoveTo={space.id === backtrackSpaceId || reachableById.has(space.id)}
+                  canMoveTo={space.id === backtrackSpaceId || reachableById.has(space.id) || isJumpTarget(space.id)}
                   moveCost={space.id === backtrackSpaceId ? 1 : reachableById.get(space.id)?.steps ?? 1}
                   isLinkedToHovered={
                     hoveredSpace !== null &&

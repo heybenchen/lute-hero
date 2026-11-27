@@ -171,6 +171,7 @@ export interface Tunables {
   styleCostTrance: number
   styleCostGrunge: number
   styleCostDubstep: number
+  styleCostTripHop: number
   /** Punk: bonus to d4 songs. */
   punkBonus: number
   /** Soft Rock: face value added to d8s and d12s (can crit). */
@@ -293,6 +294,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   styleCostTrance: 1,
   styleCostGrunge: 2,
   styleCostDubstep: 1,
+  styleCostTripHop: 1,
   punkBonus: 1,
   softRockBonus: 1,
   progRockFrom: 4,
@@ -432,6 +434,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'styleCostTrance', label: 'Trance cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'styleCostGrunge', label: 'Grunge cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'styleCostDubstep', label: 'Dubstep cost', group: 'Genres', min: 0, max: 30, step: 1 },
+  { key: 'styleCostTripHop', label: 'Trip-Hop cost', group: 'Genres', min: 0, max: 30, step: 1 },
   { key: 'punkBonus', label: 'Punk: bonus to d4 songs', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'softRockBonus', label: 'Soft Rock: d8/d12 face bonus', group: 'Genres', min: 0, max: 5, step: 1 },
   { key: 'progRockFrom', label: 'Prog Rock: from song number', group: 'Genres', min: 2, max: 7, step: 1 },

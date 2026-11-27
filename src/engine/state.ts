@@ -124,6 +124,8 @@ export interface MoveStep {
   fromSpaceId: number
   /** Inspiration refunded on undo — only set by saves from before travel was removed. */
   inspirationSpent?: number
+  /** Trip-Hop's move to any space: it costs no regular move, and undoing it gives the use back. */
+  anywhere?: boolean
 }
 
 /**
@@ -157,6 +159,8 @@ export interface EngineState {
   moveTrail: MoveStep[]
   /** The current bard's Inspiration when their turn began (Soul needs 3+). */
   turnStartInspiration?: number
+  /** Trip-Hop: the current bard has used their move to any space this turn. */
+  tripHopUsed?: boolean
 
   // Combat (synced, unlike the old client-only slice)
   combat: EngineCombatState

@@ -101,6 +101,10 @@ export const STYLE_META: Record<StyleId, StyleMeta> = {
   trance: { group: 'new', timing: 'always', was: 2, win: 30.3, tunables: ['tranceBonus'] },
   grunge: { group: 'new', timing: 'always', was: 1, win: 34.8, tunables: ['grungeBonus'], note: 'A guest song that misses counts too.' },
   dubstep: { group: 'new', timing: 'once-per-turn', was: 2, win: 33.5, tunables: [] },
+  'trip-hop': {
+    group: 'new', timing: 'button', was: 2, win: 31.7, tunables: [],
+    note: 'Every space beyond your normal reach lights up while it is unused. It costs none of your regular moves, and "Undo move" gives it back.',
+  },
 }
 
 export interface SongbookSetting {

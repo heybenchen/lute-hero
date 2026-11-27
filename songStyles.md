@@ -12,7 +12,7 @@ A reference for every genre in the Studio (called "styles" in code): what it doe
 - Everything players read says **genre**; songs and dice belong to **elements** (Ballad, Folk, Hymn, Shanty). Code identifiers keep the old `style` names so saves stay compatible.
 - The Studio's **Genres** shelf shows **2** offers (`styleOfferCount`). Empty slots refill at the start of every turn, and Inspiration redraws the shelf (`REFRESH_STYLE_OFFERS`). Buying at the cap replaces a genre the bard names.
 - Prices are in EXP and every price is a tunable (`styleCostKey(id)` gives its key, e.g. `styleCostHometownHero`).
-- "Once per turn" genres fire automatically the first time they apply. Four are choices instead: **Bebop** (a free encore button), **Blues** (a refresh button on a spent d20 song), **Gospel** ("call it" before a song) and **Soul** (pay Inspiration for a bonus on a song).
+- "Once per turn" genres fire automatically the first time they apply. Five are choices instead: **Bebop** (a free encore button), **Blues** (a refresh button on a spent d20 song), **Gospel** ("call it" before a song), **Soul** (pay Inspiration for a bonus on a song) and **Trip-Hop** (once per turn, move to any space; the board lights up every space beyond walking reach).
 - Two kinds of bonus, worded the same way everywhere. "Adds +N to the song" (or "+N to each song") is a flat bonus on top of the roll: it never changes a die's face, so it can't crit. "Increases the face value of a die" changes the face itself, so the die can crit (Opera, Country, Soft Rock, Baroque).
 - Guest songs (borrowed from another bard) roll without genres, never refresh anything and can't be called for Gospel.
 
@@ -64,7 +64,7 @@ These keep kebab-case ids. Their effects are data-defined specs that `studioSpec
 
 ### New with the rename
 
-Also data-defined specs. Their sizes and prices were tuned with the audit (see below).
+Data-defined specs, except Trip-Hop, which the `MOVE` reducer handles (`anywhere: true`). Their sizes and prices were tuned with the audit (see below).
 
 | Genre | id | Price (was) | What it does | Tunables | Win % |
 |---|---|---|---|---|---|
@@ -77,8 +77,9 @@ Also data-defined specs. Their sizes and prices were tuned with the audit (see b
 | **Trance** | `trance` | 1 (2) | While you have 0 Inspiration, +2 to each song. | `tranceBonus` (2) | 30.3 |
 | **Grunge** | `grunge` | 2 (1) | After a song misses, your next song adds +1. | `grungeBonus` (1) | 34.8 |
 | **Dubstep** | `dubstep` | 1 (2) | Once per turn, after a song misses, your next song rolls twice and keeps the higher. | — | 33.5 |
+| **Trip-Hop** | `trip-hop` | 1 (2) | Once per turn, move to any space on the board. | — | 31.7 |
 
-All 29 land between **26.4% (Gospel) and 39.1% (Barbershop)**. 18 sit inside the 31–37% band. Genres whose rules didn't change moved by up to ~5 points between this run and the previous one (Bluegrass 31.0 → 27.7, Hip-Hop 35.3 → 29.9), so read single rows as ±4 at best.
+All 30 land between **26.4% (Gospel) and 39.1% (Barbershop)**. 19 sit inside the 31–37% band. Genres whose rules didn't change moved by up to ~5 points between this run and the previous one (Bluegrass 31.0 → 27.7, Hip-Hop 35.3 → 29.9), so read single rows as ±4 at best.
 
 ## Outside the band
 
@@ -108,6 +109,7 @@ Latest run (600 games each, baseline 34.6%). The new genres were tuned until the
 | **Punk** | +2 to d4 songs, 1 EXP → 38.3% | 2 EXP → 38.2 | **+1, 1 EXP → 36.3 (33.8 in the latest run)** |
 | **Trance** | +2 at 0 Inspiration, 2 EXP → 28.8% | — | **1 EXP → 31.1 (30.3 in the latest run)** |
 | **Dubstep** | 2 EXP → 30.8% | — | **1 EXP → 32.4 (33.5 in the latest run)** |
+| **Trip-Hop** | once per turn, move to any space, 2 EXP → 28.6% | 3 EXP → 23.8 · 1 EXP with the bot jumping more eagerly → 31.8 (the bot isn't the limit: two moves already reach most of a 16-space board) | **1 EXP → 31.7** |
 | **Soft Rock**, **Prog Rock**, **K-Pop** | 36.5 · 34.8 · 31.4 at 2 EXP | — | as proposed |
 
 Misses are common (every song that doesn't win its monster over is spent), so "after a miss" and "per spent song" effects trigger almost every concert: they need small bonuses.
@@ -121,10 +123,11 @@ Misses are common (every song that doesn't win its monster over is spent), so "a
 | Built-in roll effects (Indie, Bluegrass, Opera, Screamo, Barbershop), Crossover, Bebop, Disco helpers, Blues and Gospel size limits (`fermataCanRefresh`, `staccatoCanRefresh`), showdown combo counting | `src/game-logic/styles/styleEffects.ts` |
 | Spec-based genres (`studioSpec`), Soul's per-play bonus (`inspiredPlaySpec`), plus `specsOf` | `src/data/styleSpecs.ts` |
 | The generic spec engine (conditions incl. `afterMiss`, `inspirationAtMost`, `monstersAtStartAtLeast`; modifiers incl. `oddBonus`, `perSpentSong`; rewards incl. `ifCharmed`) | `src/game-logic/styles/specs.ts` |
-| Applying genres in concerts and the showdown; Gospel calls and refreshes (`staccatoCall`, `RALLY_SONG`), Blues (`LINGER_SONG`), Soul (`inspiredPlay`), Pop after a concert, `turnStartInspiration`, `lastPlayMissed` | `src/engine/reducer.ts` |
+| Trip-Hop's move to any space (`MOVE { anywhere }`, `tripHopUsed`); applying genres in concerts and the showdown; Gospel calls and refreshes (`staccatoCall`, `RALLY_SONG`), Blues (`LINGER_SONG`), Soul (`inspiredPlay`), Pop after a concert, `turnStartInspiration`, `lastPlayMissed` | `src/engine/reducer.ts` |
 | Legality (calls, Soul's Inspiration, refresh sizes, free encores) | `src/engine/validate.ts` |
 | Prices after spec discounts (Lo-fi) | `src/engine/economy.ts` |
 | The concert screen's choices (call it, Soul) and refresh buttons | `src/components/game/Combat/index.tsx`, `SongCard.tsx` |
+| Trip-Hop's jump targets on the board | `src/components/game/Board/index.tsx` |
 | How the smart bot values and plays each genre | `src/sim/smartBot.ts`, `src/sim/odds.ts` |
 | Tests | `src/engine/styles.test.ts`, `src/engine/styleSpecs.test.ts` |
 

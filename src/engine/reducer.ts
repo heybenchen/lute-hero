@@ -114,7 +114,8 @@ function reduce(
           ? {
               ...p,
               position: action.toSpaceId,
-              movesThisTurn: p.movesThisTurn + 1,
+              // Trip-Hop's move to any space costs no regular move
+              movesThisTurn: p.movesThisTurn + (action.anywhere ? 0 : 1),
             }
           : p
       )
@@ -134,9 +135,10 @@ function reduce(
         {
           playerId: action.playerId,
           fromSpaceId: mover.position,
+          ...(action.anywhere ? { anywhere: true } : {}),
         },
       ]
-      return { ...state, players, spaces, moveTrail }
+      return { ...state, players, spaces, moveTrail, ...(action.anywhere ? { tripHopUsed: true } : {}) }
     }
 
     case 'UNDO_MOVE': {
@@ -148,12 +150,12 @@ function reduce(
           ? {
               ...p,
               position: step.fromSpaceId,
-              movesThisTurn: Math.max(0, p.movesThisTurn - 1),
+              movesThisTurn: step.anywhere ? p.movesThisTurn : Math.max(0, p.movesThisTurn - 1),
               inspiration: p.inspiration + (step.inspirationSpent ?? 0),
             }
           : p
       )
-      return { ...state, players, moveTrail: state.moveTrail.slice(0, -1) }
+      return { ...state, players, moveTrail: state.moveTrail.slice(0, -1), ...(step.anywhere ? { tripHopUsed: false } : {}) }
     }
 
     case 'START_COMBAT': {
@@ -832,7 +834,7 @@ function beginTurn(state: EngineState, rng: Rng): EngineState {
     : state.styleOffers
   // Soul checks the Inspiration a bard started their turn with
   const turnStartInspiration = withSpecs.find((p) => p.id === player.id)?.inspiration ?? 0
-  return { ...state, players: withSpecs, styleOffers, turnStartInspiration }
+  return { ...state, players: withSpecs, styleOffers, turnStartInspiration, tripHopUsed: false }
 }
 
 /** Data-defined styles' start-of-turn rewards (conditions like trailing in Fame). */

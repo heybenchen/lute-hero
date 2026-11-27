@@ -202,6 +202,12 @@ export const STYLES: Record<StyleId, StyleDef> = {
     flavor: 'Wait for it. Wait for it.',
     rule: 'Once per turn, after a song misses, your next song rolls twice and keeps the higher.',
   },
+  'trip-hop': {
+    id: 'trip-hop',
+    name: 'Trip-Hop',
+    flavor: 'Close your eyes on one stage, open them on another.',
+    rule: 'Once per turn, move to any space on the board.',
+  },
 }
 
 export const ALL_STYLE_IDS = Object.keys(STYLES) as StyleId[]
@@ -239,6 +245,7 @@ export function styleCost(id: StyleId): number {
     case 'trance': return t.styleCostTrance
     case 'grunge': return t.styleCostGrunge
     case 'dubstep': return t.styleCostDubstep
+    case 'trip-hop': return t.styleCostTripHop
   }
 }
 
@@ -344,6 +351,7 @@ export function styleRule(id: StyleId): string {
     case 'trance': return `While you have 0 Inspiration, +${t.tranceBonus} to each song.`
     case 'grunge': return `After a song misses, your next song adds +${t.grungeBonus}.`
     case 'dubstep': return 'Once per turn, after a song misses, your next song rolls twice and keeps the higher.'
+    case 'trip-hop': return 'Once per turn, move to any space on the board.'
     default: return STYLES[id].rule
   }
 }

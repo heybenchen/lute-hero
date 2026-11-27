@@ -119,9 +119,15 @@ export function validateAction(
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player) return illegal('Unknown player')
       if (player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
-      if (player.movesThisTurn >= movesFor(player)) return illegal('No moves left this turn')
       if (action.toSpaceId === player.position) return illegal('Already on that space')
       if (!state.spaces.some((s) => s.id === action.toSpaceId)) return illegal('Unknown space')
+      if (action.anywhere) {
+        // Trip-Hop: once per turn, to any space, without spending a regular move
+        if (!player.styles.includes('trip-hop')) return illegal(`${STYLES['trip-hop'].name} is not one of your genres`)
+        if (state.tripHopUsed) return illegal(`${STYLES['trip-hop'].name} is already used this turn`)
+        return ok
+      }
+      if (player.movesThisTurn >= movesFor(player)) return illegal('No moves left this turn')
       if (!areSpacesConnected(player.position, action.toSpaceId, state.spaces)) {
         return illegal('Spaces are not connected')
       }

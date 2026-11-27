@@ -63,8 +63,8 @@ export interface PlayerConfig {
  */
 export type GameAction =
   | { type: 'START_GAME'; playerConfigs: PlayerConfig[] }
-  /** Step to a connected space (Inspiration travel was removed). */
-  | { type: 'MOVE'; playerId: string; toSpaceId: number }
+  /** One step to a connected space. `anywhere`: Trip-Hop's once-per-turn move to any space (costs no regular move). */
+  | { type: 'MOVE'; playerId: string; toSpaceId: number; anywhere?: boolean }
   /** Take back the last move this turn (only before any combat since). */
   | { type: 'UNDO_MOVE'; playerId: string }
   | { type: 'START_COMBAT'; playerId: string }

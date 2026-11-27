@@ -41,7 +41,7 @@ describe('songbook data', () => {
     }
     expect(entries.filter((e) => e.group === 'original')).toHaveLength(12)
     expect(entries.filter((e) => e.group === 'lab')).toHaveLength(8)
-    expect(entries.filter((e) => e.group === 'new')).toHaveLength(9)
+    expect(entries.filter((e) => e.group === 'new')).toHaveLength(10)
   })
 })
 
@@ -106,7 +106,7 @@ describe('Songbook page', () => {
     const fresh = [...container.querySelectorAll('button')].find((b) => b.textContent?.startsWith('New'))!
     act(() => fresh.click())
     expect(cards(container)).toContain('dubstep')
-    expect(cards(container)).toHaveLength(9)
+    expect(cards(container)).toHaveLength(10)
     unmount()
   })
 })

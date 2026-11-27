@@ -657,3 +657,44 @@ describe('New genres', () => {
     expect(state.combat.rolls[0].value).toBe(2) // used up this turn
   })
 })
+
+describe('Trip-Hop', () => {
+  const withTripHop = (state: EngineState) =>
+    ({ ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, styles: ['trip-hop'] as StyleId[] } : p)) })
+  const jump = (state: EngineState, to: number) =>
+    applyAction(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: to, anywhere: true }, seeded())
+
+  it('moves to any space once per turn without spending a regular move', () => {
+    let state = withTripHop(startGame())
+    const from = state.players[0].position
+    const far = state.spaces.find((s) => s.id !== from && !s.connections.includes(from))!.id
+    expect(applyAction(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: far }, seeded()).ok).toBe(false) // not connected
+    const jumped = jump(state, far)
+    expect(jumped.ok).toBe(true)
+    state = jumped.ok ? jumped.state : state
+    expect(state.players[0].position).toBe(far)
+    expect(state.players[0].movesThisTurn).toBe(0)
+    expect(state.tripHopUsed).toBe(true)
+    expect(jump(state, from).ok).toBe(false) // once per turn
+  })
+
+  it('can be undone, giving the use back, and resets at the start of the next turn', () => {
+    let state = withTripHop(startGame())
+    const from = state.players[0].position
+    const far = state.spaces.find((s) => s.id !== from && !s.connections.includes(from))!.id
+    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: far, anywhere: true }).state
+    state = apply(state, { type: 'UNDO_MOVE', playerId: 'player-1' }).state
+    expect(state.players[0].position).toBe(from)
+    expect(state.tripHopUsed).toBe(false)
+    state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: far, anywhere: true }).state
+    state = apply(state, { type: 'END_TURN' }).state
+    expect(state.tripHopUsed).toBe(false)
+  })
+
+  it('needs the genre', () => {
+    const state = startGame()
+    const from = state.players[0].position
+    const far = state.spaces.find((s) => s.id !== from && !s.connections.includes(from))!.id
+    expect(jump(state, far).ok).toBe(false)
+  })
+})

@@ -70,7 +70,8 @@ export type StyleId =
   | "emo"
   | "trance"
   | "grunge"
-  | "dubstep";
+  | "dubstep"
+  | "trip-hop";
 
 export interface SongSlot {
   dice: Dice | null;
