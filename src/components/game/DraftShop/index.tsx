@@ -140,10 +140,16 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
           </div>
 
           {/* Contextual purchase guidance aligns with the collection column */}
-          {canInteract && !activeDie && selectedElement && (
-            <div className="mb-3 grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
-              <div className="hidden lg:block" aria-hidden="true" />
-              <div className="animate-slide-up flex w-full flex-wrap items-center justify-end gap-2 text-right text-sm text-parchment-200">
+          <div className="mb-3 grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
+            <div className="hidden lg:block" aria-hidden="true" />
+            <div
+              className={`flex h-16 w-full flex-wrap items-center justify-end gap-2 text-right text-sm text-parchment-200 transition-opacity sm:h-10 ${
+                canInteract && !activeDie && selectedElement ? 'visible opacity-100' : 'invisible opacity-0'
+              }`}
+              aria-hidden={!(canInteract && !activeDie && selectedElement)}
+            >
+              {canInteract && !activeDie && selectedElement && (
+                <>
                 {setlistFull ? (
                   <>
                     <span>{replaceMode ? `Choose the die to replace with a ${selectedElement} d4 (${newD4Cost()} EXP).` : `Choose a matching die to upgrade, or buy a new ${selectedElement} d4.`}</span>
@@ -162,9 +168,10 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     <span>chosen. Use your setlist to buy a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP) or upgrade a matching die.</span>
                   </>
                 )}
-              </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
             <section
