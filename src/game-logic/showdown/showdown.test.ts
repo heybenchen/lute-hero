@@ -7,6 +7,7 @@ import {
   getPlayableSongs,
   ShowdownPerformance,
   crownHolders,
+  performanceOrder,
   crownBonus,
   settleVerse,
   verseFame,
@@ -120,6 +121,12 @@ describe('the crown', () => {
     expect(crownHolders(players, {})).toEqual(['a'])
     expect(crownHolders(players, { b: 60 })).toEqual(['b'])
     expect(crownHolders(players, { b: 50 })).toEqual(['a', 'b'])
+  })
+
+  it('orders performers by Fame, most first, ties in seat order', () => {
+    const players = [{ id: 'a', fame: 120 }, { id: 'b', fame: 200 }, { id: 'c', fame: 120 }, { id: 'd', fame: 90 }]
+    expect(performanceOrder(players, {})).toEqual(['b', 'a', 'c', 'd'])
+    expect(performanceOrder(players, { d: 120 })).toEqual(['d', 'b', 'a', 'c'])
   })
 
   it('rounds verse Fame down to whole chips', () => {

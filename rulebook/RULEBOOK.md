@@ -105,7 +105,7 @@ Monsters are rebuilt from their chips whenever a space is entered and at every r
 
 ## 8. The Final Showdown
 
-The **Eternal Silence** can't be won over, only outshone. There are **three verses**; in each, every bard performs once in seat order:
+The **Eternal Silence** can't be won over, only outshone. There are **three verses**; in each, every bard performs once, **most Fame first** (ties in seat order), so the bard furthest behind plays last and knows every score:
 
 1. **Pick one element.** Every die of that element in your setlist plays together.
 2. **Roll them** and total them as in a concert. That total is your **fandom** for the verse.
@@ -208,5 +208,5 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 **Limits:** 6 songs · 2 genres · 5 chips of one element per space.
 **Round end:** each bard adds one chip of every element, one per space.
 **Gate:** 200 Fame, then one more round, then the Showdown.
-**Showdown:** 3 verses · one element per performance · fandom pays Fame, rounded down to 5 · beat the crown holder's verse +50, match it +25 · the Silence becomes immune to the strongest element.
+**Showdown:** 3 verses · most Fame performs first · one element per performance · fandom pays Fame, rounded down to 5 · beat the crown holder's verse +50, match it +25 · the Silence becomes immune to the strongest element.
 **Win:** most Fame (monsters + Showdown); ties go to fandom.

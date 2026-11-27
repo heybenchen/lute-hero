@@ -109,6 +109,20 @@ export function crownHolders(players: { id: string; fame: number }[], earned: Re
   return players.filter((p) => total(p) === top).map((p) => p.id)
 }
 
+/**
+ * Who performs when in a verse: most Fame first (tour Fame plus Showdown Fame
+ * so far), so the crown holder sets the number to beat and the bards furthest
+ * behind perform last, knowing every score before they spend Inspiration.
+ * Ties keep seat order.
+ */
+export function performanceOrder(players: { id: string; fame: number }[], earned: Record<string, number>): string[] {
+  const total = (p: { id: string; fame: number }) => p.fame + (earned[p.id] ?? 0)
+  return players
+    .map((p, seat) => ({ p, seat }))
+    .sort((a, b) => total(b.p) - total(a.p) || a.seat - b.seat)
+    .map(({ p }) => p.id)
+}
+
 /** Fame for a verse's fandom: multiplied, then rounded down to whole Fame chips. */
 export function verseFame(fandom: number): number {
   const { showdownFandomMultiplier, showdownFameRounding } = getTunables()

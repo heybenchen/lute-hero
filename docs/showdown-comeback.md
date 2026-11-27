@@ -129,3 +129,9 @@ Verse fandom ×1 as Fame, rounded down to a multiple of 5; the crown is held by 
 |---|---|---|---|---|
 | Old rules | 95% (0%) | 92% (0%) | 96% (5%) | 95% (0%) |
 | **Crown rule** | **64% (10%)** | **66% (4%)** | **76% (25%)** | **65% (3%)** |
+
+Then performers went in order of Fame each verse (most first), so the crown holder sets the number to beat and the bard furthest behind plays last; the smart bot uses that to encore for the crown bonus:
+
+| | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| **Crown rule + Fame order** | **60% (8%)** | **67% (6%)** | **76% (24%)** | **59% (3%)** |

@@ -37,6 +37,7 @@ import {
   computeBossAdaptation,
   showdownElementSongs,
   crownHolders,
+  performanceOrder,
   settleVerse,
   mergeSongs,
 } from '../game-logic/showdown/showdown.js'
@@ -1433,14 +1434,14 @@ function finishRound(state: EngineState, rng: Rng, newId: NewId): EngineState {
   return next.phase === 'main' ? beginTurn(next, rng) : next
 }
 
-/** Fresh showdown fields: verse 1, everyone at zero fandom, no adaptation yet, the Fame leader crowned. */
+/** Fresh showdown fields: verse 1, everyone at zero fandom, no adaptation yet, the Fame leader crowned and performing first. */
 function startShowdownFields(players: Player[]): Partial<EngineState> {
   const playerIds = players.map((p) => p.id)
   return {
     showdownActive: true,
     showdownComplete: false,
     showdownTurn: 1,
-    showdownOrder: playerIds,
+    showdownOrder: performanceOrder(players, {}),
     showdownPerformerIdx: 0,
     showdownResistGenre: null,
     showdownSongsUsed: [],
@@ -1717,6 +1718,7 @@ function finishShowdownPerformance(state: EngineState, events: EngineEvent[]): E
       showdownHistory: history,
       showdownEarned,
       showdownCrownIds: crownHolders(state.players, showdownEarned),
+      showdownOrder: performanceOrder(state.players, showdownEarned),
       showdownTurnPerformances: [],
       showdownTurn: state.showdownTurn + 1,
       showdownPerformerIdx: 0,

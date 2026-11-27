@@ -94,10 +94,13 @@ it('shows who holds the crown and, once they have performed, the verse to beat',
       ],
     })
     await store.dispatch({ type: 'DEBUG_SIMULATE', round: 1, showdown: true })
-    const [alba] = useGameStore.getState().players
+    const [alba, bryn] = useGameStore.getState().players
     useGameStore.setState({
       players: useGameStore.getState().players.map((p) => ({ ...p, fame: p.id === alba.id ? 120 : 80 })),
       showdownCrownIds: [alba.id],
+      // The leader performs first
+      showdownOrder: [alba.id, bryn.id],
+      showdownPerformerIdx: 0,
     })
     await act(async () => root.render(<FinalShowdown />))
     const begin = Array.from(host.querySelectorAll('button')).find((b) => /Take the Stage/.test(b.textContent ?? ''))

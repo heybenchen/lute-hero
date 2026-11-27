@@ -786,7 +786,8 @@ describe('showdown actions', () => {
   it('completes after 3 verses, banks the Showdown Fame, allows summary advance', () => {
     let state = showdownState()
     for (let verse = 1; verse <= 3; verse++) {
-      for (const pid of ['player-1', 'player-2']) {
+      for (let turn = 0; turn < 2; turn++) {
+        const pid = state.showdownOrder[state.showdownPerformerIdx]
         const performer = state.players.find((p) => p.id === pid)!
         const song = performer.songs.find((s) => s.slots.some((sl) => sl.dice))!
         state = apply(state, { type: 'PLAY_SHOWDOWN_SONG', songId: song.id }, ctx(verse * 10)).state
@@ -825,17 +826,22 @@ describe('showdown actions', () => {
     // Fame is banked at the end; the crown already follows tour + Showdown Fame (110 vs 125)
     expect(state.players.find((p) => p.id === 'player-2')!.fame).toBe(60)
     expect(state.showdownCrownIds).toEqual(['player-2'])
+    // ...and the new leader opens verse 2, so the bard behind performs last
+    expect(state.showdownOrder).toEqual(['player-2', 'player-1'])
+    expect(state.showdownPerformerIdx).toBe(0)
     const advance = result.events.find((e) => e.type === 'showdownAdvance')
     expect(advance?.type === 'showdownAdvance' && advance.recap?.[1].earned).toBe(65)
   })
 
-  it('starts the Showdown with the Fame leader crowned', () => {
+  it('starts the Showdown with the Fame leader crowned and performing first', () => {
     let state = startTwoPlayerGame()
     state = { ...state, players: state.players.map((p) => ({ ...p, fame: p.id === 'player-2' ? 210 : 150 })) }
     state = { ...state, pendingPhase: 'finalBoss' as const, finalTurnGranted: true, currentTurnPlayerIndex: 1 }
     state = apply(state, { type: 'END_TURN' }).state
     expect(state.showdownActive).toBe(true)
     expect(state.showdownCrownIds).toEqual(['player-2'])
+    // The leader performs first; last place goes last
+    expect(state.showdownOrder).toEqual(['player-2', 'player-1'])
   })
 })
 
