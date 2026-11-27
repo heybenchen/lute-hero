@@ -394,7 +394,7 @@ export function CombatModal() {
                     styleNotes={styleNotes}
                   />
                 ) : canContinue ? (
-                  <p className="flex h-full items-end justify-end gap-2 text-sm text-parchment-300">
+                  <p className="flex h-full flex-col items-end justify-end text-sm text-parchment-300">
                     {lockedTarget ? 'Win over the monster you moved, or end the concert.' : 'Pick a monster, then play a song.'}
                   </p>
                 ) : null}
