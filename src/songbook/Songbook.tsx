@@ -8,10 +8,10 @@ import {
   TIMING_LABEL,
   songbookEntries,
   type SongbookEntry,
-  type StyleGroup,
+  type GenreGroup,
 } from './data'
 
-type GroupFilter = 'all' | StyleGroup
+type GroupFilter = 'all' | GenreGroup
 type SortKey = 'catalog' | 'price' | 'strength' | 'name'
 
 const GROUP_FILTERS: { key: GroupFilter; label: string }[] = [
@@ -67,7 +67,7 @@ function StrengthBar({ win }: { win: number }) {
   )
 }
 
-function StyleCard({ e }: { e: SongbookEntry }) {
+function GenreCard({ e }: { e: SongbookEntry }) {
   const changed = e.was !== e.price
   return (
     <article id={e.id} className="flex flex-col rounded-xl border border-white/10 bg-stone-900/60 p-4">
@@ -226,7 +226,7 @@ export function Songbook() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {shown.map((e) => (
-              <StyleCard key={e.id} e={e} />
+              <GenreCard key={e.id} e={e} />
             ))}
           </div>
         )}

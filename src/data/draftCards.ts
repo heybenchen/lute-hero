@@ -1,4 +1,4 @@
-import { Dice, Genre, DiceType, NewId } from '../types/index.js';
+import { Dice, Element, DiceType, NewId } from '../types/index.js';
 import { DICE_UPGRADE_PATH } from "./startingData.js";
 import { getTunables } from "./tunables.js";
 
@@ -50,10 +50,10 @@ export function getUpgradeCost(type: DiceType): number | null {
 /**
  * Create a fresh d4 die of the purchased element.
  */
-export function createElementalDie(genre: Genre, newId?: NewId): Dice {
+export function createElementalDie(element: Element, newId?: NewId): Dice {
   return {
     id: newId ? newId("die") : `die-${Date.now()}-${dieIdCounter++}`,
     type: "d4",
-    genre,
+    element,
   };
 }

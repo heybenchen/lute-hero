@@ -1,5 +1,5 @@
-import { Genre, Rng } from '../types/index.js';
-import { ALL_GENRES } from "./genreTheme.js";
+import { Element, Rng } from '../types/index.js';
+import { ALL_ELEMENTS } from "./elementTheme.js";
 import { getTunables } from "./tunables.js";
 
 /** Chips of each element, per player, seeded into the bag at game start. */
@@ -23,12 +23,12 @@ export function shuffle<T>(items: T[], rng: Rng = Math.random): T[] {
 }
 
 /** Build and shuffle the full element bag for a game. */
-export function createElementBag(numPlayers: number, rng: Rng = Math.random): Genre[] {
+export function createElementBag(numPlayers: number, rng: Rng = Math.random): Element[] {
   const perElement = chipsPerElementPerPlayer() * numPlayers;
-  const bag: Genre[] = [];
-  for (const genre of ALL_GENRES) {
+  const bag: Element[] = [];
+  for (const element of ALL_ELEMENTS) {
     for (let i = 0; i < perElement; i++) {
-      bag.push(genre);
+      bag.push(element);
     }
   }
   return shuffle(bag, rng);
@@ -39,14 +39,14 @@ export function createElementBag(numPlayers: number, rng: Rng = Math.random): Ge
  * discard pile is shuffled back in and drawing continues.
  */
 export function drawFromBag(
-  bag: Genre[],
-  discard: Genre[],
+  bag: Element[],
+  discard: Element[],
   count: number,
   rng: Rng = Math.random,
-): { drawn: Genre[]; bag: Genre[]; discard: Genre[] } {
+): { drawn: Element[]; bag: Element[]; discard: Element[] } {
   let workingBag = [...bag];
   let workingDiscard = [...discard];
-  const drawn: Genre[] = [];
+  const drawn: Element[] = [];
 
   for (let i = 0; i < count; i++) {
     if (workingBag.length === 0) {

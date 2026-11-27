@@ -1,12 +1,12 @@
 import { ChordStage, type ChordStrike } from './ChordStage'
-import { Genre, Player } from '@/types'
+import { Element, Player } from '@/types'
 import { showdownTurns } from '@/game-logic/showdown/showdown'
-import { GENRE_THEME } from '@/data/genreTheme'
+import { ELEMENT_THEME } from '@/data/elementTheme'
 
 interface BossStageProps {
   strike?: ChordStrike
   turn: number
-  resistGenre: Genre | null
+  resistElement: Element | null
   fandom: Record<string, number>
   players: Player[]
   /** Ramps the boss's visual instability as its defeat approaches */
@@ -14,7 +14,7 @@ interface BossStageProps {
 }
 
 /** The Eternal Silence — a void orb that grows more unstable each turn. */
-export function BossStage({ turn, resistGenre, fandom, players, defeated, strike }: BossStageProps) {
+export function BossStage({ turn, resistElement, fandom, players, defeated, strike }: BossStageProps) {
   const totalFandom = players.reduce((sum, p) => sum + (fandom[p.id] || 0), 0)
 
   return (
@@ -48,7 +48,7 @@ export function BossStage({ turn, resistGenre, fandom, players, defeated, strike
         {defeated ? 'The Silence Falls' : `Verse ${turn} of ${showdownTurns()}`}
       </div>
 
-      <ChordStage verse={turn} element={resistGenre} strike={strike} />
+      <ChordStage verse={turn} element={resistElement} strike={strike} />
 
       <div
         className="font-display text-2xl sm:text-3xl text-purple-200 mb-1 text-center"
@@ -61,9 +61,9 @@ export function BossStage({ turn, resistGenre, fandom, players, defeated, strike
       </div>
 
       {/* Elemental adaptation badges — same mechanics as monster strengths/weaknesses */}
-      {resistGenre && (
+      {resistElement && (
         <div className="flex flex-wrap justify-center gap-2 mb-4 animate-slide-up">
-          {resistGenre && (
+          {resistElement && (
             <span
               className="text-xs font-medieval font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5"
               style={{
@@ -71,9 +71,9 @@ export function BossStage({ turn, resistGenre, fandom, players, defeated, strike
                 border: '1px solid rgba(232, 32, 64, 0.4)',
                 color: '#ff9d9d',
               }}
-              title={`${resistGenre} dice count for nothing this verse`}
+              title={`${resistElement} dice count for nothing this verse`}
             >
-              🛡 0× {GENRE_THEME[resistGenre].emoji} <span style={{ color: GENRE_THEME[resistGenre].color }}>{resistGenre}</span> — immune
+              🛡 0× {ELEMENT_THEME[resistElement].emoji} <span style={{ color: ELEMENT_THEME[resistElement].color }}>{resistElement}</span> — immune
             </span>
           )}
         </div>

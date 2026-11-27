@@ -5,7 +5,7 @@ import {
   shuffle,
   chipsPerElementPerPlayer,
 } from './elementBag'
-import { Genre } from '@/types'
+import { Element } from '@/types'
 
 describe('Element Bag', () => {
   describe('createElementBag', () => {
@@ -18,8 +18,8 @@ describe('Element Bag', () => {
         acc[g] = (acc[g] || 0) + 1
         return acc
       }, {})
-      for (const genre of ['Ballad', 'Folk', 'Hymn', 'Shanty']) {
-        expect(counts[genre]).toBe(chipsPerElementPerPlayer() * 2)
+      for (const element of ['Ballad', 'Folk', 'Hymn', 'Shanty']) {
+        expect(counts[element]).toBe(chipsPerElementPerPlayer() * 2)
       }
     })
 
@@ -44,8 +44,8 @@ describe('Element Bag', () => {
     })
 
     it('should shuffle the discard back in when the bag empties', () => {
-      const bag: Genre[] = ['Ballad', 'Folk']
-      const discard: Genre[] = ['Hymn', 'Hymn', 'Shanty']
+      const bag: Element[] = ['Ballad', 'Folk']
+      const discard: Element[] = ['Hymn', 'Hymn', 'Shanty']
       const result = drawFromBag(bag, discard, 4)
 
       expect(result.drawn).toHaveLength(4)
@@ -59,7 +59,7 @@ describe('Element Bag', () => {
     })
 
     it('should stop when bag and discard are both exhausted', () => {
-      const { drawn, bag, discard } = drawFromBag(['Ballad'] as Genre[], [], 4)
+      const { drawn, bag, discard } = drawFromBag(['Ballad'] as Element[], [], 4)
       expect(drawn).toEqual(['Ballad'])
       expect(bag).toHaveLength(0)
       expect(discard).toHaveLength(0)

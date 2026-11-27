@@ -1,20 +1,20 @@
 import { describe, it, expect } from 'vitest'
 import { rollDist, killChance, mean } from './odds'
-import { rollSongWithStyles, StyleContext } from '../game-logic/styles/styleEffects'
+import { rollSongWithGenres, GenreContext } from '../game-logic/genres/genreEffects'
 import { mulberry32 } from '../engine/rng'
-import { DiceType, Song, StyleId } from '../types'
+import { DiceType, Song, GenreId } from '../types'
 import { DEFAULT_TUNABLES, withTunables } from '../data/tunables'
 
 /** Monte Carlo of the real engine roll vs the exact distribution. */
-function compare(type: DiceType, styles: StyleId[], firstRoll: boolean, opts: Parameters<typeof rollDist>[1]) {
-  const song: Song = { id: 's', used: false, slots: [{ dice: { id: 'd', type, genre: 'Ballad' } }] }
-  const ctx: StyleContext = { styles, used: [], firstRoll, allElements: true, elementCount: 4 }
+function compare(type: DiceType, genres: GenreId[], firstRoll: boolean, opts: Parameters<typeof rollDist>[1]) {
+  const song: Song = { id: 's', used: false, slots: [{ dice: { id: 'd', type, element: 'Ballad' } }] }
+  const ctx: GenreContext = { genres, used: [], firstRoll, allElements: true, elementCount: 4 }
   const rng = mulberry32(17)
   const N = 120_000
   const counts = new Map<number, number>()
   withTunables(DEFAULT_TUNABLES, () => {
     for (let i = 0; i < N; i++) {
-      const r = rollSongWithStyles(song, ctx, rng).rolls[0]
+      const r = rollSongWithGenres(song, ctx, rng).rolls[0]
       const total = r.value + (r.bonus ?? 0) + r.critBonus
       counts.set(total, (counts.get(total) ?? 0) + 1)
     }
@@ -35,17 +35,17 @@ describe('exact roll distributions match the engine', () => {
   it('plain dice', () => {
     for (const t of ['d4', 'd8', 'd12', 'd20'] as DiceType[]) compare(t, [], false, { maxCascades: m })
   })
-  it('Bluegrass (advantage) on a d8', () => compare('d8', ['virtuoso'], false, { advantage: true, maxCascades: m }))
-  it('Opera raising a d20\'s rolled value', () => compare('d20', ['fortissimo'], false, { critBonus: DEFAULT_TUNABLES.fortissimoBonus, maxCascades: m }))
-  it('War Drums on a d4', () => compare('d4', ['ostinato'], false, { critFace: DEFAULT_TUNABLES.ostinatoCritFace, maxCascades: m }))
+  it('Bluegrass (advantage) on a d8', () => compare('d8', ['bluegrass'], false, { advantage: true, maxCascades: m }))
+  it('Opera raising a d20\'s rolled value', () => compare('d20', ['opera'], false, { critBonus: DEFAULT_TUNABLES.operaBonus, maxCascades: m }))
+  it('War Drums on a d4', () => compare('d4', ['indie'], false, { critFace: DEFAULT_TUNABLES.indieCritFace, maxCascades: m }))
   it('Fanfare + Harmony flat bonus on the first roll', () =>
-    compare('d8', ['overture', 'tutti'], true, { flat: DEFAULT_TUNABLES.overtureBonus + DEFAULT_TUNABLES.tuttiBonus, maxCascades: m }))
+    compare('d8', ['screamo', 'barbershop'], true, { flat: DEFAULT_TUNABLES.screamoBonus + DEFAULT_TUNABLES.barbershopBonus, maxCascades: m }))
   it('Harmony alone adds its bonus on later rolls too', () =>
-    compare('d8', ['tutti'], false, { flat: DEFAULT_TUNABLES.tuttiBonus, maxCascades: m }))
+    compare('d8', ['barbershop'], false, { flat: DEFAULT_TUNABLES.barbershopBonus, maxCascades: m }))
 })
 
 describe('generic roll options: engine roll matches the exact distribution', () => {
-  const cases: [DiceType, Omit<import('../game-logic/styles/specs').GenericRollOptions, 'maxCascades'>][] = [
+  const cases: [DiceType, Omit<import('../game-logic/genres/specs').GenericRollOptions, 'maxCascades'>][] = [
     ['d12', { disadvantage: true }],
     ['d8', { rerollAtMost: 3 }],
     ['d20', { flipAtMost: 5 }],
@@ -62,13 +62,13 @@ describe('generic roll options: engine roll matches the exact distribution', () 
   ]
   for (const [type, extra] of cases) {
     it(`${type} ${JSON.stringify(extra)}`, async () => {
-      const { rollWithOptions } = await import('../game-logic/styles/specs')
+      const { rollWithOptions } = await import('../game-logic/genres/specs')
       const opts = { ...extra, maxCascades: DEFAULT_TUNABLES.maxCritCascades }
       const rng = mulberry32(99)
       const N = 120_000
       const counts = new Map<number, number>()
       for (let i = 0; i < N; i++) {
-        const r = rollWithOptions({ id: 'd', type, genre: 'Folk' }, opts, rng)
+        const r = rollWithOptions({ id: 'd', type, element: 'Folk' }, opts, rng)
         const total = r.value + (r.bonus ?? 0) + r.critBonus
         counts.set(total, (counts.get(total) ?? 0) + 1)
       }

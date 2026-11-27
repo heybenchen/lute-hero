@@ -53,14 +53,14 @@ for (const pace of SIMULATION_PACES) {
   holdings[pace.id] = []
   const startedBards = (bards.get(1) ?? []).length
   console.log(`\n${pace.label} (skill ${pace.skill}) — showdown after rounds (p10/median/p90):`, JSON.stringify(showdownStats[pace.id]))
-  console.log('round |    n | fame | exp | insp | styles | dice | elements | d4/d8/d12/d20 (avg per bard)')
+  console.log('round |    n | fame | exp | insp | genres | dice | elements | d4/d8/d12/d20 (avg per bard)')
   for (let r = 1; r <= STORED_ROUNDS; r++) {
     const all = bards.get(r) ?? []
     if (all.length < startedBards / 2) break
     const avg = (f: (s: Bard) => number) => all.reduce((a, s) => a + f(s), 0) / all.length
     const count = (t: string) => avg((s) => s.dice.filter(([d]) => d === t).length).toFixed(1)
     holdings[pace.id].push({ dice: round1(avg((s) => s.dice.length)), elements: round1(avg((s) => s.elements)), fame: median(all.map((s) => s.fame)), exp: median(all.map((s) => s.exp)) })
-    console.log(`${String(r).padStart(5)} | ${String(all.length).padStart(4)} | ${String(median(all.map((s) => s.fame))).padStart(4)} | ${String(median(all.map((s) => s.exp))).padStart(3)} | ${String(median(all.map((s) => s.inspiration))).padStart(4)} | ${avg((s) => s.styles.length).toFixed(1).padStart(6)} | ${avg((s) => s.dice.length).toFixed(1).padStart(4)} | ${avg((s) => s.elements).toFixed(1).padStart(8)} | ${count('d4')}/${count('d8')}/${count('d12')}/${count('d20')}`)
+    console.log(`${String(r).padStart(5)} | ${String(all.length).padStart(4)} | ${String(median(all.map((s) => s.fame))).padStart(4)} | ${String(median(all.map((s) => s.exp))).padStart(3)} | ${String(median(all.map((s) => s.inspiration))).padStart(4)} | ${avg((s) => s.genres.length).toFixed(1).padStart(6)} | ${avg((s) => s.dice.length).toFixed(1).padStart(4)} | ${avg((s) => s.elements).toFixed(1).padStart(8)} | ${count('d4')}/${count('d8')}/${count('d12')}/${count('d20')}`)
   }
 }
 

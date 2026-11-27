@@ -1,24 +1,24 @@
 import { describe, it, expect } from 'vitest'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ALL_STYLE_IDS, STYLES, styleCost, styleRule } from '../data/styles'
+import { ALL_GENRE_IDS, GENRES, genreCost, genreRule } from '../data/genres'
 import { DEFAULT_TUNABLES, TUNABLE_FIELDS } from '../data/tunables'
-import { STYLE_META, songbookEntries } from './data'
+import { GENRE_META, songbookEntries } from './data'
 import { Songbook } from './Songbook'
 
 describe('songbook data', () => {
   const entries = songbookEntries()
 
-  it('has an entry for every style in the game, and nothing else', () => {
-    expect(entries.map((e) => e.id).sort()).toEqual([...ALL_STYLE_IDS].sort())
-    expect(Object.keys(STYLE_META).sort()).toEqual([...ALL_STYLE_IDS].sort())
+  it('has an entry for every genre in the game, and nothing else', () => {
+    expect(entries.map((e) => e.id).sort()).toEqual([...ALL_GENRE_IDS].sort())
+    expect(Object.keys(GENRE_META).sort()).toEqual([...ALL_GENRE_IDS].sort())
   })
 
-  it("reads each rule and price live from the game's own style code", () => {
+  it("reads each rule and price live from the game's own genre code", () => {
     for (const e of entries) {
-      expect(e.name).toBe(STYLES[e.id].name)
-      expect(e.rule).toBe(styleRule(e.id))
-      expect(e.price).toBe(styleCost(e.id))
+      expect(e.name).toBe(GENRES[e.id].name)
+      expect(e.rule).toBe(genreRule(e.id))
+      expect(e.price).toBe(genreCost(e.id))
     }
   })
 
@@ -75,12 +75,12 @@ describe('Songbook page', () => {
   it('shows every genre with its rule and price', () => {
     const { container, unmount } = mount()
     expect(container.querySelector('h1')?.textContent).toBe('Songbook')
-    expect(cards(container).sort()).toEqual([...ALL_STYLE_IDS].sort())
-    for (const id of ALL_STYLE_IDS) {
+    expect(cards(container).sort()).toEqual([...ALL_GENRE_IDS].sort())
+    for (const id of ALL_GENRE_IDS) {
       const card = container.querySelector(`article#${id}`)!
-      expect(card.textContent).toContain(STYLES[id].name)
-      expect(card.textContent).toContain(styleRule(id))
-      expect(card.textContent).toContain(`${styleCost(id)} EXP`)
+      expect(card.textContent).toContain(GENRES[id].name)
+      expect(card.textContent).toContain(genreRule(id))
+      expect(card.textContent).toContain(`${genreCost(id)} EXP`)
     }
     unmount()
   })
@@ -90,8 +90,8 @@ describe('Songbook page', () => {
     const search = container.querySelector('input[type="search"]') as HTMLInputElement
 
     typeInto(search, 'immunity')
-    expect(cards(container)).toContain('counterpoint')
-    expect(cards(container)).not.toContain('jam-session')
+    expect(cards(container)).toContain('crossover')
+    expect(cards(container)).not.toContain('mariachi')
 
     typeInto(search, 'zzzz-no-match')
     expect(cards(container)).toHaveLength(0)
@@ -100,8 +100,8 @@ describe('Songbook page', () => {
     typeInto(search, '')
     const lab = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('From the lab'))!
     act(() => lab.click())
-    expect(cards(container)).toContain('jam-session')
-    expect(cards(container)).not.toContain('staccato')
+    expect(cards(container)).toContain('mariachi')
+    expect(cards(container)).not.toContain('gospel')
     expect(cards(container)).toHaveLength(8)
     const fresh = [...container.querySelectorAll('button')].find((b) => b.textContent?.startsWith('New'))!
     act(() => fresh.click())

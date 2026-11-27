@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
-  countTagsByGenre,
+  countTagsByElement,
   createMonsterFromTemplate,
   getHPMultiplier,
   spawnMonstersFromTags,
 } from './monsterSpawner'
-import { Genre, MonsterTemplate } from '@/types'
+import { Element, MonsterTemplate } from '@/types'
 
 describe('Monster Spawner', () => {
   describe('createMonsterFromTemplate', () => {
@@ -148,7 +148,7 @@ describe('Monster Spawner', () => {
     })
 
     it('should spawn one monster per unique genre', () => {
-      const tags: Genre[] = ['Ballad', 'Folk']
+      const tags: Element[] = ['Ballad', 'Folk']
       const monsters = spawnMonstersFromTags(tags, 1)
 
       expect(monsters).toHaveLength(2)
@@ -156,8 +156,8 @@ describe('Monster Spawner', () => {
       expect(monsters[1].level).toBe(1)
     })
 
-    it('should increase level for duplicate genre tags', () => {
-      const tags: Genre[] = ['Ballad', 'Ballad', 'Folk']
+    it('should increase level for duplicate element tags', () => {
+      const tags: Element[] = ['Ballad', 'Ballad', 'Folk']
       const monsters = spawnMonstersFromTags(tags, 1)
 
       expect(monsters).toHaveLength(2)
@@ -168,8 +168,8 @@ describe('Monster Spawner', () => {
       expect(folkMonster).toBeDefined()
     })
 
-    it('should spawn single high-level monster for one genre with many tags', () => {
-      const tags: Genre[] = ['Hymn', 'Hymn', 'Hymn']
+    it('should spawn single high-level monster for one element with many tags', () => {
+      const tags: Element[] = ['Hymn', 'Hymn', 'Hymn']
       const monsters = spawnMonstersFromTags(tags, 1)
 
       expect(monsters).toHaveLength(1)
@@ -177,10 +177,10 @@ describe('Monster Spawner', () => {
     })
   })
 
-  describe('countTagsByGenre', () => {
+  describe('countTagsByElement', () => {
     it('should count each genre occurrence', () => {
-      const tags: Genre[] = ['Ballad', 'Ballad', 'Folk', 'Hymn', 'Folk']
-      const counts = countTagsByGenre(tags)
+      const tags: Element[] = ['Ballad', 'Ballad', 'Folk', 'Hymn', 'Folk']
+      const counts = countTagsByElement(tags)
 
       expect(counts.get('Ballad')).toBe(2)
       expect(counts.get('Folk')).toBe(2)

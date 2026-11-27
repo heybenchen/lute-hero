@@ -1,5 +1,5 @@
-import { BoardSpace as BoardSpaceType, Player, Genre } from '@/types'
-import { GENRE_THEME, playerTokenLabel, readableTextColor } from '@/data/genreTheme'
+import { BoardSpace as BoardSpaceType, Player, Element } from '@/types'
+import { ELEMENT_THEME, playerTokenLabel, readableTextColor } from '@/data/elementTheme'
 import { SPACE_ILLUSTRATIONS } from '@/data/boardIllustrations'
 import { Footprints } from 'lucide-react'
 
@@ -26,12 +26,12 @@ export function BoardSpace({
   const playersHere = players.filter((p) => p.position === space.id)
   const hasMonsters = space.monsters.length > 0
 
-  // Group genre tags by type for compact chip display
-  const genreTagCounts = space.genreTags.reduce<Partial<Record<Genre, number>>>((acc, g) => {
+  // Group element tags by type for compact chip display
+  const elementTagCounts = space.elementTags.reduce<Partial<Record<Element, number>>>((acc, g) => {
     acc[g] = (acc[g] || 0) + 1
     return acc
   }, {})
-  const genreEntries = Object.entries(genreTagCounts) as [Genre, number][]
+  const elementEntries = Object.entries(elementTagCounts) as [Element, number][]
   const illustration = SPACE_ILLUSTRATIONS[space.id]
   // Spaces the player can act on this turn (reachable / current)
   const isReachable = canMoveTo || isCurrentPlayer
@@ -40,7 +40,7 @@ export function BoardSpace({
     <button
       onClick={onClick}
       disabled={!canMoveTo}
-      aria-label={`Move to ${space.name}${canMoveTo && moveCost > 1 ? ` (${moveCost} moves)` : ''}, ${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}, ${space.genreTags.join(', ') || 'no element tags'}`}
+      aria-label={`Move to ${space.name}${canMoveTo && moveCost > 1 ? ` (${moveCost} moves)` : ''}, ${space.monsters.length} monster${space.monsters.length === 1 ? '' : 's'}, ${space.elementTags.join(', ') || 'no element tags'}`}
       className={`
         board-space-tile group relative sm:hover:z-40 w-full aspect-square
         flex flex-col justify-between p-1.5 sm:p-2
@@ -121,19 +121,19 @@ export function BoardSpace({
       </div>
 
       <div className="relative z-20 min-h-[16px] sm:min-h-[20px] flex items-end justify-center">
-        {genreEntries.length > 0 && (
+        {elementEntries.length > 0 && (
           <div className="chip-rack flex gap-0.5 sm:gap-1 justify-center max-w-full">
-            {genreEntries.map(([genre, count]) => {
-              const { color } = GENRE_THEME[genre]
+            {elementEntries.map(([element, count]) => {
+              const { color } = ELEMENT_THEME[element]
               return (
                 <div
-                  key={genre}
+                  key={element}
                 className="element-chip flex items-center justify-center leading-none"
                   style={{
                     background: color,
                     boxShadow: `0 0 5px ${color}70, 0 1px 2px rgba(0,0,0,0.55)`,
                   }}
-                  title={`${genre}: ${count} tag${count > 1 ? 's' : ''}`}
+                  title={`${element}: ${count} tag${count > 1 ? 's' : ''}`}
                 >
                   <span
                     className="text-[10px] sm:text-xs font-bold tabular-nums"

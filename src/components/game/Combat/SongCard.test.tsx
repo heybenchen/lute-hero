@@ -9,7 +9,7 @@ import { makeReroll } from './reroll'
 const song: Song = {
   id: 's1',
   used: false,
-  slots: [{ dice: { id: 'd1', type: 'd8', genre: 'Ballad' } }],
+  slots: [{ dice: { id: 'd1', type: 'd8', element: 'Ballad' } }],
 }
 
 function mount(node: React.ReactNode) {

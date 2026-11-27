@@ -1,6 +1,6 @@
 import { Song, SongSlot, DiceRoll } from '@/types'
 import { DiceShape } from '@/components/ui/DiceShape'
-import { GENRE_THEME } from '@/data/genreTheme'
+import { ELEMENT_THEME } from '@/data/elementTheme'
 import { Ban, RotateCcw } from 'lucide-react'
 import { RerollPill } from './RerollPill'
 import type { RerollOption } from './reroll'
@@ -27,24 +27,24 @@ interface SongCardProps {
  * view holds new rolls back until the 3D dice land, then shows the result.
  */
 function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
-  const genreColor = slot.dice ? GENRE_THEME[slot.dice.genre].color : ''
+  const elementColor = slot.dice ? ELEMENT_THEME[slot.dice.element].color : ''
   const displayValue = roll?.value
   const isCrit = roll?.isCrit ?? false
   const cascadeSum = roll?.cascadeRolls?.reduce((s, v) => s + v, 0) ?? 0
-  const styleBonus = roll?.bonus ?? 0
+  const genreBonus = roll?.bonus ?? 0
 
   return (
     <div
       className="flex h-[64px] min-w-0 flex-1 flex-col items-center justify-center rounded-md text-xs"
       style={{
-        background: genreColor ? `${genreColor}1f` : 'rgba(255, 255, 255, 0.02)',
-        border: genreColor ? `1px solid ${genreColor}80` : '1px dashed rgba(212, 168, 83, 0.12)',
-        boxShadow: isCrit ? `0 0 10px ${genreColor}80` : undefined,
+        background: elementColor ? `${elementColor}1f` : 'rgba(255, 255, 255, 0.02)',
+        border: elementColor ? `1px solid ${elementColor}80` : '1px dashed rgba(212, 168, 83, 0.12)',
+        boxShadow: isCrit ? `0 0 10px ${elementColor}80` : undefined,
       }}
     >
       {slot.dice ? (
         <div className="text-center">
-          <div className="text-xl leading-none mb-0.5" style={{ color: genreColor }}>
+          <div className="text-xl leading-none mb-0.5" style={{ color: elementColor }}>
             <DiceShape type={slot.dice.type} />
           </div>
           {displayValue !== undefined ? (
@@ -53,15 +53,15 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
               style={{ color: isCrit ? '#f0d78c' : '#e8dcc0' }}
             >
               {displayValue}
-              {styleBonus > 0 && (
-                <span className="ml-0.5 align-top text-[10px] text-amber-300" title="Genre bonus">+{styleBonus}</span>
+              {genreBonus > 0 && (
+                <span className="ml-0.5 align-top text-[10px] text-amber-300" title="Genre bonus">+{genreBonus}</span>
               )}
               {cascadeSum > 0 && (
                 <span className="ml-0.5 align-top text-[10px] text-gold-400" title="Crit bonus dice">+{cascadeSum}</span>
               )}
             </div>
           ) : (
-            <div className="mt-1 text-[11px] font-bold leading-none" style={{ color: genreColor }}>{slot.dice.genre}</div>
+            <div className="mt-1 text-[11px] font-bold leading-none" style={{ color: elementColor }}>{slot.dice.element}</div>
           )}
         </div>
       ) : (
@@ -102,7 +102,7 @@ export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, r
             type="button"
             onClick={playable ? onPlay : undefined}
             disabled={!playable}
-            aria-label={playable ? `Perform song ${index + 1}: ${song.slots.flatMap(({ dice }) => dice ? [`${dice.genre} ${dice.type}`] : []).join(', ')}${resisted ? ', immune: counts for nothing' : ''}` : undefined}
+            aria-label={playable ? `Perform song ${index + 1}: ${song.slots.flatMap(({ dice }) => dice ? [`${dice.element} ${dice.type}`] : []).join(', ')}${resisted ? ', immune: counts for nothing' : ''}` : undefined}
             title={resisted ? 'Immune: these dice count for nothing' : undefined}
             className={`relative flex w-full flex-col rounded-md transition-all duration-200 ${
               playable ? 'cursor-pointer hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-400' : 'cursor-default'

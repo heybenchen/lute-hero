@@ -18,7 +18,7 @@ it('takes a solo bard from the first chord through the winner highlight without 
   try {
     const store = useGameStore.getState()
     store.startHotseat()
-    await store.dispatch({ type: 'START_GAME', playerConfigs: [{ name: 'Lyra', starterGenre: 'Folk', color: '#4caf50' }] })
+    await store.dispatch({ type: 'START_GAME', playerConfigs: [{ name: 'Lyra', starterElement: 'Folk', color: '#4caf50' }] })
     await store.dispatch({ type: 'DEBUG_SIMULATE', round: 1, showdown: true })
     await act(async () => root.render(<FinalShowdown />))
     await click(/Face the Silence/)
@@ -54,21 +54,21 @@ it('marks the dice the Silence is immune to, unless Dissonance softens the hit',
   try {
     const store = useGameStore.getState()
     store.startHotseat()
-    await store.dispatch({ type: 'START_GAME', playerConfigs: [{ name: 'Lyra', starterGenre: 'Folk', color: '#4caf50' }] })
+    await store.dispatch({ type: 'START_GAME', playerConfigs: [{ name: 'Lyra', starterElement: 'Folk', color: '#4caf50' }] })
     await store.dispatch({ type: 'DEBUG_SIMULATE', round: 1, showdown: true })
     const songs = useGameStore.getState().players[0].songs
-    const genres = songs.flatMap((s) => (s.slots[0].dice ? [s.slots[0].dice.genre] : []))
-    const immune = genres[0]
-    useGameStore.setState({ showdownResistGenre: immune })
+    const elements = songs.flatMap((s) => (s.slots[0].dice ? [s.slots[0].dice.element] : []))
+    const immune = elements[0]
+    useGameStore.setState({ showdownResistElement: immune })
     await act(async () => root.render(<FinalShowdown />))
     const begin = Array.from(host.querySelectorAll('button')).find((b) => /Face the Silence/.test(b.textContent ?? ''))
     if (begin) await act(async () => begin.click())
 
     // One icon per song of the immune element, nothing else
-    expect(host.querySelectorAll('.song-grid [data-immune]')).toHaveLength(genres.filter((g) => g === immune).length)
+    expect(host.querySelectorAll('.song-grid [data-immune]')).toHaveLength(elements.filter((g) => g === immune).length)
 
     // Dissonance (full damage against immunity by default) means nothing is dealt zero
-    useGameStore.setState({ players: useGameStore.getState().players.map((p) => ({ ...p, styles: ['counterpoint'] })) })
+    useGameStore.setState({ players: useGameStore.getState().players.map((p) => ({ ...p, genres: ['crossover'] })) })
     await act(async () => root.render(<FinalShowdown />))
     expect(host.querySelectorAll('.song-grid [data-immune]')).toHaveLength(0)
   } finally {

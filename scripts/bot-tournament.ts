@@ -16,8 +16,8 @@ import { createInitialEngineState, EngineState } from '../src/engine/state.js'
 import { Bot, expectedDieValue } from '../src/sim/bot.js'
 import { SmartBot, SmartParams } from '../src/sim/smartBot.js'
 import { mulberry32 } from '../src/engine/rng.js'
-import { ALL_GENRES } from '../src/data/genreTheme.js'
-import type { Genre } from '../src/types/index.js'
+import { ALL_ELEMENTS } from '../src/data/elementTheme.js'
+import type { Element } from '../src/types/index.js'
 
 const GAMES = Number(process.argv[2] ?? 300)
 const LINEUP = (process.argv[3] ?? 'SBB').split('') as ('S' | 'V' | 'B' | 'X')[]
@@ -29,15 +29,15 @@ const TUNE = JSON.parse(process.env.TUNE ?? '{}')
 /** The baseline's showdown: the element with the highest expected total, no rerolls. */
 function baselineShowdownTurn(s: EngineState, ctx: ActionCtx): EngineState {
   const performer = s.players.find((p) => p.id === s.showdownOrder[s.showdownPerformerIdx])!
-  const byGenre = new Map<Genre, { total: number; songId: string }>()
+  const byElement = new Map<Element, { total: number; songId: string }>()
   for (const song of performer.songs) {
     const d = song.slots[0]?.dice
-    if (!d || d.genre === s.showdownResistGenre) continue
-    const e = byGenre.get(d.genre) ?? { total: 0, songId: song.id }
+    if (!d || d.element === s.showdownResistElement) continue
+    const e = byElement.get(d.element) ?? { total: 0, songId: song.id }
     e.total += expectedDieValue(d.type)
-    byGenre.set(d.genre, e)
+    byElement.set(d.element, e)
   }
-  const best = [...byGenre.values()].sort((a, b) => b.total - a.total)[0]
+  const best = [...byElement.values()].sort((a, b) => b.total - a.total)[0]
   const songId = best?.songId ?? performer.songs.find((sg) => sg.slots[0]?.dice)?.id
   let next = s
   if (songId) {
@@ -52,10 +52,10 @@ function game(seed: number) {
   const rng = mulberry32(seed)
   const ctx: ActionCtx = { rng, actor: { kind: 'hotseat' } }
   const n = LINEUP.length
-  const genres = [...ALL_GENRES].sort(() => rng() - 0.5).slice(0, n)
+  const elements = [...ALL_ELEMENTS].sort(() => rng() - 0.5).slice(0, n)
   const seats = [...LINEUP].sort(() => rng() - 0.5)
   const init = createInitialEngineState()
-  const started = applyAction({ ...init, tunables: { ...init.tunables, ...TUNE } }, { type: 'START_GAME', playerConfigs: genres.map((g, i) => ({ name: `P${i}`, starterGenre: g })) }, ctx)
+  const started = applyAction({ ...init, tunables: { ...init.tunables, ...TUNE } }, { type: 'START_GAME', playerConfigs: elements.map((g, i) => ({ name: `P${i}`, starterElement: g })) }, ctx)
   if (!started.ok) throw new Error(started.message)
   let s = started.state
   const smart = new SmartBot(s, rng, PARAMS)

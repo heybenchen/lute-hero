@@ -1,10 +1,10 @@
-// KEEP IN SYNC: songStyles.md (repo root) documents every genre's rule, price, tunables and simulated strength. When you change genre logic, rule text, a price or a genre tunable's default, or add or remove a genre, update songStyles.md in the same change.
-import { StyleId } from '../types/index.js'
+// KEEP IN SYNC: genres.md (repo root) documents every genre's rule, price, tunables and simulated strength. When you change genre logic, rule text, a price or a genre tunable's default, or add or remove a genre, update genres.md in the same change.
+import { GenreId } from '../types/index.js'
 import { getTunables } from './tunables.js'
 
 /**
- * Genres (called "styles" in code): Studio purchases that change how ALL of a
- * bard's songs play. A bard holds at most `maxStyles` (default 2). Two are on
+ * Genres (called "genres" in code): Studio purchases that change how ALL of a
+ * bard's songs play. A bard holds at most `maxGenres` (default 2). Two are on
  * offer at a time, kept between turns with empty slots refilled; Inspiration
  * redraws them on demand.
  *
@@ -17,133 +17,133 @@ import { getTunables } from './tunables.js'
  * names) and stay fixed so saved games keep their genres; players only ever
  * see `name`.
  */
-export interface StyleDef {
-  id: StyleId
+export interface GenreDef {
+  id: GenreId
   /** Player-facing genre name. */
   name: string
   /** A line of flavour shown under the name, about the bard. */
   flavor: string
-  /** The rule, as printed on the card (with default numbers; `styleRule` gives the live text). */
+  /** The rule, as printed on the card (with default numbers; `genreRule` gives the live text). */
   rule: string
 }
 
-export const STYLES: Record<StyleId, StyleDef> = {
-  staccato: {
-    id: 'staccato',
+export const GENRES: Record<GenreId, GenreDef> = {
+  gospel: {
+    id: 'gospel',
     name: 'Gospel',
     flavor: 'Believe it, sing it, and it comes to pass.',
     rule: "Once per turn before rolling, declare that the next roll will win over a monster. If you're right, refresh any spent song.",
   },
-  coda: {
-    id: 'coda',
+  'new-age': {
+    id: 'new-age',
     name: 'New Age',
     flavor: 'There\'s always room for one more sound.',
     rule: 'Gain a 7th song slot. If you replace this genre, you must pick a song to give up.',
   },
-  ostinato: {
-    id: 'ostinato',
+  indie: {
+    id: 'indie',
     name: 'Indie',
     flavor: 'Rough edges, big moments.',
     rule: 'All your dice crit one number lower. Does not affect bonus dice.',
   },
-  rubato: {
-    id: 'rubato',
+  bebop: {
+    id: 'bebop',
     name: 'Bebop',
     flavor: 'There are no wrong notes, only the next one.',
     rule: 'Once per turn, re-roll the die you just rolled and keep the higher result.',
   },
-  virtuoso: {
-    id: 'virtuoso',
+  bluegrass: {
+    id: 'bluegrass',
     name: 'Bluegrass',
     flavor: 'Faster than the eye, sharper than the ear.',
     rule: 'You may roll your d8 dice twice and keep the higher roll. Does not affect bonus dice.',
   },
-  fortissimo: {
-    id: 'fortissimo',
+  opera: {
+    id: 'opera',
     name: 'Opera',
     flavor: 'It isn\'t over until you sing.',
     rule: 'Increase the rolled value of your d20s by 2.',
   },
-  fermata: {
-    id: 'fermata',
+  blues: {
+    id: 'blues',
     name: 'Blues',
     flavor: 'You\'ve lost before. You play on anyway.',
     rule: 'Once per turn, you may refresh a spent d20 song for 1 Inspiration.',
   },
-  counterpoint: {
-    id: 'counterpoint',
+  crossover: {
+    id: 'crossover',
     name: 'Crossover',
     flavor: 'Even the deaf-eared ones tap along.',
     rule: 'Once per turn, a song ignores immunity.',
   },
-  tutti: {
-    id: 'tutti',
+  barbershop: {
+    id: 'barbershop',
     name: 'Barbershop',
     flavor: 'Fire, earth, wind and wave, in four-part harmony.',
     rule: 'When you have all four elements in your setlist, add +1 to each song.',
   },
-  overture: {
-    id: 'overture',
+  screamo: {
+    id: 'screamo',
     name: 'Screamo',
     flavor: 'Open with a scream; they\'ll remember it.',
     rule: 'Add +3 to your first song each turn.',
   },
-  bravo: {
-    id: 'bravo',
+  disco: {
+    id: 'disco',
     name: 'Disco',
     flavor: 'The bigger the beast, the brighter the mirror ball.',
     rule: 'Gain +10 Fame for every Lv3+ monster you win over.',
   },
-  ispirato: {
-    id: 'ispirato',
+  pop: {
+    id: 'pop',
     name: 'Pop',
     flavor: 'That hook won\'t leave your head.',
     rule: "Gain 2 Inspiration before each concert.",
   },
-  'hometown-hero': {
-    id: 'hometown-hero',
+  'country': {
+    id: 'country',
     name: 'Country',
     flavor: 'The songs of home never miss a beat.',
     rule: 'Increase the rolled value of all dice matching your starting element by 1.',
   },
-  'studio-regular': {
-    id: 'studio-regular',
+  'lo-fi': {
+    id: 'lo-fi',
     name: 'Lo-fi',
     flavor: 'Borrowed gear, cheap strings, still sounds great.',
     rule: 'Upgrades cost 1 less EXP.',
   },
-  'inspired-play': {
-    id: 'inspired-play',
+  'soul': {
+    id: 'soul',
     name: 'Soul',
     flavor: 'Play it like you mean it.',
     rule: "If you started this turn with 2+ Inspiration, spend 1 Inspiration to add +2 to every song.",
   },
-  'steady-hands': {
-    id: 'steady-hands',
+  'baroque': {
+    id: 'baroque',
     name: 'Baroque',
     flavor: 'Practised until it can\'t go wrong.',
     rule: 'Whenever a die roll is 3 or less, increase its rolled value by 1. Does not affect bonus dice.',
   },
-  'street-performer': {
-    id: 'street-performer',
+  'rap': {
+    id: 'rap',
     name: 'Rap',
     flavor: 'Every bar pays its keep.',
     rule: 'Gain 2 EXP at the start of each turn.',
   },
-  'chain-reaction': {
-    id: 'chain-reaction',
+  'house': {
+    id: 'house',
     name: 'House',
     flavor: 'The beat drops, and drops again.',
     rule: 'Add +2 to each song for each same-element song played just before it. Reduced to +1 in the Final Showdown.',
   },
-  'swarm-singer': {
-    id: 'swarm-singer',
+  'orchestra': {
+    id: 'orchestra',
     name: 'Orchestra',
     flavor: 'The bigger the hall, the fuller the sound.',
     rule: 'While there are 3+ monsters remaining, increase the rolled value of all dice by 1.',
   },
-  'jam-session': {
-    id: 'jam-session',
+  'mariachi': {
+    id: 'mariachi',
     name: 'Mariachi',
     flavor: 'Nobody plays mariachi alone.',
     rule: 'While sharing a space with another bard, add +2 to each song.',
@@ -210,48 +210,48 @@ export const STYLES: Record<StyleId, StyleDef> = {
   },
 }
 
-export const ALL_STYLE_IDS = Object.keys(STYLES) as StyleId[]
+export const ALL_GENRE_IDS = Object.keys(GENRES) as GenreId[]
 
 /** EXP price of a genre, from the live tunables. */
-export function styleCost(id: StyleId): number {
+export function genreCost(id: GenreId): number {
   const t = getTunables()
   switch (id) {
-    case 'staccato': return t.styleCostStaccato
-    case 'coda': return t.styleCostCoda
-    case 'ostinato': return t.styleCostOstinato
-    case 'rubato': return t.styleCostRubato
-    case 'virtuoso': return t.styleCostVirtuoso
-    case 'fortissimo': return t.styleCostFortissimo
-    case 'fermata': return t.styleCostFermata
-    case 'counterpoint': return t.styleCostCounterpoint
-    case 'tutti': return t.styleCostTutti
-    case 'overture': return t.styleCostOverture
-    case 'bravo': return t.styleCostBravo
-    case 'ispirato': return t.styleCostIspirato
-    case 'hometown-hero': return t.styleCostHometownHero
-    case 'studio-regular': return t.styleCostStudioRegular
-    case 'inspired-play': return t.styleCostInspiredPlay
-    case 'steady-hands': return t.styleCostSteadyHands
-    case 'street-performer': return t.styleCostStreetPerformer
-    case 'chain-reaction': return t.styleCostChainReaction
-    case 'swarm-singer': return t.styleCostSwarmSinger
-    case 'jam-session': return t.styleCostJamSession
-    case 'punk': return t.styleCostPunk
-    case 'soft-rock': return t.styleCostSoftRock
-    case 'prog-rock': return t.styleCostProgRock
-    case 'ska': return t.styleCostSka
-    case 'k-pop': return t.styleCostKPop
-    case 'emo': return t.styleCostEmo
-    case 'trance': return t.styleCostTrance
-    case 'grunge': return t.styleCostGrunge
-    case 'dubstep': return t.styleCostDubstep
-    case 'trip-hop': return t.styleCostTripHop
+    case 'gospel': return t.genreCostGospel
+    case 'new-age': return t.genreCostNewAge
+    case 'indie': return t.genreCostIndie
+    case 'bebop': return t.genreCostBebop
+    case 'bluegrass': return t.genreCostBluegrass
+    case 'opera': return t.genreCostOpera
+    case 'blues': return t.genreCostBlues
+    case 'crossover': return t.genreCostCrossover
+    case 'barbershop': return t.genreCostBarbershop
+    case 'screamo': return t.genreCostScreamo
+    case 'disco': return t.genreCostDisco
+    case 'pop': return t.genreCostPop
+    case 'country': return t.genreCostCountry
+    case 'lo-fi': return t.genreCostLoFi
+    case 'soul': return t.genreCostSoul
+    case 'baroque': return t.genreCostBaroque
+    case 'rap': return t.genreCostRap
+    case 'house': return t.genreCostHouse
+    case 'orchestra': return t.genreCostOrchestra
+    case 'mariachi': return t.genreCostMariachi
+    case 'punk': return t.genreCostPunk
+    case 'soft-rock': return t.genreCostSoftRock
+    case 'prog-rock': return t.genreCostProgRock
+    case 'ska': return t.genreCostSka
+    case 'k-pop': return t.genreCostKPop
+    case 'emo': return t.genreCostEmo
+    case 'trance': return t.genreCostTrance
+    case 'grunge': return t.genreCostGrunge
+    case 'dubstep': return t.genreCostDubstep
+    case 'trip-hop': return t.genreCostTripHop
   }
 }
 
-/** The tunable key holding a genre's price ('styleCostHometownHero', …). */
-export function styleCostKey(id: StyleId): string {
-  return 'styleCost' + id.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join('')
+/** The tunable key holding a genre's price ('genreCostCountry', …). */
+export function genreCostKey(id: GenreId): string {
+  return 'genreCost' + id.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join('')
 }
 
 /** The dice in a size range given in faces: ['d4', 'd8'], … */
@@ -291,68 +291,68 @@ function ordinal(n: number): string {
  *  - "increase the rolled value": changes the face itself, so the die can crit
  *    (and combine with other genres that act on the face).
  */
-export function styleRule(id: StyleId): string {
+export function genreRule(id: GenreId): string {
   const t = getTunables()
   switch (id) {
-    case 'fortissimo': return t.fortissimoRaisesFace
-      ? `Increase the rolled value of your d20s by ${t.fortissimoBonus}.`
-      : `Add +${t.fortissimoBonus} to every d20 song.`
-    case 'overture': return `Add +${t.overtureBonus} to your first song each turn.`
-    case 'tutti': return t.tuttiElements >= 4
-      ? `When you have all four elements in your setlist, add +${t.tuttiBonus} to each song.`
-      : `When you have ${t.tuttiElements}+ elements in your setlist, add +${t.tuttiBonus} to each song.`
-    case 'ostinato': {
-      const lower = 4 - t.ostinatoCritFace
+    case 'opera': return t.operaRaisesFace
+      ? `Increase the rolled value of your d20s by ${t.operaBonus}.`
+      : `Add +${t.operaBonus} to every d20 song.`
+    case 'screamo': return `Add +${t.screamoBonus} to your first song each turn.`
+    case 'barbershop': return t.barbershopElements >= 4
+      ? `When you have all four elements in your setlist, add +${t.barbershopBonus} to each song.`
+      : `When you have ${t.barbershopElements}+ elements in your setlist, add +${t.barbershopBonus} to each song.`
+    case 'indie': {
+      const lower = 4 - t.indieCritFace
       const by = lower === 1 ? 'one number' : `${lower} numbers`
-      const which = t.ostinatoMaxFaces >= 20 ? 'All your dice' : `Your ${dieRange(4, t.ostinatoMaxFaces)} dice`
-      const chain = t.ostinatoChainFace < 4
-        ? ` Bonus dice keep chaining${t.ostinatoChainFace === 3 ? ' one number lower' : ' on lower numbers'}.`
+      const which = t.indieMaxFaces >= 20 ? 'All your dice' : `Your ${dieRange(4, t.indieMaxFaces)} dice`
+      const chain = t.indieChainFace < 4
+        ? ` Bonus dice keep chaining${t.indieChainFace === 3 ? ' one number lower' : ' on lower numbers'}.`
         : ' Does not affect bonus dice.'
-      const extra = t.ostinatoCascadeBonus ? `. Bonus dice add +${t.ostinatoCascadeBonus}.` : chain
+      const extra = t.indieCascadeBonus ? `. Bonus dice add +${t.indieCascadeBonus}.` : chain
       return `${which} crit ${by} lower.${extra}`
     }
-    case 'bravo': return t.bravoMinLevel > 1
-      ? `Gain +${t.bravoFamePerTame} Fame for every Lv${t.bravoMinLevel}+ monster you win over.`
-      : `Gain +${t.bravoFamePerTame} Fame for every monster you win over.`
-    case 'fermata': {
-      const pay = t.fermataInspirationCost > 0 ? ` for ${t.fermataInspirationCost} Inspiration` : ''
-      return `Once per turn, you may refresh a spent ${dieRange(t.fermataMinFaces, 20)} song${pay}.`
+    case 'disco': return t.discoMinLevel > 1
+      ? `Gain +${t.discoFamePerTame} Fame for every Lv${t.discoMinLevel}+ monster you win over.`
+      : `Gain +${t.discoFamePerTame} Fame for every monster you win over.`
+    case 'blues': {
+      const pay = t.bluesInspirationCost > 0 ? ` for ${t.bluesInspirationCost} Inspiration` : ''
+      return `Once per turn, you may refresh a spent ${dieRange(t.bluesMinFaces, 20)} song${pay}.`
     }
-    case 'staccato': {
-      const which = t.staccatoMaxFaces >= 20 ? 'any spent song' : `a spent ${diceIn(4, t.staccatoMaxFaces).join('/')}`
+    case 'gospel': {
+      const which = t.gospelMaxFaces >= 20 ? 'any spent song' : `a spent ${diceIn(4, t.gospelMaxFaces).join('/')}`
       return `Once per turn before rolling, declare that the next roll will win over a monster. If you're right, refresh ${which}.`
     }
-    case 'rubato': {
-      const times = t.rubatoUsesPerTurn === 1 ? 'Once' : t.rubatoUsesPerTurn === 2 ? 'Twice' : `${t.rubatoUsesPerTurn} times`
-      const which = t.rubatoMaxFaces >= 20 ? 'the die' : `a ${dieRange(4, t.rubatoMaxFaces)} die`
+    case 'bebop': {
+      const times = t.bebopUsesPerTurn === 1 ? 'Once' : t.bebopUsesPerTurn === 2 ? 'Twice' : `${t.bebopUsesPerTurn} times`
+      const which = t.bebopMaxFaces >= 20 ? 'the die' : `a ${dieRange(4, t.bebopMaxFaces)} die`
       return `${times} per turn, re-roll ${which} you just rolled and keep the higher result.`
     }
-    case 'virtuoso': return `You may roll your ${diceAnd(t.virtuosoMinFaces, t.virtuosoMaxFaces)} dice twice and keep the higher roll. Does not affect bonus dice.`
-    case 'counterpoint': {
-      const m = t.counterpointMultiplier
+    case 'bluegrass': return `You may roll your ${diceAnd(t.bluegrassMinFaces, t.bluegrassMaxFaces)} dice twice and keep the higher roll. Does not affect bonus dice.`
+    case 'crossover': {
+      const m = t.crossoverMultiplier
       const share = m === 0.75 ? '¾' : m === 0.5 ? 'half' : m === 0.25 ? '¼' : `${Math.round(m * 100)}%`
       return m >= 1
         ? 'Once per turn, a song ignores immunity.'
         : `Once per turn, a song counts for ${share} against an immune monster instead of nothing.`
     }
-    case 'ispirato': {
-      const gain = `Gain ${t.ispiratoPerTurn} Inspiration before each concert`
-      return t.ispiratoMin > t.ispiratoPerTurn ? `${gain} (and start it with at least ${t.ispiratoMin}).` : `${gain}.`
+    case 'pop': {
+      const gain = `Gain ${t.popPerTurn} Inspiration before each concert`
+      return t.popMin > t.popPerTurn ? `${gain} (and start it with at least ${t.popMin}).` : `${gain}.`
     }
-    case 'hometown-hero': return `Increase the rolled value of all dice matching your starting element by ${t.hometownHeroBonus}.`
-    case 'steady-hands': return `Whenever a die roll is ${t.steadyHandsAtMost} or less, increase its rolled value by ${t.steadyHandsBonus}. Does not affect bonus dice.`
-    case 'street-performer': return `Gain ${t.streetPerformerExp} EXP at the start of each turn.`
-    case 'studio-regular': return `Upgrades cost ${t.studioRegularDiscount} less EXP.`
-    case 'inspired-play': return `If you started this turn with ${t.inspiredPlayMin}+ Inspiration, spend ${t.inspiredPlayCost} Inspiration to add +${t.inspiredPlayBonus} to every song.`
-    case 'chain-reaction': {
-      const cap = t.chainReactionCap > 0 ? ` (max +${t.chainReactionCap})` : ''
-      const showdown = t.chainReactionShowdownBonus !== t.chainReactionBonus
-        ? ` Reduced to +${t.chainReactionShowdownBonus} in the Final Showdown.`
+    case 'country': return `Increase the rolled value of all dice matching your starting element by ${t.countryBonus}.`
+    case 'baroque': return `Whenever a die roll is ${t.baroqueAtMost} or less, increase its rolled value by ${t.baroqueBonus}. Does not affect bonus dice.`
+    case 'rap': return `Gain ${t.rapExp} EXP at the start of each turn.`
+    case 'lo-fi': return `Upgrades cost ${t.loFiDiscount} less EXP.`
+    case 'soul': return `If you started this turn with ${t.soulMin}+ Inspiration, spend ${t.soulCost} Inspiration to add +${t.soulBonus} to every song.`
+    case 'house': {
+      const cap = t.houseCap > 0 ? ` (max +${t.houseCap})` : ''
+      const showdown = t.houseShowdownBonus !== t.houseBonus
+        ? ` Reduced to +${t.houseShowdownBonus} in the Final Showdown.`
         : ''
-      return `Add +${t.chainReactionBonus} to each song for each same-element song played just before it${cap}.${showdown}`
+      return `Add +${t.houseBonus} to each song for each same-element song played just before it${cap}.${showdown}`
     }
-    case 'swarm-singer': return `While there are ${t.swarmSingerMin}+ monsters remaining, increase the rolled value of all dice by ${t.swarmSingerBonus}.`
-    case 'jam-session': return `While sharing a space with another bard, add +${t.jamSessionBonus} to each song.`
+    case 'orchestra': return `While there are ${t.orchestraMin}+ monsters remaining, increase the rolled value of all dice by ${t.orchestraBonus}.`
+    case 'mariachi': return `While sharing a space with another bard, add +${t.mariachiBonus} to each song.`
     case 'punk': return `Whenever you crit, add +${t.punkBonus} to the song.`
     case 'soft-rock': return `Increase the rolled value of your d8s and d12s by ${t.softRockBonus}.`
     case 'prog-rock': return `Your ${ordinal(t.progRockFrom)} and later songs in a concert add +${t.progRockBonus}.`
@@ -371,17 +371,17 @@ export function styleRule(id: StyleId): string {
       return `${t.dubstepOncePerTurn ? 'Once per turn, after' : 'After'} winning over a monster, your next song ${what}.`
     }
     case 'trip-hop': return 'Once per turn, move to any space on the board.'
-    default: return STYLES[id].rule
+    default: return GENRES[id].rule
   }
 }
 
-export const maxStyles = () => getTunables().maxStyles
-export const styleOfferCount = () => getTunables().styleOfferCount
+export const maxGenres = () => getTunables().maxGenres
+export const genreOfferCount = () => getTunables().genreOfferCount
 
-/** Draw `count` distinct styles at random, skipping any in `exclude`. */
-export function drawStyleOffers(count: number, exclude: StyleId[], rng: () => number): StyleId[] {
-  const pool = ALL_STYLE_IDS.filter((id) => !exclude.includes(id))
-  const offers: StyleId[] = []
+/** Draw `count` distinct genres at random, skipping any in `exclude`. */
+export function drawGenreOffers(count: number, exclude: GenreId[], rng: () => number): GenreId[] {
+  const pool = ALL_GENRE_IDS.filter((id) => !exclude.includes(id))
+  const offers: GenreId[] = []
   while (offers.length < count && pool.length > 0) {
     offers.push(pool.splice(Math.floor(rng() * pool.length), 1)[0])
   }

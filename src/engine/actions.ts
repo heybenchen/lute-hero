@@ -1,4 +1,4 @@
-import { Genre, GamePhase, DiceType, StyleId } from '../types/index.js'
+import { Element, GamePhase, DiceType, GenreId } from '../types/index.js'
 import { SimulationPace } from '../data/simulationPaces.js'
 import type { Tunables } from '../data/tunables.js'
 import type { EngineState } from './state.js'
@@ -21,7 +21,7 @@ export interface DebugPatch {
     finalTurnGranted: boolean
   }>
   /** Per space id: the exact chip list that space should hold. */
-  spaceTags?: Record<number, Genre[]>
+  spaceTags?: Record<number, Element[]>
   /** Per monster id (in the active combat): current HP. */
   combatMonsterHp?: Record<string, number>
   /** Re-derive every space's monsters from its chips after applying the patch. */
@@ -36,8 +36,8 @@ export interface DebugPlayerFields {
   movesThisTurn: number
   fightsThisTurn: number
   monstersDefeated: number
-  /** Replace the player's styles (unknown ids dropped, Coda's song kept in sync). */
-  styles: StyleId[]
+  /** Replace the player's genres (unknown ids dropped, New Age's song kept in sync). */
+  genres: GenreId[]
 }
 
 /** One dice-slot edit: set the slot's die, or clear it with `dice: null`. */
@@ -45,14 +45,14 @@ export interface DebugDiceEdit {
   playerId: string
   songId: string
   slotIndex: number
-  dice: { type: DiceType; genre: Genre } | null
+  dice: { type: DiceType; element: Element } | null
 }
 
 /** One player's setup choices, supplied when the game starts. */
 export interface PlayerConfig {
   name: string
   /** Each bard needs a different element; it also sets their color. */
-  starterGenre: Genre
+  starterElement: Element
   /** Ignored: kept so older clients' payloads still validate. */
   color?: string
 }
@@ -71,12 +71,12 @@ export type GameAction =
   | { type: 'START_COMBAT'; playerId: string }
   /**
    * Play a song at one monster. `inspiredPlay`: Soul pays Inspiration once for a bonus on every
-   * song this concert. `staccatoCall`: Gospel declares this roll will win its monster over (once per turn).
+   * song this concert. `gospelCall`: Gospel declares this roll will win its monster over (once per turn).
    * `emoFinale`: Emo declares this the last song of the concert for a bonus; no song can follow it.
    */
-  | { type: 'PLAY_SONG'; songId: string; targetMonsterId: string; inspiredPlay?: boolean; staccatoCall?: boolean; emoFinale?: boolean }
-  /** Spend Inspiration to reroll the last song; `rubato` makes it free (once per turn, d4/d8). */
-  | { type: 'REROLL_SONG'; rubato?: boolean }
+  | { type: 'PLAY_SONG'; songId: string; targetMonsterId: string; soul?: boolean; gospelCall?: boolean; emoFinale?: boolean }
+  /** Spend Inspiration to reroll the last song; `bebop` makes it free (once per turn, d4/d8). */
+  | { type: 'REROLL_SONG'; bebop?: boolean }
   /** Rallying Cry: after a tame this turn, refresh one of your spent songs. */
   | { type: 'RALLY_SONG'; songId: string }
   /** Blues (Lingering Note): pay Inspiration to refresh one spent d20 song, once per turn. */
@@ -90,24 +90,24 @@ export type GameAction =
   | { type: 'REQUEST_FEATURE'; guestPlayerId: string; songId: string; targetMonsterId: string }
   /** The guest agrees (the song plays) or declines; the fighter may withdraw with `accept: false`. */
   | { type: 'ANSWER_FEATURE'; accept: boolean }
-  | { type: 'SELECT_COMBAT_SPREAD'; genre: Genre | null }
-  | { type: 'END_COMBAT'; spreadGenre?: Genre }
+  | { type: 'SELECT_COMBAT_SPREAD'; element: Element | null }
+  | { type: 'END_COMBAT'; spreadElement?: Element }
   | { type: 'END_TURN' }
   | { type: 'OPEN_STUDIO'; playerId: string }
   | { type: 'CLOSE_STUDIO' }
   | { type: 'SELECT_STUDIO_OFFER'; offerIndex: number | null }
   | { type: 'SELECT_STUDIO_REWARD'; rewardId: string | null }
-  | { type: 'BUY_DIE'; offerIndex: number; destination?: { songId: string; previousDieId: string | null; genre: Genre } }
+  | { type: 'BUY_DIE'; offerIndex: number; destination?: { songId: string; previousDieId: string | null; element: Element } }
   | { type: 'UPGRADE_DIE'; offerIndex: number; diceId: string }
   | { type: 'REFRESH_ELEMENT_OFFERS' }
   | { type: 'SLOT_DIE_REWARD'; rewardId: string; songId: string; slotIndex: number }
   | { type: 'BUY_INSPIRATION' }
-  /** Buy an offered style; at the cap, `replaceStyleId` names the one to give up. */
+  /** Buy an offered genre; at the cap, `replaceGenreId` names the one to give up. */
   /** `giveUpSongId`: replacing New Age with a 7th song in use names the song to give up. */
-  | { type: 'BUY_STYLE'; offerIndex: number; expectedStyleId?: StyleId; replaceStyleId?: StyleId; giveUpSongId?: string }
-  | { type: 'REFRESH_STYLE_OFFERS' }
+  | { type: 'BUY_GENRE'; offerIndex: number; expectedGenreId?: GenreId; replaceGenreId?: GenreId; giveUpSongId?: string }
+  | { type: 'REFRESH_GENRE_OFFERS' }
   | { type: 'PLAY_SHOWDOWN_SONG'; songId: string }
-  | { type: 'REROLL_SHOWDOWN_SONG'; rubato?: boolean }
+  | { type: 'REROLL_SHOWDOWN_SONG'; bebop?: boolean }
   | { type: 'FINISH_SHOWDOWN_PERFORMANCE' }
   | { type: 'ADVANCE_TO_SUMMARY' }
   | { type: 'RESET_GAME' }

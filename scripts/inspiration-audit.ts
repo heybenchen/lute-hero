@@ -1,5 +1,5 @@
 /**
- * Where does Inspiration go? Plays normal smart-bot games (styles on sale) and
+ * Where does Inspiration go? Plays normal smart-bot games (genres on sale) and
  * counts, per bard per game: Inspiration earned (clearing a space), bought with
  * EXP, spent on fight rerolls / Studio refreshes / showdown rerolls, and left
  * unspent when the game ends.
@@ -12,7 +12,7 @@ import { applyAction, ActionCtx } from '../src/engine/reducer.js'
 import { createInitialEngineState } from '../src/engine/state.js'
 import { SmartBot, SmartParams } from '../src/sim/smartBot.js'
 import { mulberry32 } from '../src/engine/rng.js'
-import { ALL_GENRES } from '../src/data/genreTheme.js'
+import { ALL_ELEMENTS } from '../src/data/elementTheme.js'
 import type { GameAction } from '../src/engine/actions.js'
 
 const GAMES = Number(process.argv[2] ?? 200)
@@ -24,9 +24,9 @@ const acc = { bought: 0, expOnInsp: 0, fightReroll: 0, shelfRefresh: 0, showdown
 for (let g = 0; g < GAMES; g++) {
   const rng = mulberry32(7000 + g)
   const ctx: ActionCtx = { rng, actor: { kind: 'hotseat' } }
-  const genres = [...ALL_GENRES].sort(() => rng() - 0.5).slice(0, PLAYERS)
+  const elements = [...ALL_ELEMENTS].sort(() => rng() - 0.5).slice(0, PLAYERS)
   const init = createInitialEngineState()
-  const r = applyAction({ ...init, tunables: { ...init.tunables, ...TUNE } }, { type: 'START_GAME', playerConfigs: genres.map((x, i) => ({ name: `B${i}`, starterGenre: x })) }, ctx)
+  const r = applyAction({ ...init, tunables: { ...init.tunables, ...TUNE } }, { type: 'START_GAME', playerConfigs: elements.map((x, i) => ({ name: `B${i}`, starterElement: x })) }, ctx)
   if (!r.ok) throw new Error(r.message)
   const bot = new SmartBot(r.state, rng, PARAMS)
   const counts = { bought: 0, expOnInsp: 0, fightReroll: 0, shelfRefresh: 0, showdownReroll: 0 }
@@ -40,8 +40,8 @@ for (let g = 0; g < GAMES; g++) {
         const p0 = before.players[before.currentTurnPlayerIndex]
         const p1 = bot.state.players[before.currentTurnPlayerIndex]
         counts.expOnInsp += p0.exp - p1.exp
-      } else if (a.type === 'REROLL_SONG' && !('rubato' in a && a.rubato)) counts.fightReroll++
-      else if (a.type === 'REFRESH_ELEMENT_OFFERS' || a.type === 'REFRESH_STYLE_OFFERS') counts.shelfRefresh++
+      } else if (a.type === 'REROLL_SONG' && !('bebop' in a && a.bebop)) counts.fightReroll++
+      else if (a.type === 'REFRESH_ELEMENT_OFFERS' || a.type === 'REFRESH_GENRE_OFFERS') counts.shelfRefresh++
       else if (a.type === 'REROLL_SHOWDOWN_SONG') counts.showdownReroll++
     }
     return ok

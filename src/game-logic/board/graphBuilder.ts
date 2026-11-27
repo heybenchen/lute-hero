@@ -1,6 +1,6 @@
-import { BoardSpace, Genre, Rng } from '../../types/index.js'
+import { BoardSpace, Element, Rng } from '../../types/index.js'
 import { getTunables } from '../../data/tunables.js'
-import { ALL_GENRES } from '../../data/genreTheme.js'
+import { ALL_ELEMENTS } from '../../data/elementTheme.js'
 import { shuffle } from '../../data/elementBag.js'
 
 // Board is a 4x4 grid. Spaces are indexed row-major:
@@ -62,7 +62,7 @@ export function createBoardGraph(): BoardSpace[] {
       id: i,
       name: names[i],
       connections: gridNeighbors(i),
-      genreTags: [],
+      elementTags: [],
       monsters: [],
       isEdge: STARTING_SPACES.includes(i),
     })
@@ -75,32 +75,32 @@ export function createBoardGraph(): BoardSpace[] {
  * A space holds at most this many chips *of any one element*. There is no cap
  * on a space's total chips — a tile can stack every element up to this limit.
  */
-export function maxTagsPerGenre(): number {
-  return getTunables().maxTagsPerGenre
+export function maxTagsPerElement(): number {
+  return getTunables().maxTagsPerElement
 }
 
 /** How many chips of one element a space is carrying. */
-export function genreTagCount(tags: Genre[], genre: Genre): number {
-  return tags.filter((t) => t === genre).length
+export function elementTagCount(tags: Element[], element: Element): number {
+  return tags.filter((t) => t === element).length
 }
 
 /** True when one more chip of this element still fits on the space. */
-export function canAddGenreTag(tags: Genre[], genre: Genre): boolean {
-  return genreTagCount(tags, genre) < maxTagsPerGenre()
+export function canAddElementTag(tags: Element[], element: Element): boolean {
+  return elementTagCount(tags, element) < maxTagsPerElement()
 }
 
 /** Append a chip if its element is not already at the cap. */
-export function addGenreTag(tags: Genre[], genre: Genre): Genre[] {
-  return canAddGenreTag(tags, genre) ? [...tags, genre] : tags
+export function addElementTag(tags: Element[], element: Element): Element[] {
+  return canAddElementTag(tags, element) ? [...tags, element] : tags
 }
 
 /** Drop any chips beyond the per-element cap, keeping the earliest of each. */
-export function capGenreTags(tags: Genre[]): Genre[] {
-  const counts: Partial<Record<Genre, number>> = {}
-  return tags.filter((genre) => {
-    const n = (counts[genre] || 0) + 1
-    counts[genre] = n
-    return n <= maxTagsPerGenre()
+export function capElementTags(tags: Element[]): Element[] {
+  const counts: Partial<Record<Element, number>> = {}
+  return tags.filter((element) => {
+    const n = (counts[element] || 0) + 1
+    counts[element] = n
+    return n <= maxTagsPerElement()
   })
 }
 
@@ -115,13 +115,13 @@ export function capGenreTags(tags: Genre[]): Genre[] {
  */
 export function scatterChipsRandomly(
   spaces: BoardSpace[],
-  chips: Genre[],
+  chips: Element[],
   rng: Rng = Math.random
 ): BoardSpace[] {
   if (chips.length === 0) return spaces
 
-  const tagsById = new Map(spaces.map((s) => [s.id, [...s.genreTags]]))
-  const hasRoom = (id: number, genre: Genre) => canAddGenreTag(tagsById.get(id) ?? [], genre)
+  const tagsById = new Map(spaces.map((s) => [s.id, [...s.elementTags]]))
+  const hasRoom = (id: number, element: Element) => canAddElementTag(tagsById.get(id) ?? [], element)
   const freshPass = () => shuffle(spaces.map((s) => s.id), rng)
 
   let pass: number[] = []
@@ -138,18 +138,18 @@ export function scatterChipsRandomly(
     tagsById.get(spaceId)!.push(chip)
   }
 
-  return spaces.map((s) => ({ ...s, genreTags: tagsById.get(s.id)! }))
+  return spaces.map((s) => ({ ...s, elementTags: tagsById.get(s.id)! }))
 }
 
 /**
- * Add a random genre tag to each space, respecting the per-element cap.
+ * Add a random element tag to each space, respecting the per-element cap.
  */
-export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random): BoardSpace[] {
-  const genres: Genre[] = [...ALL_GENRES]
+export function addElementTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random): BoardSpace[] {
+  const elements: Element[] = [...ALL_ELEMENTS]
 
   return spaces.map((space) => ({
     ...space,
-    genreTags: addGenreTag(space.genreTags, genres[Math.floor(rng() * genres.length)]),
+    elementTags: addElementTag(space.elementTags, elements[Math.floor(rng() * elements.length)]),
   }))
 }
 
@@ -162,24 +162,24 @@ export function addGenreTagsToBoard(spaces: BoardSpace[], rng: Rng = Math.random
  * board size changes), the leftover chips go to a random subset of elements so
  * no element is ever more than one chip ahead.
  */
-export function dealBalancedGenreTags(
+export function dealBalancedElementTags(
   spaceCount: number,
   tagsPerSpace: number,
   rng: Rng = Math.random
-): Genre[][] {
+): Element[][] {
   const total = spaceCount * tagsPerSpace
-  const perGenre = Math.floor(total / ALL_GENRES.length)
+  const perElement = Math.floor(total / ALL_ELEMENTS.length)
 
-  const pool: Genre[] = []
-  for (const genre of ALL_GENRES) {
-    for (let i = 0; i < perGenre; i++) pool.push(genre)
+  const pool: Element[] = []
+  for (const element of ALL_ELEMENTS) {
+    for (let i = 0; i < perElement; i++) pool.push(element)
   }
   const remainder = total - pool.length
-  if (remainder > 0) pool.push(...shuffle([...ALL_GENRES], rng).slice(0, remainder))
+  if (remainder > 0) pool.push(...shuffle([...ALL_ELEMENTS], rng).slice(0, remainder))
 
   const shuffled = shuffle(pool, rng)
   return Array.from({ length: spaceCount }, (_, i) =>
-    capGenreTags(shuffled.slice(i * tagsPerSpace, (i + 1) * tagsPerSpace))
+    capElementTags(shuffled.slice(i * tagsPerSpace, (i + 1) * tagsPerSpace))
   )
 }
 
@@ -193,25 +193,25 @@ export function dealBalancedGenreTags(
  * move (e.g. an empty opening board) is a chip added instead.
  */
 export function ensureStarterChips(
-  dealt: Genre[][],
-  needs: { spaceId: number; genre: Genre }[],
+  dealt: Element[][],
+  needs: { spaceId: number; element: Element }[],
   rng: Rng = Math.random
-): Genre[][] {
+): Element[][] {
   const tags = dealt.map((t) => [...t])
-  const required = new Map(needs.map((n) => [n.spaceId, n.genre]))
+  const required = new Map(needs.map((n) => [n.spaceId, n.element]))
   // A space may give up a chip of `genre` unless that chip is its own requirement
-  const canDonate = (id: number, genre: Genre) => {
-    const count = genreTagCount(tags[id], genre)
+  const canDonate = (id: number, element: Element) => {
+    const count = elementTagCount(tags[id], element)
     if (count === 0) return false
-    return required.get(id) !== genre || count > 1
+    return required.get(id) !== element || count > 1
   }
 
-  for (const { spaceId, genre } of needs) {
+  for (const { spaceId, element } of needs) {
     const home = tags[spaceId]
-    if (!home || home.includes(genre)) continue
+    if (!home || home.includes(element)) continue
     // Prefer donors that aren't anyone's starting space
     const candidates = shuffle(
-      tags.map((_, id) => id).filter((id) => id !== spaceId && canDonate(id, genre)),
+      tags.map((_, id) => id).filter((id) => id !== spaceId && canDonate(id, element)),
       rng
     ).sort((a, b) => Number(required.has(a)) - Number(required.has(b)))
 
@@ -219,37 +219,37 @@ export function ensureStarterChips(
     for (const donor of candidates) {
       // The chip sent back must not break the donor's own requirement or cap
       const outgoing = shuffle([...home], rng).find(
-        (g) => g !== genre && canAddGenreTag(tags[donor].filter((_, i) => i !== tags[donor].indexOf(genre)), g)
+        (g) => g !== element && canAddElementTag(tags[donor].filter((_, i) => i !== tags[donor].indexOf(element)), g)
       )
       if (home.length > 0 && outgoing === undefined) continue
       const donorTags = [...tags[donor]]
-      donorTags.splice(donorTags.indexOf(genre), 1)
+      donorTags.splice(donorTags.indexOf(element), 1)
       const homeTags = [...home]
       if (outgoing !== undefined) {
         homeTags.splice(homeTags.indexOf(outgoing), 1)
         donorTags.push(outgoing)
       }
-      homeTags.push(genre)
+      homeTags.push(element)
       tags[donor] = donorTags
       tags[spaceId] = homeTags
       swapped = true
       break
     }
-    if (!swapped) tags[spaceId] = addGenreTag(home, genre)
+    if (!swapped) tags[spaceId] = addElementTag(home, element)
   }
   return tags
 }
 
 /**
- * Add a random genre tag to all neighboring spaces of a given space.
+ * Add a random element tag to all neighboring spaces of a given space.
  * Called after each player's turn ends.
  */
-export function addGenreTagsToNeighbors(
+export function addElementTagsToNeighbors(
   spaces: BoardSpace[],
   spaceId: number,
   rng: Rng = Math.random
 ): BoardSpace[] {
-  const genres: Genre[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
+  const elements: Element[] = ['Ballad', 'Folk', 'Hymn', 'Shanty']
   const currentSpace = spaces.find((s) => s.id === spaceId)
   if (!currentSpace) return spaces
 
@@ -259,7 +259,7 @@ export function addGenreTagsToNeighbors(
     if (!neighborIds.has(space.id)) return space
     return {
       ...space,
-      genreTags: addGenreTag(space.genreTags, genres[Math.floor(rng() * genres.length)]),
+      elementTags: addElementTag(space.elementTags, elements[Math.floor(rng() * elements.length)]),
     }
   })
 }
@@ -269,10 +269,10 @@ export function addGenreTagsToNeighbors(
  * of a given space. Used when a player clears a space and chooses which
  * element radiates outward.
  */
-export function addGenreTagToNeighbors(
+export function addElementTagToNeighbors(
   spaces: BoardSpace[],
   spaceId: number,
-  genre: Genre
+  element: Element
 ): BoardSpace[] {
   const currentSpace = spaces.find((s) => s.id === spaceId)
   if (!currentSpace) return spaces
@@ -281,10 +281,10 @@ export function addGenreTagToNeighbors(
 
   return spaces.map((space) => {
     if (!neighborIds.has(space.id)) return space
-    if (!canAddGenreTag(space.genreTags, genre)) return space
+    if (!canAddElementTag(space.elementTags, element)) return space
     return {
       ...space,
-      genreTags: [...space.genreTags, genre],
+      elementTags: [...space.elementTags, element],
     }
   })
 }

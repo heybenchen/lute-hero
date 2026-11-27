@@ -1,4 +1,4 @@
-import type { DiceType, Genre, Player } from '@/types'
+import type { DiceType, Element, Player } from '@/types'
 import type { EngineEvent } from '@/engine/events'
 import { useRef, useSyncExternalStore } from 'react'
 
@@ -6,7 +6,7 @@ import { useRef, useSyncExternalStore } from 'react'
 export interface TrayDie {
   dieId: string
   type: DiceType
-  genre: Genre
+  element: Element
   values: number[]
 }
 
@@ -156,7 +156,7 @@ export function announceDiceEvents(events: EngineEvent[], players: Pick<Player, 
     for (const roll of event.rolls) {
       const die = slots.find((slot) => slot.dice?.id === roll.diceId)?.dice
       if (!die) continue
-      dice.push({ dieId: die.id, type: die.type, genre: die.genre, values: [roll.value, ...roll.cascadeRolls] })
+      dice.push({ dieId: die.id, type: die.type, element: die.element, values: [roll.value, ...roll.cascadeRolls] })
     }
     diceBus.enqueue(dice)
   }

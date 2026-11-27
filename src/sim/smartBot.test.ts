@@ -10,7 +10,7 @@ function start(seed: number): { state: EngineState; ctx: ActionCtx } {
   const ctx: ActionCtx = { rng, actor: { kind: 'hotseat' } }
   const r = applyAction(createInitialEngineState(), {
     type: 'START_GAME',
-    playerConfigs: [{ name: 'A', starterGenre: 'Ballad' }, { name: 'B', starterGenre: 'Folk' }],
+    playerConfigs: [{ name: 'A', starterElement: 'Ballad' }, { name: 'B', starterElement: 'Folk' }],
   }, ctx)
   if (!r.ok) throw new Error(r.message)
   return { state: r.state, ctx }

@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
-  getGenreMultiplier,
+  getElementMultiplier,
   applyDamageToMonster,
   isMonsterDefeated,
   songsCanStillDamage,
   songIsImmune,
 } from './damageCalculator'
-import { Genre, Monster, Song } from '@/types'
+import { Element, Monster, Song } from '@/types'
 
 describe('Damage Calculator', () => {
   const createTestMonster = (): Monster => ({
@@ -21,24 +21,24 @@ describe('Damage Calculator', () => {
     level: 1,
   })
 
-  describe('getGenreMultiplier', () => {
+  describe('getElementMultiplier', () => {
     it('should return 2x for vulnerable genre', () => {
       const monster = createTestMonster()
 
-      expect(getGenreMultiplier('Ballad', monster)).toBe(2.0)
+      expect(getElementMultiplier('Ballad', monster)).toBe(2.0)
     })
 
     it('should return 0x for resistant genre (immune)', () => {
       const monster = createTestMonster()
 
-      expect(getGenreMultiplier('Shanty', monster)).toBe(0)
+      expect(getElementMultiplier('Shanty', monster)).toBe(0)
     })
 
     it('should return 1x for neutral genres', () => {
       const monster = createTestMonster()
 
-      expect(getGenreMultiplier('Folk', monster)).toBe(1.0)
-      expect(getGenreMultiplier('Hymn', monster)).toBe(1.0)
+      expect(getElementMultiplier('Folk', monster)).toBe(1.0)
+      expect(getElementMultiplier('Hymn', monster)).toBe(1.0)
     })
   })
 
@@ -95,10 +95,10 @@ describe('Damage Calculator', () => {
   })
 
   describe('songIsImmune', () => {
-    const song = (genre: Genre): Song => ({
+    const song = (element: Element): Song => ({
       id: 's',
       used: false,
-      slots: [{ dice: { id: 'd0', type: 'd8' as const, genre } }],
+      slots: [{ dice: { id: 'd0', type: 'd8' as const, element } }],
     })
     const monster = (): Monster => ({
       id: 'm', templateId: 't', name: 'M', currentHP: 50, maxHP: 50,
@@ -123,9 +123,9 @@ describe('Damage Calculator', () => {
   })
 
   describe('songsCanStillDamage', () => {
-    const song = (genre: Genre | null): Song => ({
-      id: `s-${genre}`,
-      slots: [{ dice: genre ? { id: `d-${genre}`, type: 'd4', genre } : null }],
+    const song = (element: Element | null): Song => ({
+      id: `s-${element}`,
+      slots: [{ dice: element ? { id: `d-${element}`, type: 'd4', element } : null }],
       used: false,
     })
 
@@ -138,7 +138,7 @@ describe('Damage Calculator', () => {
     })
 
     it('ignores defeated monsters', () => {
-      const dead = { ...createTestMonster(), id: 'dead', resistance: 'Folk' as Genre, currentHP: 0 }
+      const dead = { ...createTestMonster(), id: 'dead', resistance: 'Folk' as Element, currentHP: 0 }
       expect(songsCanStillDamage([song('Shanty')], [createTestMonster(), { ...dead, resistance: 'Ballad' }])).toBe(false)
     })
 

@@ -2,7 +2,7 @@ import type { ShowdownPerformance } from '@/game-logic/showdown/showdown'
 import { useEffect, useMemo, useState } from 'react'
 import { Player } from '@/types'
 import { calculateFinalRankings } from '@/game-logic/fame/calculator'
-import { readableTextColor } from '@/data/genreTheme'
+import { readableTextColor } from '@/data/elementTheme'
 
 interface WinnerSpotlightProps {
   history: ShowdownPerformance[][]
@@ -166,7 +166,7 @@ export function WinnerSpotlight({ players, showdownFandom, history, onContinue }
 
         {highlight && revealStage >= 2 && (
           <p className="text-parchment-300 text-center mb-6">
-            In verse {highlight.verse}, {winner.name} won {highlight.fandom} fans with {highlight.genre ?? 'a single chord'}.
+            In verse {highlight.verse}, {winner.name} won {highlight.fandom} fans with {highlight.element ?? 'a single chord'}.
           </p>
         )}
         {/* Final score breakdown */}

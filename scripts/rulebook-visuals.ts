@@ -12,7 +12,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { DEFAULT_TUNABLES as T } from '../src/data/tunables.js'
 import { createBoardGraph } from '../src/game-logic/board/graphBuilder.js'
-import { ALL_STYLE_IDS, STYLES, styleCost, styleRule } from '../src/data/styles.js'
+import { ALL_GENRE_IDS, GENRES, genreCost, genreRule } from '../src/data/genres.js'
 
 const OUT = new URL('../rulebook/img/', import.meta.url).pathname
 mkdirSync(OUT, { recursive: true })
@@ -231,7 +231,7 @@ function wrap(s: string, n: number): string[] {
   const text = readFileSync(md, 'utf8')
   const start = '<!-- GENRES:START -->'
   const end = '<!-- GENRES:END -->'
-  const rows = ALL_STYLE_IDS.map((id) => `| **${STYLES[id].name}** | ${styleCost(id)} | ${styleRule(id)} |`)
+  const rows = ALL_GENRE_IDS.map((id) => `| **${GENRES[id].name}** | ${genreCost(id)} | ${genreRule(id)} |`)
   const table = ['| Genre | EXP | What it does |', '|---|---|---|', ...rows].join('\n')
   const a = text.indexOf(start)
   const b = text.indexOf(end)

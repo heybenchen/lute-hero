@@ -4,7 +4,7 @@ import { createInitialEngineState, EngineState } from './state'
 import { GameAction } from './actions'
 import { mulberry32 } from './rng'
 import { Dice, Monster } from '../types'
-import { conditionHolds, PlayContext } from '../game-logic/styles/specs'
+import { conditionHolds, PlayContext } from '../game-logic/genres/specs'
 
 const ctx = (seed = 4): ActionCtx => ({ rng: mulberry32(seed), actor: { kind: 'hotseat' } })
 function apply(state: EngineState, action: GameAction, c: ActionCtx = ctx()) {
@@ -16,24 +16,24 @@ const monster = (hp: number, level = 2): Monster => ({
   id: 'm1', templateId: 't', name: 'M', currentHP: hp, maxHP: Math.max(hp, 14), vulnerability: 'Hymn', resistance: 'Shanty', isBoss: false, level,
 })
 
-/** Alba (with the given lab styles) fights one monster on space 5 holding a single die. */
-function fight(specStyles: string[], die: Dice, hp: number, extra: Partial<EngineState['players'][number]> = {}): EngineState {
+/** Alba (with the given lab genres) fights one monster on space 5 holding a single die. */
+function fight(specGenres: string[], die: Dice, hp: number, extra: Partial<EngineState['players'][number]> = {}): EngineState {
   let s = apply(createInitialEngineState(), {
     type: 'START_GAME',
-    playerConfigs: [{ name: 'Alba', starterGenre: 'Ballad' }, { name: 'Bryn', starterGenre: 'Folk' }],
+    playerConfigs: [{ name: 'Alba', starterElement: 'Ballad' }, { name: 'Bryn', starterElement: 'Folk' }],
   })
   s = {
     ...s,
     players: s.players.map((p, i) => i === 0
-      ? { ...p, position: 5, specStyles, ...extra, songs: p.songs.map((sg, si) => ({ ...sg, slots: [{ dice: si === 0 ? die : null }] as typeof sg.slots })) }
+      ? { ...p, position: 5, specGenres, ...extra, songs: p.songs.map((sg, si) => ({ ...sg, slots: [{ dice: si === 0 ? die : null }] as typeof sg.slots })) }
       : p),
-    spaces: s.spaces.map((sp) => (sp.id === 5 ? { ...sp, genreTags: ['Hymn'], monsters: [monster(hp)] } : sp)),
+    spaces: s.spaces.map((sp) => (sp.id === 5 ? { ...sp, elementTags: ['Hymn'], monsters: [monster(hp)] } : sp)),
   }
   return apply(s, { type: 'START_COMBAT', playerId: 'player-1' })
 }
-const d4: Dice = { id: 'd', type: 'd4', genre: 'Folk' }
+const d4: Dice = { id: 'd', type: 'd4', element: 'Folk' }
 
-describe('style lab specs in the engine', () => {
+describe('genre lab specs in the engine', () => {
   it('conditions read the play context', () => {
     const play: PlayContext = {
       showdown: false, playIndex: 2, lastElement: 'Folk', comboCount: 1, elementsPlayed: ['Folk'], target: monster(10, 4),
@@ -54,7 +54,7 @@ describe('style lab specs in the engine', () => {
   it('tame and miss rewards are paid when the fight ends (Showboat)', () => {
     let s = apply(fight(['showboat'], d4, 1), { type: 'PLAY_SONG', songId: 'player-1-song-1', targetMonsterId: 'm1' })
     const before = s.players[0].fame
-    s = apply(s, { type: 'END_COMBAT', spreadGenre: 'Hymn' })
+    s = apply(s, { type: 'END_COMBAT', spreadElement: 'Hymn' })
     // Lv2 tame = 10 Fame, plus Showboat's +5
     expect(s.players[0].fame - before).toBe(15)
   })
@@ -62,9 +62,9 @@ describe('style lab specs in the engine', () => {
   it('economy changes apply to prices (Cheap Tuning makes a d4 free)', () => {
     let s = apply(createInitialEngineState(), {
       type: 'START_GAME',
-      playerConfigs: [{ name: 'Alba', starterGenre: 'Ballad' }, { name: 'Bryn', starterGenre: 'Folk' }],
+      playerConfigs: [{ name: 'Alba', starterElement: 'Ballad' }, { name: 'Bryn', starterElement: 'Folk' }],
     })
-    s = { ...s, players: s.players.map((p, i) => (i === 0 ? { ...p, exp: 0, specStyles: ['cheap-tuning'] } : p)) }
+    s = { ...s, players: s.players.map((p, i) => (i === 0 ? { ...p, exp: 0, specGenres: ['cheap-tuning'] } : p)) }
     s = apply(s, { type: 'OPEN_STUDIO', playerId: 'player-1' })
     expect(applyAction(s, { type: 'BUY_DIE', offerIndex: 0 }, ctx()).ok).toBe(true)
   })
