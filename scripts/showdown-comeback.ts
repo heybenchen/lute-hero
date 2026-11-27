@@ -196,6 +196,61 @@ const VARIANTS: Variant[] = [
       return total
     },
   },
+  ...[2, 3].map((k): Variant => ({
+    name: `Fandom x${k} + underdog boost`,
+    kind: 'scoring',
+    score: (fame, p) => {
+      const top = Math.max(...Object.values(fame))
+      return Object.fromEntries(Object.keys(fame).map((id) => [id, fame[id] + k * sum(p.verses[id]) * (top / Math.max(1, fame[id]))]))
+    },
+  })),
+  ...[2, 3].map((k): Variant => ({
+    name: `Fandom x${k} + Silence targets the leader`,
+    kind: 'scoring',
+    score: (fame, p) => {
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const lead = leaderOf(total)
+        for (const id of Object.keys(fame)) total[id] += k * (p.verses[id][v] ?? 0) * (id === lead ? 0.5 : 1)
+      }
+      return total
+    },
+  })),
+  ...[2, 3].map((k): Variant => ({
+    // Each verse's best performance takes half its (multiplied) fandom from the leader
+    name: `Fandom x${k} + stolen fans (half, from the leader)`,
+    kind: 'scoring',
+    score: (fame, p) => {
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const lead = leaderOf(total)
+        const best = Object.keys(fame).sort((a, b) => (p.verses[b][v] ?? 0) - (p.verses[a][v] ?? 0))[0]
+        for (const id of Object.keys(fame)) total[id] += k * (p.verses[id][v] ?? 0)
+        if (best !== lead) {
+          const take = Math.floor((k * (p.verses[best][v] ?? 0)) / 2)
+          total[lead] -= take
+          total[best] += take
+        }
+      }
+      return total
+    },
+  })),
+  {
+    // Verse crowns sized like a big concert: the best performance of each verse wins a Lv4 monster's Fame
+    name: 'Fandom x2 + verse crowns (+50 Fame)',
+    kind: 'scoring',
+    score: (fame, p) => {
+      const total = times(2)(fame, p)
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const best = Object.keys(fame).sort((a, b) => (p.verses[b][v] ?? 0) - (p.verses[a][v] ?? 0))[0]
+        total[best] += 50
+      }
+      return total
+    },
+  },
   {
     name: 'Fandom x2 + catch-up Inspiration',
     kind: 'replay',

@@ -35,3 +35,21 @@ At other table sizes (typical pace, 200 games): 2 bards (parity 50%): current 97
 Re-run after the switch from styles to genres (3 bards, typical pace, 300 games): current rules 92%, fandom ×6 72%, head start 20/10/0 66%, 10/5/0 57%, head start 20/10/0 + Silence targets the leader 47%, fandom only 48%. Same picture.
 
 The re-scored variants assume the bots would play the Showdown the same way under the new rule. Bots maximise their own fandom either way, so that holds closely.
+
+## Options that keep every point of Fame
+
+Fame from the whole game still counts in full; only the Showdown is made bigger or aimed at the leader. Leader win % (and last-place win %), 300 games per pace at 3 bards, 200 at 4 bards (typical pace).
+
+| Variant | 3 bards, expert | 3 bards, typical | 4 bards, typical |
+|---|---|---|---|
+| Current rules | 93% (0%) | 92% (0%) | 93% (0%) |
+| Fandom ×6 | 67% (9%) | 72% (6%) | 64% (4%) |
+| Underdog boost (fandom × leader's Fame / own Fame) | 71% (18%) | 68% (23%) | 51% (36%) |
+| Fandom ×2 + underdog boost | 38% (46%) | 31% (50%) | 15% (63%) |
+| Fandom ×2 + Silence targets the leader | 62% (7%) | 71% (4%) | 65% (4%) |
+| Fandom ×3 + Silence targets the leader | 57% (12%) | 62% (8%) | 56% (5%) |
+| Fandom ×2 + stolen fans (each verse's best takes half its fandom from the leader) | 56% (10%) | 60% (8%) | 51% (7%) |
+| Fandom ×3 + stolen fans (half) | 51% (16%) | 51% (14%) | 45% (10%) |
+| Fandom ×2 + verse crowns (+50 Fame) | 68% (8%) | 73% (4%) | 67% (4%) |
+
+Underdog boosts overshoot once fandom is multiplied (last place wins most games). The two that land near a leader win rate of 55–65% at every table size are **fandom ×3 + Silence targets the leader** (no one ever loses Fame) and **fandom ×2 + stolen fans** (the leader can lose some Fame to the bard who out-performs them).
