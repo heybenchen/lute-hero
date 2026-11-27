@@ -93,7 +93,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
       <div className="modal-content max-w-6xl">
         <div className="p-4 sm:p-6">
           {/* Header */}
-          <div className="flex justify-between items-start gap-3 mb-5 sm:mb-6">
+          <div className="flex flex-wrap justify-between items-start gap-3 mb-5 sm:mb-6">
             <div className="min-w-0 flex-1">
               <div className="font-display text-2xl text-gold-400">
                 Studio
@@ -111,23 +111,55 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               )}
             </div>
             {/* Inspiration helper UI */}
-            <div className="flex shrink-0 items-center gap-2 pr-8 text-xs sm:text-sm">
-              <button
-                onClick={handleBuyInspiration}
-                disabled={!canInteract || player.exp < inspirationCost}
-                className="flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 font-medieval font-bold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 hover:enabled:-translate-y-0.5 sm:px-3"
-                style={{
-                  background: 'rgba(176, 124, 255, 0.14)',
-                  border: '1px solid rgba(176, 124, 255, 0.45)',
-                  color: '#d9c2ff',
-                }}
-                title={`Buy 1 Inspiration for ${inspirationCost} EXP${getTunables().inspirationCostStep > 0 ? ' (cost rises each purchase this turn)' : ''}`}
-              >
-                Buy &#x2728; <span className="font-normal opacity-80">({inspirationCost} EXP)</span>
-              </button>
-              <span className="whitespace-nowrap" title="Inspiration you hold">
-                &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
-              </span>
+            <div className="ml-auto flex shrink-0 flex-col items-end gap-2 pr-8 text-xs sm:text-sm">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBuyInspiration}
+                  disabled={!canInteract || player.exp < inspirationCost}
+                  className="flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 font-medieval font-bold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 hover:enabled:-translate-y-0.5 sm:px-3"
+                  style={{
+                    background: 'rgba(176, 124, 255, 0.14)',
+                    border: '1px solid rgba(176, 124, 255, 0.45)',
+                    color: '#d9c2ff',
+                  }}
+                  title={`Buy 1 Inspiration for ${inspirationCost} EXP${getTunables().inspirationCostStep > 0 ? ' (cost rises each purchase this turn)' : ''}`}
+                >
+                  Buy &#x2728; <span className="font-normal opacity-80">({inspirationCost} EXP)</span>
+                </button>
+                <span className="whitespace-nowrap" title="Inspiration you hold">
+                  &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
+                </span>
+              </div>
+
+              {/* Contextual element-purchase guidance */}
+              {canInteract && !activeDie && selectedElement && (
+                <div
+                  className="animate-slide-up flex max-w-md flex-wrap items-center justify-end gap-2 rounded-lg px-3 py-2 text-right text-sm text-parchment-200"
+                  style={{
+                    background: 'rgba(212, 168, 83, 0.05)',
+                    border: '1px solid rgba(212, 168, 83, 0.25)',
+                  }}
+                >
+                  {setlistFull ? (
+                    <>
+                      <span>{replaceMode ? `Choose the die to replace with a ${selectedElement} d4 (${newD4Cost()} EXP).` : `Choose a matching die to upgrade, or buy a new ${selectedElement} d4.`}</span>
+                      <button className="btn-secondary" aria-pressed={replaceMode} onClick={() => setReplaceMode(!replaceMode)}>
+                        {replaceMode ? 'Cancel replacement' : `Replace a die · ${newD4Cost()} EXP`}
+                      </button>
+                    </>
+                  ) : player.exp < newD4Cost() ? (
+                    <>
+                      <GenreBadge genre={selectedElement} className="text-xs" />
+                      <span className="text-parchment-400">chosen, but a new d4 costs {newD4Cost()} EXP and you have {player.exp}.</span>
+                    </>
+                  ) : (
+                    <>
+                      <GenreBadge genre={selectedElement} className="text-xs" />
+                      <span>chosen. Use your setlist to buy a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP) or upgrade a matching die.</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
             {canInteract && (
               <button
@@ -236,34 +268,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   </div>
                 )}
 
-                {/* With an element chosen, the song slots themselves become the shop */}
-                {canInteract && !activeDie && selectedElement && (
-                  <div className="rounded-lg px-3 py-3 mt-3 animate-slide-up flex flex-wrap items-center gap-2 text-sm text-parchment-200"
-                    style={{
-                      background: 'rgba(212, 168, 83, 0.05)',
-                      border: '1px solid rgba(212, 168, 83, 0.25)',
-                    }}
-                  >
-                    {setlistFull ? (
-                      <>
-                        <span>{replaceMode ? `Choose the die to replace with a ${selectedElement} d4 (${newD4Cost()} EXP).` : `Choose a matching die to upgrade, or buy a new ${selectedElement} d4.`}</span>
-                        <button className="btn-secondary" aria-pressed={replaceMode} onClick={() => setReplaceMode(!replaceMode)}>
-                          {replaceMode ? 'Cancel replacement' : `Replace a die · ${newD4Cost()} EXP`}
-                        </button>
-                      </>
-                    ) : player.exp < newD4Cost() ? (
-                      <>
-                        <GenreBadge genre={selectedElement} className="text-xs" />
-                        <span className="text-parchment-400">chosen, but a new d4 costs {newD4Cost()} EXP and you have {player.exp}.</span>
-                      </>
-                    ) : (
-                      <>
-                        <GenreBadge genre={selectedElement} className="text-xs" />
-                        <span>chosen. Use your setlist to buy a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP) or upgrade a matching die.</span>
-                      </>
-                    )}
-                  </div>
-                )}
               </div>
 
               <StyleShelf
