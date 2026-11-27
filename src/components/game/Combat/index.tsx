@@ -379,7 +379,7 @@ export function CombatModal() {
           ) : (
             <div className="pixel-combat-header mb-3 flex flex-col gap-2 animate-fade-in sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="font-['Cinzel:Bold'] text-[9px] uppercase tracking-[0.3em] text-[#a88953]">The Concert</div>
+                <div className="mb-2 font-['Cinzel:Bold'] text-[9px] uppercase tracking-[0.3em] text-[#a88953]">Concert</div>
                 <div className="font-['MedievalSharp:Regular'] text-2xl leading-none text-[#f0d78c] sm:text-3xl">
                   Performing at {locationName}
                 </div>
