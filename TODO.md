@@ -6,7 +6,7 @@
 
 ## Medium Priority
 
-- Decide whether genres that can't trigger in the Final Showdown should (see `docs/showdown-genre-audit.md`, `scripts/showdown-genre-audit.ts`): 16 of 31 do nothing there. Mariachi (every bard shares the stage), Pop (Inspiration before each verse), Soul (a paid bonus on a performance) and Prog Rock (count dice within a performance) could reasonably apply; the rest are monster, concert or board genres whose value comes earlier. Screamo and Opera are the strongest Showdown genres (+15–17 Showdown Fame, +11–13 win points).
+- Decide whether genres that can't trigger in the Final Showdown should (see `docs/showdown-genre-audit.md`, `scripts/showdown-genre-audit.ts`): 15 of 31 do nothing there. Mariachi (every bard shares the stage), Pop (Inspiration before each verse), Soul (a paid bonus on a performance) and Prog Rock (count dice within a performance) could reasonably apply; the rest are monster, concert or board genres whose value comes earlier. Opera, Screamo and Grunge are the strongest Showdown genres (+14–19 Showdown Fame, +7–13 win points).
 
 - Re-run genre balance after the latest Baroque, Prog Rock, Grunge and Dubstep rule changes (see `genres.md`; their displayed rates are historical). Before those changes, 16 of 30 won 31–37% against a 33.3% parity (baseline 32.8%), with rows swinging ~5 points between runs. Playtest the choice genres (Gospel, Soul, Blues, Trance's spend-down) before re-pricing. A 1,200-game run per genre would halve the noise.
 
