@@ -2,7 +2,7 @@
 // CORE GAME TYPES
 // ============================================
 
-export type Genre = "Ballad" | "Folk" | "Hymn" | "Shanty";
+export type Element = "Ballad" | "Folk" | "Hymn" | "Shanty";
 
 /**
  * Random number source, drop-in for Math.random (returns [0, 1)).
@@ -25,43 +25,43 @@ export type GamePhase = "setup" | "main" | "finalBoss" | "gameOver";
 export interface Dice {
   id: string;
   type: DiceType;
-  genre: Genre;
+  element: Element;
 }
 
 export interface DiceRoll {
   diceId: string;
   value: number;
-  isCrit: boolean; // True if the roll crit (max face, or a style's crit rule)
+  isCrit: boolean; // True if the roll crit (max face, or a genre's crit rule)
   critBonus: number; // Sum of cascade roll values
   cascadeRolls: number[]; // Each additional die value from cascading crits
-  /** Flat damage added by styles (Fortissimo, Overture, Tutti). Absent = 0. */
+  /** Flat damage added by genres (Opera, Screamo, Barbershop). Absent = 0. */
   bonus?: number;
 }
 
-/** Purchasable play styles; each affects every song its bard performs. */
-export type StyleId =
-  | "staccato"
-  | "coda"
-  | "ostinato"
-  | "rubato"
-  | "virtuoso"
-  | "fortissimo"
-  | "fermata"
-  | "counterpoint"
-  | "tutti"
-  | "overture"
-  | "bravo"
-  | "ispirato"
-  // Studio styles promoted from the style lab (effects are data-defined specs)
-  | "hometown-hero"
-  | "studio-regular"
-  | "inspired-play"
-  | "steady-hands"
-  | "street-performer"
-  | "chain-reaction"
-  | "swarm-singer"
-  | "jam-session"
-  // Genres added with the rename from styles to genres (also data-defined specs)
+/** Purchasable genres; each affects every song its bard performs. */
+export type GenreId =
+  | "gospel"
+  | "new-age"
+  | "indie"
+  | "bebop"
+  | "bluegrass"
+  | "opera"
+  | "blues"
+  | "crossover"
+  | "barbershop"
+  | "screamo"
+  | "disco"
+  | "pop"
+  // Studio genres promoted from the genre lab (effects are data-defined specs)
+  | "country"
+  | "lo-fi"
+  | "soul"
+  | "baroque"
+  | "rap"
+  | "house"
+  | "orchestra"
+  | "mariachi"
+  // Genres added with the rename (also data-defined specs)
   | "punk"
   | "soft-rock"
   | "prog-rock"
@@ -94,8 +94,8 @@ export interface MonsterTemplate {
   // It does NOT affect HP — every monster spawns from the monsterBaseHp
   // tunable. Omitted for the final boss, which is never spawned this way.
   tier?: number;
-  vulnerability: Genre | null; // Single weakness - 2x damage
-  resistance: Genre | null; // Single resistance - 0x damage (immune)
+  vulnerability: Element | null; // Single weakness - 2x damage
+  resistance: Element | null; // Single resistance - 0x damage (immune)
   description: string;
   isBoss?: boolean;
 }
@@ -106,8 +106,8 @@ export interface Monster {
   name: string;
   currentHP: number;
   maxHP: number;
-  vulnerability: Genre | null;
-  resistance: Genre | null;
+  vulnerability: Element | null;
+  resistance: Element | null;
   isBoss: boolean;
   level: number; // Monster level (higher = more HP)
 }
@@ -124,7 +124,7 @@ export interface BoardSpace {
   id: number;
   name: string;
   connections: number[]; // IDs of connected spaces
-  genreTags: Genre[]; // Accumulates each round, each unique genre = 1 monster
+  elementTags: Element[]; // Accumulates each round, each unique genre = 1 monster
   monsters: Monster[];
   isEdge: boolean; // Players start on edge spaces
 }
@@ -137,7 +137,7 @@ export interface Player {
   id: string;
   name: string;
   color: string;
-  starterGenre: Genre; // Element the player started with (drives their themed color)
+  starterElement: Element; // Element the player started with (drives their themed color)
   position: number; // Current space ID
   songs: Song[];
   exp: number;
@@ -150,9 +150,9 @@ export interface Player {
   hasShoppedThisTurn: boolean; // Track if player has shopped this turn
   inspiration: number; // Inspiration tokens held (spend to reroll or refresh the shop)
   inspirationBoughtThisTurn: number; // Escalates the buy cost; resets each turn
-  styles: StyleId[]; // Owned play styles (capped by tunables.maxStyles)
-  /** Data-defined styles under test (style lab only; see game-logic/styles/specs.ts). */
-  specStyles?: string[];
+  genres: GenreId[]; // Owned genres (capped by tunables.maxGenres)
+  /** Data-defined genres under test (genre lab only; see game-logic/genres/specs.ts). */
+  specGenres?: string[];
 }
 
 // ============================================
@@ -182,21 +182,21 @@ export interface KillCredit {
 
 export interface DamageCalculation {
   baseDamage: number;
-  genreMultipliers: { genre: Genre; multiplier: number }[];
+  elementMultipliers: { element: Element; multiplier: number }[];
   critBonuses: number;
   totalDamage: number;
   // Per-die contribution against this monster, for the damage-report breakdown
   perDie: DieContribution[];
-  /** Counterpoint turned an immune hit into a partial one. */
+  /** Crossover turned an immune hit into a partial one. */
   softenedImmunity?: boolean;
 }
 
 export interface DieContribution {
-  genre: Genre | null; // null for extra dice with no slotted genre
+  element: Element | null; // null for extra dice with no slotted element
   value: number; // rolled face value
   critBonus: number; // extra damage from cascading crits (sum of cascadeRolls)
   cascadeRolls: number[]; // each cascading-crit roll, shown separately in the report
-  multiplier: number; // genre multiplier applied to this die
-  bonus?: number; // flat style bonus added before the multiplier
+  multiplier: number; // element multiplier applied to this die
+  bonus?: number; // flat genre bonus added before the multiplier
   damage: number; // (value + bonus + critBonus) × multiplier — this die's contribution
 }

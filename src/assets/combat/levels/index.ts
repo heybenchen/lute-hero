@@ -1,4 +1,4 @@
-import type { Genre } from '@/types'
+import type { Element } from '@/types'
 import ballad1 from './ballad-l1.png'
 import ballad2 from './ballad-l2.png'
 import ballad3 from './ballad-l3.png'
@@ -23,7 +23,7 @@ import shanty5 from './shanty-l5.png'
 type LevelSprites = readonly [string, string, string, string, string]
 
 /** Elemental monster art in level order, matching the game's Lv1–Lv5 cap. */
-export const MONSTER_LEVEL_SPRITES: Record<Genre, LevelSprites> = {
+export const MONSTER_LEVEL_SPRITES: Record<Element, LevelSprites> = {
   Ballad: [ballad1, ballad2, ballad3, ballad4, ballad5],
   Folk: [folk1, folk2, folk3, folk4, folk5],
   Hymn: [hymn1, hymn2, hymn3, hymn4, hymn5],

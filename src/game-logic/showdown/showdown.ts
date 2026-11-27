@@ -1,4 +1,4 @@
-import { Genre, Monster, Song, DiceRoll } from '../../types/index.js'
+import { Element, Monster, Song, DiceRoll } from '../../types/index.js'
 import { getFinalBoss } from '../../data/monsters.js'
 import { getTunables } from '../../data/tunables.js'
 
@@ -10,10 +10,10 @@ export function showdownTurns(): number {
 /** One player's performance (a single song) for a single showdown turn. */
 export interface ShowdownPerformance {
   playerId: string
-  /** Effective damage dealt = fandom earned (genre multipliers already applied). */
+  /** Effective damage dealt = fandom earned (element multipliers already applied). */
   fandom: number
   /** Dominant element of the song played — drives the boss's adaptation. */
-  genre: Genre | null
+  element: Element | null
 }
 
 /**
@@ -21,10 +21,10 @@ export interface ShowdownPerformance {
  * immunity) by one element. It has no weakness — no element is doubled.
  */
 export interface BossAdaptation {
-  resistGenre: Genre | null
+  resistElement: Element | null
 }
 
-export const NO_ADAPTATION: BossAdaptation = { resistGenre: null }
+export const NO_ADAPTATION: BossAdaptation = { resistElement: null }
 
 /**
  * Build the showdown boss with its current elemental adaptation. Genre
@@ -41,7 +41,7 @@ export function createShowdownBoss(adaptation: BossAdaptation = NO_ADAPTATION): 
     currentHP: 0,
     maxHP: 0,
     vulnerability: null,
-    resistance: adaptation.resistGenre,
+    resistance: adaptation.resistElement,
     isBoss: true,
     level: 5,
   }
@@ -52,27 +52,27 @@ export function createShowdownBoss(adaptation: BossAdaptation = NO_ADAPTATION): 
  * the most raw roll value (crit cascades included). Ties go to the genre
  * appearing first in slot order.
  */
-export function getDominantGenre(song: Song, rolls: DiceRoll[]): Genre | null {
-  const totals = new Map<Genre, number>()
-  const order: Genre[] = []
+export function getDominantElement(song: Song, rolls: DiceRoll[]): Element | null {
+  const totals = new Map<Element, number>()
+  const order: Element[] = []
 
   song.slots.forEach((slot) => {
     if (!slot.dice) return
-    const genre = slot.dice.genre
-    if (!order.includes(genre)) order.push(genre)
+    const element = slot.dice.element
+    if (!order.includes(element)) order.push(element)
     const contribution = rolls
       .filter((r) => r.diceId === slot.dice!.id)
       .reduce((sum, r) => sum + r.value + r.critBonus, 0)
-    totals.set(genre, (totals.get(genre) || 0) + contribution)
+    totals.set(element, (totals.get(element) || 0) + contribution)
   })
 
-  let dominant: Genre | null = null
+  let dominant: Element | null = null
   let best = -1
-  for (const genre of order) {
-    const total = totals.get(genre) || 0
+  for (const element of order) {
+    const total = totals.get(element) || 0
     if (total > best) {
       best = total
-      dominant = genre
+      dominant = element
     }
   }
   return dominant
@@ -84,14 +84,14 @@ export function getDominantGenre(song: Song, rolls: DiceRoll[]): Genre | null {
  * performances with an element to compare, so a solo showdown never adapts.
  */
 export function computeBossAdaptation(performances: ShowdownPerformance[]): BossAdaptation {
-  const withGenre = performances.filter((p) => p.genre !== null)
-  if (withGenre.length < 2) return NO_ADAPTATION
+  const withElement = performances.filter((p) => p.element !== null)
+  if (withElement.length < 2) return NO_ADAPTATION
 
-  let strongest = withGenre[0]
-  for (const perf of withGenre) {
+  let strongest = withElement[0]
+  for (const perf of withElement) {
     if (perf.fandom > strongest.fandom) strongest = perf
   }
-  return { resistGenre: strongest.genre }
+  return { resistElement: strongest.element }
 }
 
 /** Songs a player can actually perform (at least one die slotted). */
@@ -104,9 +104,9 @@ export function getPlayableSongs(songs: Song[]): Song[] {
  * song plus every other playable song whose die shares its element.
  */
 export function showdownElementSongs(songs: Song[], songId: string): Song[] {
-  const genre = songs.find((s) => s.id === songId)?.slots.find((slot) => slot.dice)?.dice?.genre
-  if (!genre) return []
-  return getPlayableSongs(songs).filter((s) => s.slots.some((slot) => slot.dice?.genre === genre))
+  const element = songs.find((s) => s.id === songId)?.slots.find((slot) => slot.dice)?.dice?.element
+  if (!element) return []
+  return getPlayableSongs(songs).filter((s) => s.slots.some((slot) => slot.dice?.element === element))
 }
 
 /** Several songs rolled as one performance: a single virtual song holding all their dice. */

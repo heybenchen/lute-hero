@@ -1,13 +1,13 @@
 import { ChordStage } from './ChordStage'
-import { Genre, Player } from '@/types'
+import { Element, Player } from '@/types'
 import { ShowdownPerformance } from '@/game-logic/showdown/showdown'
-import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
+import { ELEMENT_THEME, readableTextColor } from '@/data/elementTheme'
 
 interface AdaptBannerProps {
   turnEnded: number
   performances: ShowdownPerformance[]
   players: Player[]
-  resistGenre: Genre | null
+  resistElement: Element | null
   onContinue: () => void
 }
 
@@ -16,7 +16,7 @@ export function AdaptBanner({
   turnEnded,
   performances,
   players,
-  resistGenre,
+  resistElement,
   onContinue,
 }: AdaptBannerProps) {
   const byId = new Map(players.map((p) => [p.id, p]))
@@ -35,17 +35,17 @@ export function AdaptBanner({
           Verse {turnEnded} Complete
         </div>
         <div className="font-display text-3xl sm:text-4xl text-gold-400 mb-6" style={{ textShadow: '0 0 20px rgba(212,168,83,0.3)' }}>
-          {resistGenre ? `The Silence steals ${resistGenre}` : 'The Silence listens'}
+          {resistElement ? `The Silence steals ${resistElement}` : 'The Silence listens'}
         </div>
 
-        <ChordStage verse={turnEnded + 1} element={resistGenre} absorb />
+        <ChordStage verse={turnEnded + 1} element={resistElement} absorb />
         {/* Verse recap */}
         <div className="space-y-2 mb-7 max-w-md mx-auto">
           {ranked.map((perf, idx) => {
             const player = byId.get(perf.playerId)
             if (!player) return null
             const topFandom = ranked[0].fandom || 1
-            const theme = perf.genre ? GENRE_THEME[perf.genre] : null
+            const theme = perf.element ? ELEMENT_THEME[perf.element] : null
             return (
               <div
                 key={perf.playerId}
@@ -61,7 +61,7 @@ export function AdaptBanner({
                       {player.name}
                       {theme && (
                         <span className="ml-1.5 text-xs font-normal" style={{ color: theme.color }}>
-                          {theme.emoji} {perf.genre}
+                          {theme.emoji} {perf.element}
                         </span>
                       )}
                     </span>
@@ -88,9 +88,9 @@ export function AdaptBanner({
         {/* Adaptation announcement */}
         <div className="divider-ornate" />
         <div className="mt-5 mb-7 space-y-3">
-          {resistGenre ? (
+          {resistElement ? (
             <>
-              {resistGenre && (
+              {resistElement && (
                 <div
                   className="animate-slide-up rounded-lg px-4 py-3 max-w-md mx-auto text-left"
                   style={{
@@ -102,8 +102,8 @@ export function AdaptBanner({
                 >
                   <span className="text-sm text-parchment-300">
                     🛡 It hardens against the mightiest sound —{' '}
-                    <span className="font-bold" style={{ color: GENRE_THEME[resistGenre].color }}>
-                      {GENRE_THEME[resistGenre].emoji} {resistGenre}
+                    <span className="font-bold" style={{ color: ELEMENT_THEME[resistElement].color }}>
+                      {ELEMENT_THEME[resistElement].emoji} {resistElement}
                     </span>{' '}
                     dice count for <span className="font-bold text-red-300">nothing</span> next verse.
                   </span>

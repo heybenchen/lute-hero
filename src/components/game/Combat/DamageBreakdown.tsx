@@ -3,7 +3,7 @@ import { DamageCalculation, Monster } from '@/types'
 interface DamageCellProps {
   calc: DamageCalculation
   monster: Monster
-  styleNotes?: string[]
+  genreNotes?: string[]
 }
 
 /** Format a multiplier compactly: 0 → "0×", others → "×2", "×0.5", etc. */
@@ -15,7 +15,7 @@ function formatMultiplier(multiplier: number): string {
  * The most recent song's damage, kept in the combat header so it never changes
  * the height of an individual monster column.
  */
-export function DamageCell({ calc, monster, styleNotes = [] }: DamageCellProps) {
+export function DamageCell({ calc, monster, genreNotes = [] }: DamageCellProps) {
   return (
     <div className="pixel-last-hit animate-fade-in">
       <div className="flex min-w-0 items-center justify-between gap-4">
@@ -30,12 +30,12 @@ export function DamageCell({ calc, monster, styleNotes = [] }: DamageCellProps) 
         </span>
       </div>
 
-      {/* Per-die math — numbers only, no genre tags */}
+      {/* Per-die math — numbers only, no element tags */}
       <div className="mt-2 flex flex-wrap items-center justify-end gap-x-2.5 gap-y-1 border-t border-gold-700/20 pt-1.5">
         {(calc.perDie ?? []).map((die, dieIdx) => (
           <div key={dieIdx} className="flex items-center justify-end gap-1 text-xs tabular-nums">
             <span className="text-parchment-300">{die.value}</span>
-            {/* Flat style bonus (Fortissimo, Overture, Tutti) */}
+            {/* Flat genre bonus (Opera, Screamo, Barbershop) */}
             {!!die.bonus && <span className="text-amber-300" title="Genre bonus">+{die.bonus}</span>}
             {/* Each cascading crit shown separately */}
             {(die.cascadeRolls ?? []).map((crit, critIdx) => (
@@ -53,7 +53,7 @@ export function DamageCell({ calc, monster, styleNotes = [] }: DamageCellProps) 
             <span className="font-bold text-parchment-100">{Math.round(die.damage)}</span>
           </div>
         ))}
-        {styleNotes.map((name) => (
+        {genreNotes.map((name) => (
           <span key={name} className="text-[11px] text-gold-300/80">&#x266A; {name}</span>
         ))}
       </div>

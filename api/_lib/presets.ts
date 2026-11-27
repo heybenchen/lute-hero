@@ -1,3 +1,4 @@
+import { migrateLegacyNames } from '../../src/engine/legacyNames.js'
 import { randomBytes } from 'node:crypto'
 import { DebugPreset, DebugPresetSummary } from '../../src/net/protocol.js'
 import { changedTunablePaths, normalizeTunables } from '../../src/data/tunables.js'
@@ -15,7 +16,7 @@ export function newPresetId(): string {
 
 /** Strip the engine state down to the metadata the picker list shows. */
 export function toSummary(preset: DebugPreset): DebugPresetSummary {
-  const state = preset.engineState
+  const state = migrateLegacyNames(preset.engineState)
   return {
     id: preset.id,
     name: preset.name,

@@ -9,7 +9,7 @@ import actions from '../games/[id]/actions'
 import stateRoute from '../games/[id]/state'
 import { ApiRequest, ApiResponse } from '../_lib/http'
 import { Snapshot } from '../../src/net/protocol'
-import { GENRE_THEME } from '../../src/data/genreTheme'
+import { ELEMENT_THEME } from '../../src/data/elementTheme'
 import { loadGameDoc, casWriteDoc } from '../_lib/gameDoc'
 
 let redis: MemoryRedis
@@ -168,22 +168,22 @@ describe('lobby lifecycle', () => {
     const created = await createGame()
     const joined = await joinGame(created.joinCode, TOKEN_B, 'Bryn')
     const seats = joined.data.snapshot.seats
-    expect(seats.map((s: { starterGenre: string }) => s.starterGenre)).toEqual(['Ballad', 'Folk'])
-    expect(seats.map((s: { color: string }) => s.color)).toEqual([GENRE_THEME.Ballad.color, GENRE_THEME.Folk.color])
+    expect(seats.map((s: { starterElement: string }) => s.starterElement)).toEqual(['Ballad', 'Folk'])
+    expect(seats.map((s: { color: string }) => s.color)).toEqual([ELEMENT_THEME.Ballad.color, ELEMENT_THEME.Folk.color])
 
     // Taking another bard's element is refused...
-    const taken = await call(lobbyOp, makeReq('POST', `/api/games/${created.gameId}/lobby`, { token: TOKEN_B, body: { op: 'unready', starterGenre: 'Ballad' } }))
+    const taken = await call(lobbyOp, makeReq('POST', `/api/games/${created.gameId}/lobby`, { token: TOKEN_B, body: { op: 'unready', starterElement: 'Ballad' } }))
     expect(taken.status).toBe(422)
     // ...a free one is fine, and recolors the seat
-    const free = await call(lobbyOp, makeReq('POST', `/api/games/${created.gameId}/lobby`, { token: TOKEN_B, body: { op: 'unready', starterGenre: 'Shanty' } }))
+    const free = await call(lobbyOp, makeReq('POST', `/api/games/${created.gameId}/lobby`, { token: TOKEN_B, body: { op: 'unready', starterElement: 'Shanty' } }))
     expect(free.status).toBe(200)
     const bryn = (free.json() as { snapshot: Snapshot }).snapshot.seats[1]
-    expect([bryn.starterGenre, bryn.color]).toEqual(['Shanty', GENRE_THEME.Shanty.color])
+    expect([bryn.starterElement, bryn.color]).toEqual(['Shanty', ELEMENT_THEME.Shanty.color])
 
     await ready(created.gameId, TOKEN_A)
     await ready(created.gameId, TOKEN_B)
     const started = (await start(created.gameId, TOKEN_A)).json() as { snapshot: Snapshot }
-    expect(started.snapshot.engineState.players.map((p) => p.color)).toEqual([GENRE_THEME.Ballad.color, GENRE_THEME.Shanty.color])
+    expect(started.snapshot.engineState.players.map((p) => p.color)).toEqual([ELEMENT_THEME.Ballad.color, ELEMENT_THEME.Shanty.color])
   })
 })
 

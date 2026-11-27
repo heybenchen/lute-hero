@@ -1,26 +1,26 @@
-import { Genre } from '../types/index.js';
+import { Element } from '../types/index.js';
 
 /**
- * Single source of truth for genre/element presentation:
- * emoji identity, hex color, and rgb triplet (for rgba() styles).
+ * Single source of truth for element presentation:
+ * emoji identity, hex color, and rgb triplet (for rgba() genres).
  * Colors match the Tailwind theme (ballad/folk/hymn/shanty).
  */
-export const GENRE_THEME: Record<Genre, { emoji: string; color: string; rgb: string }> = {
+export const ELEMENT_THEME: Record<Element, { emoji: string; color: string; rgb: string }> = {
   Ballad: { emoji: "🔥", color: "#e82040", rgb: "232, 32, 64" },
   Folk: { emoji: "🌿", color: "#4caf50", rgb: "76, 175, 80" },
   Hymn: { emoji: "💨", color: "#facc15", rgb: "250, 204, 21" },
   Shanty: { emoji: "🌊", color: "#2979ff", rgb: "41, 121, 255" },
 };
 
-export const ALL_GENRES: Genre[] = ["Ballad", "Folk", "Hymn", "Shanty"];
+export const ALL_ELEMENTS: Element[] = ["Ballad", "Folk", "Hymn", "Shanty"];
 
 /**
  * A bard's color is always their starter element's color — the same as the
  * d8 they open with — so the board token, score track, lobby seat and every
  * other surface agree. Each element belongs to at most one bard per game.
  */
-export function playerColorFor(starterGenre: Genre): string {
-  return GENRE_THEME[starterGenre].color;
+export function playerColorFor(starterElement: Element): string {
+  return ELEMENT_THEME[starterElement].color;
 }
 
 /**

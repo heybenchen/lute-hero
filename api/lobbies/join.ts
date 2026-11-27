@@ -4,10 +4,10 @@ import { hashToken, newSeatId, findSeatByToken } from '../_lib/auth.js'
 import { buildSnapshot, loadGameDoc, mutateGameDoc } from '../_lib/gameDoc.js'
 import { ApiRequest, ApiResponse, readJsonBody, sendJson, sendError, methodNotAllowed, getPlayerToken } from '../_lib/http.js'
 
-import { ALL_GENRES, playerColorFor } from '../../src/data/genreTheme.js'
+import { ALL_ELEMENTS, playerColorFor } from '../../src/data/elementTheme.js'
 
 /** One seat per element: four elements, four bards. */
-const MAX_SEATS = ALL_GENRES.length
+const MAX_SEATS = ALL_ELEMENTS.length
 
 /**
  * POST /api/lobbies/join — join a lobby by code. If the caller's token is
@@ -56,13 +56,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
       return { ok: false, status: 403, code: 'forbidden', message: 'Lobby is full' }
     }
     // Newcomers take the first element nobody has claimed
-    const starterGenre = ALL_GENRES.find((g) => !doc.seats.some((s) => s.starterGenre === g)) ?? ALL_GENRES[0]
+    const starterElement = ALL_ELEMENTS.find((g) => !doc.seats.some((s) => s.starterElement === g)) ?? ALL_ELEMENTS[0]
     const seat: Seat = {
       seatId,
       playerId: null,
       name,
-      color: playerColorFor(starterGenre),
-      starterGenre,
+      color: playerColorFor(starterElement),
+      starterElement,
       ready: false,
       tokenHash: hashToken(token),
     }

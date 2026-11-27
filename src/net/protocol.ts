@@ -1,4 +1,4 @@
-import { Genre } from '../types/index.js'
+import { Element } from '../types/index.js'
 import { EngineState } from '../engine/state.js'
 import { EngineEvent } from '../engine/events.js'
 import { GameAction } from '../engine/actions.js'
@@ -15,7 +15,7 @@ export interface Seat {
   playerId: string | null
   name: string
   color: string
-  starterGenre: Genre
+  starterElement: Element
   ready: boolean
   /** sha256 hex of the player's secret token. Never sent to clients. */
   tokenHash: string
@@ -130,7 +130,7 @@ export interface JoinLobbyResponse {
 
 export interface LobbyOpRequest {
   op: 'ready' | 'unready' | 'leave' | 'start'
-  starterGenre?: Genre
+  starterElement?: Element
   /** Ignored: a seat's color always follows its starter element. */
   color?: string
 }

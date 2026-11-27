@@ -12,13 +12,13 @@ import {
   changedTunablePaths,
   type TunableGroup,
 } from '@/data/tunables'
-import { GENRE_THEME, ALL_GENRES, readableTextColor } from '@/data/genreTheme'
+import { ELEMENT_THEME, ALL_ELEMENTS, readableTextColor } from '@/data/elementTheme'
 import { getIdentity } from '@/net/identity'
 import * as api from '@/net/api'
 import type { DebugPresetSummary } from '@/net/protocol'
 import { ALL_DICE_TYPES } from '@/data/startingData'
-import type { Genre, GamePhase, DiceType, Player, StyleId } from '@/types'
-import { ALL_STYLE_IDS, STYLES, styleRule } from '@/data/styles'
+import type { Element, GamePhase, DiceType, Player, GenreId } from '@/types'
+import { ALL_GENRE_IDS, GENRES, genreRule } from '@/data/genres'
 
 type Tab = 'values' | 'players' | 'board' | 'simulate' | 'presets'
 
@@ -353,7 +353,7 @@ function PlayersTab() {
               {player.name[0]}
             </span>
             <span className="text-xs font-bold text-gold-300 flex-1 truncate">{player.name}</span>
-            <span className="text-[10px] text-parchment-500">{player.starterGenre}</span>
+            <span className="text-[10px] text-parchment-500">{player.starterElement}</span>
           </div>
           {PLAYER_FIELDS.map((f) => (
             <NumberRow
@@ -380,7 +380,7 @@ function PlayersTab() {
             </select>
           </div>
 
-          <StyleEditor player={player} />
+          <GenreEditor player={player} />
           <DiceEditor player={player} />
         </div>
       ))}
@@ -393,24 +393,24 @@ function PlayersTab() {
  * to an empty slot, or clear it. Every change is a DEBUG_PATCH, so it syncs to
  * online seats and persists in saves and presets like any other edit.
  */
-/** Toggle any style on or off for a player (the cap isn't enforced here). */
-function StyleEditor({ player }: { player: Player }) {
+/** Toggle any genre on or off for a player (the cap isn't enforced here). */
+function GenreEditor({ player }: { player: Player }) {
   const dispatch = useGameStore((state) => state.dispatch)
-  const toggle = (id: StyleId) => {
-    const styles = player.styles.includes(id) ? player.styles.filter((s) => s !== id) : [...player.styles, id]
-    dispatch({ type: 'DEBUG_PATCH', patch: { players: { [player.id]: { styles } } } })
+  const toggle = (id: GenreId) => {
+    const genres = player.genres.includes(id) ? player.genres.filter((s) => s !== id) : [...player.genres, id]
+    dispatch({ type: 'DEBUG_PATCH', patch: { players: { [player.id]: { genres } } } })
   }
   return (
     <div className="mt-2">
       <span className="text-[10px] font-medieval uppercase tracking-widest text-parchment-500">Genres</span>
       <div className="mt-1 flex flex-wrap gap-1">
-        {ALL_STYLE_IDS.map((id) => {
-          const on = player.styles.includes(id)
+        {ALL_GENRE_IDS.map((id) => {
+          const on = player.genres.includes(id)
           return (
             <button
               key={id}
               onClick={() => toggle(id)}
-              title={styleRule(id)}
+              title={genreRule(id)}
               className="px-1.5 py-0.5 rounded text-[10px] font-bold"
               style={{
                 background: on ? 'rgba(212, 168, 83, 0.25)' : 'rgba(0,0,0,0.3)',
@@ -418,7 +418,7 @@ function StyleEditor({ player }: { player: Player }) {
                 color: on ? '#f0d78c' : '#a08d6c',
               }}
             >
-              {STYLES[id].name}
+              {GENRES[id].name}
             </button>
           )
         })}
@@ -430,7 +430,7 @@ function StyleEditor({ player }: { player: Player }) {
 function DiceEditor({ player }: { player: Player }) {
   const dispatch = useGameStore((state) => state.dispatch)
 
-  const editSlot = (songId: string, slotIndex: number, dice: { type: DiceType; genre: Genre } | null) =>
+  const editSlot = (songId: string, slotIndex: number, dice: { type: DiceType; element: Element } | null) =>
     dispatch({ type: 'DEBUG_PATCH', patch: { dice: [{ playerId: player.id, songId, slotIndex, dice }] } })
 
   const fillAll = (type: DiceType) =>
@@ -442,7 +442,7 @@ function DiceEditor({ player }: { player: Player }) {
             playerId: player.id,
             songId: song.id,
             slotIndex,
-            dice: { type, genre: player.starterGenre },
+            dice: { type, element: player.starterElement },
           }))
         ),
       },
@@ -483,7 +483,7 @@ function DiceEditor({ player }: { player: Player }) {
                     song.id,
                     slotIndex,
                     e.target.value
-                      ? { type: e.target.value as DiceType, genre: slot.dice?.genre ?? player.starterGenre }
+                      ? { type: e.target.value as DiceType, element: slot.dice?.element ?? player.starterElement }
                       : null
                   )
                 }
@@ -497,22 +497,22 @@ function DiceEditor({ player }: { player: Player }) {
                 ))}
               </select>
               <select
-                value={slot.dice?.genre ?? ''}
+                value={slot.dice?.element ?? ''}
                 disabled={!slot.dice}
                 onChange={(e) =>
-                  slot.dice && editSlot(song.id, slotIndex, { type: slot.dice.type, genre: e.target.value as Genre })
+                  slot.dice && editSlot(song.id, slotIndex, { type: slot.dice.type, element: e.target.value as Element })
                 }
                 title={`Song ${songIdx + 1}, slot ${slotIndex + 1} — element`}
                 className="px-1 py-0.5 rounded text-[10px] min-w-0 flex-1 disabled:opacity-30"
                 style={{
-                  background: slot.dice ? `${GENRE_THEME[slot.dice.genre].color}33` : 'rgba(0,0,0,0.35)',
-                  border: `1px solid ${slot.dice ? `${GENRE_THEME[slot.dice.genre].color}99` : 'rgba(212, 168, 83, 0.25)'}`,
-                  color: slot.dice ? GENRE_THEME[slot.dice.genre].color : '#a89878',
+                  background: slot.dice ? `${ELEMENT_THEME[slot.dice.element].color}33` : 'rgba(0,0,0,0.35)',
+                  border: `1px solid ${slot.dice ? `${ELEMENT_THEME[slot.dice.element].color}99` : 'rgba(212, 168, 83, 0.25)'}`,
+                  color: slot.dice ? ELEMENT_THEME[slot.dice.element].color : '#a89878',
                 }}
               >
                 <option value="">—</option>
-                {ALL_GENRES.map((genre) => (
-                  <option key={genre} value={genre}>{genre}</option>
+                {ALL_ELEMENTS.map((element) => (
+                  <option key={element} value={element}>{element}</option>
                 ))}
               </select>
             </div>
@@ -657,21 +657,21 @@ function MiniButton({ children, onClick }: { children: React.ReactNode; onClick:
 
 function BoardTab() {
   const spaces = useGameStore((state) => state.spaces)
-  const maxPerGenre = useGameStore((state) => state.tunables.maxTagsPerGenre)
+  const maxPerElement = useGameStore((state) => state.tunables.maxTagsPerElement)
   const dispatch = useGameStore((state) => state.dispatch)
 
   if (spaces.length === 0) {
     return <p className="text-xs text-parchment-500">No game running — start one first.</p>
   }
 
-  const setTags = (spaceId: number, tags: Genre[]) =>
+  const setTags = (spaceId: number, tags: Element[]) =>
     dispatch({ type: 'DEBUG_PATCH', patch: { spaceTags: { [spaceId]: tags }, respawnMonsters: true } })
 
   const clearBoard = () =>
     dispatch({
       type: 'DEBUG_PATCH',
       patch: {
-        spaceTags: Object.fromEntries(spaces.map((s) => [s.id, [] as Genre[]])),
+        spaceTags: Object.fromEntries(spaces.map((s) => [s.id, [] as Element[]])),
         respawnMonsters: true,
       },
     })
@@ -686,7 +686,7 @@ function BoardTab() {
       </div>
       <p className="text-[10px] text-parchment-500 mb-2">
         Tap an element to add a chip; tap a chip in the row to remove it. A space holds any
-        number of chips, but only {maxPerGenre} of the same element. Monsters re-derive
+        number of chips, but only {maxPerElement} of the same element. Monsters re-derive
         immediately, so a space's roster always matches its chips.
       </p>
 
@@ -697,18 +697,18 @@ function BoardTab() {
               <span className="text-parchment-500">{space.id}</span> {space.name}
             </span>
             <span className="text-[10px] text-parchment-500 tabular-nums">
-              {space.genreTags.length} chip{space.genreTags.length === 1 ? '' : 's'}
+              {space.elementTags.length} chip{space.elementTags.length === 1 ? '' : 's'}
             </span>
           </div>
           <div className="flex items-center gap-1 mt-1 flex-wrap">
-            {ALL_GENRES.map((genre) => {
-              const { color, emoji } = GENRE_THEME[genre]
+            {ALL_ELEMENTS.map((element) => {
+              const { color, emoji } = ELEMENT_THEME[element]
               return (
                 <button
-                  key={genre}
-                  disabled={space.genreTags.filter((t) => t === genre).length >= maxPerGenre}
-                  onClick={() => setTags(space.id, [...space.genreTags, genre])}
-                  title={`Add ${genre}`}
+                  key={element}
+                  disabled={space.elementTags.filter((t) => t === element).length >= maxPerElement}
+                  onClick={() => setTags(space.id, [...space.elementTags, element])}
+                  title={`Add ${element}`}
                   className="w-6 h-6 rounded flex items-center justify-center text-xs disabled:opacity-30 transition-transform hover:enabled:-translate-y-0.5"
                   style={{ background: `${color}33`, border: `1px solid ${color}80` }}
                 >
@@ -717,21 +717,21 @@ function BoardTab() {
               )
             })}
             <span className="w-px h-4 mx-1" style={{ background: 'rgba(212, 168, 83, 0.2)' }} />
-            {space.genreTags.map((genre, i) => {
-              const { color } = GENRE_THEME[genre]
+            {space.elementTags.map((element, i) => {
+              const { color } = ELEMENT_THEME[element]
               return (
                 <button
                   key={i}
-                  onClick={() => setTags(space.id, space.genreTags.filter((_, idx) => idx !== i))}
-                  title={`Remove ${genre}`}
+                  onClick={() => setTags(space.id, space.elementTags.filter((_, idx) => idx !== i))}
+                  title={`Remove ${element}`}
                   className="px-1.5 h-5 rounded text-[10px] font-bold transition-transform hover:-translate-y-0.5"
                   style={{ background: color, color: readableTextColor(color) }}
                 >
-                  {genre[0]}
+                  {element[0]}
                 </button>
               )
             })}
-            {space.genreTags.length === 0 && (
+            {space.elementTags.length === 0 && (
               <span className="text-[10px] text-parchment-500 italic">empty</span>
             )}
           </div>

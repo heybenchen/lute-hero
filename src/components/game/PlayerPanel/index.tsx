@@ -1,7 +1,7 @@
 import { useGameStore, selectCurrentPlayer, selectCanAct, selectIsHost } from '@/store'
 import { movesFor } from '@/engine/economy'
 import { SongCard } from '../SongCard'
-import { playerTokenLabel, readableTextColor } from '@/data/genreTheme'
+import { playerTokenLabel, readableTextColor } from '@/data/elementTheme'
 import {
   Award,
   CircleDot,
@@ -13,7 +13,7 @@ import {
   Mic2,
 } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
-import { StyleChip } from '@/components/ui/StyleBadge'
+import { GenreChip } from '@/components/ui/GenreBadge'
 
 /** Everything the turn console and the mobile turn bar need to know about the active turn. */
 function useTurnState() {
@@ -245,10 +245,10 @@ export function PlayerPanel() {
           <ResourceTile icon={<Lightbulb size={14} />} label="Inspiration" value={currentPlayer.inspiration} />
         </div>
 
-        <div className="map-style-list mt-3 flex flex-wrap items-center gap-1.5">
+        <div className="map-genre-list mt-3 flex flex-wrap items-center gap-1.5">
           <span className="module-label mb-0 mr-1">Genres</span>
-          {currentPlayer.styles.length > 0
-            ? currentPlayer.styles.map((id) => <StyleChip key={id} id={id} showTooltip />)
+          {currentPlayer.genres.length > 0
+            ? currentPlayer.genres.map((id) => <GenreChip key={id} id={id} showTooltip />)
             : <span className="text-[10px] italic text-parchment-500">None yet — learn them in the Studio</span>}
         </div>
       </section>

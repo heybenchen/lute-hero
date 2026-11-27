@@ -12,7 +12,7 @@
  *    and Nimble Fingers are used when ready; Inspiration rerolls a missed kill
  *    while it holds more than 2. Featured songs from bards on the space go
  *    last, once its own songs are out.
- *  - Shop: fill empty song slots with new d4s, learn affordable styles while
+ *  - Shop: fill empty song slots with new d4s, learn affordable genres while
  *    it has room, upgrade its biggest upgradable die on a matching chip, and
  *    bank spare EXP as Inspiration (up to 3).
  *
@@ -21,14 +21,14 @@
 import { applyAction, ActionCtx } from '../engine/reducer.js'
 import { EngineState, createInitialEngineState } from '../engine/state.js'
 import { GameAction } from '../engine/actions.js'
-import { Dice, DiceType, Genre, Monster, Player, Rng, Song } from '../types/index.js'
-import { getGenreMultiplier } from '../game-logic/combat/damageCalculator.js'
+import { Dice, DiceType, Element, Monster, Player, Rng, Song } from '../types/index.js'
+import { getElementMultiplier } from '../game-logic/combat/damageCalculator.js'
 import { calculateMonsterFameValue } from '../game-logic/fame/calculator.js'
 import { getValidMoves } from '../game-logic/board/graphBuilder.js'
 import { getTunables, withTunables } from '../data/tunables.js'
 import { getUpgradeCost, newD4Cost, getInspirationCost } from '../data/draftCards.js'
-import { styleCost, maxStyles } from '../data/styles.js'
-import { ALL_GENRES } from '../data/genreTheme.js'
+import { genreCost, maxGenres } from '../data/genres.js'
+import { ALL_ELEMENTS } from '../data/elementTheme.js'
 import { SmartBot, SmartParams } from './smartBot.js'
 
 const FACES: Record<DiceType, number> = { d4: 4, d8: 8, d12: 12, d20: 20 }
@@ -45,7 +45,7 @@ function songDie(song: Song): Dice | null {
 
 function expectedHit(song: Song, monster: Monster): number {
   const die = songDie(song)
-  return die ? expectedDieValue(die.type) * getGenreMultiplier(die.genre, monster) : 0
+  return die ? expectedDieValue(die.type) * getElementMultiplier(die.element, monster) : 0
 }
 
 export class Bot {
@@ -143,7 +143,7 @@ export class Bot {
       const targets = lockedTarget ? [lockedTarget] : alive
 
       // Rallying Cry: refresh the best spent song
-      if (combat.rallyReady && fighter.styles.includes('staccato') && !combat.stylesUsed.includes('staccato')) {
+      if (combat.rallyReady && fighter.genres.includes('gospel') && !combat.genresUsed.includes('gospel')) {
         const spent = fighter.songs
           .filter((s) => combat.spentSongIds.includes(s.id) && songDie(s))
           .sort((a, b) => expectedDieValue(songDie(b)!.type) - expectedDieValue(songDie(a)!.type))[0]
@@ -180,7 +180,7 @@ export class Bot {
     }
 
     const spread = this.mainElement(this.me)
-    this.act({ type: 'END_COMBAT', spreadGenre: spread })
+    this.act({ type: 'END_COMBAT', spreadElement: spread })
   }
 
   /** After a play that missed its kill: free Nimble Fingers, else Inspiration while it holds more than 2. */
@@ -194,20 +194,20 @@ export class Bot {
       const song = this.me.songs.find((s) => s.id === lastId)!
       // Only worth it when a reroll can plausibly finish the target
       if (expectedHit(song, { ...target, currentHP: hpBefore }) < hpBefore * 0.6) return
-      if (this.act({ type: 'REROLL_SONG', rubato: true })) continue
+      if (this.act({ type: 'REROLL_SONG', bebop: true })) continue
       if (this.me.inspiration > 2 && this.act({ type: 'REROLL_SONG' })) continue
       return
     }
   }
 
-  private mainElement(player: Player): Genre {
-    const weight = new Map<Genre, number>()
+  private mainElement(player: Player): Element {
+    const weight = new Map<Element, number>()
     for (const song of player.songs) {
       const die = songDie(song)
-      if (die) weight.set(die.genre, (weight.get(die.genre) ?? 0) + expectedDieValue(die.type))
+      if (die) weight.set(die.element, (weight.get(die.element) ?? 0) + expectedDieValue(die.type))
     }
-    let best: Genre = player.starterGenre
-    for (const [genre, w] of weight) if (w > (weight.get(best) ?? 0)) best = genre
+    let best: Element = player.starterElement
+    for (const [element, w] of weight) if (w > (weight.get(best) ?? 0)) best = element
     return best
   }
 
@@ -242,11 +242,11 @@ export class Bot {
       return this.act({ type: 'BUY_DIE', offerIndex: idx })
     }
 
-    // Learn a style while there is room
-    const cap = this.tuned(() => maxStyles())
-    if (me.styles.length < cap) {
-      const idx = this.state.styleOffers.findIndex((id) => !me.styles.includes(id) && me.exp >= this.tuned(() => styleCost(id)))
-      if (idx !== -1 && this.act({ type: 'BUY_STYLE', offerIndex: idx })) return true
+    // Learn a genre while there is room
+    const cap = this.tuned(() => maxGenres())
+    if (me.genres.length < cap) {
+      const idx = this.state.genreOffers.findIndex((id) => !me.genres.includes(id) && me.exp >= this.tuned(() => genreCost(id)))
+      if (idx !== -1 && this.act({ type: 'BUY_GENRE', offerIndex: idx })) return true
     }
 
     // Upgrade the biggest die that a chip on offer matches
@@ -257,7 +257,7 @@ export class Bot {
     for (const die of dice) {
       const cost = this.tuned(() => getUpgradeCost(die.type))
       if (cost === null || me.exp < cost) continue
-      const idx = offers.indexOf(die.genre)
+      const idx = offers.indexOf(die.element)
       if (idx === -1) continue
       if (this.act({ type: 'UPGRADE_DIE', offerIndex: idx, diceId: die.id })) return true
     }
@@ -306,23 +306,23 @@ export interface BardSnapshot {
   exp: number
   inspiration: number
   monstersDefeated: number
-  styles: string[]
-  /** [die type, element offset from the bard's starter element in ALL_GENRES order] */
+  genres: string[]
+  /** [die type, element offset from the bard's starter element in ALL_ELEMENTS order] */
   dice: [DiceType, number][]
 }
 
 export function snapshotBard(player: Player): BardSnapshot {
-  const base = ALL_GENRES.indexOf(player.starterGenre)
+  const base = ALL_ELEMENTS.indexOf(player.starterElement)
   return {
     fame: player.fame,
     exp: player.exp,
     inspiration: player.inspiration,
     monstersDefeated: player.monstersDefeated,
-    styles: [...player.styles],
+    genres: [...player.genres],
     dice: player.songs
       .map(songDie)
       .filter((d): d is Dice => !!d)
-      .map((d) => [d.type, (ALL_GENRES.indexOf(d.genre) - base + ALL_GENRES.length) % ALL_GENRES.length]),
+      .map((d) => [d.type, (ALL_ELEMENTS.indexOf(d.element) - base + ALL_ELEMENTS.length) % ALL_ELEMENTS.length]),
   }
 }
 
@@ -337,10 +337,10 @@ export function simulateGame(
   maxRounds = 40,
   params: Partial<SmartParams> = {}
 ): { showdownAfterRound: number | null; state: EngineState } {
-  const genres = shuffleGenres(rng).slice(0, playerCount)
+  const elements = shuffleElements(rng).slice(0, playerCount)
   const started = applyAction(
     createInitialEngineState(),
-    { type: 'START_GAME', playerConfigs: genres.map((g, i) => ({ name: `Bot ${i + 1}`, starterGenre: g })) },
+    { type: 'START_GAME', playerConfigs: elements.map((g, i) => ({ name: `Bot ${i + 1}`, starterElement: g })) },
     { rng, actor: { kind: 'hotseat' } }
   )
   if (!started.ok) throw new Error(started.message)
@@ -359,8 +359,8 @@ export function simulateGame(
   return { showdownAfterRound: bot.state.showdownActive ? round - 1 : null, state: bot.state }
 }
 
-function shuffleGenres(rng: Rng): Genre[] {
-  const list = [...ALL_GENRES]
+function shuffleElements(rng: Rng): Element[] {
+  const list = [...ALL_ELEMENTS]
   for (let i = list.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1))
     ;[list[i], list[j]] = [list[j], list[i]]

@@ -63,7 +63,7 @@ describe('Elemental Dice Shop', () => {
     it('should create a d4 of the requested element', () => {
       const die = createElementalDie('Folk')
       expect(die.type).toBe('d4')
-      expect(die.genre).toBe('Folk')
+      expect(die.element).toBe('Folk')
     })
 
     it('should assign unique ids', () => {

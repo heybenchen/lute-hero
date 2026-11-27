@@ -13,7 +13,7 @@ it('lets a bard pick any space within the moves they have left, and walks there'
   try {
     const store = useGameStore.getState()
     store.startHotseat()
-    await store.dispatch({ type: 'START_GAME', playerConfigs: [{ name: 'Lyra', starterGenre: 'Folk', color: '#4caf50' }] })
+    await store.dispatch({ type: 'START_GAME', playerConfigs: [{ name: 'Lyra', starterElement: 'Folk', color: '#4caf50' }] })
     await act(async () => root.render(<Board />))
 
     const start = useGameStore.getState().players[0].position
@@ -52,7 +52,7 @@ it('with one move left only the neighbouring spaces are selectable', async () =>
   try {
     const store = useGameStore.getState()
     store.startHotseat()
-    await store.dispatch({ type: 'START_GAME', playerConfigs: [{ name: 'Lyra', starterGenre: 'Folk', color: '#4caf50' }] })
+    await store.dispatch({ type: 'START_GAME', playerConfigs: [{ name: 'Lyra', starterElement: 'Folk', color: '#4caf50' }] })
     const first = getReachableMoves(useGameStore.getState().players[0].position, useGameStore.getState().spaces, 1)[0]
     await store.dispatch({ type: 'MOVE', playerId: useGameStore.getState().players[0].id, toSpaceId: first.space.id })
     await act(async () => root.render(<Board />))

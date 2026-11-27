@@ -1,18 +1,18 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import { GENRE_THEME } from '@/data/genreTheme'
-import type { Genre } from '@/types'
+import { ELEMENT_THEME } from '@/data/elementTheme'
+import type { Element } from '@/types'
 
 export interface ChordStrike {
   id: string
-  genre: Genre | null
+  element: Element | null
   hadCrit: boolean
   wasResisted: boolean
 }
 
 interface Props {
   verse: number
-  element?: Genre | null
+  element?: Element | null
   strike?: ChordStrike
   finale?: boolean
   absorb?: boolean
@@ -36,7 +36,7 @@ export function ChordStage({ verse, element, strike, finale, absorb }: Props) {
     const scene = new THREE.Scene()
     const camera = new THREE.OrthographicCamera(-5, 5, 1.85, -1.85, .1, 40)
     camera.position.z = 10
-    const hue = element ? GENRE_THEME[element].color : '#ad83ff'
+    const hue = element ? ELEMENT_THEME[element].color : '#ad83ff'
     const body = new THREE.Group()
     scene.add(body)
     const core = new THREE.Mesh(new THREE.IcosahedronGeometry(.86, 0),
@@ -96,7 +96,7 @@ export function ChordStage({ verse, element, strike, finale, absorb }: Props) {
         const distance = finale ? burst * (1.2 + i % 5) : absorb ? 0 : Math.max(0, flight) * (cue?.wasResisted ? 1.4 : 3.6)
         const inbound = finale ? 0 : Math.max(0, -flight) * (8 + i % 4)
         spark.position.set(Math.cos(angle) * distance + (i % 2 ? inbound : -inbound), Math.sin(angle) * distance + (i % 5 - 2) * .12, 1)
-        spark.material.color.set(cue?.genre ? GENRE_THEME[cue.genre].color : hue)
+        spark.material.color.set(cue?.element ? ELEMENT_THEME[cue.element].color : hue)
         spark.scale.setScalar((finale ? 3.2 : cue?.hadCrit ? 1.7 : 1) * Math.max(.1, finale ? 1 - burst / 2.4 : 1 - Math.max(0, flight)))
       })
       renderer.render(scene, camera)

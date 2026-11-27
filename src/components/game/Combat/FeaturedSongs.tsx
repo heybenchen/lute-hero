@@ -145,7 +145,7 @@ function FeatureRequestPrompt({
   const isFighter = myPlayerId === fighter.id
   const dieLabel = die ? (
     <span className="inline-flex items-center gap-1 font-bold">
-      <DiceShape type={die.type} /> {die.genre}
+      <DiceShape type={die.type} /> {die.element}
     </span>
   ) : 'a song'
 

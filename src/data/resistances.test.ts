@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { ELEMENT_MATCHUPS, getMatchup } from './resistances'
 import { MONSTER_TEMPLATES } from './monsters'
-import { getGenreMultiplier } from '../game-logic/combat/damageCalculator'
-import { Monster, Genre } from '../types/index'
+import { getElementMultiplier } from '../game-logic/combat/damageCalculator'
+import { Monster, Element } from '../types/index'
 
 describe('ELEMENT_MATCHUPS', () => {
   it('covers all four non-boss elements', () => {
@@ -44,12 +44,12 @@ describe('ELEMENT_MATCHUPS', () => {
         isBoss: false,
         level: 1,
       }
-      expect(getGenreMultiplier(m.weakTo, monster)).toBe(2)
-      expect(getGenreMultiplier(m.immuneTo, monster)).toBe(0)
-      const neutral = (['Ballad', 'Folk', 'Hymn', 'Shanty'] as Genre[]).find(
+      expect(getElementMultiplier(m.weakTo, monster)).toBe(2)
+      expect(getElementMultiplier(m.immuneTo, monster)).toBe(0)
+      const neutral = (['Ballad', 'Folk', 'Hymn', 'Shanty'] as Element[]).find(
         (g) => g !== m.weakTo && g !== m.immuneTo,
       )!
-      expect(getGenreMultiplier(neutral, monster)).toBe(1)
+      expect(getElementMultiplier(neutral, monster)).toBe(1)
     }
   })
 })

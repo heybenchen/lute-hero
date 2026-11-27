@@ -1,6 +1,6 @@
 /**
  * Exact roll and damage distributions for the simulation bots, mirroring
- * `rollStyledDie` (styleEffects.ts) and the crit cascade (roller.ts):
+ * `rollGenreDie` (genreEffects.ts) and the crit cascade (roller.ts):
  *
  *  - a die rolls 1..N (Master's Touch: the higher of two rolls),
  *  - Dragon's Roar adds to a d20 and can push it onto its top face,
@@ -14,14 +14,14 @@
  * song tames that monster?" thousands of times per game cheaply.
  */
 import { DiceType } from '../types/index.js'
-import { GenericRollOptions, effectiveCritFace } from '../game-logic/styles/specs.js'
+import { GenericRollOptions, effectiveCritFace } from '../game-logic/genres/specs.js'
 
 const FACES: Record<DiceType, number> = { d4: 4, d8: 8, d12: 12, d20: 20 }
 
 /** A discrete distribution: total → probability. */
 export type Dist = Map<number, number>
 
-/** Same options the engine's generic roll takes (built-in styles and specs reduce to these). */
+/** Same options the engine's generic roll takes (built-in genres and specs reduce to these). */
 export type RollOptions = GenericRollOptions
 
 const cascadeCache = new Map<string, Dist>()
@@ -60,7 +60,7 @@ const rollCache = new Map<string, Dist>()
 
 /**
  * Distribution of a die's pre-multiplier total, mirroring `rollWithOptions`
- * (game-logic/styles/specs.ts) step by step: advantage/disadvantage → reroll
+ * (game-logic/genres/specs.ts) step by step: advantage/disadvantage → reroll
  * of a low face → flip → floor → crit check → cascade → flat (+ odd-face bonus) → ×times.
  */
 export function rollDist(type: DiceType, opts: RollOptions): Dist {

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
-import type { DiceType, Genre } from '@/types'
-import { GENRE_THEME, readableTextColor } from '@/data/genreTheme'
+import type { DiceType, Element } from '@/types'
+import { ELEMENT_THEME, readableTextColor } from '@/data/elementTheme'
 import { getDieShape, labelsShowing, type DieShape } from './dieShapes'
 import { FRAME_RATE, simulateThrow, type Arena, type ThrowResult } from './simulate'
 import type { TrayRequest } from './diceBus'
@@ -96,9 +96,9 @@ const FONT_PX: Record<DiceType, number> = { d4: 50, d8: 84, d12: 90, d20: 74 }
 const textures = new Map<string, THREE.CanvasTexture>()
 
 /** Engraved number(s) on a resin face, with a soft bevel highlight at the edges. */
-function faceTexture(shape: DieShape, genre: Genre, labels: number[], face: number, maxAnisotropy: number): THREE.CanvasTexture {
+function faceTexture(shape: DieShape, element: Element, labels: number[], face: number, maxAnisotropy: number): THREE.CanvasTexture {
   const faceLabels = shape.readsVertex ? shape.faces[face].map((v) => labels[v]) : [labels[face]]
-  const key = `${shape.type}|${genre}|${faceLabels.join(',')}`
+  const key = `${shape.type}|${element}|${faceLabels.join(',')}`
   const cached = textures.get(key)
   if (cached) return cached
 
@@ -111,7 +111,7 @@ function faceTexture(shape: DieShape, genre: Genre, labels: number[], face: numb
     x: half + p.x * half * FACE_SCALE * scale,
     y: half - p.y * half * FACE_SCALE * scale,
   })
-  const base = GENRE_THEME[genre].color
+  const base = ELEMENT_THEME[element].color
   const ink = readableTextColor(base) === '#ffffff' ? '#fbf6ea' : '#21170c'
 
   // Resin body: a gentle radial falloff so faces don't read as flat stickers
@@ -210,7 +210,7 @@ interface LiveDie {
   materials: THREE.MeshPhysicalMaterial[]
   value: number
   crit: boolean
-  genre: Genre
+  element: Element
 }
 
 export class DiceTray {
@@ -353,7 +353,7 @@ export class DiceTray {
 
       const added = throwing.map((d, i) => {
         const value = d.values[wave]
-        const live = this.spawn(shapes[i], d.genre, sim.landed[i], value)
+        const live = this.spawn(shapes[i], d.element, sim.landed[i], value)
         live.crit = value === shapes[i].sides && d.values.length > wave + 1
         return live
       })
@@ -375,11 +375,11 @@ export class DiceTray {
   }
 
   /** A die mesh labelled so the face (or vertex) it will land on shows `value`. */
-  private createDie(shape: DieShape, genre: Genre, landed: number, value: number): LiveDie {
+  private createDie(shape: DieShape, element: Element, landed: number, value: number): LiveDie {
     const labels = labelsShowing(shape, landed, value)
     const maxAnisotropy = this.renderer.capabilities.getMaxAnisotropy()
     const materials = shape.faces.map((_, f) => new THREE.MeshPhysicalMaterial({
-      map: faceTexture(shape, genre, labels, f, maxAnisotropy),
+      map: faceTexture(shape, element, labels, f, maxAnisotropy),
       roughness: 0.3,
       metalness: 0,
       clearcoat: 1,
@@ -391,12 +391,12 @@ export class DiceTray {
     const mesh = new THREE.Mesh(renderShape(shape).geometry, materials)
     mesh.castShadow = true
     mesh.receiveShadow = true
-    return { shape, mesh, materials, value, crit: false, genre }
+    return { shape, mesh, materials, value, crit: false, element }
   }
 
   /** Add a die to this throw; it stays hidden until playback positions it. */
-  private spawn(shape: DieShape, genre: Genre, landed: number, value: number): LiveDie {
-    const die = this.createDie(shape, genre, landed, value)
+  private spawn(shape: DieShape, element: Element, landed: number, value: number): LiveDie {
+    const die = this.createDie(shape, element, landed, value)
     die.mesh.visible = false
     this.scene.add(die.mesh)
     this.dice.push(die)
@@ -515,7 +515,7 @@ export class DiceTray {
         x: (v.x * 0.5 + 0.5) * rect.width,
         y: (-v.y * 0.5 + 0.5) * rect.height,
         text: String(die.value),
-        color: GENRE_THEME[die.genre].color,
+        color: ELEMENT_THEME[die.element].color,
         crit: die.crit,
       }
     }))

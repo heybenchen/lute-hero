@@ -1,6 +1,6 @@
 # Genres
 
-A reference for every genre in the Studio (called "styles" in code): what it does, what it costs, which tunables shape it, where its logic lives and how strong it simulates.
+A reference for every genre in the Studio: what it does, what it costs, which tunables shape it, where its logic lives and how strong it simulates.
 
 > The same information is on the **`/songbook`** page of the app (`src/songbook/`). It reads rules, prices and settings live from the code, so only the win rates and "was" prices in `src/songbook/data.ts` need updating by hand along with this file.
 
@@ -8,22 +8,22 @@ A reference for every genre in the Studio (called "styles" in code): what it doe
 
 ## How genres work
 
-- A genre changes how **all** of a bard's songs play. A bard holds at most **2** (`maxStyles`).
-- Everything players read says **genre**; songs and dice belong to **elements** (Ballad, Folk, Hymn, Shanty). Code identifiers keep the old `style` names so saves stay compatible.
-- The Studio's **Genres** shelf shows **2** offers (`styleOfferCount`). Empty slots refill at the start of every turn, and Inspiration redraws the shelf (`REFRESH_STYLE_OFFERS`). Buying at the cap replaces a genre the bard names.
-- Prices are in EXP and every price is a tunable (`styleCostKey(id)` gives its key, e.g. `styleCostHometownHero`).
+- A genre changes how **all** of a bard's songs play. A bard holds at most **2** (`maxGenres`).
+- Players and code use the same words: a Studio purchase is a **genre** (`GenreId`, `player.genres`); songs and dice belong to **elements** (Ballad, Folk, Hymn, Shanty: `Element`, `die.element`). Each genre's id is its own name in kebab case (`opera`, `new-age`, `lo-fi`). Saves from before the rename are migrated on load (`src/engine/legacyNames.ts`).
+- The Studio's **Genres** shelf shows **2** offers (`genreOfferCount`). Empty slots refill at the start of every turn, and Inspiration redraws the shelf (`REFRESH_GENRE_OFFERS`). Buying at the cap replaces a genre the bard names.
+- Prices are in EXP and every price is a tunable (`genreCostKey(id)` gives its key, e.g. `genreCostCountry`).
 - "Once per turn" genres fire automatically the first time they apply (Bluegrass is always on). Five are choices instead: **Bebop** (a free encore button), **Blues** (a refresh button on a spent d20 song), **Gospel** ("call it" before a song), **Soul** (pay Inspiration once for a bonus on every song that concert) and **Trip-Hop** (once per turn, move to any space; the board lights up every space beyond walking reach).
 - Two kinds of bonus, worded the same way everywhere. "Add +N to the song" (or "to each song") is a flat bonus on top of the roll: it never changes a die's face, so it can't crit. "Increase the rolled value" changes the face itself, so the die can crit (Country, Soft Rock, Baroque, Orchestra).
 - Guest songs (borrowed from another bard) roll without genres, never refresh anything and can't be called for Gospel.
 
 ## How strength is measured
 
-Run `OPP=1 ROUND=5 STYLES=<id> npx tsx scripts/style-audit.ts 600`. It plays 3-bard games with smart bots in every seat, through the real engine and the Final Showdown:
+Run `OPP=1 ROUND=5 GENRES=<id> npx tsx scripts/genre-audit.ts 600`. It plays 3-bard games with smart bots in every seat, through the real engine and the Final Showdown:
 
-- **Real timing.** Bots buy their first genre in **round 5** and a second in round 7 (`npx tsx scripts/style-timing.ts`). The tested bard gets the genre on their shelf from round 5 and buys it at its **real price** the first turn they can afford it, ahead of dice upgrades.
+- **Real timing.** Bots buy their first genre in **round 5** and a second in round 7 (`npx tsx scripts/genre-timing.ts`). The tested bard gets the genre on their shelf from round 5 and buys it at its **real price** the first turn they can afford it, ahead of dice upgrades.
 - **Shopping rivals.** The other two bards shop for genres like anyone (real prices, whatever the smart bot values).
 - **What "balanced" means.** Three seats means a third of games (**33.3%**). The no-genre row (everyone shopping naturally) won **32.8%** in the latest run. At 600 games one result carries about ±1.9 points of noise (±3.8 at two sigma), so only gaps over about 4 points mean anything. The goal is every genre within about 4 points of parity (roughly 31–37%).
-- **The bot values every genre.** Its odds model can't see "after a miss" or K-Pop's Fame, so Grunge, Dubstep and K-Pop carry audit priors (`STYLE_PRIOR` in `smartBot.ts`); without them the bot sold those genres off. Gospel, Blues and Soul are valued from this audit too.
+- **The bot values every genre.** Its odds model can't see "after a miss" or K-Pop's Fame, so Grunge, Dubstep and K-Pop carry audit priors (`GENRE_PRIOR` in `smartBot.ts`); without them the bot sold those genres off. Gospel, Blues and Soul are valued from this audit too.
 - **The bot plays the choices.** Gospel calls a play it expects to win (at least 60%) while a spent song is waiting; Soul pays when the +2 lifts the win chance by more than the Inspiration is worth; Blues refreshes a spent d20 song when it is worth more than the Inspiration. These heuristics are simple, so the two choice genres that measure low (Gospel, Soul) may play better in human hands.
 
 ## All genres (current values)
@@ -34,33 +34,33 @@ Run `OPP=1 ROUND=5 STYLES=<id> npx tsx scripts/style-audit.ts 600`. It plays 3-b
 
 | Genre | id | Price (was) | What it does | Tunables | Win % |
 |---|---|---|---|---|---|
-| **Gospel** | `staccato` | 2 (2) | Once per turn before rolling, declare that the next roll will win over a monster. If you're right, refresh any spent song. | `staccatoMaxFaces` (20) | 27.1 |
-| **New Age** | `coda` | 1 (1) | Gain a 7th song slot. If you replace this genre, you must pick a song to give up. | — | 28.1 |
-| **Indie** | `ostinato` | 2 (2) | All your dice crit one number lower. Does not affect bonus dice. | `ostinatoCritFace` (3), `ostinatoMaxFaces` (20), `ostinatoCascadeBonus` (0), `ostinatoChainFace` (4) | 34.3 |
-| **Bebop** | `rubato` | 1 (1) | Once per turn, re-roll the die you just rolled and keep the higher result. | `rubatoMaxFaces` (20), `rubatoUsesPerTurn` (1) | 32.9 |
-| **Bluegrass** | `virtuoso` | 2 (2) | You may roll your d8 dice twice and keep the higher roll. Does not affect bonus dice. | `virtuosoMinFaces` (8), `virtuosoMaxFaces` (8) | 39.3 |
-| **Opera** | `fortissimo` | 2 (2) | Increase the rolled value of your d20s by 2. | `fortissimoBonus` (2), `fortissimoRaisesFace` (1) | 30.4 |
-| **Blues** | `fermata` | 3 (3) | Once per turn, you may refresh a spent d20 song for 1 Inspiration. | `fermataMinFaces` (20), `fermataInspirationCost` (1) | 31.5 |
-| **Crossover** | `counterpoint` | 2 (2) | Once per turn, a song ignores immunity. | `counterpointMultiplier` (1) | 31.8 |
-| **Barbershop** | `tutti` | 2 (2) | When you have all four elements in your setlist, add +1 to each song. | `tuttiBonus` (1), `tuttiElements` (4) | 37.3 |
-| **Screamo** | `overture` | 2 (2) | Add +3 to your first song each turn. | `overtureBonus` (3) | 32.9 |
-| **Disco** | `bravo` | 3 (3) | Gain +10 Fame for every Lv3+ monster you win over. | `bravoFamePerTame` (10), `bravoMinLevel` (3) | 37.5 |
-| **Pop** | `ispirato` | 1 (1) | Gain 2 Inspiration before each concert. | `ispiratoPerTurn` (2), `ispiratoMin` (1) | 32.9 |
+| **Gospel** | `gospel` | 2 (2) | Once per turn before rolling, declare that the next roll will win over a monster. If you're right, refresh any spent song. | `gospelMaxFaces` (20) | 27.1 |
+| **New Age** | `new-age` | 1 (1) | Gain a 7th song slot. If you replace this genre, you must pick a song to give up. | — | 28.1 |
+| **Indie** | `indie` | 2 (2) | All your dice crit one number lower. Does not affect bonus dice. | `indieCritFace` (3), `indieMaxFaces` (20), `indieCascadeBonus` (0), `indieChainFace` (4) | 34.3 |
+| **Bebop** | `bebop` | 1 (1) | Once per turn, re-roll the die you just rolled and keep the higher result. | `bebopMaxFaces` (20), `bebopUsesPerTurn` (1) | 32.9 |
+| **Bluegrass** | `bluegrass` | 2 (2) | You may roll your d8 dice twice and keep the higher roll. Does not affect bonus dice. | `bluegrassMinFaces` (8), `bluegrassMaxFaces` (8) | 39.3 |
+| **Opera** | `opera` | 2 (2) | Increase the rolled value of your d20s by 2. | `operaBonus` (2), `operaRaisesFace` (1) | 30.4 |
+| **Blues** | `blues` | 3 (3) | Once per turn, you may refresh a spent d20 song for 1 Inspiration. | `bluesMinFaces` (20), `bluesInspirationCost` (1) | 31.5 |
+| **Crossover** | `crossover` | 2 (2) | Once per turn, a song ignores immunity. | `crossoverMultiplier` (1) | 31.8 |
+| **Barbershop** | `barbershop` | 2 (2) | When you have all four elements in your setlist, add +1 to each song. | `barbershopBonus` (1), `barbershopElements` (4) | 37.3 |
+| **Screamo** | `screamo` | 2 (2) | Add +3 to your first song each turn. | `screamoBonus` (3) | 32.9 |
+| **Disco** | `disco` | 3 (3) | Gain +10 Fame for every Lv3+ monster you win over. | `discoFamePerTame` (10), `discoMinLevel` (3) | 37.5 |
+| **Pop** | `pop` | 1 (1) | Gain 2 Inspiration before each concert. | `popPerTurn` (2), `popMin` (1) | 32.9 |
 
 ### From the lab
 
-These keep kebab-case ids. Their effects are data-defined specs that `studioSpec()` builds from the live tunables, except Soul, which the engine adds per play (`inspiredPlaySpec()`).
+These keep kebab-case ids. Their effects are data-defined specs that `studioSpec()` builds from the live tunables, except Soul, which the engine adds per play (`soulSpec()`).
 
 | Genre | id | Price (was) | What it does | Tunables | Win % |
 |---|---|---|---|---|---|
-| **Country** | `hometown-hero` | 1 (1) | Increase the rolled value of all dice matching your starting element by 1. | `hometownHeroBonus` (1) | 33.9 |
-| **Lo-fi** | `studio-regular` | 3 (3) | Upgrades cost 1 less EXP. | `studioRegularDiscount` (1) | 30.9 |
-| **Soul** | `inspired-play` | 2 (3) | If you started this turn with 2+ Inspiration, spend 1 Inspiration to add +2 to every song. | `inspiredPlayBonus` (2), `inspiredPlayMin` (2), `inspiredPlayCost` (1) | 32.3 |
-| **Baroque** | `steady-hands` | 1 (1) | Whenever a die roll is 3 or less, increase its rolled value by 1. Does not affect bonus dice. | `steadyHandsAtMost` (3), `steadyHandsBonus` (1) | 39.0 |
-| **Rap** | `street-performer` | 2 (1) | Gain 2 EXP at the start of each turn. | `streetPerformerExp` (2) | 31.6 |
-| **House** | `chain-reaction` | 2 (2) | Add +2 to each song for each same-element song played just before it. Reduced to +1 in the Final Showdown. | `chainReactionBonus` (2), `chainReactionCap` (0), `chainReactionShowdownBonus` (1) | 37.1 |
-| **Orchestra** | `swarm-singer` | 2 (2) | While there are 3+ monsters remaining, increase the rolled value of all dice by 1. | `swarmSingerBonus` (1), `swarmSingerMin` (3) | 36.6 |
-| **Mariachi** | `jam-session` | 2 (3) | While sharing a space with another bard, add +2 to each song. | `jamSessionBonus` (2) | 35.3 |
+| **Country** | `country` | 1 (1) | Increase the rolled value of all dice matching your starting element by 1. | `countryBonus` (1) | 33.9 |
+| **Lo-fi** | `lo-fi` | 3 (3) | Upgrades cost 1 less EXP. | `loFiDiscount` (1) | 30.9 |
+| **Soul** | `soul` | 2 (3) | If you started this turn with 2+ Inspiration, spend 1 Inspiration to add +2 to every song. | `soulBonus` (2), `soulMin` (2), `soulCost` (1) | 32.3 |
+| **Baroque** | `baroque` | 1 (1) | Whenever a die roll is 3 or less, increase its rolled value by 1. Does not affect bonus dice. | `baroqueAtMost` (3), `baroqueBonus` (1) | 39.0 |
+| **Rap** | `rap` | 2 (1) | Gain 2 EXP at the start of each turn. | `rapExp` (2) | 31.6 |
+| **House** | `house` | 2 (2) | Add +2 to each song for each same-element song played just before it. Reduced to +1 in the Final Showdown. | `houseBonus` (2), `houseCap` (0), `houseShowdownBonus` (1) | 37.1 |
+| **Orchestra** | `orchestra` | 2 (2) | While there are 3+ monsters remaining, increase the rolled value of all dice by 1. | `orchestraBonus` (1), `orchestraMin` (3) | 36.6 |
+| **Mariachi** | `mariachi` | 2 (3) | While sharing a space with another bard, add +2 to each song. | `mariachiBonus` (2) | 35.3 |
 
 ### New with the rename
 
@@ -134,34 +134,34 @@ Not applied unless noted; each is a tunable change (600 games, same seeds).
 
 | What | File |
 |---|---|
-| Catalog (names, flavour), prices, live rule text (`styleRule`) | `src/data/styles.ts` |
+| Catalog (names, flavour), prices, live rule text (`genreRule`) | `src/data/genres.ts` |
 | Every number (prices, bonuses, limits), in the **Genres** group | `src/data/tunables.ts` |
-| Built-in roll effects (Indie, Bluegrass, Opera, Screamo, Barbershop), Crossover, Bebop, Disco helpers, Blues and Gospel size limits (`fermataCanRefresh`, `staccatoCanRefresh`), showdown combo counting | `src/game-logic/styles/styleEffects.ts` |
-| Spec-based genres (`studioSpec`), Soul's per-play bonus (`inspiredPlaySpec`), plus `specsOf` | `src/data/styleSpecs.ts` |
-| The generic spec engine (conditions incl. `afterMove`, `afterWin`, `lastSong`, `inspirationAtMost`; modifiers incl. `oddBonus`, `critFlat`, `lowFaceBonus`) | `src/game-logic/styles/specs.ts` |
-| Trip-Hop's move to any space (`MOVE { anywhere }`, `tripHopUsed`); applying genres in concerts and the showdown; Gospel calls and refreshes (`staccatoCall`, `RALLY_SONG`), Blues (`LINGER_SONG`), Soul (`inspiredPlay`, `soulActive`), Pop before a concert, K-Pop's concert reward, New Age's give-up (`giveUpSongId`), `turnStartInspiration`, `lastPlayResult` | `src/engine/reducer.ts` |
+| Built-in roll effects (Indie, Bluegrass, Opera, Screamo, Barbershop), Crossover, Bebop, Disco helpers, Blues and Gospel size limits (`bluesCanRefresh`, `gospelCanRefresh`), showdown combo counting | `src/game-logic/genres/genreEffects.ts` |
+| Spec-based genres (`studioSpec`), Soul's per-play bonus (`soulSpec`), plus `specsOf` | `src/data/genreSpecs.ts` |
+| The generic spec engine (conditions incl. `afterMove`, `afterWin`, `lastSong`, `inspirationAtMost`; modifiers incl. `oddBonus`, `critFlat`, `lowFaceBonus`) | `src/game-logic/genres/specs.ts` |
+| Trip-Hop's move to any space (`MOVE { anywhere }`, `tripHopUsed`); applying genres in concerts and the showdown; Gospel calls and refreshes (`gospelCall`, `RALLY_SONG`), Blues (`LINGER_SONG`), Soul (`soul`, `soulActive`), Pop before a concert, K-Pop's concert reward, New Age's give-up (`giveUpSongId`), `turnStartInspiration`, `lastPlayResult` | `src/engine/reducer.ts` |
 | Legality (calls, Soul's Inspiration, refresh sizes, free encores) | `src/engine/validate.ts` |
 | Prices after spec discounts (Lo-fi) | `src/engine/economy.ts` |
 | The concert screen's choices (call it, Soul) and refresh buttons | `src/components/game/Combat/index.tsx`, `SongCard.tsx` |
-| New Age's give-up picker in the Studio | `src/components/game/DraftShop/StyleShelf.tsx` |
+| New Age's give-up picker in the Studio | `src/components/game/DraftShop/GenreShelf.tsx` |
 | Trip-Hop's jump targets on the board | `src/components/game/Board/index.tsx` |
 | How the smart bot values and plays each genre | `src/sim/smartBot.ts`, `src/sim/odds.ts` |
-| Tests | `src/engine/styles.test.ts`, `src/engine/styleSpecs.test.ts` |
+| Tests | `src/engine/genres.test.ts`, `src/engine/styleSpecs.test.ts` |
 
 ## Re-running the numbers
 
 ```bash
-OPP=1 ROUND=5 STYLES=jam-session npx tsx scripts/style-audit.ts 600
+OPP=1 ROUND=5 GENRES=mariachi npx tsx scripts/genre-audit.ts 600
 ```
 
 ```bash
-OPP=1 ROUND=5 STYLES=emo TUNE='{"emoBonus":5}' npx tsx scripts/style-audit.ts 600
+OPP=1 ROUND=5 GENRES=emo TUNE='{"emoBonus":5}' npx tsx scripts/genre-audit.ts 600
 ```
 
 ```bash
-npx tsx scripts/style-timing.ts 200
+npx tsx scripts/genre-timing.ts 200
 ```
 
-Add `none` to `STYLES` for the all-shopping baseline. Drop `OPP=1` for the easier "rivals hold no genres" test.
+Add `none` to `GENRES` for the all-shopping baseline. Drop `OPP=1` for the easier "rivals hold no genres" test.
 
-The 100 experimental styles that haven't been promoted, and the older rebalance history, are in [`docs/style-lab-report.md`](docs/style-lab-report.md).
+The 100 experimental genres that haven't been promoted, and the older rebalance history, are in [`docs/genre-lab-report.md`](docs/genre-lab-report.md).

@@ -8,7 +8,7 @@
 
 - Decide whether the Final Showdown should allow comebacks: the Fame leader going in wins 94–97% of bot games (they lead 2nd place by 84–99 Fame; a bard earns ~70 fandom in the Showdown). Options and simulated results in `docs/showdown-comeback.md` (`scripts/showdown-comeback.ts`); the most promising are "Fame becomes a head start" (20/10/0 by rank → leader wins ~67%) and Silence targets the leader.
 
-- Genre balance after the buffs (see `songStyles.md`): 16 of 30 win 31–37% against a 33.3% parity (baseline 32.8%), rows swing ~5 points between runs. Low: Emo 24.8% (declared final song at +8; playtest whether players plan finales better than the bot), Trance 26.4% (bots bank Inspiration; playtest), Gospel 27.1% (the call is the lever), New Age 28.1%, Prog Rock 28.1%, Opera 30.4% (now +2 to the rolled value), Dubstep 28.8%, Trip-Hop 29.0%. High: Bluegrass 39.3%, Baroque 39.0%, Disco 37.5%, Barbershop 37.3%, House 37.1%. Playtest the choice genres (Gospel, Soul, Blues, Trance's spend-down) before re-pricing. A 1,200-game run per genre would halve the noise.
+- Genre balance after the buffs (see `genres.md`): 16 of 30 win 31–37% against a 33.3% parity (baseline 32.8%), rows swing ~5 points between runs. Low: Emo 24.8% (declared final song at +8; playtest whether players plan finales better than the bot), Trance 26.4% (bots bank Inspiration; playtest), Gospel 27.1% (the call is the lever), New Age 28.1%, Prog Rock 28.1%, Opera 30.4% (now +2 to the rolled value), Dubstep 28.8%, Trip-Hop 29.0%. High: Bluegrass 39.3%, Baroque 39.0%, Disco 37.5%, Barbershop 37.3%, House 37.1%. Playtest the choice genres (Gospel, Soul, Blues, Trance's spend-down) before re-pricing. A 1,200-game run per genre would halve the noise.
 
 - Online multiplayer follow-ups (out of scope for v1): turn timers / auto-skip without host action, replacing a vanished player's seat with a new token mid-game, spectator-only (non-seated) viewers, short-lived stream tickets instead of the token in the SSE query string
 
@@ -18,6 +18,7 @@
 
 ## Completed
 
+- Code now uses the player-facing words: Studio purchases are `genres` (`GenreId`, `player.genres`, `BUY_GENRE`, `genreCost*` tunables) and the four colours are `elements` (`Element`, `die.element`, `elementTags`, `starterElement`). Genre ids are the genre names (`opera`, `new-age`, `lo-fi`, ...). Old saves, presets and online games are migrated on load (`src/engine/legacyNames.ts`). `songStyles.md` is now `genres.md`; the style scripts are `scripts/genre-*.ts`.
 - The playtest Simulate tab has a pace: Learning / Typical (default) / Expert. The expert smart bot fought and won nearly every turn and spent every EXP at once, so by round 5 bards held 6 dice in ~3.8 elements — far ahead of real playtests. Slower paces make it slip like a person (`SmartParams.skill`); by round 5 Typical holds ~4.9 dice in ~3.2 elements, Learning ~3.4 in ~2.5. The panel shows the expected holdings for the chosen pace and round. Paces are calibrated by guesswork — retune `SIMULATION_PACES` skills against real playtest numbers.
 
 - Retreating before any dice are rolled is now free: it does not consume the bard's concert for the turn, alter monster chips, trigger retreat rewards, or show the damage-forfeit confirmation.

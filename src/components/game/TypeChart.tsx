@@ -1,9 +1,9 @@
-import { Genre } from '@/types'
-import { GENRE_THEME } from '@/data/genreTheme'
+import { Element } from '@/types'
+import { ELEMENT_THEME } from '@/data/elementTheme'
 import { ELEMENT_MATCHUPS } from '@/data/resistances'
 
 /**
- * A compass-style diagram of the genre/element type chart. Opposing elements
+ * A compass-style diagram of the element type chart. Opposing elements
  * face each other across the cross; the dashed link between them marks the
  * mutual 0× immunity, while each node's green "2×" badge marks the matching
  * genre that is super effective against that monster. Layout and colors are
@@ -33,14 +33,14 @@ function buildLayout() {
   )!
   const secondOpp = second.immuneTo
 
-  const slots: Record<Genre, Slot> = {
+  const slots: Record<Element, Slot> = {
     [first.element]: 'top',
     [firstOpp]: 'bottom',
     [second.element]: 'left',
     [secondOpp]: 'right',
-  } as Record<Genre, Slot>
+  } as Record<Element, Slot>
 
-  const links: [Genre, Genre][] = [
+  const links: [Element, Element][] = [
     [first.element, firstOpp],
     [second.element, secondOpp],
   ]
@@ -56,7 +56,7 @@ export function TypeChart({ className = '' }: { className?: string }) {
         viewBox={`0 0 ${VIEW} ${VIEW}`}
         className="w-full h-auto max-w-[340px] mx-auto"
         role="img"
-        aria-label="Element type chart: opposing elements are immune (0×) to each other; each element takes 2× from its matching genre."
+        aria-label="Element type chart: opposing elements are immune (0×) to each other; each element takes 2× from songs of its own element."
       >
         <defs>
           <radialGradient id="tc-hub" cx="50%" cy="50%" r="50%">
@@ -143,7 +143,7 @@ export function TypeChart({ className = '' }: { className?: string }) {
         {/* Element nodes */}
         {ELEMENT_MATCHUPS.map((m) => {
           const p = POS[slots[m.element]]
-          const theme = GENRE_THEME[m.element]
+          const theme = ELEMENT_THEME[m.element]
           return (
             <g key={m.element}>
               <circle
@@ -175,7 +175,7 @@ export function TypeChart({ className = '' }: { className?: string }) {
                 {m.element}
               </text>
 
-              {/* 2× super-effective badge (matching genre) */}
+              {/* 2× super-effective badge (matching element) */}
               <g transform={`translate(${p.x + R - 6}, ${p.y - R + 6})`}>
                 <circle r={14} fill="#1c2a17" stroke="#4caf50" strokeWidth={1.5} />
                 <text

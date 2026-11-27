@@ -378,31 +378,31 @@
 
   .turn-pip-ready { background: #d4a853; box-shadow: 0 0 5px rgba(212,168,83,0.45); }
 
-  .style-chip {
+  .genre-chip {
     @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medieval font-bold whitespace-nowrap;
     color: #f0d78c;
     background: rgba(212, 168, 83, 0.12);
     border: 1px solid rgba(212, 168, 83, 0.35);
   }
 
-  .style-chip-spent {
+  .genre-chip-spent {
     color: #a08d6c;
     background: rgba(255, 255, 255, 0.03);
     border-color: rgba(212, 168, 83, 0.15);
     text-decoration: line-through;
   }
 
-  .style-chip-with-tooltip {
+  .genre-chip-with-tooltip {
     position: relative;
     cursor: help;
     outline: none;
   }
 
-  .style-chip-with-tooltip:focus-visible {
+  .genre-chip-with-tooltip:focus-visible {
     box-shadow: 0 0 0 2px #17110b, 0 0 0 3px #f0d78c;
   }
 
-  .style-rule-tooltip {
+  .genre-rule-tooltip {
     position: absolute;
     z-index: 60;
     top: calc(100% + 8px);
@@ -431,7 +431,7 @@
     transition: opacity 120ms ease, transform 120ms ease;
   }
 
-  .style-rule-tooltip::before {
+  .genre-rule-tooltip::before {
     content: '';
     position: absolute;
     bottom: 100%;
@@ -441,20 +441,20 @@
     transform: translateX(-50%);
   }
 
-  .style-rule-tooltip strong {
+  .genre-rule-tooltip strong {
     color: #f0d78c;
     font-family: "Cinzel:Bold", Cinzel, serif;
     font-size: 11px;
     letter-spacing: .05em;
   }
 
-  .style-rule-tooltip em {
+  .genre-rule-tooltip em {
     color: #a08d6c;
     font-size: 10px;
   }
 
-  .style-chip-with-tooltip:hover .style-rule-tooltip,
-  .style-chip-with-tooltip:focus-visible .style-rule-tooltip {
+  .genre-chip-with-tooltip:hover .genre-rule-tooltip,
+  .genre-chip-with-tooltip:focus-visible .genre-rule-tooltip {
     opacity: 1;
     transform: translate(-50%, 0);
   }
@@ -462,15 +462,15 @@
   /* Map tooltips are anchored to the full row at every breakpoint. The player
      console sits against the viewport edge on desktop, so centering on a chip
      can otherwise push the tooltip off-screen. */
-  .map-style-list {
+  .map-genre-list {
     position: relative;
   }
 
-  .map-style-list .style-chip-with-tooltip {
+  .map-genre-list .genre-chip-with-tooltip {
     position: static;
   }
 
-  .map-style-list .style-rule-tooltip {
+  .map-genre-list .genre-rule-tooltip {
     right: 0;
     left: 0;
     width: auto;
@@ -478,16 +478,16 @@
     transform: translateY(-4px);
   }
 
-  .map-style-list .style-rule-tooltip::before {
+  .map-genre-list .genre-rule-tooltip::before {
     display: none;
   }
 
-  .map-style-list .style-chip-with-tooltip:hover .style-rule-tooltip,
-  .map-style-list .style-chip-with-tooltip:focus-visible .style-rule-tooltip {
+  .map-genre-list .genre-chip-with-tooltip:hover .genre-rule-tooltip,
+  .map-genre-list .genre-chip-with-tooltip:focus-visible .genre-rule-tooltip {
     transform: translateY(0);
   }
 
-  .style-offer {
+  .genre-offer {
     @apply rounded-lg p-3 sm:p-4;
     background: linear-gradient(160deg, rgba(212, 168, 83, 0.09) 0%, rgba(42, 33, 24, 0.92) 100%);
     border: 1px solid rgba(212, 168, 83, 0.3);
@@ -642,10 +642,10 @@
   /* =============================================
      GENRE BADGES
      ============================================= */
-  .genre-ballad { @apply bg-ballad text-white; }
-  .genre-folk { @apply bg-folk text-white; }
-  .genre-hymn { @apply bg-hymn; color: #2a2118; }
-  .genre-shanty { @apply bg-shanty text-white; }
+  .element-ballad { @apply bg-ballad text-white; }
+  .element-folk { @apply bg-folk text-white; }
+  .element-hymn { @apply bg-hymn; color: #2a2118; }
+  .element-shanty { @apply bg-shanty text-white; }
 
   /* =============================================
      HP BAR

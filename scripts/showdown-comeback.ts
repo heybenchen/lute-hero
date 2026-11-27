@@ -16,7 +16,7 @@
  */
 import { applyAction } from '../src/engine/reducer.js'
 import { createInitialEngineState } from '../src/engine/state.js'
-import { ALL_GENRES } from '../src/data/genreTheme.js'
+import { ALL_ELEMENTS } from '../src/data/elementTheme.js'
 import { SmartBot } from '../src/sim/smartBot.js'
 import { mulberry32 } from '../src/engine/rng.js'
 import type { EngineState } from '../src/engine/state.js'
@@ -379,10 +379,10 @@ function report(title: string, tallies: [string, Tally][]) {
 
 function toShowdown(gate: number, g: number): EngineState | null {
   const rng = mulberry32(PLAYERS * 1_000_003 + g * 7919 + gate)
-  const genres = [...ALL_GENRES].sort(() => rng() - 0.5).slice(0, PLAYERS)
+  const elements = [...ALL_ELEMENTS].sort(() => rng() - 0.5).slice(0, PLAYERS)
   const dealt = applyAction(
     { ...createInitialEngineState(), tunables: { ...DEFAULT_TUNABLES, fameFinalBossThreshold: gate } },
-    { type: 'START_GAME', playerConfigs: genres.map((genre, i) => ({ name: `Bot ${i + 1}`, starterGenre: genre })) },
+    { type: 'START_GAME', playerConfigs: elements.map((element, i) => ({ name: `Bot ${i + 1}`, starterElement: element })) },
     { rng, actor: { kind: 'hotseat' } }
   )
   if (!dealt.ok) return null

@@ -12,7 +12,7 @@ import { applyAction } from '../src/engine/reducer.js'
 import { createInitialEngineState } from '../src/engine/state.js'
 import { mulberry32 } from '../src/engine/rng.js'
 import { SmartBot } from '../src/sim/smartBot.js'
-import { ALL_GENRES } from '../src/data/genreTheme.js'
+import { ALL_ELEMENTS } from '../src/data/elementTheme.js'
 import type { EngineState, GameAction } from '../src/types/index.js'
 
 const GAMES = Number(process.argv[2] ?? 300)
@@ -40,9 +40,9 @@ function boardShape(state: EngineState) {
   let chips = 0
   const levels: number[] = []
   for (const s of state.spaces) {
-    chips += s.genreTags.length
-    for (const g of ALL_GENRES) {
-      const n = s.genreTags.filter((t) => t === g).length
+    chips += s.elementTags.length
+    for (const g of ALL_ELEMENTS) {
+      const n = s.elementTags.filter((t) => t === g).length
       if (n > 0) levels.push(n)
     }
   }
@@ -52,11 +52,11 @@ function boardShape(state: EngineState) {
 
 function playGame(players: number, seed: number, levelUpAll: 0 | 1, st: Stats) {
   const rng = mulberry32(seed)
-  const genres = [...ALL_GENRES]
-  for (let i = genres.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [genres[i], genres[j]] = [genres[j], genres[i]] }
+  const elements = [...ALL_ELEMENTS]
+  for (let i = elements.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [elements[i], elements[j]] = [elements[j], elements[i]] }
   const started = applyAction(createInitialEngineState(), {
     type: 'START_GAME',
-    playerConfigs: genres.slice(0, players).map((g, i) => ({ name: `Bot ${i + 1}`, starterGenre: g })),
+    playerConfigs: elements.slice(0, players).map((g, i) => ({ name: `Bot ${i + 1}`, starterElement: g })),
   }, { rng, actor: { kind: 'hotseat' } })
   if (!started.ok) throw new Error(started.message)
   const state = { ...started.state, tunables: { ...started.state.tunables, retreatLevelsUpAll: levelUpAll } }
@@ -78,8 +78,8 @@ function playGame(players: number, seed: number, levelUpAll: 0 | 1, st: Stats) {
       if (left.length > 0 && fighterId) {
         st.endedEarly++
         const space = before.combat.spaceId
-        const chipsBefore = before.spaces.find((s) => s.id === space)!.genreTags.length
-        const chipsAfter = bot.state.spaces.find((s) => s.id === space)!.genreTags.length
+        const chipsBefore = before.spaces.find((s) => s.id === space)!.elementTags.length
+        const chipsAfter = bot.state.spaces.find((s) => s.id === space)!.elementTags.length
         const removed = before.combat.monsters.filter((m) => m.currentHP <= 0).reduce((a, m) => a + m.level, 0)
         st.levelUpsFromEarlyEnd += Math.max(0, chipsAfter - (chipsBefore - removed))
       }

@@ -59,7 +59,7 @@ function sampleState(): EngineState {
     id,
     name,
     color: '#3b82f6',
-    starterGenre: 'Ballad',
+    starterElement: 'Ballad',
     position: 0,
     songs: [],
     exp: 0,
@@ -72,7 +72,7 @@ function sampleState(): EngineState {
     hasShoppedThisTurn: false,
     inspiration: 1,
     inspirationBoughtThisTurn: 0,
-    styles: [],
+    genres: [],
   })
 
   return {
@@ -81,7 +81,7 @@ function sampleState(): EngineState {
     currentRound: 4,
     players: [player('player-1', 'Alba', 120), player('player-2', 'Bryn', 40)],
     spaces: [
-      { id: 0, name: 'The Forgotten Stage', connections: [1], genreTags: [], monsters: [], isEdge: true },
+      { id: 0, name: 'The Forgotten Stage', connections: [1], elementTags: [], monsters: [], isEdge: true },
     ],
     tunables: { ...DEFAULT_TUNABLES, fameFinalBossThreshold: 60, newD4Cost: 9 },
   }

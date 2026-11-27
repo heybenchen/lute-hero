@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useGameStore } from '@/store'
-import { Genre } from '@/types'
-import { ALL_GENRES, GENRE_THEME, playerColorFor, readableTextColor } from '@/data/genreTheme'
+import { Element } from '@/types'
+import { ALL_ELEMENTS, ELEMENT_THEME, playerColorFor, readableTextColor } from '@/data/elementTheme'
 
 const SELECT_CHEVRON =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23e8d5b0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E\")"
@@ -9,7 +9,7 @@ const SELECT_CHEVRON =
 export function Setup() {
   const [playerCount, setPlayerCount] = useState(2)
   const [playerNames, setPlayerNames] = useState(['Player 1', 'Player 2', 'Player 3', 'Player 4'])
-  const [selectedGenres, setSelectedGenres] = useState<Genre[]>(['Ballad', 'Folk', 'Hymn', 'Shanty'])
+  const [selectedElements, setSelectedElements] = useState<Element[]>(['Ballad', 'Folk', 'Hymn', 'Shanty'])
 
   const dispatch = useGameStore((state) => state.dispatch)
 
@@ -18,7 +18,7 @@ export function Setup() {
     for (let i = 0; i < playerCount; i++) {
       playerConfigs.push({
         name: playerNames[i] || `Player ${i + 1}`,
-        starterGenre: selectedGenres[i],
+        starterElement: selectedElements[i],
       })
     }
     dispatch({ type: 'START_GAME', playerConfigs })
@@ -85,10 +85,10 @@ export function Setup() {
                 <div
                   className="player-avatar w-10 h-10 text-base flex-shrink-0"
                   style={{
-                    backgroundColor: playerColorFor(selectedGenres[idx]),
-                    color: readableTextColor(playerColorFor(selectedGenres[idx])),
+                    backgroundColor: playerColorFor(selectedElements[idx]),
+                    color: readableTextColor(playerColorFor(selectedElements[idx])),
                   }}
-                  title={`${GENRE_THEME[selectedGenres[idx]].emoji} ${selectedGenres[idx]} bard`}
+                  title={`${ELEMENT_THEME[selectedElements[idx]].emoji} ${selectedElements[idx]} bard`}
                 >
                   {idx + 1}
                 </div>
@@ -110,16 +110,16 @@ export function Setup() {
                 />
 
                 <select
-                  value={selectedGenres[idx]}
+                  value={selectedElements[idx]}
                   onChange={(e) => {
                     // Each element belongs to one bard: taking one another
                     // player has swaps the two, so the lineup stays unique.
-                    const genre = e.target.value as Genre
-                    const newGenres = [...selectedGenres]
-                    const holder = newGenres.indexOf(genre)
-                    if (holder >= 0) newGenres[holder] = newGenres[idx]
-                    newGenres[idx] = genre
-                    setSelectedGenres(newGenres)
+                    const element = e.target.value as Element
+                    const newElements = [...selectedElements]
+                    const holder = newElements.indexOf(element)
+                    if (holder >= 0) newElements[holder] = newElements[idx]
+                    newElements[idx] = element
+                    setSelectedElements(newElements)
                   }}
                   className="flex-shrink-0 w-32 sm:w-44 appearance-none truncate pl-3 sm:pl-4 pr-9 sm:pr-11 py-2 rounded-lg text-white font-game cursor-pointer"
                   style={{
@@ -132,12 +132,12 @@ export function Setup() {
                     border: '1px solid rgba(212, 168, 83, 0.2)',
                   }}
                 >
-                  {ALL_GENRES.map((genre) => {
-                    const holder = selectedGenres.indexOf(genre)
+                  {ALL_ELEMENTS.map((element) => {
+                    const holder = selectedElements.indexOf(element)
                     const takenBy = holder >= 0 && holder !== idx && holder < playerCount ? playerNames[holder] || `Player ${holder + 1}` : null
                     return (
-                      <option key={genre} value={genre}>
-                        {GENRE_THEME[genre].emoji} {genre}{takenBy ? ` (swap with ${takenBy})` : ''}
+                      <option key={element} value={element}>
+                        {ELEMENT_THEME[element].emoji} {element}{takenBy ? ` (swap with ${takenBy})` : ''}
                       </option>
                     )
                   })}
@@ -170,7 +170,7 @@ export function Setup() {
           <h3 className="font-medieval font-bold mb-2 text-gold-400 text-xs uppercase tracking-wider">Quick Rules</h3>
           <ul className="list-disc list-inside space-y-1 text-parchment-400 text-xs">
             <li>Move to connected spaces each turn</li>
-            <li>Genre tags spawn monsters when you enter</li>
+            <li>Element tags spawn monsters when you enter</li>
             <li>Pick one monster. Once you move it, keep playing to it until it is won over, or end the concert.</li>
             <li>Win over monsters to gain Fame and EXP</li>
             <li>Songs of a monster's own element count 2x; its immune element counts for nothing</li>

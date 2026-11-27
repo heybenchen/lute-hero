@@ -1,4 +1,4 @@
-import { Genre } from '../types/index.js'
+import { Element } from '../types/index.js'
 import { MONSTER_TEMPLATES } from './monsters.js'
 
 /**
@@ -7,22 +7,22 @@ import { MONSTER_TEMPLATES } from './monsters.js'
  * the engine actually applies.
  *
  * A monster is named for its element and is always weak (2×) to that element's
- * matching genre and immune (0×) to the opposing element's genre. The two
+ * own songs and immune (0×) to the opposing element's songs. The two
  * opposing pairs are mutual: Ballad (Fire) ⟷ Shanty (Water) and
  * Folk (Earth) ⟷ Hymn (Wind).
  */
 export interface ElementMatchup {
   /** The monster's element — equal to the genre it is weak to. */
-  element: Genre
+  element: Element
   /** Genre whose dice deal 2× (super effective). */
-  weakTo: Genre
+  weakTo: Element
   /** Genre whose dice deal 0× (immune). */
-  immuneTo: Genre
+  immuneTo: Element
 }
 
 /** One matchup per element, in template order (Ballad, Folk, Hymn, Shanty). */
 export const ELEMENT_MATCHUPS: ElementMatchup[] = (() => {
-  const byElement = new Map<Genre, ElementMatchup>()
+  const byElement = new Map<Element, ElementMatchup>()
   for (const template of MONSTER_TEMPLATES) {
     if (template.isBoss || !template.vulnerability || !template.resistance) continue
     if (byElement.has(template.vulnerability)) continue
@@ -36,6 +36,6 @@ export const ELEMENT_MATCHUPS: ElementMatchup[] = (() => {
 })()
 
 /** Look up a single element's matchup. */
-export function getMatchup(element: Genre): ElementMatchup | undefined {
+export function getMatchup(element: Element): ElementMatchup | undefined {
   return ELEMENT_MATCHUPS.find((m) => m.element === element)
 }

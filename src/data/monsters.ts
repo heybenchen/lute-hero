@@ -1,4 +1,4 @@
-import { MonsterTemplate, Genre, Rng } from '../types/index.js'
+import { MonsterTemplate, Element, Rng } from '../types/index.js'
 
 export const MONSTER_TEMPLATES: MonsterTemplate[] = [
   // Fire monsters — vulnerable to Ballad (Fire), resistant to Shanty (Water)
@@ -150,7 +150,7 @@ export const MONSTER_TEMPLATES: MonsterTemplate[] = [
 ]
 
 /** All non-boss templates grouped by vulnerability genre */
-const templatesByGenre: Record<Genre, MonsterTemplate[]> = {
+const templatesByElement: Record<Element, MonsterTemplate[]> = {
   Ballad: MONSTER_TEMPLATES.filter((m) => m.vulnerability === 'Ballad' && !m.isBoss),
   Folk: MONSTER_TEMPLATES.filter((m) => m.vulnerability === 'Folk' && !m.isBoss),
   Hymn: MONSTER_TEMPLATES.filter((m) => m.vulnerability === 'Hymn' && !m.isBoss),
@@ -162,8 +162,8 @@ const templatesByGenre: Record<Genre, MonsterTemplate[]> = {
  * In later rounds, higher-tier templates are more likely. Tiers change which
  * monster you meet, not how tough it is — HP comes from the tunables.
  */
-export function getMonsterByGenre(genre: Genre, round: number = 1, rng: Rng = Math.random): MonsterTemplate {
-  const candidates = templatesByGenre[genre]
+export function getMonsterByElement(element: Element, round: number = 1, rng: Rng = Math.random): MonsterTemplate {
+  const candidates = templatesByElement[element]
   if (!candidates || candidates.length === 0) {
     const allNonBoss = MONSTER_TEMPLATES.filter((m) => !m.isBoss)
     return allNonBoss[Math.floor(rng() * allNonBoss.length)]

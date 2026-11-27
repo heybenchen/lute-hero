@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { Genre } from '@/types'
+import { Element } from '@/types'
 import {
   EngineState,
   EngineCombatState,
@@ -78,7 +78,7 @@ export type GameStore = GameMirror &
     /** Try to resume the online game saved in this browser. */
     resumeOnlineSession: () => Promise<boolean>
     /** Lobby operations: ready/unready/leave/start. */
-    sendLobbyOp: (op: 'ready' | 'unready' | 'leave' | 'start', extras?: { starterGenre?: Genre; color?: string }) => Promise<boolean>
+    sendLobbyOp: (op: 'ready' | 'unready' | 'leave' | 'start', extras?: { starterElement?: Element; color?: string }) => Promise<boolean>
     /** Disconnect from the online game and return to mode select. */
     leaveOnline: () => void
     /** Back to the mode-select screen (stops any driver). */
