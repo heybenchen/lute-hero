@@ -14,7 +14,7 @@ import {
 import { GENRE_THEME } from '@/data/genreTheme'
 import { getTunables } from '@/data/tunables'
 import { StyleShelf } from './StyleShelf'
-import { RefreshCw } from 'lucide-react'
+import { Recycle, RefreshCw } from 'lucide-react'
 
 interface DraftShopProps {
   playerId: string
@@ -26,7 +26,6 @@ interface DraftShopProps {
 const EMPTY_REWARDS: PendingReward[] = []
 
 export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
-  const [replaceMode, setReplaceMode] = useState(false)
   const [selectedStyle, setSelectedStyle] = useState<StyleId | null>(null)
   const buyingIntoSlot = useRef(false)
   const player = useGameStore(selectPlayerById(playerId))
@@ -69,9 +68,8 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     if (!canInteract || selectedOfferIdx === null || !selectedElement || buyingIntoSlot.current) return
     buyingIntoSlot.current = true
     try {
-      const result = await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx,
+      await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx,
         destination: { songId, previousDieId, genre: selectedElement } })
-      if (result.ok) setReplaceMode(false)
     } finally {
       buyingIntoSlot.current = false
     }
@@ -131,12 +129,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
             {canInteract && !activeDie && selectedElement && (
               <div className="flex w-full flex-wrap items-end justify-end gap-2 pr-8 text-right text-sm text-parchment-200">
                 {setlistFull ? (
-                  <>
-                    <span>{replaceMode ? `Choose the die to replace with a ${selectedElement} d4 (${newD4Cost()} EXP).` : `Choose a matching die to upgrade, or buy a new ${selectedElement} d4.`}</span>
-                    <button className="btn-secondary" aria-pressed={replaceMode} onClick={() => setReplaceMode(!replaceMode)}>
-                      {replaceMode ? 'Cancel replacement' : `Replace a die · ${newD4Cost()} EXP`}
-                    </button>
-                  </>
+                  <span>Choose a matching die to upgrade, or replace another song with a new {selectedElement} d4 ({newD4Cost()} EXP).</span>
                 ) : player.exp < newD4Cost() ? (
                   <>
                     <GenreBadge genre={selectedElement} className="text-xs" />
@@ -350,15 +343,13 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           const canAffordD4 = player.exp >= newD4Cost()
                           let offerAction: 'buy' | 'buy-locked' | 'upgrade' | 'upgrade-locked' | 'locked' | null = null
                           if (selectedElement && !activeDie) {
-                            if (setlistFull && replaceMode) {
-                              offerAction = canAffordD4 ? 'buy' : 'buy-locked'
-                            } else if (slot.dice?.genre === selectedElement) {
+                            if (slot.dice?.genre === selectedElement) {
                               offerAction = upgradeCost === null
                                 ? 'locked'
                                 : player.exp >= upgradeCost
                                 ? 'upgrade'
                                 : 'upgrade-locked'
-                            } else if (!slot.dice) {
+                            } else if (!slot.dice || setlistFull) {
                               offerAction = canAffordD4 ? 'buy' : 'buy-locked'
                             } else {
                               offerAction = 'locked'
@@ -418,7 +409,18 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                   : 'default',
                               }}
                             >
-                              {slot.dice ? (
+                              {slot.dice && (offerAction === 'buy' || offerAction === 'buy-locked') ? (
+                                <div className="text-center leading-tight">
+                                  <div className="flex items-center justify-center gap-1 text-sm font-bold text-parchment-100">
+                                    <Recycle size={15} aria-hidden="true" />
+                                    <DiceShape type="d4" />
+                                    <span>d4</span>
+                                  </div>
+                                  <div className={`mt-1 text-[11px] font-bold ${offerAction === 'buy-locked' ? 'text-parchment-100' : 'text-gold-300'}`}>
+                                    {newD4Cost()} EXP
+                                  </div>
+                                </div>
+                              ) : slot.dice ? (
                                 <div className="text-center relative flex flex-col items-center">
                                   <div className="text-2xl mb-0.5 text-gold-400"><DiceShape type={slot.dice.type} /></div>
                                   <div className="absolute -top-1 -right-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
@@ -442,7 +444,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                               ) : (
                                 <div className="text-parchment-500/30 text-xs">Empty</div>
                               )}
-                              {slot.dice && offerAction === 'buy' && <span className="text-xs text-gold-300">Replace · {newD4Cost()} EXP</span>}
                               {nextType && (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && (
                                 <div
                                   className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg text-center leading-tight"
