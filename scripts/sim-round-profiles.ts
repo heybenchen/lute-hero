@@ -1,75 +1,90 @@
 /**
- * Simulate many bot games through the real engine, print what bards hold
- * after each round, and write src/data/roundProfiles.ts: when games reach
- * the Final Showdown. Run: npx tsx scripts/sim-round-profiles.ts
+ * Simulate many bot games through the real engine at every simulation pace
+ * (`SIMULATION_PACES`), print what bards hold after each round, and write
+ * src/data/roundProfiles.ts: when games reach the Final Showdown and what a
+ * bard typically holds after each round, per pace.
+ * Run: npx tsx scripts/sim-round-profiles.ts   (GAMES=n per table, default 150)
  */
 import { writeFileSync } from 'node:fs'
 import { simulateGame, snapshotBard } from '../src/sim/bot.js'
 import { mulberry32 } from '../src/engine/rng.js'
+import { SIMULATION_PACES } from '../src/data/simulationPaces.js'
 import type { BardSnapshot } from '../src/sim/bot.js'
 
-const GAMES_PER_TABLE = 300
-const SAMPLES_PER_ROUND = 40
+const GAMES_PER_TABLE = Number(process.env.GAMES ?? 150)
 const TABLES = [2, 3, 4]
-
-const pools = new Map<number, BardSnapshot[]>()
-const seen = new Map<number, number>()
-const sample = mulberry32(20261121)
-const showdownAfter: Record<number, number[]> = {}
-
-for (const players of TABLES) {
-  showdownAfter[players] = []
-  for (let g = 0; g < GAMES_PER_TABLE; g++) {
-    const rng = mulberry32(players * 100_000 + g)
-    const { showdownAfterRound } = simulateGame(players, rng, (round, state) => {
-      for (const p of state.players) {
-        // Reservoir sample so every bard-round is equally likely to be kept
-        const snap = snapshotBard(p)
-        const pool = pools.get(round) ?? []
-        const n = (seen.get(round) ?? 0) + 1
-        seen.set(round, n)
-        if (pool.length < SAMPLES_PER_ROUND) pool.push(snap)
-        else {
-          const j = Math.floor(sample() * n)
-          if (j < SAMPLES_PER_ROUND) pool[j] = snap
-        }
-        pools.set(round, pool)
-      }
-    })
-    if (showdownAfterRound !== null) showdownAfter[players].push(showdownAfterRound)
-  }
-}
+/** Rounds whose holdings are stored for the panel. */
+const STORED_ROUNDS = 20
 
 const pct = (xs: number[], q: number) => {
   const s = [...xs].sort((a, b) => a - b)
   return s[Math.min(s.length - 1, Math.floor(q * (s.length - 1)))]
 }
 const median = (xs: number[]) => pct(xs, 0.5)
+const round1 = (x: number) => Math.round(x * 10) / 10
 
-// Keep rounds with a meaningful number of bard-rounds behind them
-const rounds = [...pools.keys()].filter((r) => (seen.get(r) ?? 0) >= 60).sort((a, b) => a - b)
-const showdownStats = Object.fromEntries(
-  TABLES.map((n) => [n, { p10: pct(showdownAfter[n], 0.1), median: median(showdownAfter[n]), p90: pct(showdownAfter[n], 0.9) }])
-)
+type Bard = BardSnapshot & { elements: number }
+const showdownStats: Record<string, Record<number, { p10: number; median: number; p90: number }>> = {}
+const holdings: Record<string, { dice: number; elements: number; fame: number; exp: number }[]> = {}
+
+for (const pace of SIMULATION_PACES) {
+  const bards = new Map<number, Bard[]>()
+  const showdownAfter: Record<number, number[]> = {}
+  for (const players of TABLES) {
+    showdownAfter[players] = []
+    for (let g = 0; g < GAMES_PER_TABLE; g++) {
+      const rng = mulberry32(players * 100_000 + g)
+      const { showdownAfterRound } = simulateGame(players, rng, (round, state) => {
+        const list = bards.get(round) ?? []
+        for (const p of state.players) {
+          const snap = snapshotBard(p)
+          list.push({ ...snap, elements: new Set(snap.dice.map(([, e]) => e)).size })
+        }
+        bards.set(round, list)
+      }, 40, { skill: pace.skill })
+      if (showdownAfterRound !== null) showdownAfter[players].push(showdownAfterRound)
+    }
+  }
+  showdownStats[pace.id] = Object.fromEntries(
+    TABLES.map((n) => [n, { p10: pct(showdownAfter[n], 0.1), median: median(showdownAfter[n]), p90: pct(showdownAfter[n], 0.9) }])
+  )
+
+  // Holdings per round, while most games are still running
+  holdings[pace.id] = []
+  const startedBards = (bards.get(1) ?? []).length
+  console.log(`\n${pace.label} (skill ${pace.skill}) — showdown after rounds (p10/median/p90):`, JSON.stringify(showdownStats[pace.id]))
+  console.log('round |    n | fame | exp | insp | styles | dice | elements | d4/d8/d12/d20 (avg per bard)')
+  for (let r = 1; r <= STORED_ROUNDS; r++) {
+    const all = bards.get(r) ?? []
+    if (all.length < startedBards / 2) break
+    const avg = (f: (s: Bard) => number) => all.reduce((a, s) => a + f(s), 0) / all.length
+    const count = (t: string) => avg((s) => s.dice.filter(([d]) => d === t).length).toFixed(1)
+    holdings[pace.id].push({ dice: round1(avg((s) => s.dice.length)), elements: round1(avg((s) => s.elements)), fame: median(all.map((s) => s.fame)), exp: median(all.map((s) => s.exp)) })
+    console.log(`${String(r).padStart(5)} | ${String(all.length).padStart(4)} | ${String(median(all.map((s) => s.fame))).padStart(4)} | ${String(median(all.map((s) => s.exp))).padStart(3)} | ${String(median(all.map((s) => s.inspiration))).padStart(4)} | ${avg((s) => s.styles.length).toFixed(1).padStart(6)} | ${avg((s) => s.dice.length).toFixed(1).padStart(4)} | ${avg((s) => s.elements).toFixed(1).padStart(8)} | ${count('d4')}/${count('d8')}/${count('d12')}/${count('d20')}`)
+  }
+}
 
 const header = `/**
  * GENERATED by scripts/sim-round-profiles.ts — do not edit by hand.
  *
- * When bot games (src/sim/bot.ts, ${GAMES_PER_TABLE * TABLES.length} games of ${TABLES.join('/')} bards
- * played through the real engine) reached the Final Showdown, in rounds
- * completed. The playtest console shows this next to its "Simulate" control.
+ * Smart-bot games (${GAMES_PER_TABLE} per table of ${TABLES.join('/')} bards per pace, played
+ * through the real engine) at every simulation pace (src/data/simulationPaces.ts):
+ * when they reached the Final Showdown, in rounds completed, and what a bard
+ * held after each round (average dice and elements, median Fame and unspent
+ * EXP; index 0 is round 1). The playtest console shows these next to its
+ * "Simulate" control.
  */
+import type { SimulationPace } from './simulationPaces.js'
 
-export const SHOWDOWN_ROUND_STATS: Record<number, { p10: number; median: number; p90: number }> = ${JSON.stringify(showdownStats)}
+export interface RoundHoldings {
+  dice: number
+  elements: number
+  fame: number
+  exp: number
+}
+
+export const SHOWDOWN_ROUND_STATS: Record<SimulationPace, Record<number, { p10: number; median: number; p90: number }>> = ${JSON.stringify(showdownStats)}
+
+export const ROUND_HOLDINGS: Record<SimulationPace, RoundHoldings[]> = ${JSON.stringify(holdings)}
 `
 writeFileSync(new URL('../src/data/roundProfiles.ts', import.meta.url), header)
-
-// Summary for humans
-console.log('showdown after rounds (p10/median/p90):', JSON.stringify(showdownStats))
-console.log('round | n | fame | exp | insp | styles | dice | d4/d8/d12/d20 (avg per bard)')
-for (const r of rounds) {
-  const all = pools.get(r)!
-  const avg = (f: (s: BardSnapshot) => number) => (all.reduce((a, s) => a + f(s), 0) / all.length).toFixed(1)
-  const count = (t: string) => avg((s) => s.dice.filter(([d]) => d === t).length)
-  console.log(`${String(r).padStart(5)} | ${String(seen.get(r)).padStart(4)} | ${median(all.map((s) => s.fame))} | ${median(all.map((s) => s.exp))} | ${median(all.map((s) => s.inspiration))} | ${avg((s) => s.styles.length)} | ${avg((s) => s.dice.length)} | ${count('d4')}/${count('d8')}/${count('d12')}/${count('d20')}`)
-}

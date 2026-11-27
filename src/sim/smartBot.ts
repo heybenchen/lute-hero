@@ -88,6 +88,15 @@ export interface SmartParams {
   showdownStop: 'par' | 'optimal'
   /** Inspiration to keep stocked by buying it with leftover EXP (before the endgame reserve). */
   inspirationTarget: number
+  /**
+   * How well the bot plays, 0–1. 1 is the expert policy above. Below 1 it
+   * plays like a person still learning the game: with probability
+   * `1 - skill` per decision it moves to a random reachable space, picks a
+   * random legal play in a fight, skips the Studio, or buys a random
+   * affordable option, and it holds back on encores. Used to pace the
+   * playtest Simulate tab (`SIMULATION_PACES`).
+   */
+  skill: number
 }
 
 export const DEFAULT_SMART_PARAMS: SmartParams = {
@@ -106,6 +115,7 @@ export const DEFAULT_SMART_PARAMS: SmartParams = {
   styleValuation: 'odds',
   showdownStop: 'par',
   inspirationTarget: 2,
+  skill: 1,
 }
 
 /**
@@ -175,6 +185,15 @@ export class SmartBot {
     if (!result.ok) return false
     this.state = result.state
     return true
+  }
+
+  /** True when this decision should be a learner's slip rather than the expert pick. */
+  private slips(): boolean {
+    return this.p.skill < 1 && this.ctx.rng() >= this.p.skill
+  }
+
+  private pickRandom<T>(xs: T[]): T {
+    return xs[Math.floor(this.ctx.rng() * xs.length)]
   }
 
   private get me(): Player {
@@ -319,7 +338,7 @@ export class SmartBot {
         }
       }
 
-      const pick = this.bestCandidate(fighter, alive, targets)
+      const pick = this.slips() ? this.randomCandidate(fighter, targets) : this.bestCandidate(fighter, alive, targets)
       if (!pick) break
       const hpBefore = pick.monster.currentHP
       const ok = pick.featuredFrom
@@ -334,6 +353,18 @@ export class SmartBot {
 
   private guestsAt(spaceId: number, fighterId: string): Player[] {
     return this.state.players.filter((p) => p.id !== fighterId && p.position === spaceId)
+  }
+
+  /** A learner's play: any own song that can hurt any allowed target. */
+  private randomCandidate(fighter: Player, targets: Monster[]): Candidate | null {
+    const combat = this.state.combat
+    const plays: Candidate[] = []
+    for (const song of fighter.songs) {
+      const die = songDie(song)
+      if (!die || combat.spentSongIds.includes(song.id)) continue
+      for (const m of targets) if (getGenreMultiplier(die.genre, m) > 0) plays.push({ song, monster: m, score: 0, pk: 0 })
+    }
+    return plays.length > 0 ? this.pickRandom(plays) : null
   }
 
   private bestCandidate(fighter: Player, alive: Monster[], targets: Monster[]): Candidate | null {
@@ -538,6 +569,7 @@ export class SmartBot {
 
   /** After a miss (the song is spent and the target stands): reroll if it pays. */
   private considerReroll(pick: Candidate, hpBefore: number): void {
+    if (this.slips()) return
     for (let i = 0; i < 4; i++) {
       const combat = this.state.combat
       const target = combat.monsters.find((m) => m.id === pick.monster.id)
@@ -623,6 +655,14 @@ export class SmartBot {
     const valueAt = (id: number) => {
       const space = this.state.spaces.find((s) => s.id === id)!
       return this.estimateFight(space.monsters, me, this.guestsAt(id, me.id).length)
+    }
+    if (this.slips()) {
+      // A learner heads for any nearby space with monsters on it
+      const occupied = [...reach.keys()].filter((id) => (this.state.spaces.find((s) => s.id === id)?.monsters.length ?? 0) > 0)
+      if (occupied.length > 0) {
+        for (const step of reach.get(this.pickRandom(occupied)) ?? []) if (!this.act({ type: 'MOVE', playerId: me.id, toSpaceId: step })) break
+        return
+      }
     }
     let best = me.position
     let bestScore = valueAt(me.position)
@@ -758,6 +798,8 @@ export class SmartBot {
 
   private shop(): void {
     const me = this.me
+    // A learner sometimes leaves the Studio for another turn, saving the EXP
+    if (this.slips()) return
     if (!this.act({ type: 'OPEN_STUDIO', playerId: me.id })) return
     this.refreshedThisTurn = false
     const forced = this.forcedStyle
@@ -836,6 +878,8 @@ export class SmartBot {
       .map((o) => ({ ...o, ratio: o.value / Math.max(1, o.cost) }))
       .filter((o) => o.ratio > this.p.buyThreshold)
       .sort((a, b) => b.ratio - a.ratio)
+    // A learner sometimes buys whatever catches their eye
+    if (options.length > 0 && this.slips()) return this.act(this.pickRandom(options).action)
     for (const o of ranked) if (this.act(o.action)) return true
 
     // Nothing good on the shelf and EXP to spend: redraw with spare Inspiration

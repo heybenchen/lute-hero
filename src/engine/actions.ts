@@ -1,4 +1,5 @@
 import { Genre, GamePhase, DiceType, StyleId } from '../types/index.js'
+import { SimulationPace } from '../data/simulationPaces.js'
 import type { Tunables } from '../data/tunables.js'
 import type { EngineState } from './state.js'
 
@@ -109,9 +110,10 @@ export type GameAction =
   /**
    * Bots replay this table from a fresh deal until `round` rounds are done,
    * then play continues from there — or, with `showdown`, the Final Showdown
-   * starts from that state.
+   * starts from that state. `pace` sets how well the bots play (missing:
+   * expert).
    */
-  | { type: 'DEBUG_SIMULATE'; round: number; showdown: boolean }
+  | { type: 'DEBUG_SIMULATE'; round: number; showdown: boolean; pace?: SimulationPace }
 
 export type GameActionType = GameAction['type']
 

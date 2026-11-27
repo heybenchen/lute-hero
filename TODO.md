@@ -16,6 +16,8 @@
 
 ## Completed
 
+- The playtest Simulate tab has a pace: Learning / Typical (default) / Expert. The expert smart bot fought and won nearly every turn and spent every EXP at once, so by round 5 bards held 6 dice in ~3.8 elements — far ahead of real playtests. Slower paces make it slip like a person (`SmartParams.skill`); by round 5 Typical holds ~4.9 dice in ~3.2 elements, Learning ~3.4 in ~2.5. The panel shows the expected holdings for the chosen pace and round. Paces are calibrated by guesswork — retune `SIMULATION_PACES` skills against real playtest numbers.
+
 - Simulated the ending-early rule (`scripts/retreat-rule-sim.ts`, 300 smart-bot games per rule per table): levelling up every monster left instead of only moved ones gives ~5–8% more EXP, ~2–3 times as many chips added by early endings, 50–80% more Lv4+ monsters by round 4–8, and games about 0.25–0.4 rounds shorter. Kept "only moved" as default; `retreatLevelsUpAll` tunable switches.
 
 - Ending a concert early now levels up only the monsters that were moved but not won over (untouched ones stay as they were); the Studio's element shelf says "cubes" in the app too.

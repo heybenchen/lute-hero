@@ -43,6 +43,7 @@ import { getTunables, withTunables, normalizeTunables } from '../data/tunables.j
 import { ALL_GENRES, playerColorFor } from '../data/genreTheme.js'
 import { STYLES, drawStyleOffers, styleCost, styleOfferCount } from '../data/styles.js'
 import { simulateRounds } from '../sim/bot.js'
+import { paceSkill } from '../data/simulationPaces.js'
 import {
   StyleContext,
   rollSongWithStyles,
@@ -491,7 +492,7 @@ function reduce(
       return loadDebugState(state, action.engineState)
 
     case 'DEBUG_SIMULATE':
-      return simulateToRound(state, action.round, action.showdown, rng)
+      return simulateToRound(state, action.round, action.showdown, rng, paceSkill(action.pace))
   }
 }
 
@@ -1374,9 +1375,10 @@ function startShowdownFields(playerIds: string[]): Partial<EngineState> {
  * the shop — comes out of real play, so it is realistic and self-consistent.
  * A bot game can reach the showdown before the requested round; then a few
  * more games are tried, and the one that got furthest is used. With
- * `showdown`, the Final Showdown starts from that state.
+ * `showdown`, the Final Showdown starts from that state. `skill` is how well
+ * the bots play (`SIMULATION_PACES`).
  */
-function simulateToRound(state: EngineState, round: number, showdown: boolean, rng: Rng): EngineState {
+function simulateToRound(state: EngineState, round: number, showdown: boolean, rng: Rng, skill = 1): EngineState {
   const playerConfigs = state.players.map((p) => ({ name: p.name, starterGenre: p.starterGenre }))
   const target = Math.min(Math.max(1, round), MAX_SIMULATED_ROUND)
   let best: { state: EngineState; completed: number } | null = null
@@ -1387,7 +1389,7 @@ function simulateToRound(state: EngineState, round: number, showdown: boolean, r
       { rng, actor: { kind: 'hotseat' } }
     )
     if (!dealt.ok) return state
-    const result = simulateRounds(dealt.state, target, rng)
+    const result = simulateRounds(dealt.state, target, rng, { skill })
     if (!best || result.completed > best.completed) best = result
     if (best.completed >= target) break
   }
