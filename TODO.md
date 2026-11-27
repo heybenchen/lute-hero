@@ -31,6 +31,8 @@
 - Rulebook now 5 pages + a quick-reference page. Fights are "concerts": a monster is "moved" (was wounded) or "won over" (was tamed) and becomes a fan; HP is "Resolve"; rerolls are "encores". Elements are shown as a cross diagram, monster levels appear once (on the quick reference), and a test keeps fighting words out of the book. Style text says "win over" and "concerts" too.
 
 - Made the main tabletop feel more dynamic with drifting candlelight and dust, a subtly moving realm map, twinkling title accents, tactile tile art/chip hover responses, and reduced-motion fallbacks.
+- Reduced the height of both available and collection style cards while tightening padding and rule spacing so their aligned rows remain readable.
+
 - Aligned the Studio's left and right Styles sections by matching the Song Elements block to the Songs block height and using one fixed card height for available, owned, and empty styles.
 
 - Refined the Studio's owned labels and empty states: Song Elements, Your Songs, Your Styles, two visible style-capacity slots, matching owned/available style card heights, and a fully labeled Inspiration balance.

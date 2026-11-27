@@ -55,9 +55,9 @@ export function StyleShelf({
             <button key={id} type="button" aria-pressed={selected === id}
               disabled={!canInteract || player.exp < styleCost(id)}
               onClick={() => onSelectedChange(selected === id ? null : id)}
-              className="style-offer flex h-32 flex-col text-left disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
+              className="style-offer flex h-28 flex-col text-left !p-3 disabled:opacity-60 aria-pressed:ring-2 aria-pressed:ring-gold-400">
               <span className="flex justify-between gap-2"><strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong><span>{styleCost(id)} EXP</span></span>
-              <span className="mt-2 block text-sm">{styleRule(id)}</span>
+              <span className="mt-1.5 block text-sm leading-tight">{styleRule(id)}</span>
             </button>
           ))}
         </div>
@@ -71,9 +71,9 @@ export function StyleShelf({
         <h3 className="mb-3 font-display text-lg text-gold-300">Your Genres</h3>
         <div className="grid auto-rows-fr grid-cols-1 gap-3">
           {player.styles.map((id) => (
-            <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer flex h-32 flex-col text-left enabled:ring-1 enabled:ring-gold-400">
+            <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer flex h-28 flex-col text-left !p-3 enabled:ring-1 enabled:ring-gold-400">
               <strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong>
-              <span className="mt-2 block text-sm">{styleRule(id)}</span>
+              <span className="mt-1.5 block text-sm leading-tight">{styleRule(id)}</span>
             </button>
           ))}
           {Array.from({ length: cap - player.styles.length }, (_, index) => (
@@ -82,7 +82,7 @@ export function StyleShelf({
               type="button"
               disabled={!ready}
               onClick={() => place()}
-              className="style-offer flex h-32 items-center justify-center border-dashed text-center text-parchment-500 enabled:ring-1 enabled:ring-gold-400"
+              className="style-offer flex h-28 items-center justify-center border-dashed text-center text-parchment-500 enabled:ring-1 enabled:ring-gold-400"
             >
               Empty genre slot
             </button>
