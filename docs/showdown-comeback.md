@@ -135,3 +135,13 @@ Then performers went in order of Fame each verse (most first), so the crown hold
 | | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
 |---|---|---|---|---|
 | **Crown rule + Fame order** | **60% (8%)** | **67% (6%)** | **76% (24%)** | **59% (3%)** |
+
+### Smaller crown bonuses at 4 bards
+
+400 games per pace, replayed with each bonus size so the bots chase the crown knowing what it pays. Leader win % (last-place win %); parity is 25%.
+
+| | 4 bards, typical | 4 bards, expert |
+|---|---|---|
+| Old rules | 90% (0%) | 91% (0%) |
+| Crown: beat +50, match +25 (shipped) | 62% (1%) | 57% (2%) |
+| Crown: beat +25, match +10 | 74% (1%) | 72% (0%) |

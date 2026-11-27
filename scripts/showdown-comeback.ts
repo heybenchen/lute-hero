@@ -425,6 +425,28 @@ const VARIANTS: Variant[] = [
       return total
     },
   },
+  ...([[50, 25], [25, 10]] as const).map(([beat, tie]): Variant => ({
+    // The crown rule at other bonus sizes: replayed with those tunables, so the bots
+    // chase the crown knowing what it pays, then scored the same way
+    name: `[crown ${beat}/${tie}] fandom x1 rounded to 5s, beat the crown +${beat}, match +${tie}`,
+    kind: 'replay',
+    prepare: (s) => ({ ...s, tunables: { ...s.tunables, showdownCrownBeatBonus: beat, showdownCrownTieBonus: tie } }),
+    score: (fame, p) => {
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const top = Math.max(...Object.values(total))
+        const crown = Object.keys(total).filter((id) => total[id] === top)
+        const toBeat = Math.max(...crown.map((id) => p.verses[id][v] ?? 0))
+        for (const id of Object.keys(fame)) {
+          const perf = p.verses[id][v] ?? 0
+          const bonus = crown.includes(id) ? 0 : perf > toBeat ? beat : perf === toBeat && perf > 0 ? tie : 0
+          total[id] += Math.floor(perf / 5) * 5 + bonus
+        }
+      }
+      return total
+    },
+  })),
   {
     name: 'Fandom x2 + catch-up Inspiration',
     kind: 'replay',
