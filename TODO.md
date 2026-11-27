@@ -18,7 +18,7 @@
 
 ## Completed
 
-- Updated four genre rules: Baroque floors rolls below 3 to 3, Prog Rock starts on the 3rd concert song, Dubstep inherits the move-triggered follow-up bonus, and Grunge replaces each d20 with two d12 rolls.
+- Updated four genre rules: Baroque floors rolls below 3 to 3, Prog Rock starts on the 3rd concert song, Dubstep adds +2 to the next song after moving a monster without winning it over, and Grunge replaces each d20 with two d12 rolls.
 
 - Code now uses the player-facing words: Studio purchases are `genres` (`GenreId`, `player.genres`, `BUY_GENRE`, `genreCost*` tunables) and the four colours are `elements` (`Element`, `die.element`, `elementTags`, `starterElement`). Genre ids are the genre names (`opera`, `new-age`, `lo-fi`, ...). Old saves, presets and online games are migrated on load (`src/engine/legacyNames.ts`). `songStyles.md` is now `genres.md`; the style scripts are `scripts/genre-*.ts`.
 - The playtest Simulate tab has a pace: Learning / Typical (default) / Expert. The expert smart bot fought and won nearly every turn and spent every EXP at once, so by round 5 bards held 6 dice in ~3.8 elements — far ahead of real playtests. Slower paces make it slip like a person (`SmartParams.skill`); by round 5 Typical holds ~4.9 dice in ~3.2 elements, Learning ~3.4 in ~2.5. The panel shows the expected holdings for the chosen pace and round. Paces are calibrated by guesswork — retune `SIMULATION_PACES` skills against real playtest numbers.

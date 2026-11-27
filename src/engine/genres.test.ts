@@ -679,7 +679,8 @@ describe('New genres', () => {
     state = play(state, 1, faces([2, 8]), 'm1').state
     expect(state.combat.rolls[0].bonus).toBeUndefined() // the last song moved nothing
     state = play(state, 2, faces([2, 8]), 'm1').state
-    expect(state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.dubstepBonus)
+    expect(DEFAULT_TUNABLES.dubstepBonus).toBe(2)
+    expect(state.combat.rolls[0].bonus).toBe(2)
   })
 
   it('Grunge rolls two d12s in place of each d20', () => {
