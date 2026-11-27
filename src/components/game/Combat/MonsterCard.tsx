@@ -51,7 +51,6 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
         className={`pixel-monster-card-target ${selectable ? 'cursor-pointer' : ''} ${isSelected ? 'is-targeted' : ''} ${isDefeated ? 'is-defeated' : ''}`}
       >
         <div className="pixel-monster-target">
-          <span className="pixel-monster-level">LV {monster.level}</span>
           <img
             className="pixel-monster-sprite"
             src={sprite}

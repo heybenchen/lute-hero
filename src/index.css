@@ -810,22 +810,10 @@
     animation: none;
   }
 
-  .pixel-monster-level,
   .pixel-defeated-label {
     position: absolute;
     z-index: 3;
     font-family: "Cinzel:Bold", serif;
-  }
-
-  .pixel-monster-level {
-    left: 8px;
-    top: 12px;
-    padding: 3px 5px;
-    color: #f0d78c;
-    background: #17100c;
-    border: 1px solid #75582e;
-    font-size: 9px;
-    letter-spacing: .08em;
   }
 
   .pixel-defeated-label {

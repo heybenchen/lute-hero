@@ -16,6 +16,8 @@
 
 ## Completed
 
+- Removed the redundant floating level chips above combat monster sprites; level remains visible in each monster stat card.
+
 - Spec rule update applied: Gospel/K-Pop/Emo/Grunge/Dubstep/Punk/Ska/Pop/Soul/Opera/Orchestra/Baroque/Bluegrass/New Age rules, Hip-Hop renamed Rap, new wording ("add +N to the song", "increase the rolled value"). Baroque shipped at +1 (54% at +2) and Bluegrass on d8s only (44% on d4 and d8).
 
 - Styles became **genres**: all 20 renamed to real-world genres with new flavour lines, and "genre" replaces "style" everywhere players read (Studio shelf, Songbook, rulebook). Rule and price changes: Blues refreshes a spent d20 song for 1 Inspiration (a button), Orchestra counts monsters at the start of the concert, Mariachi costs 2, House has no cap and builds within a showdown verse at +1, Soul spends 1 Inspiration per use (3+ at the start of the turn) and costs 2, Gospel calls its target before rolling and refreshes a spent d12-or-smaller song, Pop gives its Inspiration after each concert. Ten new genres: Punk, Soft Rock, Prog Rock, Ska, K-Pop, Emo, Trance, Grunge, Dubstep and Trip-Hop (once per turn, move to any space), tuned with the audit. The smart bot learned the new choices (calls, Soul, Blues) and values the genres its odds can't see. Engine, bot, concert UI, tests, `songStyles.md`, Songbook, rulebook and PDF updated, and every genre re-measured with the style audit.
