@@ -141,7 +141,7 @@
 
 - Redesigned the full fight screen around a clear tactical hierarchy: a battle HUD now surfaces targets, ready songs, and Inspiration; monsters use aligned target-first cards; songs form a compact readable command rack; active styles use a concise rules strip instead of full shop cards; damage math and reroll/retreat controls have larger text and more stable responsive alignment.
 
-- Reworked the combat layout: the target/song prompt now sits beneath “The Mashup,” paid Reroll and the Inspiration counter sit beside Retreat, full owned-style cards appear below Your Songs, and the responsive song grid fits all seven Extra Verse songs on one row when space allows.
+- Reworked the combat layout: the target/song prompt now sits beneath “The Concert,” paid Reroll and the Inspiration counter sit beside Retreat, full owned-style cards appear below Your Songs, and the responsive song grid fits all seven Extra Verse songs on one row when space allows.
 
 - Removed the cover-song mechanic entirely. Combat actions now accept only the active bard's own songs; co-located players no longer lend songs or split Fame, and the cover-song UI, state fields, reward logic, helper, and tests have been removed.
 
