@@ -102,3 +102,19 @@ Fame is tracked with chips of 5 / 10 / 25 / 50, so every Fame change must be a m
 | [chips] fandom ×1 + 25, or 50 when beating by 10+ | 70% (6%) | 74% (2%) | 84% (16%) | 68% (3%) |
 
 Rounding to 5s barely changes anything. Bonuses that take nothing from the leader are a little weaker than the switch-over versions, and every option is weakest at 2 bards, where the trailing bard starts ~115 Fame behind.
+
+## Verse crowns (chip-friendly)
+
+Each verse's performance is rounded down to a multiple of 5 and scored at ×1 or ×2. The highest performance of the verse (ties all count) also earns a flat crown. Nobody loses Fame. Leader win % (last-place win %).
+
+| Variant | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| Current rules | 95% (0%) | 92% (0%) | 96% (5%) | 95% (0%) |
+| Fandom ×1 + 25 crown | 83% (3%) | 84% (0%) | 91% (9%) | 84% (3%) |
+| Fandom ×1 + 50 crown | 74% (6%) | 77% (2%) | 87% (14%) | 75% (4%) |
+| Fandom ×1 + 75 crown | 67% (10%) | 72% (6%) | 83% (18%) | 69% (5%) |
+| Fandom ×2 + 25 crown | 77% (6%) | 79% (2%) | 88% (12%) | 75% (4%) |
+| Fandom ×2 + 50 crown | 71% (8%) | 74% (4%) | 84% (17%) | 70% (5%) |
+| Fandom ×2 + 75 crown | 64% (12%) | 69% (7%) | 80% (20%) | 66% (8%) |
+
+Crowns are a little weaker than "beat the leader's verse" bonuses of the same size: the leader also has the best dice, so they often take the crown themselves.

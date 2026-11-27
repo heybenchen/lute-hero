@@ -387,6 +387,23 @@ const VARIANTS: Variant[] = [
       chip('rounded, fandom x1 + 25 for beating the leader, 50 by 10+', 1, (m) => (m >= 10 ? 50 : m > 0 ? 25 : 0)),
     ]
   })(),
+  ...([[1, 25], [1, 50], [2, 25], [2, 50], [1, 75], [2, 75]] as const).map(([k, crown]): Variant => ({
+    // Chip-friendly verse crown: verses rounded down to 5s, fandom k x, and the verse's
+    // highest performance (ties all crowned) earns a flat crown
+    name: `[crown] rounded, fandom x${k} + ${crown} to each verse's top performance`,
+    kind: 'scoring',
+    score: (fame, p) => {
+      const r5 = (n: number) => Math.floor(n / 5) * 5
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const perf = Object.fromEntries(Object.keys(fame).map((id) => [id, r5(p.verses[id][v] ?? 0)]))
+        const top = Math.max(...Object.values(perf))
+        for (const id of Object.keys(fame)) total[id] += k * perf[id] + (perf[id] === top && top > 0 ? crown : 0)
+      }
+      return total
+    },
+  })),
   {
     name: 'Fandom x2 + catch-up Inspiration',
     kind: 'replay',
