@@ -116,8 +116,15 @@ describe('Ostinato', () => {
 })
 
 describe('Fortissimo (Opera)', () => {
-  it('adds a flat +2 to every d20 song, which never crits', () => {
+  it('raises the rolled value of every d20, so an 18 becomes a crit', () => {
     const state = fight(['fortissimo'], [['d20', 'Hymn']], [{}])
+    const { state: after } = play(state, 1, faces([18, 20]))
+    expect(after.combat.rolls[0]).toMatchObject({ value: 18, bonus: DEFAULT_TUNABLES.fortissimoBonus, isCrit: true })
+  })
+
+  it('adds a flat +2 that never crits when fortissimoRaisesFace is off', () => {
+    const state = fight(['fortissimo'], [['d20', 'Hymn']], [{}])
+    state.tunables = { ...state.tunables, fortissimoRaisesFace: 0 }
     const { state: after } = play(state, 1, faces([18, 20]))
     expect(after.combat.rolls[0]).toMatchObject({ value: 18, bonus: DEFAULT_TUNABLES.fortissimoBonus, isCrit: false })
     expect(hp(after)).toBe(50 - (18 + DEFAULT_TUNABLES.fortissimoBonus))
@@ -635,15 +642,28 @@ describe('New genres', () => {
     expect(extra(4)).toBe(DEFAULT_TUNABLES.kPopFame4)
   })
 
-  it('Emo doubles the value of the last unspent song', () => {
-    let state = fight(['emo'], [['d4', 'Hymn'], ['d4', 'Hymn'], ['d4', 'Hymn']], [{ currentHP: 500, maxHP: 500 }])
-    state = play(state, 1, faces([2, 4])).state
-    expect(state.combat.rolls[0].bonus).toBeUndefined()
-    state = play(state, 2, faces([2, 4])).state
-    expect(state.combat.rolls[0].bonus).toBeUndefined()
-    const before = hp(state)
-    state = play(state, 3, faces([3, 4])).state // the last one left
-    expect(before - hp(state)).toBe(3 * DEFAULT_TUNABLES.emoMultiplier + DEFAULT_TUNABLES.emoBonus)
+  it('Emo adds its bonus to a song declared the last of the concert, and nothing can follow it', () => {
+    let state = fight(['emo'], [['d8', 'Hymn'], ['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }, { currentHP: 200, maxHP: 200 }])
+    const finale = (c: ActionCtx) =>
+      applyAction(state, { type: 'PLAY_SONG', songId: 'player-1-song-1', targetMonsterId: 'm1', emoFinale: true }, c)
+    expect(play(state, 1, faces([2, 8])).state.combat.rolls[0].bonus).toBeUndefined() // undeclared: nothing
+    const declared = finale(faces([2, 8]))
+    expect(declared.ok).toBe(true)
+    if (!declared.ok) return
+    state = declared.state
+    expect(state.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.emoBonus)
+    expect(state.combat.finaleDeclared).toBe(true)
+    expect(applyAction(state, { type: 'PLAY_SONG', songId: 'player-1-song-2', targetMonsterId: 'm1' }, faces([2, 8])).ok).toBe(false)
+    // An encore of the final song keeps its bonus
+    state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 2 } : p)) }
+    const encore = apply(state, { type: 'REROLL_SONG' }, faces([5, 8])).state
+    expect(encore.combat.rolls[0].bonus).toBe(DEFAULT_TUNABLES.emoBonus)
+    expect(apply(encore, { type: 'END_COMBAT' }).state.combat.isActive).toBe(false)
+  })
+
+  it('Emo needs the genre to declare a final song', () => {
+    const state = fight([], [['d8', 'Hymn']], [{ currentHP: 200, maxHP: 200 }])
+    expect(applyAction(state, { type: 'PLAY_SONG', songId: 'player-1-song-1', targetMonsterId: 'm1', emoFinale: true }, faces([2, 8])).ok).toBe(false)
   })
 
   it('Trance adds its bonus only while the bard holds no Inspiration', () => {

@@ -32,6 +32,7 @@ function validateFeature(
   feature: { guestPlayerId: string; songId: string; targetMonsterId: string }
 ): ValidationResult {
   const combat = state.combat
+  if (combat.finaleDeclared) return illegal('That was the final song: end the concert')
   if (!combat.isActive) return illegal('No concert in progress')
   const guest = state.players.find((p) => p.id === feature.guestPlayerId)
   if (!guest || guest.id === combat.playerId) return illegal('Choose another bard to borrow from')
@@ -165,6 +166,7 @@ export function validateAction(
       const gate = requireCurrentTurn()
       if (!gate.ok) return gate
       if (!state.combat.isActive) return illegal('No concert in progress')
+      if (state.combat.finaleDeclared) return illegal('That was your final song: end the concert')
       if (state.combat.featureRequest) return illegal('Waiting for an answer about a guest song')
       // A song whose dice are spent (it damaged without defeating) can't replay.
       if (state.combat.spentSongIds.includes(action.songId)) {
@@ -182,6 +184,7 @@ export function validateAction(
         if ((state.turnStartInspiration ?? 0) < t.inspiredPlayMin) return illegal(`${STYLES['inspired-play'].name} needs ${t.inspiredPlayMin}+ Inspiration at the start of your turn`)
         if (fighter.inspiration < t.inspiredPlayCost) return illegal('Not enough Inspiration')
       }
+      if (action.emoFinale && !fighter.styles.includes('emo')) return illegal(`${STYLES.emo.name} is not one of your genres`)
       if (action.staccatoCall) {
         if (!fighter.styles.includes('staccato')) return illegal(`${STYLES.staccato.name} is not one of your genres`)
         if (state.combat.stylesUsed.includes('staccato')) return illegal(`${STYLES.staccato.name} is already used this turn`)

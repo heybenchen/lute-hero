@@ -131,7 +131,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 | **Indie** | 2 | All your dice crit one number lower. Does not affect bonus dice. |
 | **Bebop** | 1 | Once per turn, re-roll the die you just rolled and keep the higher result. |
 | **Bluegrass** | 2 | You may roll your d8 dice twice and keep the higher roll. Does not affect bonus dice. |
-| **Opera** | 2 | Add +2 to every d20 song. |
+| **Opera** | 2 | Increase the rolled value of your d20s by 2. |
 | **Blues** | 3 | Once per turn, you may refresh a spent d20 song for 1 Inspiration. |
 | **Crossover** | 2 | Once per turn, a song ignores immunity. |
 | **Barbershop** | 2 | When you have all four elements in your setlist, add +1 to each song. |
@@ -151,7 +151,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 | **Prog Rock** | 2 | Your 4th and later songs in a concert add +2. |
 | **Ska** | 2 | Whenever you roll an odd number, add +1 to the song. |
 | **K-Pop** | 2 | Gain +15 Fame for winning over 3 monsters or +25 Fame for winning 4 monsters in one concert. |
-| **Emo** | 2 | When you're down to your last song, double its value. |
+| **Emo** | 2 | Declare that this is your last song of the concert: add +8 to it. The concert ends after this song. |
 | **Trance** | 2 | While you have 0 Inspiration, add +3 to each song. |
 | **Grunge** | 2 | Every time a song moves a monster without winning it over, add +1 to your next song. |
 | **Dubstep** | 2 | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher, then adds +3. |

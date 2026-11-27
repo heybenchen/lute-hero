@@ -39,7 +39,7 @@ Run `OPP=1 ROUND=5 STYLES=<id> npx tsx scripts/style-audit.ts 600`. It plays 3-b
 | **Indie** | `ostinato` | 2 (2) | All your dice crit one number lower. Does not affect bonus dice. | `ostinatoCritFace` (3), `ostinatoMaxFaces` (20), `ostinatoCascadeBonus` (0), `ostinatoChainFace` (4) | 34.3 |
 | **Bebop** | `rubato` | 1 (1) | Once per turn, re-roll the die you just rolled and keep the higher result. | `rubatoMaxFaces` (20), `rubatoUsesPerTurn` (1) | 32.9 |
 | **Bluegrass** | `virtuoso` | 2 (2) | You may roll your d8 dice twice and keep the higher roll. Does not affect bonus dice. | `virtuosoMinFaces` (8), `virtuosoMaxFaces` (8) | 39.3 |
-| **Opera** | `fortissimo` | 2 (2) | Add +2 to every d20 song. | `fortissimoBonus` (2), `fortissimoRaisesFace` (0) | 28.5 |
+| **Opera** | `fortissimo` | 2 (2) | Increase the rolled value of your d20s by 2. | `fortissimoBonus` (2), `fortissimoRaisesFace` (1) | 30.4 |
 | **Blues** | `fermata` | 3 (3) | Once per turn, you may refresh a spent d20 song for 1 Inspiration. | `fermataMinFaces` (20), `fermataInspirationCost` (1) | 31.5 |
 | **Crossover** | `counterpoint` | 2 (2) | Once per turn, a song ignores immunity. | `counterpointMultiplier` (1) | 31.8 |
 | **Barbershop** | `tutti` | 2 (2) | When you have all four elements in your setlist, add +1 to each song. | `tuttiBonus` (1), `tuttiElements` (4) | 37.3 |
@@ -73,26 +73,26 @@ Data-defined specs, except Trip-Hop, which the `MOVE` reducer handles (`anywhere
 | **Prog Rock** | `prog-rock` | 2 (2) | Your 4th and later songs in a concert add +2. | `progRockFrom` (4), `progRockBonus` (2) | 28.1 |
 | **Ska** | `ska` | 2 (4) | Whenever you roll an odd number, add +1 to the song. | `skaBonus` (1) | 32.1 |
 | **K-Pop** | `k-pop` | 2 (2) | Gain +15 Fame for winning over 3 monsters or +25 Fame for winning 4 monsters in one concert. | `kPopFame3` (15), `kPopFame4` (25) | 32.0 |
-| **Emo** | `emo` | 2 (2) | When you're down to your last song, double its value. | `emoMultiplier` (2), `emoBonus` (0), `emoSongsLeft` (1) | 21.8 |
+| **Emo** | `emo` | 2 (2) | Declare that this is your last song of the concert: add +8 to it. The concert ends after this song. | `emoBonus` (8) | 24.8 |
 | **Trance** | `trance` | 2 (2) | While you have 0 Inspiration, add +3 to each song. | `tranceBonus` (3) | 26.4 |
 | **Grunge** | `grunge` | 2 (2) | Every time a song moves a monster without winning it over, add +1 to your next song. | `grungeBonus` (1) | 31.2 |
 | **Dubstep** | `dubstep` | 2 (2) | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher, then adds +3. | `dubstepAdvantage` (1), `dubstepBonus` (3), `dubstepMultiplier` (1), `dubstepOncePerTurn` (1) | 28.8 |
 | **Trip-Hop** | `trip-hop` | 1 (2) | Once per turn, move to any space on the board. | — | 29.0 |
 
-All 30 land between **21.8% (Emo) and 39.3% (Bluegrass)**. 16 sit inside the 31–37% band. Rows swing up to ~5 points between runs, so read single rows as ±4 at best.
+All 30 land between **24.8% (Emo) and 39.3% (Bluegrass)**. 16 sit inside the 31–37% band. Rows swing up to ~5 points between runs, so read single rows as ±4 at best.
 
 ## Outside the band
 
-Latest run (600 games each, baseline 32.8%), after the buffs: Pop +2 Inspiration, K-Pop +15/+25 Fame, Soul at 2 EXP needing 2+ Inspiration (all three now in the band), Gospel refreshing any die, Trance +3, Emo doubling its last song, Dubstep rolling twice and adding +3.
+Latest run (600 games each, baseline 32.8%), after the buffs: Pop +2 Inspiration, K-Pop +15/+25 Fame, Soul at 2 EXP needing 2+ Inspiration (all three now in the band), Gospel refreshing any die, Trance +3, Dubstep rolling twice and adding +3. Emo (declared final song, +8) and Opera (+2 to the rolled value of d20s) were changed afterwards; their rows come from their own 600-game runs.
 
 | Genre | Result | Notes |
 |---|---|---|
-| **Emo** | 21.8% at 2 EXP | Doubling the last song, +4 or +5 all measure 22–25%: the last song rarely comes up. Reach is the lever (+3 on your last 3 songs measured 32.8%; +5 on the last 2, 30.4%) |
+| **Emo** | 24.8% at 2 EXP | A declared final song at +8 (see below). Earlier versions that boosted only the last song (doubling, +4, +5) measured 22–25%: the last song rarely comes up |
 | **Trance** | 26.4% at 2 EXP | The smart bot banks Inspiration for the showdown, so it rarely sits at 0; players who spend it down will get more from it |
 | **Gospel** | 27.1% at 2 EXP | Refreshing any die didn't move it; the call is the lever |
 | **New Age** | 28.1% at 1 EXP | 34.9% at 0 EXP |
 | **Prog Rock** | 28.1% at 2 EXP | 31.4% last run, partly noise |
-| **Opera** | 28.5% at 2 EXP | Raising the rolled value by 2 measured 30.4%; +3 flat 31.1%; +3 to the rolled value 36.7% |
+| **Opera** | 30.4% at 2 EXP | Now raises the rolled value of d20s by 2 (was a flat +2: 28.5%); +3 flat 31.1%; +3 to the rolled value 36.7% |
 | **Dubstep** | 28.8% at 2 EXP | Up from 26.3% with the +3 |
 | **Trip-Hop** | 29.0% at 1 EXP | 32.1% at 0 EXP |
 | **Lo-fi** | 30.9% at 3 EXP | Edge of the band |
@@ -102,21 +102,26 @@ Latest run (600 games each, baseline 32.8%), after the buffs: Pop +2 Inspiration
 
 **Adjusted after the first run:** Baroque as designed (+2 to a roll of 3 or less) measured **54.1%**, because a 2 or 3 on a d4 became a crit; at +1 it measures **36.5%**. Bluegrass on d4 and d8 measured **43.9%** (39.4% at 3 EXP, 37.4% at 4); it now covers d8s only.
 
+### Emo as a declared final song
+
+The bard declares a song their last of the concert for a bonus (`emoBonus`, 8), and the concert ends after it (`PLAY_SONG { emoFinale }`). Measured with the smart bot declaring only when nothing else is left to win (the last song, or the only monster left); an eager bot that declared to chase big wins ended concerts it would have kept winning and did worse (17–22%).
+
+| Bonus | +3 | +6 | +8 | +10 | +15 | +20 | +8 at 1 EXP |
+|---|---|---|---|---|---|---|---|
+| Win % | 23.1 | 24.3 | 24.8 | 25.2 | 26.8 | 27.5 | 25.8 |
+
+None reaches the band (baseline 32.8%; "+5 on your last 2 songs" measured 30.4%), but the declared finale was kept at +8 as the clearer rule; a player who plans the finale will do better than the conservative bot.
+
 ### Buffs measured for the weak genres
 
 Not applied unless noted; each is a tunable change (600 games, same seeds).
 
 | Genre | Buff | Win % |
 |---|---|---|
-| Emo | +5 on the last song | 25.0 |
-| **Emo** | double the last song (**applied**) | 24.3 (21.8 in the full run) |
-| Emo | +4 on the last song | 24.7 |
-| Emo | +3 on your last 3 songs (`emoSongsLeft` 3) | **32.8** |
-| Emo | +5 on your last 2 songs | 30.4 |
 | **Pop** | +2 Inspiration before each concert (**applied**) | **32.3** |
 | **K-Pop** | +15 / +25 Fame (**applied**) | **32.9** |
 | **Soul** | 2 EXP and 2+ Inspiration at turn start (**applied**) | **31.1** (2 EXP alone: 27.3) |
-| Opera | +3 to d20 songs · +2 to the rolled value · +3 to the rolled value | **31.1** · 30.4 · 36.7 |
+| **Opera** | +3 to d20 songs · +2 to the rolled value (**applied**) · +3 to the rolled value | 31.1 · **30.4** · 36.7 |
 | **New Age** | 0 EXP | **34.9** |
 | **Trip-Hop** | 0 EXP | **32.1** |
 | Lo-fi | 2 EXP | 37.4 (overshoots) |

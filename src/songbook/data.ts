@@ -68,7 +68,7 @@ export const STYLE_META: Record<StyleId, StyleMeta> = {
     note: 'A free encore button, never costs Inspiration. If the new roll is lower, your first roll stands (the use is still spent).',
   },
   virtuoso: { group: 'original', timing: 'always', was: 2, win: 39.3, tunables: ['virtuosoMinFaces', 'virtuosoMaxFaces'] },
-  fortissimo: { group: 'original', timing: 'always', was: 2, win: 28.5, tunables: ['fortissimoBonus', 'fortissimoRaisesFace'] },
+  fortissimo: { group: 'original', timing: 'always', was: 2, win: 30.4, tunables: ['fortissimoBonus', 'fortissimoRaisesFace'] },
   fermata: {
     group: 'original', timing: 'button', was: 3, win: 31.5, tunables: ['fermataMinFaces', 'fermataInspirationCost'],
     note: 'A button on a spent d20 song during a concert. Songs refresh at the start of every concert anyway.',
@@ -97,7 +97,7 @@ export const STYLE_META: Record<StyleId, StyleMeta> = {
   'prog-rock': { group: 'new', timing: 'always', was: 2, win: 28.1, tunables: ['progRockFrom', 'progRockBonus'] },
   ska: { group: 'new', timing: 'always', was: 4, win: 32.1, tunables: ['skaBonus'], note: 'Reads the face the die lands on, before any bonus.' },
   'k-pop': { group: 'new', timing: 'always', was: 2, win: 32.0, tunables: ['kPopFame3', 'kPopFame4'], note: 'Paid at the end of the concert; guest songs\' wins don\'t count.' },
-  emo: { group: 'new', timing: 'always', was: 2, win: 21.8, tunables: ['emoMultiplier', 'emoBonus', 'emoSongsLeft'], note: 'Your last unspent song, counting the one you play.' },
+  emo: { group: 'new', timing: 'button', was: 2, win: 24.8, tunables: ['emoBonus'], note: 'Tick it before a song: that song gets the bonus, and the concert ends after it (monsters you moved but didn\'t win over level up, as when you end early). An encore keeps the bonus.' },
   trance: { group: 'new', timing: 'always', was: 2, win: 26.4, tunables: ['tranceBonus'] },
   grunge: { group: 'new', timing: 'always', was: 2, win: 31.2, tunables: ['grungeBonus'], note: 'Only a song that took some Resolve counts. A guest song counts too.' },
   dubstep: { group: 'new', timing: 'once-per-turn', was: 2, win: 28.8, tunables: ['dubstepAdvantage', 'dubstepBonus', 'dubstepMultiplier', 'dubstepOncePerTurn'], note: 'A guest song\'s win counts too.' },

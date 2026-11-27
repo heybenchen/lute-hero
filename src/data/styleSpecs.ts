@@ -60,8 +60,8 @@ export function studioSpec(id: StyleId): StyleSpec | null {
       return { ...base, roll: [{ oddBonus: t.skaBonus }] }
     // K-Pop's Fame for a big concert is paid in endCombat (it counts the concert's wins)
     case 'emo':
-      // Emo: a bonus on your last unspent song
-      return { ...base, roll: [{ when: { songsLeftAtMost: t.emoSongsLeft }, ...(t.emoBonus ? { flat: t.emoBonus } : {}), ...(t.emoMultiplier !== 1 ? { times: t.emoMultiplier } : {}) }] }
+      // Emo's bonus rides on the song the bard declares their last (PLAY_SONG emoFinale), via emoFinaleSpec()
+      return null
     case 'trance':
       return { ...base, roll: [{ when: { inspirationAtMost: 0 }, flat: t.tranceBonus }] }
     case 'grunge':
@@ -78,6 +78,11 @@ export function studioSpec(id: StyleId): StyleSpec | null {
     default:
       return null
   }
+}
+
+/** Emo: the bonus on the song a bard declares their last of the concert. */
+export function emoFinaleSpec(): StyleSpec {
+  return { id: 'emo', name: 'emo', theme: 'studio', rule: '', cost: 0, roll: [{ flat: getTunables().emoBonus }] }
 }
 
 /** Soul (Inspired Play): the +bonus a bard buys for one play by spending Inspiration. */

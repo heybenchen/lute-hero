@@ -188,11 +188,8 @@ export interface Tunables {
   kPopFame3: number
   kPopFame4: number
   /** Emo: bonus per spent song, and its cap. */
-  /** Emo: bonus to a song when you're down to this many unspent songs (1 = your last). */
+  /** Emo: bonus on the song the bard declares their last of the concert. */
   emoBonus: number
-  emoSongsLeft: number
-  /** Emo: multiply the last song's value (1 = off). */
-  emoMultiplier: number
   /** Opera: 1 = its bonus raises the d20's rolled value (it can crit), 0 = a flat bonus. */
   fortissimoRaisesFace: number
   /** Dubstep: the song after a win rolls twice (1/0), adds this, and is multiplied by this. */
@@ -318,10 +315,8 @@ export const DEFAULT_TUNABLES: Tunables = {
   skaBonus: 1,
   kPopFame3: 15,
   kPopFame4: 25,
-  emoBonus: 0,
-  emoSongsLeft: 1,
-  emoMultiplier: 2,
-  fortissimoRaisesFace: 0,
+  emoBonus: 8,
+  fortissimoRaisesFace: 1,
   dubstepAdvantage: 1,
   dubstepBonus: 3,
   dubstepMultiplier: 1,
@@ -466,9 +461,7 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'skaBonus', label: 'Ska: bonus on odd faces', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'kPopFame3', label: 'K-Pop: Fame for 3 monsters in a concert', group: 'Genres', min: 0, max: 50, step: 1 },
   { key: 'kPopFame4', label: 'K-Pop: Fame for 4+ monsters in a concert', group: 'Genres', min: 0, max: 50, step: 1 },
-  { key: 'emoBonus', label: 'Emo: bonus to your last songs', group: 'Genres', min: 0, max: 10, step: 1 },
-  { key: 'emoSongsLeft', label: 'Emo: songs left that count as "last"', group: 'Genres', min: 1, max: 6, step: 1 },
-  { key: 'emoMultiplier', label: 'Emo: multiplies the last song (1 = off)', group: 'Genres', min: 1, max: 3, step: 0.5 },
+  { key: 'emoBonus', label: 'Emo: bonus on your declared final song', group: 'Genres', min: 0, max: 20, step: 1 },
   { key: 'fortissimoRaisesFace', label: 'Opera: raises the rolled value (1) or flat bonus (0)', group: 'Genres', min: 0, max: 1, step: 1 },
   { key: 'dubstepAdvantage', label: 'Dubstep: next song rolls twice (1/0)', group: 'Genres', min: 0, max: 1, step: 1 },
   { key: 'dubstepBonus', label: 'Dubstep: bonus to the next song', group: 'Genres', min: 0, max: 10, step: 1 },

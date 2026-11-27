@@ -62,7 +62,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'fortissimo',
     name: 'Opera',
     flavor: 'It isn\'t over until you sing.',
-    rule: 'Add +2 to every d20 song.',
+    rule: 'Increase the rolled value of your d20s by 2.',
   },
   fermata: {
     id: 'fermata',
@@ -181,8 +181,8 @@ export const STYLES: Record<StyleId, StyleDef> = {
   emo: {
     id: 'emo',
     name: 'Emo',
-    flavor: 'Every song you lose makes the next one hurt more.',
-    rule: "When you're down to your last song, double its value.",
+    flavor: 'Pour everything into one last song, then walk off the stage.',
+    rule: 'Declare that this is your last song of the concert: add +8 to it. The concert ends after this song.',
   },
   trance: {
     id: 'trance',
@@ -294,7 +294,9 @@ function ordinal(n: number): string {
 export function styleRule(id: StyleId): string {
   const t = getTunables()
   switch (id) {
-    case 'fortissimo': return `Add +${t.fortissimoBonus} to every d20 song.`
+    case 'fortissimo': return t.fortissimoRaisesFace
+      ? `Increase the rolled value of your d20s by ${t.fortissimoBonus}.`
+      : `Add +${t.fortissimoBonus} to every d20 song.`
     case 'overture': return `Add +${t.overtureBonus} to your first song each turn.`
     case 'tutti': return t.tuttiElements >= 4
       ? `When you have all four elements in your setlist, add +${t.tuttiBonus} to each song.`
@@ -356,15 +358,7 @@ export function styleRule(id: StyleId): string {
     case 'prog-rock': return `Your ${ordinal(t.progRockFrom)} and later songs in a concert add +${t.progRockBonus}.`
     case 'ska': return `Whenever you roll an odd number, add +${t.skaBonus} to the song.`
     case 'k-pop': return `Gain +${t.kPopFame3} Fame for winning over 3 monsters or +${t.kPopFame4} Fame for winning 4 monsters in one concert.`
-    case 'emo': {
-      const what = [
-        t.emoMultiplier === 2 ? 'double its value' : t.emoMultiplier !== 1 ? `multiply its value by ${t.emoMultiplier}` : '',
-        t.emoBonus ? `add +${t.emoBonus}` : '',
-      ].filter(Boolean).join(' and ')
-      return t.emoSongsLeft <= 1
-        ? `When you're down to your last song, ${what}.`
-        : `When you're down to your last ${t.emoSongsLeft} songs, ${what.replace('its value', 'their value')} for each.`
-    }
+    case 'emo': return `Declare that this is your last song of the concert: add +${t.emoBonus} to it. The concert ends after this song.`
     case 'trance': return `While you have 0 Inspiration, add +${t.tranceBonus} to each song.`
     case 'grunge': return `Every time a song moves a monster without winning it over, add +${t.grungeBonus} to your next song.`
     case 'dubstep': {

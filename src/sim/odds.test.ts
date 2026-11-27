@@ -36,7 +36,7 @@ describe('exact roll distributions match the engine', () => {
     for (const t of ['d4', 'd8', 'd12', 'd20'] as DiceType[]) compare(t, [], false, { maxCascades: m })
   })
   it('Bluegrass (advantage) on a d8', () => compare('d8', ['virtuoso'], false, { advantage: true, maxCascades: m }))
-  it('Opera\'s flat bonus on a d20', () => compare('d20', ['fortissimo'], false, { flat: DEFAULT_TUNABLES.fortissimoBonus, maxCascades: m }))
+  it('Opera raising a d20\'s rolled value', () => compare('d20', ['fortissimo'], false, { critBonus: DEFAULT_TUNABLES.fortissimoBonus, maxCascades: m }))
   it('War Drums on a d4', () => compare('d4', ['ostinato'], false, { critFace: DEFAULT_TUNABLES.ostinatoCritFace, maxCascades: m }))
   it('Fanfare + Harmony flat bonus on the first roll', () =>
     compare('d8', ['overture', 'tutti'], true, { flat: DEFAULT_TUNABLES.overtureBonus + DEFAULT_TUNABLES.tuttiBonus, maxCascades: m }))

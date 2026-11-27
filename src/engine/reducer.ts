@@ -18,7 +18,7 @@ import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, ensure
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
 import { calculateSingleTargetDamage, calculateDamage, rollSong } from '../game-logic/combat/damageCalculator.js'
 import { PlayContext, StyleSpec, addRewards, conditionHolds, inspirationRules, specMultiplier } from '../game-logic/styles/specs.js'
-import { specsOf, inspiredPlaySpec } from '../data/styleSpecs.js'
+import { specsOf, inspiredPlaySpec, emoFinaleSpec } from '../data/styleSpecs.js'
 import {
   calculateFameEarned,
   calculateMonsterExp,
@@ -202,13 +202,17 @@ function reduce(
       // Gospel's call rides on the play, and an encore replays it.
       const activateSoul = !!action.inspiredPlay && !state.combat.soulActive
       const soulActive = !!state.combat.soulActive || activateSoul
-      const flags = { staccatoCall: !!action.staccatoCall }
+      const flags = { staccatoCall: !!action.staccatoCall, emoFinale: !!action.emoFinale }
       const players = activateSoul
         ? adjustInspiration(state.players, fighter.id, -getTunables().inspiredPlayCost)
         : state.players
-      const extra = soulActive ? [inspiredPlaySpec()] : []
+      const extra = [...(soulActive ? [inspiredPlaySpec()] : []), ...(flags.emoFinale ? [emoFinaleSpec()] : [])]
       const combat = performCombatPlay({ ...state.combat, soulActive }, snapshot, song, action.targetMonsterId, fighter, rng, events, state.players, extra, flags)
-      return { ...state, players, combat: { ...combat, undoSnapshot: snapshot, lastPlayedSongId: song.id, lastPlayFlags: flags } }
+      return {
+        ...state,
+        players,
+        combat: { ...combat, undoSnapshot: snapshot, lastPlayedSongId: song.id, lastPlayFlags: flags, finaleDeclared: flags.emoFinale },
+      }
     }
 
     case 'REROLL_SONG': {
@@ -233,7 +237,11 @@ function reduce(
         ? [{ id: '_reroll-bonus', name: '', rule: '', theme: '', cost: 0, roll: [{ flat: insp.bonus }] }]
         : []
       const flags = state.combat.lastPlayFlags ?? {}
-      const replayed = state.combat.soulActive ? [...rerollBonus, inspiredPlaySpec()] : rerollBonus
+      const replayed = [
+        ...rerollBonus,
+        ...(state.combat.soulActive ? [inspiredPlaySpec()] : []),
+        ...(flags.emoFinale ? [emoFinaleSpec()] : []),
+      ]
       let combat = performCombatPlay(state.combat, snapshot, song, targetId, updatedFighter, rng, events, state.players, replayed, flags)
       // Keep-the-better rerolls (Nimble Fingers always, plus any style-lab spec that grants
       // it): if the new roll charms the target less, the old result stands
