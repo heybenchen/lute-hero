@@ -125,7 +125,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   Buy &#x2728; <span className="font-normal opacity-80">({inspirationCost} EXP)</span>
                 </button>
                 <span className="whitespace-nowrap pl-1" title="Inspiration you hold">
-                  &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span>
+                  &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
                 </span>
                 <button
                   onClick={handleRefreshOffers}
@@ -167,7 +167,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                   <div className="flex items-center gap-3">
                     <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
-                      Dice Elements
+                      Song Elements
                     </div>
                     <div className="text-sm text-parchment-500">
                       {elementBag.length} left in bag
@@ -333,7 +333,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="text-xs font-medieval text-parchment-400 uppercase tracking-wider">
-                    Songs
+                    Your Songs
                   </div>
                   <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, rgba(212, 168, 83, 0.2), transparent)' }} />
                 </div>

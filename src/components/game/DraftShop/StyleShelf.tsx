@@ -68,17 +68,25 @@ export function StyleShelf({
 
   return (
     <div className="mt-4 border-t border-gold-700/20 pt-4">
-        <h3 className="mb-3 font-display text-lg text-gold-300">Genres · {player.styles.length}/{cap}</h3>
+        <h3 className="mb-3 font-display text-lg text-gold-300">Your Genres</h3>
         <div className="grid auto-rows-fr grid-cols-1 gap-3">
           {player.styles.map((id) => (
-            <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer flex min-h-28 flex-col text-left enabled:ring-1 enabled:ring-gold-400">
+            <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer flex h-32 flex-col text-left enabled:ring-1 enabled:ring-gold-400">
               <strong className="font-display text-xl text-gold-300">{STYLES[id].name}</strong>
               <span className="mt-2 block text-sm">{styleRule(id)}</span>
             </button>
           ))}
-          {!full && <button type="button" disabled={!ready} onClick={() => place()} className="style-offer min-h-28 border-dashed text-left enabled:ring-1 enabled:ring-gold-400">
-            Empty genre slot
-          </button>}
+          {Array.from({ length: cap - player.styles.length }, (_, index) => (
+            <button
+              key={`empty-style-${index}`}
+              type="button"
+              disabled={!ready}
+              onClick={() => place()}
+              className="style-offer flex h-32 items-center justify-center border-dashed text-center text-parchment-500 enabled:ring-1 enabled:ring-gold-400"
+            >
+              Empty genre slot
+            </button>
+          ))}
         </div>
       {givingUp && ready && (
         <div className="mt-4 rounded-lg border border-gold-700/40 p-3" role="group" aria-label="Choose a song to give up">
