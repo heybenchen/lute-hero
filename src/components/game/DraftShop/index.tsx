@@ -93,8 +93,8 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
       <div className="modal-content max-w-6xl">
         <div className="p-4 sm:p-6">
           {/* Header */}
-          <div className="flex flex-wrap justify-between items-start gap-3 mb-5 sm:mb-6">
-            <div className="min-w-0 flex-1">
+          <div className="relative mb-5 grid gap-3 sm:mb-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
+            <div className="min-w-0">
               <div className="font-display text-2xl text-gold-400">
                 Studio
               </div>
@@ -128,28 +128,8 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 </div>
               )}
             </div>
-            {canInteract && (
-              <button
-                onClick={onClose}
-                className="relative z-10 -ml-7 flex h-7 w-7 shrink-0 items-center justify-center text-xl leading-none text-parchment-400 transition-colors hover:text-parchment-200"
-                title="Close Studio"
-              >
-                &#x2715;
-              </button>
-            )}
-          </div>
-
-          {/* Contextual purchase guidance aligns with the collection column */}
-          <div className="mb-3 grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
-            <div className="hidden lg:block" aria-hidden="true" />
-            <div
-              className={`flex h-16 w-full flex-wrap items-center justify-end gap-2 text-right text-sm text-parchment-200 transition-opacity sm:h-10 ${
-                canInteract && !activeDie && selectedElement ? 'visible opacity-100' : 'invisible opacity-0'
-              }`}
-              aria-hidden={!(canInteract && !activeDie && selectedElement)}
-            >
-              {canInteract && !activeDie && selectedElement && (
-                <>
+            {canInteract && !activeDie && selectedElement && (
+              <div className="flex w-full flex-wrap items-end justify-end gap-2 pr-8 text-right text-sm text-parchment-200">
                 {setlistFull ? (
                   <>
                     <span>{replaceMode ? `Choose the die to replace with a ${selectedElement} d4 (${newD4Cost()} EXP).` : `Choose a matching die to upgrade, or buy a new ${selectedElement} d4.`}</span>
@@ -168,9 +148,17 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                     <span>chosen. Use your setlist to buy a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP) or upgrade a matching die.</span>
                   </>
                 )}
-                </>
-              )}
-            </div>
+              </div>
+            )}
+            {canInteract && (
+              <button
+                onClick={onClose}
+                className="absolute right-0 top-0 z-10 flex h-7 w-7 items-center justify-center text-xl leading-none text-parchment-400 transition-colors hover:text-parchment-200"
+                title="Close Studio"
+              >
+                &#x2715;
+              </button>
+            )}
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">

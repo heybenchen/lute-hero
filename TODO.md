@@ -34,6 +34,7 @@
 - Reserved a permanent responsive-height row for the Studio purchase helper, so selecting, deselecting, or placing an element never shifts the surrounding layout.
 
 - Removed the outer border/background from the Studio purchase helper and aligned it in a separate row exactly to the Your collection column width.
+- Merged the Studio purchase helper into the header's Your collection-aligned column, eliminating the separate reserved row so hidden guidance takes no space.
 
 - Moved the Studio's Buy Inspiration control and Inspiration balance directly beneath the active player's name.
 
