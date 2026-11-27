@@ -81,7 +81,7 @@ Your **setlist** is up to six songs, each holding one die. **To play a song**, c
 - **Encore.** After a song that moves a monster, you may pay **1 Inspiration** to roll it again. The new roll replaces the old one.
 - **Guest songs.** Once per concert, you may borrow one song from each other bard on your space. It plays without genres or encores and is never spent. If it wins a monster over, your guest gets half its Fame and EXP, rounded down.
 
-**Ending a concert.** Stop any time, or play until your songs are spent or every monster is won over. You gain **EXP for every monster you moved or won over**. If you win over every monster, you also gain **1 Inspiration** and add one chip of an element of your choice to each neighbouring space.
+**Ending a concert.** Stop any time, or play until your songs are spent or every monster is won over. If you stop before rolling any dice, the concert is free and you may still play one this turn. Otherwise, you gain **EXP for every monster you moved or won over**. If you win over every monster, you also gain **1 Inspiration** and add one chip of an element of your choice to each neighbouring space.
 
 **Ending early.** If any monster is left, the chips of the monsters you won over leave the board (one per level), and **every monster you moved but didn't win over levels up**: add one chip of its element (up to 5). Monsters you never played to stay as they are.
 
@@ -162,7 +162,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 
 - An encore always replaces the roll, even if worse (Bebop keeps the higher).
 - If the monster you moved is immune to all your songs, end the concert.
-- Ending a concert before any song is allowed; you gain nothing.
+- Ending a concert before rolling any dice is free; you gain nothing and may still play one concert this turn.
 - Passing through a space rebuilds its monsters just like stopping there.
 - When you win over a whole space, skip neighbours that already hold 5 chips of your chosen element. New round chips that don't fit go to another space.
 - With all songs full, a new d4 replaces a die of your choice.

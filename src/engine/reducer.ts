@@ -1181,6 +1181,29 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
   const combat = state.combat
   const fighterId = combat.playerId!
   const spaceId = combat.spaceId!
+  const noDiceRolled = combat.rolls.length === 0
+
+  // Backing out before the first roll is a free cancellation: it does not use
+  // the bard's one concert, alter the space, or trigger retreat rewards.
+  if (noDiceRolled) {
+    events.push({
+      type: 'combatEnded',
+      playerId: fighterId,
+      success: false,
+      monstersDefeated: 0,
+    })
+    return {
+      ...state,
+      players: state.players.map((player) =>
+        player.id === fighterId
+          ? { ...player, fightsThisTurn: Math.max(0, player.fightsThisTurn - 1) }
+          : player
+      ),
+      combat: createInitialCombatState(),
+      studio: createInitialStudioState(),
+    }
+  }
+
   const success = combat.monsters.every((m) => m.currentHP <= 0)
   const fighterStyles = state.players.find((p) => p.id === fighterId)?.styles ?? []
   const rewards = computeCombatRewards(combat, fighterStyles)

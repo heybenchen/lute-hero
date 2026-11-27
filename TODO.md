@@ -16,6 +16,8 @@
 
 ## Completed
 
+- Retreating before any dice are rolled is now free: it does not consume the bard's concert for the turn, alter monster chips, trigger retreat rewards, or show the damage-forfeit confirmation.
+
 - Removed the redundant floating level chips above combat monster sprites; level remains visible in each monster stat card.
 
 - Spec rule update applied: Gospel/K-Pop/Emo/Grunge/Dubstep/Punk/Ska/Pop/Soul/Opera/Orchestra/Baroque/Bluegrass/New Age rules, Hip-Hop renamed Rap, new wording ("add +N to the song", "increase the rolled value"). Baroque shipped at +1 (54% at +2) and Bluegrass on d8s only (44% on d4 and d8).

@@ -19,7 +19,7 @@ import { counterpointMultiplier, fermataCanRefresh, rubatoCanReroll, rubatoUsesL
 import { getTunables } from '@/data/tunables'
 import { songIsImmune, songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
-import { ArrowLeft, Flag, Map as MapIcon, RotateCcw, Sparkles, Target } from 'lucide-react'
+import { ArrowLeft, Flag, Map as MapIcon, RotateCcw, Sparkles } from 'lucide-react'
 import { COMBAT_STAGE_BACKDROPS } from '@/assets/combat/stages'
 
 export function CombatModal() {
@@ -176,6 +176,7 @@ export function CombatModal() {
   const canContinue = ownSongsRemaining > 0 || featurableSongs.length > 0
 
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
+  const hasRolledDice = rolls.length > 0
   const rollMatchesSelectedTarget =
     !rollDisplayDismissed && selectedTargetId !== null && selectedTargetId === lastTargetMonsterId
   const totalExp = rewards.totalExp
@@ -301,6 +302,7 @@ export function CombatModal() {
     immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false, elementCount: 0 }),
   }
   const retreatForfeitsDamage =
+    hasRolledDice &&
     canContinue &&
     !allMonstersDefeated &&
     (songsCanStillDamage(remainingSongs, availableTargets, damageOptions) || songsCanStillDamage(featurableSongs, availableTargets))
@@ -629,7 +631,9 @@ export function CombatModal() {
                   color: canContinue ? '#d8c7a5' : '#f0c1aa',
                   boxShadow: 'none',
                 }}
-                title="End the concert now — you earn EXP for every monster you moved and Fame for each one you won over. Monsters you moved but didn't win over level up."
+                title={hasRolledDice
+                  ? "End the concert now — you earn EXP for every monster you moved and Fame for each one you won over. Monsters you moved but didn't win over level up."
+                  : 'Leave before rolling for free — this does not use your concert for the turn.'}
               >
                 <Flag size={16} className="shrink-0 opacity-80" aria-hidden="true" />
                 <span className="font-medieval font-bold">{canContinue ? 'End concert' : 'Finish concert'}</span>
