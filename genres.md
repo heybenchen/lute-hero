@@ -76,7 +76,7 @@ Data-defined specs, except Trip-Hop, which the `MOVE` reducer handles (`anywhere
 | **Emo** | `emo` | 2 (2) | Declare that this is your last song of the concert: add +8 to it. The concert ends after this song. | `emoBonus` (8) | 24.8 |
 | **Trance** | `trance` | 2 (2) | While you have 0 Inspiration, add +3 to each song. | `tranceBonus` (3) | 26.4 |
 | **Grunge** | `grunge` | 2 (2) | You may roll two d12s in place of your d20s. | — | 31.2† |
-| **Dubstep** | `dubstep` | 2 (2) | Every time a song moves a monster without winning it over, add +1 to your next song. | `dubstepBonus` (1) | 28.8† |
+| **Dubstep** | `dubstep` | 2 (2) | Every time a song moves a monster without winning it over, add +2 to your next song. | `dubstepBonus` (2) | 28.8† |
 | **Trip-Hop** | `trip-hop` | 1 (2) | Once per turn, move to any space on the board. | — | 29.0 |
 
 All 30 land between **24.8% (Emo) and 39.3% (Bluegrass)**. 16 sit inside the 31–37% band. Rows swing up to ~5 points between runs, so read single rows as ±4 at best.
