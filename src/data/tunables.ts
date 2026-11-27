@@ -308,7 +308,7 @@ export const DEFAULT_TUNABLES: Tunables = {
   kPopFame4: 25,
   emoBonus: 8,
   operaRaisesFace: 1,
-  dubstepBonus: 1,
+  dubstepBonus: 2,
   tranceBonus: 3,
 }
 
