@@ -4,7 +4,7 @@ import { createInitialEngineState, normalizeEngineState, EngineState } from './s
 import { GameAction } from './actions'
 import { mulberry32 } from './rng'
 import { DEFAULT_TUNABLES } from '../data/tunables'
-import { Genre } from '../types'
+import { DiceRoll, Genre } from '../types'
 import { GENRE_THEME } from '../data/genreTheme'
 
 const HOTSEAT: Pick<ActionCtx, 'actor'> = { actor: { kind: 'hotseat' } }
@@ -241,6 +241,14 @@ describe('UNDO_MOVE', () => {
 })
 
 describe('combat flow', () => {
+  const recordedRoll: DiceRoll = {
+    diceId: 'test-die',
+    value: 1,
+    isCrit: false,
+    critBonus: 0,
+    cascadeRolls: [],
+  }
+
   function stateWithMonsterAtPlayer(): EngineState {
     let state = startTwoPlayerGame()
     // Guarantee a monster on an adjacent space by moving onto a tagged space,
@@ -324,7 +332,8 @@ describe('combat flow', () => {
   it('retreat adjusts tags for defeated and surviving monsters', () => {
     let state = stateWithMonsterAtPlayer()
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
-    // One survivor at full HP: retreat re-adds its genre tag
+    // A zero-damage roll still makes this a used concert.
+    state = { ...state, combat: { ...state.combat, rolls: [recordedRoll] } }
     const survivors = state.combat.monsters
     state = apply(state, { type: 'END_COMBAT' }).state
     const space = state.spaces.find((s) => s.id === 1)!
@@ -334,8 +343,24 @@ describe('combat flow', () => {
     }
   })
 
+  it('refunds the concert when the bard retreats before rolling any dice', () => {
+    let state = stateWithMonsterAtPlayer()
+    const tagsBefore = state.spaces.find((space) => space.id === 1)!.genreTags
+    state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
+    expect(state.players[0].fightsThisTurn).toBe(1)
+    expect(state.combat.rolls).toHaveLength(0)
+
+    state = apply(state, { type: 'END_COMBAT' }).state
+
+    expect(state.combat.isActive).toBe(false)
+    expect(state.players[0].fightsThisTurn).toBe(0)
+    expect(state.spaces.find((space) => space.id === 1)!.genreTags).toEqual(tagsBefore)
+    expect(applyAction(state, { type: 'START_COMBAT', playerId: 'player-1' }, ctx()).ok).toBe(true)
+  })
+
   it('ending early levels up only monsters that were moved, not untouched ones', () => {
-    const base = apply(stateWithMonsterAtPlayer(), { type: 'START_COMBAT', playerId: 'player-1' }).state
+    const started = apply(stateWithMonsterAtPlayer(), { type: 'START_COMBAT', playerId: 'player-1' }).state
+    const base = { ...started, combat: { ...started.combat, rolls: [recordedRoll] } }
     const target = base.combat.monsters.find((m) => m.vulnerability)!
     const genre = target.vulnerability!
     const count = (st: typeof base) => st.spaces.find((s) => s.id === base.combat.spaceId)!.genreTags.filter((g) => g === genre).length
@@ -367,7 +392,11 @@ describe('combat flow', () => {
     // Wound the Lv1 only: its 1 EXP, not the Lv2's
     const wounded = {
       ...state,
-      combat: { ...state.combat, monsters: state.combat.monsters.map((m) => (m.id === folk.id ? { ...m, currentHP: m.maxHP - 1 } : m)) },
+      combat: {
+        ...state.combat,
+        rolls: [recordedRoll],
+        monsters: state.combat.monsters.map((m) => (m.id === folk.id ? { ...m, currentHP: m.maxHP - 1 } : m)),
+      },
     }
     expect(computeCombatRewards(wounded.combat).totalExp).toBe(DEFAULT_TUNABLES.monsterExpPerLevel)
     expect(apply(wounded, { type: 'END_COMBAT' }).state.players[0].exp).toBe(expBefore + DEFAULT_TUNABLES.monsterExpPerLevel)

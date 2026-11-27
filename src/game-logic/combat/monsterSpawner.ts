@@ -64,15 +64,13 @@ export function monsterSpawnHp(level: number): number {
   return Math.max(1, Math.floor(monsterBaseHp * getHPMultiplier(level) * monsterHpScale))
 }
 
-/**
- * Get monster name with level prefix
- */
+/** Size/power titles that mirror the five visual monster evolutions. */
+export const MONSTER_LEVEL_PREFIXES = ['Lesser', '', 'Greater', 'Elder', 'Apex'] as const
+
+/** Get a monster name whose title clearly communicates its level. */
 export function getMonsterNameWithLevel(baseName: string, level: number): string {
-  if (level === 1) return baseName
-  if (level === 2) return `Strong ${baseName}`
-  if (level === 3) return `Veteran ${baseName}`
-  if (level === 4) return `Legendary ${baseName}`
-  return `Mythic ${baseName}`
+  const prefix = MONSTER_LEVEL_PREFIXES[clampMonsterLevel(level) - 1]
+  return prefix ? `${prefix} ${baseName}` : baseName
 }
 
 /**

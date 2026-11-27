@@ -29,3 +29,7 @@ yarn.lock
 *.sw?
 .vercel
 .env*
+
+# Generated source sheets used to cut runtime combat artwork
+.figma/combat-stage-atlases/
+.figma/monster-level-sheets/
