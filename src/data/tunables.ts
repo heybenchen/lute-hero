@@ -188,8 +188,11 @@ export interface Tunables {
   kPopFame3: number
   kPopFame4: number
   /** Emo: bonus per spent song, and its cap. */
-  /** Emo: bonus to your last unspent song. */
+  /** Emo: bonus to a song when you're down to this many unspent songs (1 = your last). */
   emoBonus: number
+  emoSongsLeft: number
+  /** Dubstep: 1 = once per turn, 0 = after every win. */
+  dubstepOncePerTurn: number
   /** Trance: bonus while holding no Inspiration. */
   tranceBonus: number
   /** Grunge: bonus to the song after a miss. */
@@ -307,7 +310,9 @@ export const DEFAULT_TUNABLES: Tunables = {
   skaBonus: 1,
   kPopFame3: 10,
   kPopFame4: 15,
-  emoBonus: 3,
+  emoBonus: 5,
+  emoSongsLeft: 1,
+  dubstepOncePerTurn: 1,
   tranceBonus: 2,
   grungeBonus: 1,
 }
@@ -448,7 +453,9 @@ const SCALAR_FIELDS: { key: ScalarKey; label: string; group: TunableGroup; min: 
   { key: 'skaBonus', label: 'Ska: bonus on odd faces', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'kPopFame3', label: 'K-Pop: Fame for 3 monsters in a concert', group: 'Genres', min: 0, max: 50, step: 1 },
   { key: 'kPopFame4', label: 'K-Pop: Fame for 4+ monsters in a concert', group: 'Genres', min: 0, max: 50, step: 1 },
-  { key: 'emoBonus', label: 'Emo: bonus to your last song', group: 'Genres', min: 0, max: 10, step: 1 },
+  { key: 'emoBonus', label: 'Emo: bonus to your last songs', group: 'Genres', min: 0, max: 10, step: 1 },
+  { key: 'emoSongsLeft', label: 'Emo: songs left that count as "last"', group: 'Genres', min: 1, max: 6, step: 1 },
+  { key: 'dubstepOncePerTurn', label: 'Dubstep: once per turn (1) or every win (0)', group: 'Genres', min: 0, max: 1, step: 1 },
   { key: 'tranceBonus', label: 'Trance: bonus at 0 Inspiration', group: 'Genres', min: 0, max: 10, step: 1 },
   { key: 'grungeBonus', label: 'Grunge: bonus after a miss', group: 'Genres', min: 0, max: 10, step: 1 },
 ]

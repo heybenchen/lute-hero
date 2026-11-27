@@ -73,13 +73,13 @@ Data-defined specs, except Trip-Hop, which the `MOVE` reducer handles (`anywhere
 | **Prog Rock** | `prog-rock` | 2 (2) | Your 4th and later songs in a concert add +2. | `progRockFrom` (4), `progRockBonus` (2) | 31.4 |
 | **Ska** | `ska` | 2 (4) | Whenever you roll an odd number, add +1 to the song. | `skaBonus` (1) | 31.2 |
 | **K-Pop** | `k-pop` | 2 (2) | Gain +10 Fame for winning over 3 monsters or +15 Fame for winning 4 monsters in one concert. | `kPopFame3` (10), `kPopFame4` (15) | 29.8 |
-| **Emo** | `emo` | 2 (2) | When you're down to your last song, add +3. | `emoBonus` (3) | 24.2 |
+| **Emo** | `emo` | 2 (2) | When you're down to your last song, add +5. | `emoBonus` (5), `emoSongsLeft` (1) | 25.0 |
 | **Trance** | `trance` | 2 (1) | While you have 0 Inspiration, add +2 to each song. | `tranceBonus` (2) | 27.8 |
 | **Grunge** | `grunge` | 2 (2) | Every time a song moves a monster without winning it over, add +1 to your next song. | `grungeBonus` (1) | 32.9 |
-| **Dubstep** | `dubstep` | 2 (1) | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher. | — | 26.3 |
+| **Dubstep** | `dubstep` | 2 (1) | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher. | `dubstepOncePerTurn` (1) | 26.3 |
 | **Trip-Hop** | `trip-hop` | 1 (2) | Once per turn, move to any space on the board. | — | 30.3 |
 
-All 30 land between **24.2% (Emo) and 38.8% (Orchestra)**. 16 sit inside the 31–37% band. Rows swing up to ~5 points between runs, so read single rows as ±4 at best.
+All 30 land between **25.0% (Emo) and 38.8% (Orchestra)**. 16 sit inside the 31–37% band. Rows swing up to ~5 points between runs, so read single rows as ±4 at best.
 
 ## Outside the band
 
@@ -87,7 +87,7 @@ Latest run (600 games each, baseline 31.9%), after the spec's rule update. Rules
 
 | Genre | Result | Notes |
 |---|---|---|
-| **Emo** | 24.2% at 2 EXP | +3 on your last song rarely comes up: most concerts end before the last song |
+| **Emo** | 25.0% at 2 EXP (+5) | +3 measured 24.2%: the last song rarely comes up. Reach is the lever: +3 on your last 3 songs measured 32.8% (`emoSongsLeft` 3) |
 | **Pop** | 26.1% at 1 EXP | Inspiration before a concert instead of after |
 | **Dubstep** | 26.3% at 2 EXP | After a win, rolling twice matters less: the song that follows is often a sure thing |
 | **Gospel** | 27.3% at 2 EXP | 1 EXP reached only ~27% in earlier runs; the call is the lever, not the price |
@@ -102,6 +102,27 @@ Latest run (600 games each, baseline 31.9%), after the spec's rule update. Rules
 | **Orchestra** | 38.8% at 2 EXP | Raising the rolled value (can crit) made it stronger |
 
 **Adjusted after the first run:** Baroque as designed (+2 to a roll of 3 or less) measured **54.1%**, because a 2 or 3 on a d4 became a crit; at +1 it measures **36.5%**. Bluegrass on d4 and d8 measured **43.9%** (39.4% at 3 EXP, 37.4% at 4); it now covers d8s only.
+
+### Buffs measured for the weak genres
+
+Not applied unless noted; each is a tunable change (600 games, same seeds).
+
+| Genre | Buff | Win % |
+|---|---|---|
+| **Emo** | +5 on the last song (**applied**) | 25.0 |
+| Emo | +3 on your last 3 songs (`emoSongsLeft` 3) | **32.8** |
+| Emo | +5 on your last 2 songs | 30.4 |
+| **Pop** | +2 Inspiration before each concert | **32.3** |
+| **K-Pop** | +15 / +25 Fame | **32.9** |
+| **Soul** | 2 EXP and 2+ Inspiration at turn start | **31.1** (2 EXP alone: 27.3) |
+| **Opera** | +3 to d20 songs | **31.1** |
+| **New Age** | 0 EXP | **34.9** |
+| **Trip-Hop** | 0 EXP | **32.1** |
+| Lo-fi | 2 EXP | 37.4 (overshoots) |
+| Dubstep | 1 EXP · every win (no once per turn) | 27.5 · 23.8 |
+| Gospel | refresh any die · plus 1 EXP | 25.8 · 28.2 |
+| Trance | +3 · +3 at 1 EXP | 27.8 · 29.2 |
+
 
 ## Where the logic lives
 

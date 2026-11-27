@@ -61,7 +61,7 @@ export function studioSpec(id: StyleId): StyleSpec | null {
     // K-Pop's Fame for a big concert is paid in endCombat (it counts the concert's wins)
     case 'emo':
       // Emo: a bonus on your last unspent song
-      return { ...base, roll: [{ when: { lastSong: true }, flat: t.emoBonus }] }
+      return { ...base, roll: [{ when: { songsLeftAtMost: t.emoSongsLeft }, flat: t.emoBonus }] }
     case 'trance':
       return { ...base, roll: [{ when: { inspirationAtMost: 0 }, flat: t.tranceBonus }] }
     case 'grunge':
@@ -69,7 +69,7 @@ export function studioSpec(id: StyleId): StyleSpec | null {
       return { ...base, roll: [{ when: { afterMove: true }, flat: t.grungeBonus }] }
     case 'dubstep':
       // Dubstep: after a song wins its monster over, once per turn
-      return { ...base, roll: [{ when: { afterWin: true, oncePerTurn: true }, advantage: true }] }
+      return { ...base, roll: [{ when: { afterWin: true, ...(t.dubstepOncePerTurn ? { oncePerTurn: true } : {}) }, advantage: true }] }
     default:
       return null
   }

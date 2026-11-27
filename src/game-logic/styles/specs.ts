@@ -74,6 +74,8 @@ export interface SpecCondition {
   afterWin?: boolean
   /** This is the bard's last unspent song this fight. */
   lastSong?: boolean
+  /** At most this many unspent songs left this fight, counting the one being played. */
+  songsLeftAtMost?: number
   /** Fires at most once per turn (tracked per spec). */
   oncePerTurn?: boolean
 }
@@ -274,6 +276,7 @@ export function conditionHolds(c: SpecCondition | undefined, die: Dice, ctx: Pla
   if (c.afterMove && ctx.lastPlayResult !== 'moved') return false
   if (c.afterWin && ctx.lastPlayResult !== 'won') return false
   if (c.lastSong && ctx.songsLeft !== 1) return false
+  if (c.songsLeftAtMost !== undefined && (ctx.songsLeft ?? Infinity) > c.songsLeftAtMost) return false
   if (c.monstersAtStartAtLeast !== undefined && (ctx.monstersAtStart ?? ctx.monstersInFight) < c.monstersAtStartAtLeast) return false
   if (c.inspirationAtLeast !== undefined && ctx.inspiration < c.inspirationAtLeast) return false
   if (c.oncePerTurn && ctx.used.includes(specId)) return false

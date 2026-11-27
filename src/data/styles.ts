@@ -182,7 +182,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
     id: 'emo',
     name: 'Emo',
     flavor: 'Every song you lose makes the next one hurt more.',
-    rule: 'When you\'re down to your last song, add +3.',
+    rule: 'When you\'re down to your last song, add +5.',
   },
   trance: {
     id: 'trance',
@@ -356,10 +356,14 @@ export function styleRule(id: StyleId): string {
     case 'prog-rock': return `Your ${ordinal(t.progRockFrom)} and later songs in a concert add +${t.progRockBonus}.`
     case 'ska': return `Whenever you roll an odd number, add +${t.skaBonus} to the song.`
     case 'k-pop': return `Gain +${t.kPopFame3} Fame for winning over 3 monsters or +${t.kPopFame4} Fame for winning 4 monsters in one concert.`
-    case 'emo': return `When you're down to your last song, add +${t.emoBonus}.`
+    case 'emo': return t.emoSongsLeft <= 1
+      ? `When you're down to your last song, add +${t.emoBonus}.`
+      : `When you're down to your last ${t.emoSongsLeft} songs, add +${t.emoBonus} to each.`
     case 'trance': return `While you have 0 Inspiration, add +${t.tranceBonus} to each song.`
     case 'grunge': return `Every time a song moves a monster without winning it over, add +${t.grungeBonus} to your next song.`
-    case 'dubstep': return 'Once per turn, after winning over a monster, your next song rolls twice and keeps the higher.'
+    case 'dubstep': return t.dubstepOncePerTurn
+      ? 'Once per turn, after winning over a monster, your next song rolls twice and keeps the higher.'
+      : 'After winning over a monster, your next song rolls twice and keeps the higher.'
     case 'trip-hop': return 'Once per turn, move to any space on the board.'
     default: return STYLES[id].rule
   }

@@ -151,7 +151,7 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 | **Prog Rock** | 2 | Your 4th and later songs in a concert add +2. |
 | **Ska** | 2 | Whenever you roll an odd number, add +1 to the song. |
 | **K-Pop** | 2 | Gain +10 Fame for winning over 3 monsters or +15 Fame for winning 4 monsters in one concert. |
-| **Emo** | 2 | When you're down to your last song, add +3. |
+| **Emo** | 2 | When you're down to your last song, add +5. |
 | **Trance** | 2 | While you have 0 Inspiration, add +2 to each song. |
 | **Grunge** | 2 | Every time a song moves a monster without winning it over, add +1 to your next song. |
 | **Dubstep** | 2 | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher. |

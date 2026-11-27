@@ -97,10 +97,10 @@ export const STYLE_META: Record<StyleId, StyleMeta> = {
   'prog-rock': { group: 'new', timing: 'always', was: 2, win: 31.4, tunables: ['progRockFrom', 'progRockBonus'] },
   ska: { group: 'new', timing: 'always', was: 4, win: 31.2, tunables: ['skaBonus'], note: 'Reads the face the die lands on, before any bonus.' },
   'k-pop': { group: 'new', timing: 'always', was: 2, win: 29.8, tunables: ['kPopFame3', 'kPopFame4'], note: 'Paid at the end of the concert; guest songs\' wins don\'t count.' },
-  emo: { group: 'new', timing: 'always', was: 2, win: 24.2, tunables: ['emoBonus'], note: 'Your last unspent song, counting the one you play.' },
+  emo: { group: 'new', timing: 'always', was: 2, win: 25.0, tunables: ['emoBonus', 'emoSongsLeft'], note: 'Your last unspent song, counting the one you play.' },
   trance: { group: 'new', timing: 'always', was: 1, win: 27.8, tunables: ['tranceBonus'] },
   grunge: { group: 'new', timing: 'always', was: 2, win: 32.9, tunables: ['grungeBonus'], note: 'Only a song that took some Resolve counts. A guest song counts too.' },
-  dubstep: { group: 'new', timing: 'once-per-turn', was: 1, win: 26.3, tunables: [], note: 'A guest song\'s win counts too.' },
+  dubstep: { group: 'new', timing: 'once-per-turn', was: 1, win: 26.3, tunables: ['dubstepOncePerTurn'], note: 'A guest song\'s win counts too.' },
   'trip-hop': {
     group: 'new', timing: 'button', was: 2, win: 30.3, tunables: [],
     note: 'Every space beyond your normal reach lights up while it is unused. It costs none of your regular moves, and "Undo move" gives it back.',
