@@ -57,6 +57,7 @@ export interface EngineCombatState {
     specFired?: string[]
     playLog?: Genre[]
     specRewards?: SpecReward
+    lastPlayResult?: 'won' | 'moved' | 'missed' | null
   } | null
   /**
    * "Once per turn" styles already spent this turn. A bard fights at most once
@@ -67,10 +68,16 @@ export interface EngineCombatState {
   /** Names of the styles that shaped the last play, for the damage report. */
   styleNotes: string[]
   /**
-   * Rallying Cry (`staccato`) is armed: a song tamed a monster this turn, so
-   * the bard may refresh one spent song of their choice (RALLY_SONG).
+   * Gospel (`staccato`) is armed: the bard called a monster and the song won it
+   * over, so they may refresh one spent song of their choice (RALLY_SONG).
    */
   rallyReady: boolean
+  /** How the last play went: won its monster over, moved it, or neither (Grunge, Dubstep). */
+  lastPlayResult?: 'won' | 'moved' | 'missed' | null
+  /** Gospel's call on the last own play, replayed by an encore. */
+  lastPlayFlags?: { staccatoCall?: boolean }
+  /** Soul is paid for this concert: every song gets its bonus. */
+  soulActive?: boolean
   lastPlayedSongId: string | null
   /** Shared victory choice so spectators see the element being considered. */
   selectedSpreadGenre: Genre | null
@@ -116,6 +123,8 @@ export interface MoveStep {
   fromSpaceId: number
   /** Inspiration refunded on undo — only set by saves from before travel was removed. */
   inspirationSpent?: number
+  /** Trip-Hop's move to any space: it costs no regular move, and undoing it gives the use back. */
+  anywhere?: boolean
 }
 
 /**
@@ -147,6 +156,10 @@ export interface EngineState {
 
   /** This turn's moves, newest last, for UNDO_MOVE (see `MoveStep`). */
   moveTrail: MoveStep[]
+  /** The current bard's Inspiration when their turn began (Soul needs 3+). */
+  turnStartInspiration?: number
+  /** Trip-Hop: the current bard has used their move to any space this turn. */
+  tripHopUsed?: boolean
 
   // Combat (synced, unlike the old client-only slice)
   combat: EngineCombatState
@@ -217,6 +230,9 @@ export function createInitialCombatState(): EngineCombatState {
     stylesUsed: [],
     styleNotes: [],
     rallyReady: false,
+    lastPlayResult: null,
+    lastPlayFlags: {},
+    soulActive: false,
     featuredPlayerIds: [],
     featureRequest: null,
     specFired: [],

@@ -28,21 +28,56 @@ export function studioSpec(id: StyleId): StyleSpec | null {
       return { ...base, roll: [{ when: { element: 'starter' }, critBonus: t.hometownHeroBonus }] }
     case 'studio-regular':
       return { ...base, economy: { upgradeCost: -t.studioRegularDiscount } }
-    case 'inspired-play':
-      return { ...base, roll: [{ when: { inspirationAtLeast: t.inspiredPlayMin }, flat: t.inspiredPlayBonus }] }
+    // Soul (Inspired Play) is a choice the bard makes per play (PLAY_SONG inspiredPlay),
+    // so the engine adds its bonus through inspiredPlaySpec() rather than here
     case 'steady-hands':
-      return { ...base, roll: [{ floor: t.steadyHandsFloor }] }
+      // Baroque: a low roll is raised (bonus dice are rolled plain)
+      return { ...base, roll: [{ lowFaceBonus: t.steadyHandsBonus, lowFaceAtMost: t.steadyHandsAtMost }] }
     case 'street-performer':
       return { ...base, onTurnStart: [{ reward: { exp: t.streetPerformerExp } }] }
-    case 'chain-reaction':
-      return { ...base, roll: [{ perComboBonus: t.chainReactionBonus, bonusCap: t.chainReactionCap }] }
+    case 'chain-reaction': {
+      // House: no cap by default (0 = none), and a smaller bonus per link in the Final Showdown
+      const cap = t.chainReactionCap > 0 ? { bonusCap: t.chainReactionCap } : {}
+      return { ...base, roll: [
+        { when: { showdown: false }, perComboBonus: t.chainReactionBonus, ...cap },
+        { when: { showdown: true }, perComboBonus: t.chainReactionShowdownBonus, ...cap },
+      ] }
+    }
     case 'swarm-singer':
-      return { ...base, roll: [{ when: { monstersAtLeast: t.swarmSingerMin }, flat: t.swarmSingerBonus }] }
+      // Orchestra: while enough monsters remain, every die's rolled value goes up (it can crit)
+      return { ...base, roll: [{ when: { monstersAtLeast: t.swarmSingerMin }, critBonus: t.swarmSingerBonus }] }
     case 'jam-session':
       return { ...base, roll: [{ when: { sharingSpace: true }, flat: t.jamSessionBonus }] }
+    // Genres added with the rename from styles to genres
+    case 'punk':
+      // Punk: a bonus on the song whenever its die crits
+      return { ...base, roll: [{ critFlat: t.punkBonus }] }
+    case 'soft-rock':
+      return { ...base, roll: [{ when: { dice: ['d8', 'd12'] }, critBonus: t.softRockBonus }] }
+    case 'prog-rock':
+      return { ...base, roll: [{ when: { playIndexAtLeast: t.progRockFrom - 1, showdown: false }, flat: t.progRockBonus }] }
+    case 'ska':
+      return { ...base, roll: [{ oddBonus: t.skaBonus }] }
+    // K-Pop's Fame for a big concert is paid in endCombat (it counts the concert's wins)
+    case 'emo':
+      // Emo: a bonus on your last unspent song
+      return { ...base, roll: [{ when: { songsLeftAtMost: t.emoSongsLeft }, flat: t.emoBonus }] }
+    case 'trance':
+      return { ...base, roll: [{ when: { inspirationAtMost: 0 }, flat: t.tranceBonus }] }
+    case 'grunge':
+      // Grunge: after a song moves its monster without winning it over
+      return { ...base, roll: [{ when: { afterMove: true }, flat: t.grungeBonus }] }
+    case 'dubstep':
+      // Dubstep: after a song wins its monster over, once per turn
+      return { ...base, roll: [{ when: { afterWin: true, ...(t.dubstepOncePerTurn ? { oncePerTurn: true } : {}) }, advantage: true }] }
     default:
       return null
   }
+}
+
+/** Soul (Inspired Play): the +bonus a bard buys for one play by spending Inspiration. */
+export function inspiredPlaySpec(): StyleSpec {
+  return { id: 'inspired-play', name: 'inspired-play', theme: 'studio', rule: '', cost: 0, roll: [{ flat: getTunables().inspiredPlayBonus }] }
 }
 
 /** Specs for a set of Studio styles plus any style-lab specs. */

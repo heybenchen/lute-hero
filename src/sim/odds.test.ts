@@ -35,8 +35,8 @@ describe('exact roll distributions match the engine', () => {
   it('plain dice', () => {
     for (const t of ['d4', 'd8', 'd12', 'd20'] as DiceType[]) compare(t, [], false, { maxCascades: m })
   })
-  it('Master\'s Touch (advantage) on a d12', () => compare('d12', ['virtuoso'], false, { advantage: true, maxCascades: m }))
-  it('Dragon\'s Roar on a d20', () => compare('d20', ['fortissimo'], false, { critBonus: DEFAULT_TUNABLES.fortissimoBonus, maxCascades: m }))
+  it('Bluegrass (advantage) on a d8', () => compare('d8', ['virtuoso'], false, { advantage: true, maxCascades: m }))
+  it('Opera\'s flat bonus on a d20', () => compare('d20', ['fortissimo'], false, { flat: DEFAULT_TUNABLES.fortissimoBonus, maxCascades: m }))
   it('War Drums on a d4', () => compare('d4', ['ostinato'], false, { critFace: DEFAULT_TUNABLES.ostinatoCritFace, maxCascades: m }))
   it('Fanfare + Harmony flat bonus on the first roll', () =>
     compare('d8', ['overture', 'tutti'], true, { flat: DEFAULT_TUNABLES.overtureBonus + DEFAULT_TUNABLES.tuttiBonus, maxCascades: m }))
@@ -56,6 +56,9 @@ describe('generic roll options: engine roll matches the exact distribution', () 
     ['d20', { noCrit: true, flat: 3 }],
     ['d12', { times: 1.5, advantage: true }],
     ['d4', { rerollAtMost: 1, critBonus: 1, flat: 1, times: 2 }],
+    ['d8', { critFlat: 4 }],
+    ['d4', { lowFaceBonus: 2, lowFaceAtMost: 3 }],
+    ['d8', { oddBonus: 1, critFlat: 4, advantage: true }],
   ]
   for (const [type, extra] of cases) {
     it(`${type} ${JSON.stringify(extra)}`, async () => {

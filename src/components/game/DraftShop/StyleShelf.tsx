@@ -11,11 +11,26 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
   const cap = maxStyles()
   const full = player.styles.length >= cap
   const ready = canInteract && selected !== null && offers.includes(selected) && player.exp >= styleCost(selected)
+  // New Age: replacing it while its 7th song holds a die means choosing a song to give up
+  const [givingUp, setGivingUp] = useState(false)
+  const codaInUse = player.songs.some((sg) => sg.id === `${player.id}-coda` && sg.slots[0]?.dice)
+  const songsWithDice = player.songs.filter((sg) => sg.slots[0]?.dice)
 
-  async function place(replaceStyleId?: StyleId) {
+  async function place(replaceStyleId?: StyleId, giveUpSongId?: string) {
     if (!selected || !ready) return
+    if (replaceStyleId === 'coda' && codaInUse && !giveUpSongId) {
+      setGivingUp(true)
+      return
+    }
     setSelected(null)
-    await dispatch({ type: 'BUY_STYLE', offerIndex: offers.indexOf(selected), expectedStyleId: selected, replaceStyleId })
+    setGivingUp(false)
+    await dispatch({
+      type: 'BUY_STYLE',
+      offerIndex: offers.indexOf(selected),
+      expectedStyleId: selected,
+      replaceStyleId,
+      ...(giveUpSongId ? { giveUpSongId } : {}),
+    })
   }
 
   return (
@@ -33,11 +48,11 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
           </button>
         ))}
       </div>
-      {!offers.length && <p>Styles refill after the turn or when you refresh.</p>}
-      <h3 className="module-label mt-5">Your styles · {player.styles.length}/{cap}</h3>
+      {!offers.length && <p>Genres refill after the turn or when you refresh.</p>}
+      <h3 className="module-label mt-5">Your genres · {player.styles.length}/{cap}</h3>
       <p className="mb-2 text-sm text-parchment-300">{ready
-        ? full ? 'Choose the style to replace.' : 'Choose the empty slot to learn this style.'
-        : 'Select a style on the shelf.'}</p>
+        ? full ? 'Choose the genre to replace.' : 'Choose the empty slot to learn this genre.'
+        : 'Select a genre on the shelf.'}</p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {player.styles.map((id) => (
           <button key={id} type="button" disabled={!full || !ready} onClick={() => place(id)} className="style-offer text-left enabled:ring-1 enabled:ring-gold-400">
@@ -46,9 +61,28 @@ export function StyleShelf({ player, canInteract }: { player: Player; canInterac
           </button>
         ))}
         {!full && <button type="button" disabled={!ready} onClick={() => place()} className="rounded-lg border border-dashed border-gold-700 p-4 enabled:ring-1 enabled:ring-gold-400">
-          Empty style slot
+          Empty genre slot
         </button>}
       </div>
+      {givingUp && ready && (
+        <div className="mt-4 rounded-lg border border-gold-700/40 p-3" role="group" aria-label="Choose a song to give up">
+          <p className="mb-2 text-sm text-parchment-200">
+            Giving up <strong>{STYLES.coda.name}</strong> leaves you 6 songs. Choose the song to give up (its die is lost).
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {songsWithDice.map((sg) => {
+              const die = sg.slots[0]!.dice!
+              return (
+                <button key={sg.id} type="button" onClick={() => place('coda', sg.id)}
+                  className="rounded-md border border-gold-700/50 px-3 py-1.5 text-sm hover:bg-white/5">
+                  Song {player.songs.indexOf(sg) + 1}: {die.genre} {die.type}
+                </button>
+              )
+            })}
+            <button type="button" onClick={() => setGivingUp(false)} className="px-3 py-1.5 text-sm text-parchment-400">Cancel</button>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

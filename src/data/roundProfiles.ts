@@ -6,4 +6,4 @@
  * completed. The playtest console shows this next to its "Simulate" control.
  */
 
-export const SHOWDOWN_ROUND_STATS: Record<number, { p10: number; median: number; p90: number }> = {"2":{"p10":8,"median":9,"p90":10},"3":{"p10":8,"median":9,"p90":9},"4":{"p10":7,"median":8,"p90":9}}
+export const SHOWDOWN_ROUND_STATS: Record<number, { p10: number; median: number; p90: number }> = {"2":{"p10":9,"median":10,"p90":12},"3":{"p10":8,"median":9,"p90":10},"4":{"p10":8,"median":8,"p90":9}}
