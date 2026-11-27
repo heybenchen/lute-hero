@@ -128,37 +128,6 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 </div>
               )}
             </div>
-            {/* Contextual purchase guidance */}
-            <div className="ml-auto flex shrink-0 flex-col items-end gap-2 pr-8 text-xs sm:text-sm">
-              {canInteract && !activeDie && selectedElement && (
-                <div
-                  className="animate-slide-up flex max-w-md flex-wrap items-center justify-end gap-2 rounded-lg px-3 py-2 text-right text-sm text-parchment-200"
-                  style={{
-                    background: 'rgba(212, 168, 83, 0.05)',
-                    border: '1px solid rgba(212, 168, 83, 0.25)',
-                  }}
-                >
-                  {setlistFull ? (
-                    <>
-                      <span>{replaceMode ? `Choose the die to replace with a ${selectedElement} d4 (${newD4Cost()} EXP).` : `Choose a matching die to upgrade, or buy a new ${selectedElement} d4.`}</span>
-                      <button className="btn-secondary" aria-pressed={replaceMode} onClick={() => setReplaceMode(!replaceMode)}>
-                        {replaceMode ? 'Cancel replacement' : `Replace a die · ${newD4Cost()} EXP`}
-                      </button>
-                    </>
-                  ) : player.exp < newD4Cost() ? (
-                    <>
-                      <GenreBadge genre={selectedElement} className="text-xs" />
-                      <span className="text-parchment-400">chosen, but a new d4 costs {newD4Cost()} EXP and you have {player.exp}.</span>
-                    </>
-                  ) : (
-                    <>
-                      <GenreBadge genre={selectedElement} className="text-xs" />
-                      <span>chosen. Use your setlist to buy a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP) or upgrade a matching die.</span>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
             {canInteract && (
               <button
                 onClick={onClose}
@@ -169,6 +138,33 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
               </button>
             )}
           </div>
+
+          {/* Contextual purchase guidance aligns with the collection column */}
+          {canInteract && !activeDie && selectedElement && (
+            <div className="mb-3 grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
+              <div className="hidden lg:block" aria-hidden="true" />
+              <div className="animate-slide-up flex w-full flex-wrap items-center justify-end gap-2 text-right text-sm text-parchment-200">
+                {setlistFull ? (
+                  <>
+                    <span>{replaceMode ? `Choose the die to replace with a ${selectedElement} d4 (${newD4Cost()} EXP).` : `Choose a matching die to upgrade, or buy a new ${selectedElement} d4.`}</span>
+                    <button className="btn-secondary" aria-pressed={replaceMode} onClick={() => setReplaceMode(!replaceMode)}>
+                      {replaceMode ? 'Cancel replacement' : `Replace a die · ${newD4Cost()} EXP`}
+                    </button>
+                  </>
+                ) : player.exp < newD4Cost() ? (
+                  <>
+                    <GenreBadge genre={selectedElement} className="text-xs" />
+                    <span className="text-parchment-400">chosen, but a new d4 costs {newD4Cost()} EXP and you have {player.exp}.</span>
+                  </>
+                ) : (
+                  <>
+                    <GenreBadge genre={selectedElement} className="text-xs" />
+                    <span>chosen. Use your setlist to buy a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP) or upgrade a matching die.</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
             <section
