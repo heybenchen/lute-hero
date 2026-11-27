@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { type ReactNode, useRef, useState } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
 import { Genre, Dice, PendingReward, StyleId } from '@/types'
 import { getMaxValue } from '@/game-logic/dice/roller'
@@ -109,35 +109,25 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   Watching {player.name}&rsquo;s Studio live
                 </div>
               )}
-              {/* Inspiration: buy one, or spend one to redraw the elements and styles on offer */}
-              <div className="mt-2 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                <button
-                  onClick={handleBuyInspiration}
-                  disabled={!canInteract || player.exp < inspirationCost}
-                  className="flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 font-medieval font-bold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 hover:enabled:-translate-y-0.5 sm:px-3"
-                  style={{
-                    background: 'rgba(176, 124, 255, 0.14)',
-                    border: '1px solid rgba(176, 124, 255, 0.45)',
-                    color: '#d9c2ff',
-                  }}
-                  title={`Buy 1 Inspiration for ${inspirationCost} EXP${getTunables().inspirationCostStep > 0 ? ' (cost rises each purchase this turn)' : ''}`}
-                >
-                  Buy &#x2728; <span className="font-normal opacity-80">({inspirationCost} EXP)</span>
-                </button>
-                <span className="whitespace-nowrap pl-1" title="Inspiration you hold">
-                  &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
-                </span>
-                <button
-                  onClick={handleRefreshOffers}
-                  disabled={!canInteract || player.inspiration < inspirationSpend()}
-                  className="btn-secondary ml-auto flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-sm"
-                  title={player.inspiration >= inspirationSpend()
-                    ? `Spend ${inspirationSpend()} Inspiration to draw new element cubes and new genre offers`
-                    : 'Requires Inspiration'}
-                >
-                  <RefreshCw size={13} aria-hidden="true" /> Refresh <span className="font-normal opacity-80">(&#x2728;{inspirationSpend()})</span>
-                </button>
-              </div>
+            </div>
+            {/* Inspiration helper UI */}
+            <div className="flex shrink-0 items-center gap-2 pr-8 text-xs sm:text-sm">
+              <button
+                onClick={handleBuyInspiration}
+                disabled={!canInteract || player.exp < inspirationCost}
+                className="flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 font-medieval font-bold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 hover:enabled:-translate-y-0.5 sm:px-3"
+                style={{
+                  background: 'rgba(176, 124, 255, 0.14)',
+                  border: '1px solid rgba(176, 124, 255, 0.45)',
+                  color: '#d9c2ff',
+                }}
+                title={`Buy 1 Inspiration for ${inspirationCost} EXP${getTunables().inspirationCostStep > 0 ? ' (cost rises each purchase this turn)' : ''}`}
+              >
+                Buy &#x2728; <span className="font-normal opacity-80">({inspirationCost} EXP)</span>
+              </button>
+              <span className="whitespace-nowrap" title="Inspiration you hold">
+                &#x2728; <span className="font-bold" style={{ color: '#d9c2ff' }}>{player.inspiration}</span> Inspiration
+              </span>
             </div>
             {canInteract && (
               <button
@@ -160,6 +150,18 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
             >
               <StudioSection
                 title="Available to Learn"
+                action={(
+                  <button
+                    onClick={handleRefreshOffers}
+                    disabled={!canInteract || player.inspiration < inspirationSpend()}
+                    className="btn-secondary flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-sm"
+                    title={player.inspiration >= inspirationSpend()
+                      ? `Spend ${inspirationSpend()} Inspiration to draw new element chips and new genre offers`
+                      : 'Requires Inspiration'}
+                  >
+                    <RefreshCw size={13} aria-hidden="true" /> Refresh <span className="font-normal opacity-80">(&#x2728;{inspirationSpend()})</span>
+                  </button>
+                )}
               />
 
               {/* Element chips drawn from the bag */}
@@ -490,11 +492,14 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
 }
 
 /** A heading for one side of the Studio's market/collection split. */
-function StudioSection({ title, subtitle }: { title: string; subtitle?: string }) {
+function StudioSection({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
   return (
-    <div className="mb-4">
-      <div className="font-display text-xl text-gold-300">{title}</div>
-      {subtitle && <p className="text-sm text-parchment-400">{subtitle}</p>}
+    <div className="mb-4 flex items-start justify-between gap-3">
+      <div>
+        <div className="font-display text-xl text-gold-300">{title}</div>
+        {subtitle && <p className="text-sm text-parchment-400">{subtitle}</p>}
+      </div>
+      {action}
     </div>
   )
 }
