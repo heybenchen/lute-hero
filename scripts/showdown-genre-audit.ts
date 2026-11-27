@@ -10,7 +10,7 @@
  *
  *   npx tsx scripts/showdown-genre-audit.ts      (GAMES=200 PLAYERS=3 PACE=typical)
  *
- * New Age (`coda`) adds a 7th song; holding it here also gives that song a d4
+ * New Age (`new-age`) adds a 7th song; holding it here also gives that song a d4
  * of the bard's most-held element, as a bard who bought it would have.
  */
 import { applyAction } from '../src/engine/reducer.js'
@@ -19,23 +19,23 @@ import type { EngineState } from '../src/engine/state.js'
 import { SmartBot } from '../src/sim/smartBot.js'
 import { mulberry32 } from '../src/engine/rng.js'
 import { DEFAULT_TUNABLES } from '../src/data/tunables.js'
-import { ALL_GENRES } from '../src/data/genreTheme.js'
-import { STYLES } from '../src/data/styles.js'
+import { ALL_ELEMENTS } from '../src/data/elementTheme.js'
+import { GENRES, ALL_GENRE_IDS, genreCost } from '../src/data/genres.js'
 import { paceSkill, SimulationPace } from '../src/data/simulationPaces.js'
-import type { Genre, Player, Song, StyleId } from '../src/types/index.js'
+import type { Element, Player, Song, GenreId } from '../src/types/index.js'
 
 const GAMES = Number(process.env.GAMES ?? 200)
 const PLAYERS = Number(process.env.PLAYERS ?? 3)
 const PACE = (process.env.PACE ?? 'typical') as SimulationPace
 const skill = paceSkill(PACE)
-const ONLY = process.env.STYLES ? (process.env.STYLES.split(',') as StyleId[]) : null
+const ONLY = process.env.GENRES ? (process.env.GENRES.split(',') as GenreId[]) : null
 
 function toShowdown(g: number): EngineState | null {
   const rng = mulberry32(PLAYERS * 7_000_001 + g * 104_729)
-  const genres = [...ALL_GENRES].sort(() => rng() - 0.5).slice(0, PLAYERS)
+  const genres = [...ALL_ELEMENTS].sort(() => rng() - 0.5).slice(0, PLAYERS)
   const dealt = applyAction(
     { ...createInitialEngineState(), tunables: { ...DEFAULT_TUNABLES } },
-    { type: 'START_GAME', playerConfigs: genres.map((genre, i) => ({ name: `Bot ${i + 1}`, starterGenre: genre })) },
+    { type: 'START_GAME', playerConfigs: genres.map((genre, i) => ({ name: `Bot ${i + 1}`, starterElement: genre })) },
     { rng, actor: { kind: 'hotseat' } }
   )
   if (!dealt.ok) return null
@@ -47,18 +47,18 @@ function toShowdown(g: number): EngineState | null {
 const songDie = (s: Song) => s.slots.find((slot) => slot.dice)?.dice ?? null
 
 /** Clear every bard's genres; the tested bard (seat 1) holds `style` (or nothing). */
-function withGenre(start: EngineState, style: StyleId | null): EngineState {
+function withGenre(start: EngineState, style: GenreId | null): EngineState {
   const testedId = start.players[0].id
   const players: Player[] = start.players.map((p) => {
     // Drop any New Age 7th song the bard really had, so every run starts level
-    const songs = p.songs.filter((s) => s.id !== `${p.id}-coda`)
-    if (p.id !== testedId || !style) return { ...p, styles: [], songs }
-    if (style !== 'coda') return { ...p, styles: [style], songs }
-    const counts = new Map<Genre, number>()
-    for (const s of songs) { const d = songDie(s); if (d) counts.set(d.genre, (counts.get(d.genre) ?? 0) + 1) }
-    const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? p.starterGenre
-    const coda: Song = { id: `${p.id}-coda`, used: false, slots: [{ dice: { id: `${p.id}-coda-d4`, type: 'd4', genre: top } }] } as Song
-    return { ...p, styles: ['coda'], songs: [...songs, coda] }
+    const songs = p.songs.filter((s) => s.id !== `${p.id}-new-age`)
+    if (p.id !== testedId || !style) return { ...p, genres: [], songs }
+    if (style !== 'new-age') return { ...p, genres: [style], songs }
+    const counts = new Map<Element, number>()
+    for (const s of songs) { const d = songDie(s); if (d) counts.set(d.element, (counts.get(d.element) ?? 0) + 1) }
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? p.starterElement
+    const newAge: Song = { id: `${p.id}-new-age`, used: false, slots: [{ dice: { id: `${p.id}-new-age-d4`, type: 'd4', element: top } }] } as Song
+    return { ...p, genres: ['new-age'], songs: [...songs, newAge] }
   })
   return { ...start, players }
 }
@@ -75,7 +75,7 @@ function play(start: EngineState, seed: number) {
 
 interface Tally { n: number; fandom: number; earned: number; crown: number; won: number }
 const blank = (): Tally => ({ n: 0, fandom: 0, earned: 0, crown: 0, won: 0 })
-const ids = (ONLY ?? (Object.keys(STYLES) as StyleId[]))
+const ids = (ONLY ?? ALL_GENRE_IDS)
 const tallies = new Map<string, Tally>([['(none)', blank()], ...ids.map((id): [string, Tally] => [id, blank()])])
 
 for (let g = 0; g < GAMES; g++) {
@@ -83,7 +83,7 @@ for (let g = 0; g < GAMES; g++) {
   if (!start) continue
   const seed = 31_337 + g
   for (const [key, t] of tallies) {
-    const r = play(withGenre(start, key === '(none)' ? null : (key as StyleId)), seed)
+    const r = play(withGenre(start, key === '(none)' ? null : (key as GenreId)), seed)
     t.n++; t.fandom += r.fandom; t.earned += r.earned; t.crown += r.crown; t.won += r.won
   }
 }
@@ -92,8 +92,8 @@ const base = tallies.get('(none)')!
 const avg = (t: Tally, k: keyof Tally) => t[k] / Math.max(1, t.n)
 const rows = [...tallies.entries()].map(([key, t]) => ({
   key,
-  name: key === '(none)' ? '(no genre)' : STYLES[key as StyleId].name,
-  cost: key === '(none)' ? '' : String(DEFAULT_TUNABLES[`styleCost${key.replace(/(^|-)([a-z])/g, (_m, _d, c: string) => c.toUpperCase())}` as keyof typeof DEFAULT_TUNABLES] ?? ''),
+  name: key === '(none)' ? '(no genre)' : GENRES[key as GenreId].name,
+  cost: key === '(none)' ? '' : String(genreCost(key as GenreId)),
   fandom: avg(t, 'fandom'),
   earned: avg(t, 'earned'),
   crown: avg(t, 'crown'),

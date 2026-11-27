@@ -1,23 +1,43 @@
-import { Genre } from '@/types'
+import { GenreId } from '@/types'
+import { GENRES, genreRule } from '@/data/genres'
+import { Music } from 'lucide-react'
+import { useId } from 'react'
 
-interface GenreBadgeProps {
-  genre: Genre
+/**
+ * A compact chip naming one of a bard's genres; hover shows its rule.
+ * `spent` greys out a once-per-turn genre that has fired this turn.
+ */
+export function GenreChip({
+  id,
+  spent = false,
+  className = '',
+  showTooltip = false,
+}: {
+  id: GenreId
+  spent?: boolean
   className?: string
-}
+  showTooltip?: boolean
+}) {
+  const genre = GENRES[id]
+  const tooltipId = useId()
+  const rule = genreRule(id)
 
-const genreStyles: Record<Genre, string> = {
-  Ballad: 'genre-ballad',
-  Folk: 'genre-folk',
-  Hymn: 'genre-hymn',
-  Shanty: 'genre-shanty',
-}
-
-export function GenreBadge({ genre, className = '' }: GenreBadgeProps) {
   return (
     <span
-      className={`px-2 py-1 rounded-full text-xs font-bold ${genreStyles[genre]} ${className}`}
+      className={`genre-chip ${showTooltip ? 'genre-chip-with-tooltip' : ''} ${spent ? 'genre-chip-spent' : ''} ${className}`}
+      title={showTooltip ? undefined : `${genre.name}: ${rule}${spent ? ' — used this turn' : ''}`}
+      tabIndex={showTooltip ? 0 : undefined}
+      aria-describedby={showTooltip ? tooltipId : undefined}
     >
-      {genre}
+      <Music size={11} aria-hidden="true" />
+      {genre.name}
+      {showTooltip && (
+        <span id={tooltipId} role="tooltip" className="genre-rule-tooltip">
+          <strong>{genre.name}</strong>
+          <span>{rule}</span>
+          {spent && <em>Used this turn</em>}
+        </span>
+      )}
     </span>
   )
 }

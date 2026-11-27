@@ -1,8 +1,8 @@
 import { type ReactNode, useRef, useState } from 'react'
 import { useGameStore, selectPlayerById } from '@/store'
-import { Genre, Dice, PendingReward, StyleId } from '@/types'
+import { Element, Dice, PendingReward, GenreId } from '@/types'
 import { getMaxValue } from '@/game-logic/dice/roller'
-import { GenreBadge } from '@/components/ui/GenreBadge'
+import { ElementBadge } from '@/components/ui/ElementBadge'
 import { DiceShape } from '@/components/ui/DiceShape'
 import {
   newD4Cost,
@@ -11,9 +11,9 @@ import {
   getInspirationCost,
   inspirationSpend,
 } from '@/data/draftCards'
-import { GENRE_THEME } from '@/data/genreTheme'
+import { ELEMENT_THEME } from '@/data/elementTheme'
 import { getTunables } from '@/data/tunables'
-import { StyleShelf } from './StyleShelf'
+import { GenreShelf } from './GenreShelf'
 import { Recycle, RefreshCw } from 'lucide-react'
 
 interface DraftShopProps {
@@ -26,7 +26,7 @@ interface DraftShopProps {
 const EMPTY_REWARDS: PendingReward[] = []
 
 export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
-  const [selectedStyle, setSelectedStyle] = useState<StyleId | null>(null)
+  const [selectedGenre, setSelectedGenre] = useState<GenreId | null>(null)
   const buyingIntoSlot = useRef(false)
   const player = useGameStore(selectPlayerById(playerId))
   const dispatch = useGameStore((state) => state.dispatch)
@@ -41,7 +41,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
   const selectedOfferIdx = useGameStore((state) => state.studio.selectedOfferIdx)
   const activeRewardId = useGameStore((state) => state.studio.activeRewardId)
 
-  const selectedElement: Genre | null =
+  const selectedElement: Element | null =
     selectedOfferIdx !== null ? elementOffers[selectedOfferIdx] ?? null : null
 
   const activeReward = pendingRewards.find((r) => r.id === activeRewardId) ?? null
@@ -69,7 +69,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
     buyingIntoSlot.current = true
     try {
       await dispatch({ type: 'BUY_DIE', offerIndex: selectedOfferIdx,
-        destination: { songId, previousDieId, genre: selectedElement } })
+        destination: { songId, previousDieId, element: selectedElement } })
     } finally {
       buyingIntoSlot.current = false
     }
@@ -132,12 +132,12 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   <span>Choose a matching die to upgrade, or replace another song with a new {selectedElement} d4 ({newD4Cost()} EXP).</span>
                 ) : player.exp < newD4Cost() ? (
                   <>
-                    <GenreBadge genre={selectedElement} className="text-xs" />
+                    <ElementBadge element={selectedElement} className="text-xs" />
                     <span className="text-parchment-400">chosen, but a new d4 costs {newD4Cost()} EXP and you have {player.exp}.</span>
                   </>
                 ) : (
                   <>
-                    <GenreBadge genre={selectedElement} className="text-xs" />
+                    <ElementBadge element={selectedElement} className="text-xs" />
                     <span>chosen. Use your setlist to buy a new <DiceShape type="d4" /> d4 ({newD4Cost()} EXP) or upgrade a matching die.</span>
                   </>
                 )}
@@ -199,12 +199,12 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   </div>
                 ) : (
                   <div className="grid min-h-64 w-full auto-rows-fr grid-cols-2 gap-2 sm:min-h-[20.875rem]">
-                    {elementOffers.map((genre, offerIdx) => {
-                      const { emoji, rgb } = GENRE_THEME[genre]
+                    {elementOffers.map((element, offerIdx) => {
+                      const { emoji, rgb } = ELEMENT_THEME[element]
                       const isSelected = selectedOfferIdx === offerIdx
                       return (
                         <button
-                          key={`${genre}-${offerIdx}`}
+                          key={`${element}-${offerIdx}`}
                           disabled={!canInteract}
                           className={`group relative flex h-full w-full min-w-0 self-stretch items-center justify-center rounded-lg px-1 py-3 transition-all duration-200 ease-out animate-scale-in ${canInteract ? 'cursor-pointer' : 'cursor-default'}`}
                           style={{
@@ -230,7 +230,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                             >
                               {emoji}
                             </div>
-                            <GenreBadge genre={genre} className="text-xs transition-transform duration-200 ease-out group-hover:-translate-y-0.5 group-hover:scale-105" />
+                            <ElementBadge element={element} className="text-xs transition-transform duration-200 ease-out group-hover:-translate-y-0.5 group-hover:scale-105" />
                           </div>
                           {isSelected && (
                             <div
@@ -252,12 +252,12 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
 
               </div>
 
-              <StyleShelf
+              <GenreShelf
                 player={player}
                 canInteract={canInteract}
                 view="offers"
-                selected={selectedStyle}
-                onSelectedChange={setSelectedStyle}
+                selected={selectedGenre}
+                onSelectedChange={setSelectedGenre}
               />
             </section>
 
@@ -289,7 +289,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                   <div className="flex flex-wrap gap-2">
                     {pendingRewards.map((reward) => {
                       const isActive = reward.id === activeRewardId
-                      const { rgb } = GENRE_THEME[reward.dice.genre]
+                      const { rgb } = ELEMENT_THEME[reward.dice.element]
                       return (
                         <button
                           key={reward.id}
@@ -304,7 +304,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                         >
                           <span className="text-lg text-gold-400"><DiceShape type={reward.dice.type} /></span>
                           <span className="text-sm font-bold text-parchment-200">{reward.dice.type}</span>
-                          <GenreBadge genre={reward.dice.genre} className="text-[10px] px-1.5 py-0" />
+                          <ElementBadge element={reward.dice.element} className="text-[10px] px-1.5 py-0" />
                         </button>
                       )
                     })}
@@ -343,7 +343,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           const canAffordD4 = player.exp >= newD4Cost()
                           let offerAction: 'buy' | 'buy-locked' | 'upgrade' | 'upgrade-locked' | 'locked' | null = null
                           if (selectedElement && !activeDie) {
-                            if (slot.dice?.genre === selectedElement) {
+                            if (slot.dice?.element === selectedElement) {
                               offerAction = upgradeCost === null
                                 ? 'locked'
                                 : player.exp >= upgradeCost
@@ -358,11 +358,11 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                           const isOffer = offerAction === 'buy' || offerAction === 'upgrade'
                           const slotLabel =
                             (offerAction === 'buy' || offerAction === 'buy-locked')
-                              ? `${slot.dice ? 'Replace ' + slot.dice.genre + ' ' + slot.dice.type + ' with' : 'Buy'} a ${selectedElement} d4 for ${newD4Cost()} EXP into Song ${songIndex + 1}`
+                              ? `${slot.dice ? 'Replace ' + slot.dice.element + ' ' + slot.dice.type + ' with' : 'Buy'} a ${selectedElement} d4 for ${newD4Cost()} EXP into Song ${songIndex + 1}`
                               : (offerAction === 'upgrade' || offerAction === 'upgrade-locked') && slot.dice
-                              ? `Upgrade Song ${songIndex + 1}'s ${slot.dice.genre} ${slot.dice.type} to ${getNextDiceType(slot.dice.type)} for ${upgradeCost} EXP`
+                              ? `Upgrade Song ${songIndex + 1}'s ${slot.dice.element} ${slot.dice.type} to ${getNextDiceType(slot.dice.type)} for ${upgradeCost} EXP`
                               : undefined
-                          const offerRgb = selectedElement ? GENRE_THEME[selectedElement].rgb : '212, 168, 83'
+                          const offerRgb = selectedElement ? ELEMENT_THEME[selectedElement].rgb : '212, 168, 83'
                           const nextType = slot.dice ? getNextDiceType(slot.dice.type) : null
                           const onSlotClick = () => {
                             if (offerAction === 'buy') return handleBuyIntoSlot(song.id, slot.dice?.id ?? null)
@@ -432,7 +432,7 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                                   >
                                     {getMaxValue(slot.dice.type)}
                                   </div>
-                                  <GenreBadge genre={slot.dice.genre} className="text-[9px] px-1 py-0" />
+                                  <ElementBadge element={slot.dice.element} className="text-[9px] px-1 py-0" />
                                 </div>
                               ) : offerAction === 'buy' || offerAction === 'buy-locked' ? (
                                 <div className="text-center leading-tight">
@@ -470,12 +470,12 @@ export function DraftShop({ playerId, canInteract, onClose }: DraftShopProps) {
                 </div>
               </div>
 
-              <StyleShelf
+              <GenreShelf
                 player={player}
                 canInteract={canInteract}
                 view="owned"
-                selected={selectedStyle}
-                onSelectedChange={setSelectedStyle}
+                selected={selectedGenre}
+                onSelectedChange={setSelectedGenre}
               />
             </section>
           </div>

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   showdownTurns,
   createShowdownBoss,
-  getDominantGenre,
+  getDominantElement,
   computeBossAdaptation,
   getPlayableSongs,
   ShowdownPerformance,
@@ -13,21 +13,21 @@ import {
   verseFame,
 } from './showdown'
 import { withTunables, DEFAULT_TUNABLES } from '@/data/tunables'
-import { Genre, Song, DiceRoll } from '@/types'
+import { Element, Song, DiceRoll } from '@/types'
 
-function perf(playerId: string, fandom: number, genre: Genre | null): ShowdownPerformance {
-  return { playerId, fandom, genre }
+function perf(playerId: string, fandom: number, element: Element | null): ShowdownPerformance {
+  return { playerId, fandom, element }
 }
 
 function roll(diceId: string, value: number, critBonus = 0): DiceRoll {
   return { diceId, value, isCrit: critBonus > 0, critBonus, cascadeRolls: [] }
 }
 
-function song(genre: Genre | null): Song {
+function song(element: Element | null): Song {
   return {
     id: 's1',
     slots: [
-      { dice: genre ? { id: 'd1', type: 'd8', genre } : null },
+      { dice: element ? { id: 'd1', type: 'd8', element } : null },
     ],
     used: false,
   }
@@ -49,24 +49,24 @@ describe('createShowdownBoss', () => {
   })
 
   it('carries its adaptation as an immunity, never a weakness', () => {
-    const boss = createShowdownBoss({ resistGenre: 'Ballad' })
+    const boss = createShowdownBoss({ resistElement: 'Ballad' })
     expect(boss.resistance).toBe('Ballad')
     expect(boss.vulnerability).toBeNull()
   })
 })
 
-describe('getDominantGenre', () => {
-  it('returns the genre of a single-element song', () => {
+describe('getDominantElement', () => {
+  it('returns the element of a single-element song', () => {
     const s = song('Ballad')
-    expect(getDominantGenre(s, [roll('d1', 3), roll('d2', 5)])).toBe('Ballad')
+    expect(getDominantElement(s, [roll('d1', 3), roll('d2', 5)])).toBe('Ballad')
   })
 
   it('ignores rolls from other songs', () => {
-    expect(getDominantGenre(song('Ballad'), [roll('d1', 2), roll('d2', 20)])).toBe('Ballad')
+    expect(getDominantElement(song('Ballad'), [roll('d1', 2), roll('d2', 20)])).toBe('Ballad')
   })
 
   it('returns null for a song with no dice', () => {
-    expect(getDominantGenre(song(null), [])).toBeNull()
+    expect(getDominantElement(song(null), [])).toBeNull()
   })
 })
 
@@ -77,20 +77,20 @@ describe('computeBossAdaptation', () => {
       perf('p2', 35, 'Folk'),
       perf('p3', 8, 'Shanty'),
     ])
-    expect(result).toEqual({ resistGenre: 'Folk' })
+    expect(result).toEqual({ resistElement: 'Folk' })
   })
 
   it('does not adapt in a solo showdown', () => {
-    expect(computeBossAdaptation([perf('p1', 25, 'Ballad')])).toEqual({ resistGenre: null })
+    expect(computeBossAdaptation([perf('p1', 25, 'Ballad')])).toEqual({ resistElement: null })
   })
 
   it('does not adapt with no performances', () => {
-    expect(computeBossAdaptation([])).toEqual({ resistGenre: null })
+    expect(computeBossAdaptation([])).toEqual({ resistElement: null })
   })
 
   it('adapts even when every performance shares an element', () => {
     const result = computeBossAdaptation([perf('p1', 30, 'Ballad'), perf('p2', 10, 'Ballad')])
-    expect(result.resistGenre).toBe('Ballad')
+    expect(result.resistElement).toBe('Ballad')
   })
 
   it('breaks ties by performance order', () => {
@@ -99,11 +99,11 @@ describe('computeBossAdaptation', () => {
       perf('p2', 30, 'Folk'),
       perf('p3', 10, 'Hymn'),
     ])
-    expect(result.resistGenre).toBe('Ballad')
+    expect(result.resistElement).toBe('Ballad')
   })
 
   it('ignores performances without an element', () => {
-    expect(computeBossAdaptation([perf('p1', 30, 'Ballad'), perf('p2', 5, null)])).toEqual({ resistGenre: null })
+    expect(computeBossAdaptation([perf('p1', 30, 'Ballad'), perf('p2', 5, null)])).toEqual({ resistElement: null })
   })
 })
 

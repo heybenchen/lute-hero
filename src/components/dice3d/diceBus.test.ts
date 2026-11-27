@@ -3,7 +3,7 @@ import { announceDiceEvents, diceBus } from './diceBus'
 import type { EngineEvent } from '@/engine/events'
 import type { SongSlot } from '@/types'
 
-const die = { dieId: 'd1', type: 'd8' as const, genre: 'Ballad' as const, values: [8, 3] }
+const die = { dieId: 'd1', type: 'd8' as const, element: 'Ballad' as const, values: [8, 3] }
 
 describe('diceBus', () => {
   let release: (() => void) | null = null
@@ -76,19 +76,19 @@ describe('diceBus', () => {
 
   it('turns diceRolled events into throws with every cascade value', () => {
     release = diceBus.registerHost()
-    const players = [{ songs: [{ id: 's1', used: false, slots: [{ dice: { id: 'd1', type: 'd8', genre: 'Folk' } }] as [SongSlot] }] }]
+    const players = [{ songs: [{ id: 's1', used: false, slots: [{ dice: { id: 'd1', type: 'd8', element: 'Folk' } }] as [SongSlot] }] }]
     const events: EngineEvent[] = [{
       type: 'diceRolled', playerId: 'p1', songId: 's1', context: 'combat',
       rolls: [{ diceId: 'd1', value: 8, isCrit: true, critBonus: 5, cascadeRolls: [5] }],
     }]
     announceDiceEvents(events, players)
-    expect(diceBus.current()?.dice).toEqual([{ dieId: 'd1', type: 'd8', genre: 'Folk', values: [8, 5] }])
+    expect(diceBus.current()?.dice).toEqual([{ dieId: 'd1', type: 'd8', element: 'Folk', values: [8, 5] }])
   })
 
   it('throws every die of a showdown performance, across all its songs', () => {
     release = diceBus.registerHost()
     const song = (id: string, dieId: string, type: 'd4' | 'd20') =>
-      ({ id, used: false, slots: [{ dice: { id: dieId, type, genre: 'Ballad' } }] as [SongSlot] })
+      ({ id, used: false, slots: [{ dice: { id: dieId, type, element: 'Ballad' } }] as [SongSlot] })
     const players = [{ songs: [song('s1', 'b1', 'd20'), song('s2', 'b2', 'd4'), song('s3', 'b3', 'd4')] }]
     const roll = (diceId: string, value: number) => ({ diceId, value, isCrit: false, critBonus: 0, cascadeRolls: [] })
     const events: EngineEvent[] = [{

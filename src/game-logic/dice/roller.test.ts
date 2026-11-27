@@ -94,7 +94,7 @@ describe('Dice Roller', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd8',
-        genre: 'Ballad',
+        element: 'Ballad',
       }
 
       const result = rollDiceWithCrit(dice)
@@ -112,7 +112,7 @@ describe('Dice Roller', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd8',
-        genre: 'Ballad',
+        element: 'Ballad',
       }
 
       const mockRandom = vi.spyOn(Math, 'random')
@@ -135,7 +135,7 @@ describe('Dice Roller', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd8',
-        genre: 'Ballad',
+        element: 'Ballad',
       }
 
       const mockRandom = vi.spyOn(Math, 'random')
@@ -160,7 +160,7 @@ describe('Dice Roller', () => {
       const dice: Dice = {
         id: 'test-dice',
         type: 'd8',
-        genre: 'Ballad',
+        element: 'Ballad',
       }
 
       // Mock Math.random to return non-max

@@ -1,8 +1,8 @@
 export default {
   "codeProperties": {
-    "genre": {
+    "element": {
       "type": "string",
-      "label": "Genre",
+      "label": "Element",
       "control": "select",
       "options": [
         {

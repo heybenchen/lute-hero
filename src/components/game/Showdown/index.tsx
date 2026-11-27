@@ -6,18 +6,18 @@ import type { EngineEvent } from '@/engine/events'
 import { SongCard } from '../Combat/SongCard'
 import { SongGrid } from '../Combat/SongGrid'
 import { makeReroll } from '../Combat/reroll'
-import { CombatStyles } from '../DraftShop/StyleShelf'
+import { CombatGenres } from '../DraftShop/GenreShelf'
 import { BossStage } from './BossStage'
 import { AdaptBanner } from './AdaptBanner'
 import { WinnerSpotlight } from './WinnerSpotlight'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
-import { counterpointMultiplier, rubatoCanReroll } from '@/game-logic/styles/styleEffects'
+import { crossoverMultiplier, bebopCanReroll } from '@/game-logic/genres/genreEffects'
 import { songIsImmune } from '@/game-logic/combat/damageCalculator'
 import { createShowdownBoss, getPlayableSongs, mergeSongs, ShowdownPerformance, verseFame } from '@/game-logic/showdown/showdown'
 import { withTunables, type Tunables } from '@/data/tunables'
 import { Player } from '@/types'
-import { STYLES } from '@/data/styles'
-import { readableTextColor } from '@/data/genreTheme'
+import { GENRES } from '@/data/genres'
+import { readableTextColor } from '@/data/elementTheme'
 
 type Stage = 'intro' | 'perform' | 'adapt' | 'finale' | 'winner'
 
@@ -31,7 +31,7 @@ export function FinalShowdown() {
   const showdownTurn = useGameStore((state) => state.showdownTurn)
   const showdownOrder = useGameStore((state) => state.showdownOrder)
   const showdownPerformerIdx = useGameStore((state) => state.showdownPerformerIdx)
-  const showdownResistGenre = useGameStore((state) => state.showdownResistGenre)
+  const showdownResistElement = useGameStore((state) => state.showdownResistElement)
   const showdownSongsUsed = useGameStore((state) => state.showdownSongsUsed)
   const showdownCurrentFandom = useGameStore((state) => state.showdownCurrentFandom)
   const showdownFandom = useGameStore((state) => state.showdownFandom)
@@ -44,7 +44,7 @@ export function FinalShowdown() {
   const canPerform = useGameStore(selectCanPerform)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
   const mode = useGameStore((state) => state.mode)
-  const rubatoUsed = useGameStore((state) => !!state.showdownUndo?.rubatoUsed)
+  const bebopUsed = useGameStore((state) => !!state.showdownUndo?.bebopUsed)
 
   // The engine starts the showdown when END_TURN flips the phase, so it is
   // already active on mount. Show the intro only for a fresh showdown;
@@ -77,7 +77,7 @@ export function FinalShowdown() {
     await diceBus.whenSettled()
     const popup: FandomPopup = {
       id: `fandom-${++popupSeq.current}`,
-      genre: result.genre,
+      element: result.element,
       fandom: result.fandom,
       hadCrit: result.hadCrit,
       wasResisted: result.wasResisted,
@@ -146,18 +146,18 @@ export function FinalShowdown() {
     if (result.ok) showPerformance(result.events)
   }
 
-  // Rubato: one free reroll of a d4/d8 performance per verse
-  const canRubato = canReroll && !!performer && performer.styles.includes('rubato') && !rubatoUsed && rubatoCanReroll(mergeSongs(performedSongs))
-  const handleRubato = async () => {
-    if (!canRubato) return
-    const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG', rubato: true })
+  // Bebop: one free reroll of a d4/d8 performance per verse
+  const canBebop = canReroll && !!performer && performer.genres.includes('bebop') && !bebopUsed && bebopCanReroll(mergeSongs(performedSongs))
+  const handleBebop = async () => {
+    if (!canBebop) return
+    const result = await dispatch({ type: 'REROLL_SHOWDOWN_SONG', bebop: true })
     if (result.ok) showPerformance(result.events)
   }
 
   // The reroll sits on the dice just performed: free with Nimble Fingers, else 1 Inspiration
   const reroll = performer && hasPerformed && performedSongs.length > 0
     ? makeReroll({
-        free: canRubato ? { name: STYLES.rubato.name, onClick: handleRubato } : undefined,
+        free: canBebop ? { name: GENRES.bebop.name, onClick: handleBebop } : undefined,
         inspiration: performer.inspiration,
         enabled: canReroll,
         subject: 'performance',
@@ -167,10 +167,10 @@ export function FinalShowdown() {
 
   // The Silence is immune to one element each verse: show which dice will deal nothing,
   // the same way a fight does (Dissonance softens the hit, so it counts as damage).
-  const boss = useMemo(() => createShowdownBoss({ resistGenre: showdownResistGenre }), [showdownResistGenre])
+  const boss = useMemo(() => createShowdownBoss({ resistElement: showdownResistElement }), [showdownResistElement])
   const damageOptions = {
     immuneMultiplier: performer
-      ? counterpointMultiplier({ styles: performer.styles, used: [], firstRoll: true, allElements: false, elementCount: 0 })
+      ? crossoverMultiplier({ genres: performer.genres, used: [], firstRoll: true, allElements: false, elementCount: 0 })
       : undefined,
   }
 
@@ -203,7 +203,7 @@ export function FinalShowdown() {
         turnEnded={adaptTurnEnded}
         performances={adaptRecap}
         players={players}
-        resistGenre={showdownResistGenre}
+        resistElement={showdownResistElement}
         crownIds={showdownCrownIds}
         onContinue={() => setStage('perform')}
       />
@@ -273,7 +273,7 @@ export function FinalShowdown() {
           <BossStage
             strike={popups[popups.length - 1]}
             turn={showdownTurn}
-            resistGenre={showdownResistGenre}
+            resistElement={showdownResistElement}
             fandom={held.showdownFandom}
             players={players}
           />
@@ -347,7 +347,7 @@ export function FinalShowdown() {
                   )
                 })}
               </SongGrid>
-              <CombatStyles player={performer} usedStyleIds={rubatoUsed ? ['rubato'] : []} />
+              <CombatGenres player={performer} usedGenreIds={bebopUsed ? ['bebop'] : []} />
             </div>
 
             {/* Finish performance */}

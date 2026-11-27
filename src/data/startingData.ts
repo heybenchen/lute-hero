@@ -1,13 +1,13 @@
-import { Genre, DiceType, Dice, Song } from '../types/index.js';
+import { Element, DiceType, Dice, Song } from '../types/index.js';
 
 // Starter die: one d8 of the bard's chosen element, in their first song.
-const starterDie = (genre: Genre): Dice[] => [{
-  id: `${genre.toLowerCase()}-starter-1`,
+const starterDie = (element: Element): Dice[] => [{
+  id: `${element.toLowerCase()}-starter-1`,
   type: "d8",
-  genre,
+  element,
 }];
 
-export const STARTER_DICE: { [key in Genre]: Dice[] } = {
+export const STARTER_DICE: { [key in Element]: Dice[] } = {
   Ballad: starterDie("Ballad"),
   Folk: starterDie("Folk"),
   Hymn: starterDie("Hymn"),
@@ -18,8 +18,8 @@ export const STARTER_DICE: { [key in Genre]: Dice[] } = {
 export const SONGS_PER_BARD = 6;
 
 // Create 6 starter songs of one die each: the first holds the starter d8.
-export function createStarterSongs(genre: Genre, playerId: string): Song[] {
-  const starterDice = STARTER_DICE[genre];
+export function createStarterSongs(element: Element, playerId: string): Song[] {
+  const starterDice = STARTER_DICE[element];
 
   return Array.from({ length: SONGS_PER_BARD }, (_, i): Song => ({
     id: `${playerId}-song-${i + 1}`,

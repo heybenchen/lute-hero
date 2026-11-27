@@ -31,8 +31,8 @@ function sharedFight(monsters: Monster[], brynPosition = 5): EngineState {
   const started = applyAction(createInitialEngineState(), {
     type: 'START_GAME',
     playerConfigs: [
-      { name: 'Alba', starterGenre: 'Ballad' },
-      { name: 'Bryn', starterGenre: 'Folk' },
+      { name: 'Alba', starterElement: 'Ballad' },
+      { name: 'Bryn', starterElement: 'Folk' },
     ],
   }, hotseat())
   if (!started.ok) throw new Error(started.message)
@@ -43,10 +43,10 @@ function sharedFight(monsters: Monster[], brynPosition = 5): EngineState {
       ...p,
       position: i === 0 ? 5 : brynPosition,
       songs: i === 1
-        ? p.songs.map((s, si) => (si === 0 ? { ...s, slots: [{ dice: { id: 'bryn-d20', type: 'd20' as const, genre: 'Folk' as const } }] as typeof s.slots } : s))
+        ? p.songs.map((s, si) => (si === 0 ? { ...s, slots: [{ dice: { id: 'bryn-d20', type: 'd20' as const, element: 'Folk' as const } }] as typeof s.slots } : s))
         : p.songs,
     })),
-    spaces: state.spaces.map((s) => (s.id === 5 ? { ...s, genreTags: ['Hymn'], monsters } : s)),
+    spaces: state.spaces.map((s) => (s.id === 5 ? { ...s, elementTags: ['Hymn'], monsters } : s)),
   }
   return apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
 }
@@ -69,7 +69,7 @@ describe('featured songs', () => {
     expect(state.combat.undoSnapshot).toBeNull()
 
     const before = state.players.map((p) => ({ fame: p.fame, exp: p.exp }))
-    state = apply(state, { type: 'END_COMBAT', spreadGenre: 'Hymn' }).state
+    state = apply(state, { type: 'END_COMBAT', spreadElement: 'Hymn' }).state
     // Lv2: 10 Fame and 2 EXP, split evenly
     expect(state.players[0].fame - before[0].fame).toBe(5)
     expect(state.players[0].exp - before[0].exp).toBe(1)
@@ -80,7 +80,7 @@ describe('featured songs', () => {
   it('the fighter keeps the larger half of an odd split', () => {
     let state = sharedFight([monster('m1', 1, 1)])
     state = apply(state, feature('m1')).state
-    state = apply(state, { type: 'END_COMBAT', spreadGenre: 'Hymn' }).state
+    state = apply(state, { type: 'END_COMBAT', spreadElement: 'Hymn' }).state
     // Lv1: 5 Fame / 1 EXP → fighter 3 / 1, guest 2 / 0
     expect(state.players[0].fame).toBe(3)
     expect(state.players[1].fame).toBe(2)

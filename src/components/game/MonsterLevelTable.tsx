@@ -4,7 +4,7 @@ import { calculateMonsterFameValue, calculateMonsterExp } from '@/game-logic/fam
 /**
  * Reference table of what each monster level is worth. Every number is pulled
  * from the same functions the engine uses, so it can't drift from real play.
- * A monster's level equals the number of matching genre chips on its space.
+ * A monster's level equals the number of matching element chips on its space.
  */
 
 const LEVELS = Array.from({ length: maxMonsterLevel() }, (_, i) => i + 1)

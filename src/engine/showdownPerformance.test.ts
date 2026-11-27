@@ -16,12 +16,12 @@ function apply(state: EngineState, action: GameAction, c: ActionCtx = ctx()) {
 function showdown(): EngineState {
   const started = apply(createInitialEngineState(), {
     type: 'START_GAME',
-    playerConfigs: [{ name: 'Alba', starterGenre: 'Ballad' }, { name: 'Bryn', starterGenre: 'Folk' }],
+    playerConfigs: [{ name: 'Alba', starterElement: 'Ballad' }, { name: 'Bryn', starterElement: 'Folk' }],
   }).state
   const dice: (Dice | null)[] = [
-    { id: 'b1', type: 'd8', genre: 'Ballad' },
-    { id: 'f1', type: 'd12', genre: 'Folk' },
-    { id: 'b2', type: 'd4', genre: 'Ballad' },
+    { id: 'b1', type: 'd8', element: 'Ballad' },
+    { id: 'f1', type: 'd12', element: 'Folk' },
+    { id: 'b2', type: 'd4', element: 'Ballad' },
     null, null, null,
   ]
   let state: EngineState = {
@@ -66,7 +66,7 @@ describe('DEBUG_SIMULATE', () => {
   const fresh = () => {
     const started = apply(createInitialEngineState(), {
       type: 'START_GAME',
-      playerConfigs: [{ name: 'Alba', starterGenre: 'Ballad' }, { name: 'Bryn', starterGenre: 'Folk' }, { name: 'Cleo', starterGenre: 'Hymn' }],
+      playerConfigs: [{ name: 'Alba', starterElement: 'Ballad' }, { name: 'Bryn', starterElement: 'Folk' }, { name: 'Cleo', starterElement: 'Hymn' }],
     }).state
     // A playtest tweak that the simulation must keep
     return { ...started, tunables: { ...started.tunables, newD4Cost: 2 } }
@@ -80,12 +80,12 @@ describe('DEBUG_SIMULATE', () => {
     expect(state.currentRound).toBe(7)
     expect(state.currentTurnPlayerIndex).toBe(0)
     expect(state.showdownActive).toBe(false)
-    expect(state.players.map((p) => [p.id, p.name, p.starterGenre])).toEqual(before.players.map((p) => [p.id, p.name, p.starterGenre]))
+    expect(state.players.map((p) => [p.id, p.name, p.starterElement])).toEqual(before.players.map((p) => [p.id, p.name, p.starterElement]))
     expect(state.tunables.newD4Cost).toBe(2)
     // Six rounds of real play: bards have bought dice, earned Fame, and the board moved on
     expect(dice(state).length).toBeGreaterThan(dice(before).length)
     expect(state.players.some((p) => p.fame > 0)).toBe(true)
-    expect(state.spaces.map((sp) => sp.genreTags.join())).not.toEqual(before.spaces.map((sp) => sp.genreTags.join()))
+    expect(state.spaces.map((sp) => sp.elementTags.join())).not.toEqual(before.spaces.map((sp) => sp.elementTags.join()))
     // ...and the game simply continues from there
     expect(applyAction(state, { type: 'END_TURN' }, ctx()).ok).toBe(true)
   })

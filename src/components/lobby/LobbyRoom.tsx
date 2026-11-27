@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useGameStore } from '@/store'
-import { Genre } from '@/types'
-import { GENRE_THEME, ALL_GENRES, readableTextColor } from '@/data/genreTheme'
-import { GenreBadge } from '@/components/ui/GenreBadge'
+import { Element } from '@/types'
+import { ELEMENT_THEME, ALL_ELEMENTS, readableTextColor } from '@/data/elementTheme'
+import { ElementBadge } from '@/components/ui/ElementBadge'
 
 /**
  * The online waiting room: shows the join code, every seat with its
@@ -25,7 +25,7 @@ export function LobbyRoom() {
   const isHost = lobby.mySeatId === lobby.hostSeatId
   const allReady = lobby.seats.length >= 1 && lobby.seats.every((s) => s.ready)
 
-  const op = async (name: 'ready' | 'unready' | 'leave' | 'start', extras?: { starterGenre?: Genre }) => {
+  const op = async (name: 'ready' | 'unready' | 'leave' | 'start', extras?: { starterElement?: Element }) => {
     setBusy(true)
     await sendLobbyOp(name, extras)
     setBusy(false)
@@ -41,10 +41,10 @@ export function LobbyRoom() {
     }
   }
 
-  const handleGenrePick = (genre: Genre) => {
+  const handleElementPick = (element: Element) => {
     if (!mySeat || mySeat.ready) return
     // Genre choice rides on an unready op so it can change until ready
-    op('unready', { starterGenre: genre })
+    op('unready', { starterElement: element })
   }
 
   return (
@@ -80,7 +80,7 @@ export function LobbyRoom() {
             const online = lobby.presence[seat.seatId] !== false
             const isMe = seat.seatId === lobby.mySeatId
             const seatIsHost = seat.seatId === lobby.hostSeatId
-            const theme = GENRE_THEME[seat.starterGenre]
+            const theme = ELEMENT_THEME[seat.starterElement]
             return (
               <div
                 key={seat.seatId}
@@ -113,7 +113,7 @@ export function LobbyRoom() {
                     {seatIsHost && <span className="text-[10px]" title="Host">👑</span>}
                   </div>
                   <div className="text-xs" style={{ color: theme.color }}>
-                    {theme.emoji} {seat.starterGenre}
+                    {theme.emoji} {seat.starterElement}
                   </div>
                 </div>
                 <span
@@ -145,17 +145,17 @@ export function LobbyRoom() {
               Your Starter Element
             </div>
             <div className="grid grid-cols-4 gap-2">
-              {ALL_GENRES.map((genre) => {
-                const { emoji, rgb } = GENRE_THEME[genre]
-                const isChosen = mySeat.starterGenre === genre
+              {ALL_ELEMENTS.map((element) => {
+                const { emoji, rgb } = ELEMENT_THEME[element]
+                const isChosen = mySeat.starterElement === element
                 // One bard per element: someone else's element can't be picked
-                const takenBy = lobby.seats.find((s) => s.seatId !== mySeat.seatId && s.starterGenre === genre)
+                const takenBy = lobby.seats.find((s) => s.seatId !== mySeat.seatId && s.starterElement === element)
                 return (
                   <button
-                    key={genre}
-                    onClick={() => handleGenrePick(genre)}
+                    key={element}
+                    onClick={() => handleElementPick(element)}
                     disabled={busy || !!takenBy}
-                    title={takenBy ? `${takenBy.name} plays ${genre}` : undefined}
+                    title={takenBy ? `${takenBy.name} plays ${element}` : undefined}
                     className="rounded-lg py-2 flex flex-col items-center gap-1 transition-all duration-150 hover:enabled:-translate-y-0.5 disabled:opacity-35 disabled:cursor-not-allowed"
                     style={{
                       background: isChosen ? `rgba(${rgb}, 0.2)` : 'rgba(0,0,0,0.25)',
@@ -163,7 +163,7 @@ export function LobbyRoom() {
                     }}
                   >
                     <span className="text-xl">{emoji}</span>
-                    <GenreBadge genre={genre} className="text-[9px] px-1 py-0" />
+                    <ElementBadge element={element} className="text-[9px] px-1 py-0" />
                   </button>
                 )
               })}

@@ -14,8 +14,8 @@ import {
   getGameId,
 } from '../../_lib/http.js'
 
-import { ALL_GENRES, playerColorFor } from '../../../src/data/genreTheme.js'
-import type { Genre } from '../../../src/types/index.js'
+import { ALL_ELEMENTS, playerColorFor } from '../../../src/data/elementTheme.js'
+import type { Element } from '../../../src/types/index.js'
 
 /** POST /api/games/[id]/lobby — ready/unready/leave/start. */
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
@@ -42,16 +42,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
         if (doc.status !== 'lobby') {
           return { ok: false as const, status: 422, code: 'illegal' as const, message: 'Game already started' }
         }
-        const wanted = body.starterGenre && ALL_GENRES.includes(body.starterGenre as Genre)
-          ? body.starterGenre
-          : seat.starterGenre
+        const wanted = body.starterElement && ALL_ELEMENTS.includes(body.starterElement as Element)
+          ? body.starterElement
+          : seat.starterElement
         // Each element belongs to one bard, and it sets their color
-        if (doc.seats.some((s) => s.seatId !== seat.seatId && s.starterGenre === wanted)) {
+        if (doc.seats.some((s) => s.seatId !== seat.seatId && s.starterElement === wanted)) {
           return { ok: false as const, status: 422, code: 'illegal' as const, message: `Another bard already plays ${wanted}` }
         }
         const seats = doc.seats.map((s) => {
           if (s.seatId !== seat.seatId) return s
-          return { ...s, ready: body.op === 'ready', starterGenre: wanted, color: playerColorFor(wanted) }
+          return { ...s, ready: body.op === 'ready', starterElement: wanted, color: playerColorFor(wanted) }
         })
         return {
           doc: { ...doc, seats },
@@ -88,7 +88,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
 
         const playerConfigs: PlayerConfig[] = doc.seats.map((s) => ({
           name: s.name,
-          starterGenre: s.starterGenre,
+          starterElement: s.starterElement,
         }))
 
         const applied = applyActionToDoc(

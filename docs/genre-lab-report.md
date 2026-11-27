@@ -1,8 +1,8 @@
-# Style lab report
+# Genre lab report
 
 **Summary:** 21 too strong · 12 slightly strong · 20 balanced · 13 slightly weak · 34 too weak
 
-Generated from `scripts/style-lab.ts`: each style was held alone from round 1 by one bard in 250 three-bard games played by smart bots (`src/sim/smartBot.ts`) through the Final Showdown; seats random, seeds shared. **No-style baseline: 30.4% wins.** Target band for a balanced style: **42–48%** (about +12 points).
+Generated from `scripts/genre-lab.ts`: each genre was held alone from round 1 by one bard in 250 three-bard games played by smart bots (`src/sim/smartBot.ts`) through the Final Showdown; seats random, seeds shared. **No-style baseline: 30.4% wins.** Target band for a balanced genre: **42–48%** (about +12 points).
 
 Verdicts: Too strong > 52% · Slightly strong 48–52% · Balanced 42–48% · Slightly weak 38–42% · Too weak < 38%.
 
@@ -26,55 +26,55 @@ Measured with `scripts/inspiration-value.ts` (one bard starts with a bonus, smar
 
 ## Correction: realistic timing
 
-Every win rate below this section holds the style from round 1 for free. That is not how styles are bought: bots (and players) cannot afford one before round 4 to 6, because EXP goes into dice upgrades. `scripts/style-timing.ts` measured it: first style bought in round 5 (middle half rounds 4–6), second in round 7, in games lasting about 9.7 rounds. `ROUND=5 scripts/style-audit.ts` models that. The tested bard buys at the real price from round 5 on, ahead of dice. The results for the 20 Studio styles are in `songStyles.md`, which now judges styles with rivals who shop for styles too (`OPP=1`), where a balanced style wins about a third of games. Headlines: the spread is 28.7–42.5% (no-style baseline 31.8), expensive styles lose the most (Master's Touch 41.5 → 28.7, Nimble Fingers 45.2 → 29.2, Muse's Favor 42.3 → 29.7, Rallying Cry 47.0 → 36.2) and cheap roll-bonus styles hold up (Studio Regular 42.5, Double Time 42.5, Small Ensemble 41.3). Treat the "held from round 1" numbers below as superseded. They are history.
+Every win rate below this section holds the genre from round 1 for free. That is not how genres are bought: bots (and players) cannot afford one before round 4 to 6, because EXP goes into dice upgrades. `scripts/genre-timing.ts` measured it: first genre bought in round 5 (middle half rounds 4–6), second in round 7, in games lasting about 9.7 rounds. `ROUND=5 scripts/genre-audit.ts` models that. The tested bard buys at the real price from round 5 on, ahead of dice. The results for the 20 Studio genres are in `genres.md`, which now judges genres with rivals who shop for genres too (`OPP=1`), where a balanced genre wins about a third of games. Headlines: the spread is 28.7–42.5% (no-style baseline 31.8), expensive genres lose the most (Master's Touch 41.5 → 28.7, Nimble Fingers 45.2 → 29.2, Muse's Favor 42.3 → 29.7, Rallying Cry 47.0 → 36.2) and cheap roll-bonus genres hold up (Studio Regular 42.5, Double Time 42.5, Small Ensemble 41.3). Treat the "held from round 1" numbers below as superseded. They are history.
 
-## Rebalance of the existing 12 styles
+## Rebalance of the existing 12 genres
 
-Same method (300 games each, smart bots; no-style baseline 31.8%). Every change is a tunable in the playtest console's **Values → Styles** group, so it can be tried live. (These were the first proposals; what shipped is in the next section.)
+Same method (300 games each, smart bots; no-style baseline 31.8%). Every change is a tunable in the playtest console's **Values → Genres** group, so it can be tried live. (These were the first proposals; what shipped is in the next section.)
 
-| Style | Today | Win % today | Proposed | Win % proposed | Tunables |
+| Genre | Today | Win % today | Proposed | Win % proposed | Tunables |
 |---|---|---|---|---|---|
-| **Crowd Favorite** | +5 Fame for every monster you tame | 64.7 | +2 Fame per tame | **44.3** | `bravoFamePerTame: 2` |
-| **Lingering Note** | Once per turn, a d12/d20 song that misses isn't spent | 61.0 | d20 songs only, and keeping it costs 1 Inspiration | **47.7** | `fermataMinFaces: 20`, `fermataInspirationCost: 1` |
-| **Rallying Cry** | Once per turn, after a tame, refresh a spent song of your choice | 51.8 | …a spent d4 or d8 song | **46.7** | `staccatoMaxFaces: 8` |
-| **Harmony** | If your setlist holds all four elements, +4 to your first roll each turn | 49.5 | +3 instead of +4 | **46.5** | `tuttiBonus: 3` |
+| **Crowd Favorite** | +5 Fame for every monster you tame | 64.7 | +2 Fame per tame | **44.3** | `discoFamePerTame: 2` |
+| **Lingering Note** | Once per turn, a d12/d20 song that misses isn't spent | 61.0 | d20 songs only, and keeping it costs 1 Inspiration | **47.7** | `bluesMinFaces: 20`, `bluesInspirationCost: 1` |
+| **Rallying Cry** | Once per turn, after a tame, refresh a spent song of your choice | 51.8 | …a spent d4 or d8 song | **46.7** | `gospelMaxFaces: 8` |
+| **Harmony** | If your setlist holds all four elements, +4 to your first roll each turn | 49.5 | +3 instead of +4 | **46.5** | `barbershopBonus: 3` |
 | **Dragon's Roar** | +2 to every d20 roll (can crit) | 46.2 | unchanged | 46.2 | — |
 | **Fanfare** | +2 to your first roll each turn | 43.7 | unchanged | 43.7 | — |
-| **Extra Verse** | A 7th song slot | 41.5 | unchanged (cheapest style, 1 EXP) | 41.5 | — |
+| **Extra Verse** | A 7th song slot | 41.5 | unchanged (cheapest genre, 1 EXP) | 41.5 | — |
 | **Master's Touch** | Once per turn, your first d12/d20 roll is rolled twice; keep the higher | 41.5 | unchanged | 41.5 | — |
-| **Dissonance** | Once per turn, a roll against an immune target deals half damage | 40.7 | ¾ damage instead of half | **42.8** | `counterpointMultiplier: 0.75` |
-| **War Drums** | Your d4s crit on a 3 or 4 | 36.7 | …and their crit dice add +2 | **41.8** | `ostinatoCascadeBonus: 2` |
-| **Nimble Fingers** | Once per turn, reroll a d4 or d8 song for free | 34.2 | any die, twice per turn | **45.2** | `rubatoMaxFaces: 20`, `rubatoUsesPerTurn: 2` |
-| **Muse's Favor** | Start each turn with at least 1 Inspiration | 33.5 | +1 Inspiration at the start of every turn | **42.7** | `ispiratoPerTurn: 1` |
+| **Dissonance** | Once per turn, a roll against an immune target deals half damage | 40.7 | ¾ damage instead of half | **42.8** | `crossoverMultiplier: 0.75` |
+| **War Drums** | Your d4s crit on a 3 or 4 | 36.7 | …and their crit dice add +2 | **41.8** | `indieCascadeBonus: 2` |
+| **Nimble Fingers** | Once per turn, reroll a d4 or d8 song for free | 34.2 | any die, twice per turn | **45.2** | `bebopMaxFaces: 20`, `bebopUsesPerTurn: 2` |
+| **Muse's Favor** | Start each turn with at least 1 Inspiration | 33.5 | +1 Inspiration at the start of every turn | **42.7** | `popPerTurn: 1` |
 
 Rejected alternatives (same runs): Lingering Note d20-only but free 55.0 · Rallying Cry d4–d12 46.5 · Harmony +2 40.0 · Dragon's Roar +1 38.7 · Dissonance full damage 48.2 · War Drums crit on 2+ 34.2, reaching d8/d12 36.5–37.0, "+1 to d4s and d8s (can crit)" 49.5 · Nimble Fingers any die once 39.7, d4–d8 twice 41.0 · Muse's Favor floor of 2/3 36.7/35.0 · Master's Touch on d8s too 41.2.
 
-With the rebalance, the twelve styles span 41.5–47.7% — all within noise (±2.8 points) of the band.
+With the rebalance, the twelve genres span 41.5–47.7% — all within noise (±2.8 points) of the band.
 
-## Shipped defaults and the eight promoted styles
+## Shipped defaults and the eight promoted genres
 
-These are now the game's defaults. Power is measured the same way (style held from round 1, 300 games, smart bots); **no-style baseline 31.8%**.
+These are now the game's defaults. Power is measured the same way (genre held from round 1, 300 games, smart bots); **no-style baseline 31.8%**.
 
-### Existing styles that changed
+### Existing genres that changed
 
-| Style | What it does now | Win % | Tunables |
+| Genre | What it does now | Win % | Tunables |
 |---|---|---|---|
-| **Crowd Favorite** | +10 Fame for every Lv3+ monster you tame (was +5 at 40.5%; price 2 → 3) | **48.8** held; bought at 2 / 3 / 4 EXP: 42.5 / 36.5 / 35.8 | `bravoFamePerTame: 10`, `bravoMinLevel: 3`, `styleCostBravo: 3` |
-| **Rallying Cry** | Once per turn, after a tame, refresh a spent d4 or d8 song of your choice | **47.0** | `staccatoMaxFaces: 8` |
-| **Harmony** | If your setlist holds all four elements, +3 to your first roll each turn (added on top of the face; can't crit) | **46.5** | `tuttiBonus: 3` |
-| **War Drums** | All your dice crit one number lower (a d4 on a 3, a d20 on a 19); bonus dice still need the top face | **42.3** | `ostinatoMaxFaces: 20` (price unchanged at 2) |
-| **Nimble Fingers** | Twice per turn, reroll any song for free | **45.2** (once per turn: 39.0) | `rubatoMaxFaces: 20`, `rubatoUsesPerTurn: 2` |
-| **Muse's Favor** | Gain 1 Inspiration at the start of each turn | **42.3** | `ispiratoPerTurn: 1` |
+| **Crowd Favorite** | +10 Fame for every Lv3+ monster you tame (was +5 at 40.5%; price 2 → 3) | **48.8** held; bought at 2 / 3 / 4 EXP: 42.5 / 36.5 / 35.8 | `discoFamePerTame: 10`, `discoMinLevel: 3`, `genreCostDisco: 3` |
+| **Rallying Cry** | Once per turn, after a tame, refresh a spent d4 or d8 song of your choice | **47.0** | `gospelMaxFaces: 8` |
+| **Harmony** | If your setlist holds all four elements, +3 to your first roll each turn (added on top of the face; can't crit) | **46.5** | `barbershopBonus: 3` |
+| **War Drums** | All your dice crit one number lower (a d4 on a 3, a d20 on a 19); bonus dice still need the top face | **42.3** | `indieMaxFaces: 20` (price unchanged at 2) |
+| **Nimble Fingers** | Twice per turn, reroll any song for free | **45.2** (once per turn: 39.0) | `bebopMaxFaces: 20`, `bebopUsesPerTurn: 2` |
+| **Muse's Favor** | Gain 1 Inspiration at the start of each turn | **42.3** | `popPerTurn: 1` |
 
-War Drums variants (300 games): all dice, bonus dice also chaining one lower 50.0 (not shipped; the shipped version, first-roll crit only, is 42.3) · d4s only 36.7 · d4s only with bonus dice chaining on a 3 or 4, uncapped 34.5 (35.0 bought at 2 EXP). Chaining is a new tunable, `ostinatoChainFace` (default 4 = top face only; lower values chain that many numbers below the top, scaled by die size like the crit face).
+War Drums variants (300 games): all dice, bonus dice also chaining one lower 50.0 (not shipped; the shipped version, first-roll crit only, is 42.3) · d4s only 36.7 · d4s only with bonus dice chaining on a 3 or 4, uncapped 34.5 (35.0 bought at 2 EXP). Chaining is a new tunable, `indieChainFace` (default 4 = top face only; lower values chain that many numbers below the top, scaled by die size like the crit face).
 
 Lingering Note (d20 songs only, 1 Inspiration per use: **47.7**) and Dissonance followed in later commits. Dissonance went to ¾ damage (**42.8**) first and then full damage (**48.5**). Also tried: Lingering Note on any die for 1 Inspiration 50.3, for 2 Inspiration 38.2.
 
 Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs, 300 games): every tame 64.2 · Lv2+ 50.8 (built-in run: 51.0) · **Lv3+ 43.5** (built-in run: 40.5) · first tame each turn 41.3 · clearing a space 40.8 · weak-element tames 51.3 · one-song tames of untouched monsters 50.7 · +10 for Lv3+ 48.8 · +10 for Lv4+ 34.8 · +10 on clear 50.5 · +10 once per turn 62.3.
 
-### Promoted from the style lab
+### Promoted from the genre lab
 
-| Style | What it does | Win % (held) | Price | Win % bought at 2 / 3 / 4 EXP |
+| Genre | What it does | Win % (held) | Price | Win % bought at 2 / 3 / 4 EXP |
 |---|---|---|---|---|
 | **Hometown Hero** | Dice of your starting element get +1 (can crit) | **45.8** | 2 | 34.2 / 33.5 / 33.5 |
 | **Small Ensemble** | Your d4s and d8s roll twice; keep the higher | **46.5** | 3 | 34.5 / 35.2 / 34.5 |
@@ -85,13 +85,13 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 | **Swarm Singer** | +2 to every die in fights with 3+ monsters (can't crit) | **44.7** | 2 | 36.2 / 32.8 / 32.2 |
 | **Jam Session** | +2 to every die while you share a space with another bard (can't crit) | **47.5** | 3 | 39.2 / 35.2 / 33.3 |
 
-**How prices were set** (`BUY=n scripts/style-audit.ts`): the tested bard pays n EXP for the style the first turn they can afford it, and the other bards hold no styles. Buying mid-game spends EXP that would have gone into dice, so the gain is smaller than holding the style from round 1. The current well-priced styles at their current prices are the yardstick: Rallying Cry @2 35.2 · Fanfare @3 34.5 · Dragon's Roar @4 33.8 · Harmony @4 34.2 · Crowd Favorite @2 38.3 · War Drums @2 / 3 / 4 34.2 / 34.8 / 33.7. Each new style takes the price that lands it in that 34–38% range. Where several prices fall within noise (±2.7 points), it takes the cheaper one.
+**How prices were set** (`BUY=n scripts/genre-audit.ts`): the tested bard pays n EXP for the genre the first turn they can afford it, and the other bards hold no genres. Buying mid-game spends EXP that would have gone into dice, so the gain is smaller than holding the genre from round 1. The current well-priced genres at their current prices are the yardstick: Rallying Cry @2 35.2 · Fanfare @3 34.5 · Dragon's Roar @4 33.8 · Harmony @4 34.2 · Crowd Favorite @2 38.3 · War Drums @2 / 3 / 4 34.2 / 34.8 / 33.7. Each new genre takes the price that lands it in that 34–38% range. Where several prices fall within noise (±2.7 points), it takes the cheaper one.
 
-## 100 new styles
+## 100 new genres
 
 ## 1. Element-specific
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Ember Heart** | Your Ballad dice get +2 (can crit). | 55.0 | Too strong |
 | **Purist** | Once per turn, a die of your starting element gets +4. | 50.0 | Slightly strong |
@@ -106,7 +106,7 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 
 ## 2. Dice-specific
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Quick Strum** | A d4 song that misses isn't spent. | 91.2 | Too strong |
 | **Cheap Tuning** | New d4s cost 1 less EXP. | 50.0 | Slightly strong |
@@ -121,7 +121,7 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 
 ## 3. Inspiration & economy
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Studio Regular** | Upgrades cost 1 less EXP. | 47.4 | Balanced |
 | **Bard of Means** | In the Studio, each Inspiration can pay for 2 EXP. | 46.8 | Balanced |
@@ -136,7 +136,7 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 
 ## 4. Dice manipulation
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Even Keel** | Your dice get +3 but can't crit. | 81.6 | Too strong |
 | **Flip Side** | A roll of 1 flips to the top face (and crits). | 59.6 | Too strong |
@@ -151,7 +151,7 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 
 ## 5. Combo rolls
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Opening Chord** | Your first song each fight gets +4 (can crit). | 69.0 | Too strong |
 | **Crescendo** | +1 per song already played this fight (max +4). | 64.8 | Too strong |
@@ -166,7 +166,7 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 
 ## 6. Gambles
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Triple Threat** | Your first song each fight deals ×3, but if it misses you lose 5 Fame. | 91.8 | Too strong |
 | **Risky Business** | Missed songs aren't spent, but each miss costs 1 Inspiration. | 91.2 | Too strong |
@@ -181,7 +181,7 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 
 ## 7. Crits
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Power Chord** | Your d8s and d12s get +3 (can crit). | 78.4 | Too strong |
 | **Fever Pitch** | From your 3rd song each fight, dice crit one face lower and crit dice add +1. | 49.0 | Slightly strong |
@@ -196,7 +196,7 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 
 ## 8. Targeting
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Finisher** | +3 against already-wounded monsters. | 67.0 | Too strong |
 | **Giant Slayer** | +3 against Lv4+ monsters. | 65.8 | Too strong |
@@ -211,7 +211,7 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 
 ## 9. Table position & rivalry
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Busker** | +2 EXP whenever a fight ends with monsters left. | 48.8 | Slightly strong |
 | **Jam Session** | +2 to every die while you share a space with another bard. | 47.6 | Balanced |
@@ -226,7 +226,7 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 
 ## 10. Showdown & tempo
 
-| Style | What it does | Win % | Verdict |
+| Genre | What it does | Win % | Verdict |
 |---|---|---|---|
 | **Opening Act** | Your first song each fight rolls twice, keeps the higher, and gets +2. | 64.8 | Too strong |
 | **Stamina** | +1 to every die, +1 more in the Final Showdown. | 56.8 | Too strong |
@@ -244,8 +244,8 @@ Crowd Favorite triggers that were tried, all at +5 Fame unless noted (spec runs,
 - **"A miss isn't spent" is the most powerful effect in the game.** Quick Strum (d4s) and Risky Business (any die, 1 Inspiration) both win ~91%: replaying a song until it tames turns every fight into a guaranteed clear. Lingering Note works because it is once per turn; any such effect needs a hard per-turn limit.
 - **Flat bonuses on every die are worth far more than they look.** +3 to all dice (Even Keel 82%, Glass Cannon 70% even with its EXP penalty) roughly doubles a d4. +1 on everything (Stamina) already lands at 57%. Conditional +2/+3 (Finisher, Giant Slayer, First Impression) is the right size class only when the condition is common.
 - **"Roll twice, keep the lower" is ruinous** unless paid back in full: Reckless and Gambler's Shot ~5%, while All or Nothing (keep the lower, but ×2) is 64%.
-- **Showdown-only styles are weak** (Showstopper 37%, Grand Finale 35%, Headline Act 34%): the showdown is three performances, while the board game decides most of the Fame. Slow Burn (−1 in fights, +4 in the showdown) is a trap at 20%.
+- **Showdown-only genres are weak** (Showstopper 37%, Grand Finale 35%, Headline Act 34%): the showdown is three performances, while the board game decides most of the Fame. Slow Burn (−1 in fights, +4 in the showdown) is a trap at 20%.
 - **Big-die crit tweaks barely matter** (War Horn 33%, Thunderclap 32%): d20s already hit hard; crits matter on small dice and in volume.
-- **Economy styles land in the middle** (Cheap Tuning 50%, Studio Regular 47%, Bard of Means 47%) and are a good source of balanced, low-complexity options.
-- **Inspiration styles are weak in smart hands** (Golden Take 36%, Second Take 33%, Patron 35%): the bot already uses Inspiration where it matters, so extra rerolls add little. Inspiration needs bigger levers (Inspired Play's +2 while holding 3+ is balanced at 47%).
-- **Element-locked styles depend on luck of the draw**: Ember Heart (Ballad) 55% vs Sea Legs (Shanty) 33% — the starting-element versions (Hometown Hero 46%, True Voice 49%) are more reliable.
+- **Economy genres land in the middle** (Cheap Tuning 50%, Studio Regular 47%, Bard of Means 47%) and are a good source of balanced, low-complexity options.
+- **Inspiration genres are weak in smart hands** (Golden Take 36%, Second Take 33%, Patron 35%): the bot already uses Inspiration where it matters, so extra rerolls add little. Inspiration needs bigger levers (Inspired Play's +2 while holding 3+ is balanced at 47%).
+- **Element-locked genres depend on luck of the draw**: Ember Heart (Ballad) 55% vs Sea Legs (Shanty) 33% — the starting-element versions (Hometown Hero 46%, True Voice 49%) are more reliable.

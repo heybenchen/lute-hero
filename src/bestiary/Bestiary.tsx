@@ -7,10 +7,14 @@ import {
 import {
   BESTIARY_TYPES,
   buildLevels,
+  mergeGameMonsters,
   hpAtLevel,
+  seedMonsters,
   type BestiaryType,
   type Monster,
 } from './data'
+import { MONSTER_LEVEL_SPRITES } from '@/assets/combat/levels'
+import type { Element } from '@/types'
 
 /* ------------------------------------------------------------------ */
 /*  Elemental identity: colour + icon (effects come from the roster).  */
@@ -55,7 +59,17 @@ const TYPES: Record<BestiaryType, TypeTheme> = {
 type NewMonster = Pick<Monster, 'name' | 'type' | 'baseHp' | 'tagline'>
 
 const api = {
-  list: (): Promise<Monster[]> => fetch('/api/monsters').then((r) => r.json()),
+  list: (): Promise<Monster[]> =>
+    fetch('/api/monsters')
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Bestiary request failed (${response.status})`)
+        const data: unknown = await response.json()
+        if (!Array.isArray(data)) throw new Error('Bestiary response was not a roster')
+        return mergeGameMonsters(data as Monster[])
+      })
+      // The Make preview may not have its API harness. Keep the manual usable
+      // there while production continues to persist edits through the API.
+      .catch(() => seedMonsters()),
   create: (m: NewMonster): Promise<Monster> =>
     fetch('/api/monsters', {
       method: 'POST',
@@ -123,12 +137,16 @@ function Portrait({
 }) {
   const t = TYPES[type]
   const Icon = t.Icon
+  const internalImage = url.match(/^game-monster:\/\/(Ballad|Folk|Hymn|Shanty)\/([1-5])$/)
+  const resolvedUrl = internalImage
+    ? MONSTER_LEVEL_SPRITES[internalImage[1] as Element][Number(internalImage[2]) - 1]
+    : url
   if (url) {
     return (
       <img
-        src={url}
+        src={resolvedUrl}
         alt=""
-        className={`${size} shrink-0 rounded-md object-cover ring-1 ring-white/10`}
+        className={`${size} shrink-0 rounded-md bg-stone-900 object-contain p-1 ring-1 ring-white/10 [image-rendering:pixelated]`}
       />
     )
   }
@@ -300,6 +318,13 @@ function DetailDrawer({
               {monster.levels.map((lvl, idx) => (
                 <div key={idx} className="rounded-lg border border-white/10 bg-stone-900/60 p-3">
                   <div className="flex items-center gap-3">
+                    {lvl.imageUrl && (
+                      <Portrait
+                        url={lvl.imageUrl}
+                        type={monster.type}
+                        size="h-14 w-14"
+                      />
+                    )}
                     <span className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-500/15 text-sm font-bold text-amber-300">
                       {lvl.level}
                     </span>

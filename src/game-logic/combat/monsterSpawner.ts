@@ -1,13 +1,13 @@
-import { BoardSpace, Monster, Genre, MonsterTemplate, Rng, NewId } from '../../types/index.js'
-import { getMonsterByGenre } from '../../data/monsters.js'
+import { BoardSpace, Monster, Element, MonsterTemplate, Rng, NewId } from '../../types/index.js'
+import { getMonsterByElement } from '../../data/monsters.js'
 import { getTunables } from '../../data/tunables.js'
 
 /**
- * Count tags by genre and find the dominant genre
+ * Count tags by element and find the dominant element
  */
-export function countTagsByGenre(genreTags: Genre[]): Map<Genre, number> {
-  const counts = new Map<Genre, number>()
-  genreTags.forEach((tag) => {
+export function countTagsByElement(elementTags: Element[]): Map<Element, number> {
+  const counts = new Map<Element, number>()
+  elementTags.forEach((tag) => {
     counts.set(tag, (counts.get(tag) || 0) + 1)
   })
   return counts
@@ -16,21 +16,21 @@ export function countTagsByGenre(genreTags: Genre[]): Map<Genre, number> {
 /**
  * Get the dominant genre and its count from tags
  */
-export function getDominantGenre(genreTags: Genre[]): { genre: Genre; count: number } | null {
-  if (genreTags.length === 0) return null
+export function getDominantElement(elementTags: Element[]): { element: Element; count: number } | null {
+  if (elementTags.length === 0) return null
 
-  const counts = countTagsByGenre(genreTags)
-  let maxGenre: Genre | null = null
+  const counts = countTagsByElement(elementTags)
+  let maxElement: Element | null = null
   let maxCount = 0
 
-  counts.forEach((count, genre) => {
+  counts.forEach((count, element) => {
     if (count > maxCount) {
       maxCount = count
-      maxGenre = genre
+      maxElement = element
     }
   })
 
-  return maxGenre ? { genre: maxGenre, count: maxCount } : null
+  return maxElement ? { element: maxElement, count: maxCount } : null
 }
 
 /** Monster levels never exceed this; HP, fame, EXP, and naming all top out here. */
@@ -75,24 +75,24 @@ export function getMonsterNameWithLevel(baseName: string, level: number): string
 
 /**
  * Spawn one monster per unique genre present in tags. A monster's level is
- * simply the count of its genre's tags — the same number the board shows on
+ * simply the count of its element's tags — the same number the board shows on
  * that genre's chip — so what you see on a space matches what you fight.
  * The round parameter only selects tougher templates in later rounds.
  * e.g. [Pop, Pop, Rock] -> 1 Lv2 Pop monster + 1 Lv1 Rock monster
  */
 export function spawnMonstersFromTags(
-  genreTags: Genre[],
+  elementTags: Element[],
   spaceId: number,
   round: number = 1,
   rng: Rng = Math.random,
   newId?: NewId
 ): Monster[] {
-  const counts = countTagsByGenre(genreTags)
+  const counts = countTagsByElement(elementTags)
   const monsters: Monster[] = []
   let index = 0
 
-  counts.forEach((count, genre) => {
-    const template = getMonsterByGenre(genre, round, rng)
+  counts.forEach((count, element) => {
+    const template = getMonsterByElement(element, round, rng)
     const monster = createMonsterFromTemplate(template, spaceId, index, count, newId)
     monsters.push(monster)
     index++
@@ -102,18 +102,18 @@ export function spawnMonstersFromTags(
 }
 
 /**
- * Spawn monsters for initial board setup — one per unique genre chip, exactly
+ * Spawn monsters for initial board setup — one per unique element chip, exactly
  * like entering the space later, so the starting board's monsters match its
  * chips.
  */
 export function spawnInitialMonsters(
-  genreTags: Genre[],
+  elementTags: Element[],
   spaceId: number,
   round: number = 1,
   rng: Rng = Math.random,
   newId?: NewId
 ): Monster[] {
-  return spawnMonstersFromTags(genreTags, spaceId, round, rng, newId)
+  return spawnMonstersFromTags(elementTags, spaceId, round, rng, newId)
 }
 
 /**
@@ -143,12 +143,12 @@ export function createMonsterFromTemplate(
 }
 
 /**
- * Clear monsters from a space and reset genre tags
+ * Clear monsters from a space and reset element tags
  */
 export function clearSpace(space: BoardSpace): BoardSpace {
   return {
     ...space,
     monsters: [],
-    genreTags: [],
+    elementTags: [],
   }
 }

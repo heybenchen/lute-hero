@@ -1,8 +1,9 @@
+import { migrateLegacyNames } from './legacyNames.js'
 import {
   GamePhase,
   BoardSpace,
   Player,
-  Genre,
+  Element,
   PendingReward,
   Monster,
   SongUsage,
@@ -11,14 +12,14 @@ import {
   DiceRoll,
   DiceType,
   DamageCalculation,
-  StyleId,
+  GenreId,
 } from '../types/index.js'
 import { ShowdownPerformance, crownHolders } from '../game-logic/showdown/showdown.js'
-import type { SpecReward } from '../game-logic/styles/specs.js'
+import type { SpecReward } from '../game-logic/genres/specs.js'
 import { SONGS_PER_BARD } from '../data/startingData.js'
-import { playerColorFor } from '../data/genreTheme.js'
+import { playerColorFor } from '../data/elementTheme.js'
 import { Tunables, DEFAULT_TUNABLES, normalizeTunables } from '../data/tunables.js'
-import { ALL_STYLE_IDS } from '../data/styles.js'
+import { ALL_GENRE_IDS } from '../data/genres.js'
 
 /**
  * Live combat state — part of the synced engine state so spectators watch
@@ -52,44 +53,44 @@ export interface EngineCombatState {
     spentSongIds: string[]
     killCredits: KillCredit[]
     totalDamage: number
-    stylesUsed: StyleId[]
+    genresUsed: GenreId[]
     rallyReady: boolean
     specFired?: string[]
-    playLog?: Genre[]
+    playLog?: Element[]
     specRewards?: SpecReward
     lastPlayResult?: 'won' | 'moved' | 'missed' | null
   } | null
   /**
-   * "Once per turn" styles already spent this turn. A bard fights at most once
+   * "Once per turn" genres already spent this turn. A bard fights at most once
    * a turn, so this lives with the combat and is part of the reroll snapshot:
-   * rerolling a play replays its style triggers rather than burning them.
+   * rerolling a play replays its genre triggers rather than burning them.
    */
-  stylesUsed: StyleId[]
-  /** Names of the styles that shaped the last play, for the damage report. */
-  styleNotes: string[]
+  genresUsed: GenreId[]
+  /** Names of the genres that shaped the last play, for the damage report. */
+  genreNotes: string[]
   /**
-   * Gospel (`staccato`) is armed: the bard called a monster and the song won it
+   * Gospel (`gospel`) is armed: the bard called a monster and the song won it
    * over, so they may refresh one spent song of their choice (RALLY_SONG).
    */
   rallyReady: boolean
-  /** How the last play went: won its monster over, moved it, or neither (Grunge, Dubstep). */
+  /** How the last play went: won its monster over, moved it, or neither (Dubstep). */
   lastPlayResult?: 'won' | 'moved' | 'missed' | null
   /** Gospel's call and Emo's final-song declaration on the last own play, replayed by an encore. */
-  lastPlayFlags?: { staccatoCall?: boolean; emoFinale?: boolean }
+  lastPlayFlags?: { gospelCall?: boolean; emoFinale?: boolean }
   /** Emo: the bard declared their final song, so no song can follow (the concert must end). */
   finaleDeclared?: boolean
   /** Soul is paid for this concert: every song gets its bonus. */
   soulActive?: boolean
   lastPlayedSongId: string | null
   /** Shared victory choice so spectators see the element being considered. */
-  selectedSpreadGenre: Genre | null
-  /** Data-defined styles: once-per-turn ones that fired this turn. */
+  selectedSpreadElement: Element | null
+  /** Data-defined genres: once-per-turn ones that fired this turn. */
   specFired: string[]
   /** Elements of the songs played this fight, in order (combo conditions). */
-  playLog: Genre[]
-  /** Fame/EXP/Inspiration data-defined styles earned this fight, paid at its end. */
+  playLog: Element[]
+  /** Fame/EXP/Inspiration data-defined genres earned this fight, paid at its end. */
   specRewards: SpecReward
-  /** Inspiration rerolls taken for free this turn (data-defined styles). */
+  /** Inspiration rerolls taken for free this turn (data-defined genres). */
   freeRerollsUsed: number
   /** Bards on the space whose featured song has been played this fight (one each). */
   featuredPlayerIds: string[]
@@ -148,12 +149,12 @@ export interface EngineState {
   players: Player[]
 
   // Shop
-  elementBag: Genre[]
-  elementDiscard: Genre[]
-  elementOffers: Genre[]
+  elementBag: Element[]
+  elementDiscard: Element[]
+  elementOffers: Element[]
   pendingRewards: Record<string, PendingReward[]>
-  /** Styles on offer in the Studio; persistent, with empty slots refilled after a turn. */
-  styleOffers: StyleId[]
+  /** Genres on offer in the Studio; persistent, with empty slots refilled after a turn. */
+  genreOffers: GenreId[]
   studio: EngineStudioState
 
   /** This turn's moves, newest last, for UNDO_MOVE (see `MoveStep`). */
@@ -178,10 +179,10 @@ export interface EngineState {
   showdownTurn: number
   showdownOrder: string[]
   showdownPerformerIdx: number
-  showdownResistGenre: Genre | null
+  showdownResistElement: Element | null
   showdownSongsUsed: string[]
   showdownCurrentFandom: number
-  showdownCurrentGenre: Genre | null
+  showdownCurrentElement: Element | null
   showdownTurnPerformances: ShowdownPerformance[]
   showdownHistory: ShowdownPerformance[][]
   showdownFandom: Record<string, number>
@@ -209,9 +210,9 @@ export interface ShowdownUndo {
   bestHit: { damage: number } | undefined
   crits: number
   songsUsed: string[]
-  /** Rubato's free reroll has been used on this performance. */
-  rubatoUsed?: boolean
-  /** Style-lab free Inspiration rerolls used on this performance. */
+  /** Bebop's free reroll has been used on this performance. */
+  bebopUsed?: boolean
+  /** Genre-lab free Inspiration rerolls used on this performance. */
   freeRerollsUsed?: number
 }
 
@@ -232,9 +233,9 @@ export function createInitialCombatState(): EngineCombatState {
     lastDamageCalculations: [],
     undoSnapshot: null,
     lastPlayedSongId: null,
-    selectedSpreadGenre: null,
-    stylesUsed: [],
-    styleNotes: [],
+    selectedSpreadElement: null,
+    genresUsed: [],
+    genreNotes: [],
     rallyReady: false,
     lastPlayResult: null,
     lastPlayFlags: {},
@@ -326,14 +327,16 @@ function migrateRewardDice(rewards: Record<string, PendingReward[]>): Record<str
  * Add newly introduced synchronized fields — and migrate retired ones — when
  * loading a game saved by an older version.
  */
-export function normalizeEngineState(state: EngineState): EngineState {
+export function normalizeEngineState(saved: EngineState): EngineState {
+  // Saves from before the genre/element rename use the old field names and ids
+  const state = migrateLegacyNames(saved)
   // Colors used to follow seat order; they now always match the starter element
-  // A style that has since been retired drops out of saves rather than breaking them
-  const known = new Set<string>(ALL_STYLE_IDS)
+  // A genre that has since been retired drops out of saves rather than breaking them
+  const known = new Set<string>(ALL_GENRE_IDS)
   const players = migratePlayerDice(state.players ?? []).map((p) => ({
     ...p,
-    color: playerColorFor(p.starterGenre),
-    styles: (p.styles ?? []).filter((id) => known.has(id)),
+    color: playerColorFor(p.starterElement),
+    genres: (p.genres ?? []).filter((id) => known.has(id)),
   }))
   // Only legacy slots create aliases. Do not infer relationships from ids in
   // already-migrated games: each song can be spent independently after reload.
@@ -355,7 +358,7 @@ export function normalizeEngineState(state: EngineState): EngineState {
     ...state,
     players,
     pendingRewards: migrateRewardDice(state.pendingRewards ?? {}),
-    styleOffers: (state.styleOffers ?? []).filter((id) => known.has(id)),
+    genreOffers: (state.genreOffers ?? []).filter((id) => known.has(id)),
     combat: {
       ...createInitialCombatState(),
       ...state.combat,
@@ -365,7 +368,7 @@ export function normalizeEngineState(state: EngineState): EngineState {
       spentSongIds: migrateSongIds(state.combat?.spentSongIds),
       undoSnapshot: state.combat?.undoSnapshot ? {
         ...state.combat.undoSnapshot,
-        stylesUsed: state.combat.undoSnapshot.stylesUsed ?? [],
+        genresUsed: state.combat.undoSnapshot.genresUsed ?? [],
         rallyReady: state.combat.undoSnapshot.rallyReady ?? false,
         spentSongIds: migrateSongIds(state.combat.undoSnapshot.spentSongIds),
       } : null,
@@ -402,7 +405,7 @@ export function createInitialEngineState(): EngineState {
     elementDiscard: [],
     elementOffers: [],
     pendingRewards: {},
-    styleOffers: [],
+    genreOffers: [],
     studio: createInitialStudioState(),
     moveTrail: [],
 
@@ -414,10 +417,10 @@ export function createInitialEngineState(): EngineState {
     showdownTurn: 1,
     showdownOrder: [],
     showdownPerformerIdx: 0,
-    showdownResistGenre: null,
+    showdownResistElement: null,
     showdownSongsUsed: [],
     showdownCurrentFandom: 0,
-    showdownCurrentGenre: null,
+    showdownCurrentElement: null,
     showdownTurnPerformances: [],
     showdownHistory: [],
     showdownFandom: {},

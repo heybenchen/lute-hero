@@ -1,14 +1,14 @@
 /**
  * Per-player prices and limits: the tunable base values adjusted by any
- * data-defined styles the player holds (style lab). With no specs these are
+ * data-defined genres the player holds (genre lab). With no specs these are
  * exactly the tunable values.
  */
-// KEEP IN SYNC: songStyles.md (repo root) documents every style's rule, price, tunables and simulated strength. When you change style logic, rule text, a price or a style tunable's default, or add or remove a style, update songStyles.md in the same change.
+// KEEP IN SYNC: genres.md (repo root) documents every genre's rule, price, tunables and simulated strength. When you change genre logic, rule text, a price or a genre tunable's default, or add or remove a genre, update genres.md in the same change.
 import { Dice, Player } from '../types/index.js'
 import { newD4Cost, getUpgradeCost, getInspirationCost } from '../data/draftCards.js'
 import { getTunables } from '../data/tunables.js'
-import { specsOf } from '../data/styleSpecs.js'
-import { economyDelta, upgradeDelta } from '../game-logic/styles/specs.js'
+import { specsOf } from '../data/genreSpecs.js'
+import { economyDelta, upgradeDelta } from '../game-logic/genres/specs.js'
 
 export function d4CostFor(player: Player): number {
   return Math.max(0, newD4Cost() + economyDelta(specsOf(player), 'd4Cost'))
@@ -16,7 +16,7 @@ export function d4CostFor(player: Player): number {
 
 export function upgradeCostFor(player: Player, die: Dice): number | null {
   const base = getUpgradeCost(die.type)
-  return base === null ? null : Math.max(0, base + upgradeDelta(specsOf(player), die, player.starterGenre))
+  return base === null ? null : Math.max(0, base + upgradeDelta(specsOf(player), die, player.starterElement))
 }
 
 export function inspirationCostFor(player: Player): number {

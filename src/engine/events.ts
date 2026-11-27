@@ -1,4 +1,4 @@
-import { DiceRoll, DamageCalculation, Monster, Genre } from '../types/index.js'
+import { DiceRoll, DamageCalculation, Monster, Element } from '../types/index.js'
 import { ShowdownPerformance } from '../game-logic/showdown/showdown.js'
 
 /**
@@ -31,7 +31,7 @@ export type EngineEvent =
       fandom: number
       hadCrit: boolean
       wasResisted: boolean
-      genre: Genre | null
+      element: Element | null
     }
   | {
       type: 'showdownAdvance'

@@ -4,8 +4,8 @@ import { createInitialEngineState, normalizeEngineState, EngineState } from './s
 import { GameAction } from './actions'
 import { mulberry32 } from './rng'
 import { DEFAULT_TUNABLES } from '../data/tunables'
-import { DiceRoll, Genre } from '../types'
-import { GENRE_THEME } from '../data/genreTheme'
+import { DiceRoll, Element } from '../types'
+import { ELEMENT_THEME } from '../data/elementTheme'
 
 const HOTSEAT: Pick<ActionCtx, 'actor'> = { actor: { kind: 'hotseat' } }
 
@@ -23,8 +23,8 @@ function startTwoPlayerGame(seed = 42): EngineState {
     {
       type: 'START_GAME',
       playerConfigs: [
-        { name: 'Alba', starterGenre: 'Ballad', color: '#3b82f6' },
-        { name: 'Bryn', starterGenre: 'Folk', color: '#ef4444' },
+        { name: 'Alba', starterElement: 'Ballad', color: '#3b82f6' },
+        { name: 'Bryn', starterElement: 'Folk', color: '#ef4444' },
       ],
     },
     ctx(seed)
@@ -75,9 +75,9 @@ describe('START_GAME', () => {
     expect(state.players[1].position).toBe(3)
     expect(state.spaces).toHaveLength(16)
     // Every space starts with exactly 1 monster chip
-    expect(state.spaces.every((s) => s.genreTags.length === 1)).toBe(true)
-    // Each space spawns one monster per unique genre chip, matching the board
-    expect(state.spaces.every((s) => s.monsters.length === new Set(s.genreTags).size)).toBe(true)
+    expect(state.spaces.every((s) => s.elementTags.length === 1)).toBe(true)
+    // Each space spawns one monster per unique element chip, matching the board
+    expect(state.spaces.every((s) => s.monsters.length === new Set(s.elementTags).size)).toBe(true)
     expect(state.elementOffers).toHaveLength(4)
   })
 
@@ -87,10 +87,10 @@ describe('START_GAME', () => {
       {
         type: 'START_GAME',
         playerConfigs: [
-          { name: 'Alba', starterGenre: 'Ballad', color: '#3b82f6' },
-          { name: 'Bryn', starterGenre: 'Folk', color: '#ef4444' },
-          { name: 'Cleo', starterGenre: 'Hymn', color: '#22c55e' },
-          { name: 'Dara', starterGenre: 'Shanty', color: '#a855f7' },
+          { name: 'Alba', starterElement: 'Ballad', color: '#3b82f6' },
+          { name: 'Bryn', starterElement: 'Folk', color: '#ef4444' },
+          { name: 'Cleo', starterElement: 'Hymn', color: '#22c55e' },
+          { name: 'Dara', starterElement: 'Shanty', color: '#a855f7' },
         ],
       },
       ctx(),
@@ -101,10 +101,10 @@ describe('START_GAME', () => {
       p.songs.flatMap((s) => s.slots.map((slot) => slot.dice)).filter((d) => d !== null)
 
     for (const player of result.state.players) {
-      expect(dice(player)).toMatchObject([{ type: 'd8', genre: player.starterGenre }])
+      expect(dice(player)).toMatchObject([{ type: 'd8', element: player.starterElement }])
       // ...and opens on a space with a monster of that element
       const home = result.state.spaces.find((sp) => sp.id === player.position)!
-      expect(home.monsters.some((m) => m.vulnerability === player.starterGenre)).toBe(true)
+      expect(home.monsters.some((m) => m.vulnerability === player.starterElement)).toBe(true)
     }
     const alba = result.state.players[0]
     // Six single-slot songs: the d8 in song 1, the rest empty.
@@ -117,7 +117,7 @@ describe('START_GAME', () => {
   it('deals the opening chips evenly across elements, in a random order', () => {
     const counts = (state: EngineState) => {
       const tally: Record<string, number> = { Ballad: 0, Folk: 0, Hymn: 0, Shanty: 0 }
-      for (const space of state.spaces) for (const tag of space.genreTags) tally[tag]++
+      for (const space of state.spaces) for (const tag of space.elementTags) tally[tag]++
       return tally
     }
 
@@ -127,7 +127,7 @@ describe('START_GAME', () => {
     }
 
     // Balanced, but not in a fixed arrangement — different seeds place them differently
-    const layout = (seed: number) => startTwoPlayerGame(seed).spaces.map((s) => s.genreTags.join())
+    const layout = (seed: number) => startTwoPlayerGame(seed).spaces.map((s) => s.elementTags.join())
     expect(layout(1)).not.toEqual(layout(42))
   })
 
@@ -136,14 +136,14 @@ describe('START_GAME', () => {
     state = { ...state, tunables: { ...DEFAULT_TUNABLES, startingTagsPerSpace: 3 } }
     const started = apply(state, {
       type: 'START_GAME',
-      playerConfigs: [{ name: 'Solo', starterGenre: 'Hymn', color: '#fff' }],
+      playerConfigs: [{ name: 'Solo', starterElement: 'Hymn', color: '#fff' }],
     }).state
 
     const tally: Record<string, number> = { Ballad: 0, Folk: 0, Hymn: 0, Shanty: 0 }
-    for (const space of started.spaces) for (const tag of space.genreTags) tally[tag]++
+    for (const space of started.spaces) for (const tag of space.elementTags) tally[tag]++
     // 16 spaces x 3 chips = 48 = 12 per element
     expect(tally).toEqual({ Ballad: 12, Folk: 12, Hymn: 12, Shanty: 12 })
-    expect(started.spaces.every((s) => s.genreTags.length === 3)).toBe(true)
+    expect(started.spaces.every((s) => s.elementTags.length === 3)).toBe(true)
   })
 
   it('spawns every level-1 monster with the same 8 HP', () => {
@@ -172,7 +172,7 @@ describe('START_GAME', () => {
 
   it('rejects starting twice', () => {
     const state = startTwoPlayerGame()
-    const result = applyAction(state, { type: 'START_GAME', playerConfigs: [{ name: 'X', starterGenre: 'Hymn', color: '#fff' }] }, ctx())
+    const result = applyAction(state, { type: 'START_GAME', playerConfigs: [{ name: 'X', starterElement: 'Hymn', color: '#fff' }] }, ctx())
     expect(result.ok).toBe(false)
   })
 })
@@ -186,7 +186,7 @@ describe('MOVE', () => {
     expect(moved.position).toBe(1)
     expect(moved.movesThisTurn).toBe(1)
     const space = result.state.spaces.find((s) => s.id === 1)!
-    expect(space.monsters.length).toBe(space.genreTags.length > 0 ? new Set(space.genreTags).size : 0)
+    expect(space.monsters.length).toBe(space.elementTags.length > 0 ? new Set(space.elementTags).size : 0)
   })
 
   it('rejects non-adjacent moves and exhausted moves', () => {
@@ -228,7 +228,7 @@ describe('UNDO_MOVE', () => {
     let state = startTwoPlayerGame()
     const p1 = state.players[0]
     // Guarantee a fight on the destination
-    state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Folk'] } : s)) }
+    state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, elementTags: ['Folk'] } : s)) }
     state = apply(state, { type: 'MOVE', playerId: p1.id, toSpaceId: 1 }).state
     const fought = apply(state, { type: 'START_COMBAT', playerId: p1.id }).state
     expect(fought.moveTrail).toEqual([])
@@ -256,7 +256,7 @@ describe('combat flow', () => {
     state = {
       ...state,
       spaces: state.spaces.map((s) =>
-        s.id === 1 ? { ...s, genreTags: ['Ballad', 'Ballad'] } : s
+        s.id === 1 ? { ...s, elementTags: ['Ballad', 'Ballad'] } : s
       ),
     }
     state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 }).state
@@ -287,7 +287,7 @@ describe('combat flow', () => {
 
     const fameBefore = state.players[0].fame
     const rewards = computeCombatRewards(state.combat)
-    const endResult = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' })
+    const endResult = apply(state, { type: 'END_COMBAT', spreadElement: 'Folk' })
     state = endResult.state
     expect(state.combat.isActive).toBe(false)
     // Combat no longer opens the Studio — the button hints instead
@@ -297,10 +297,10 @@ describe('combat flow', () => {
     // Victory clears the space and radiates Folk to neighbors
     const fought = state.spaces.find((s) => s.id === 1)!
     expect(fought.monsters).toHaveLength(0)
-    expect(fought.genreTags).toHaveLength(0)
+    expect(fought.elementTags).toHaveLength(0)
     for (const nid of fought.connections) {
       const n = state.spaces.find((s) => s.id === nid)!
-      expect(n.genreTags.filter((g) => g === 'Folk').length).toBeGreaterThanOrEqual(1)
+      expect(n.elementTags.filter((g) => g === 'Folk').length).toBeGreaterThanOrEqual(1)
     }
   })
 
@@ -312,8 +312,8 @@ describe('combat flow', () => {
       combat: { ...state.combat, monsters: state.combat.monsters.map((m) => ({ ...m, currentHP: 0 })) },
     }
     expect(applyAction(state, { type: 'END_COMBAT' }, ctx()).ok).toBe(false)
-    state = apply(state, { type: 'SELECT_COMBAT_SPREAD', genre: 'Hymn' }).state
-    expect(state.combat.selectedSpreadGenre).toBe('Hymn')
+    state = apply(state, { type: 'SELECT_COMBAT_SPREAD', element: 'Hymn' }).state
+    expect(state.combat.selectedSpreadElement).toBe('Hymn')
     expect(applyAction(state, { type: 'END_COMBAT' }, ctx()).ok).toBe(true)
   })
 
@@ -337,15 +337,15 @@ describe('combat flow', () => {
     const survivors = state.combat.monsters
     state = apply(state, { type: 'END_COMBAT' }).state
     const space = state.spaces.find((s) => s.id === 1)!
-    const survivingGenres = survivors.filter((m) => m.vulnerability).map((m) => m.vulnerability!)
-    for (const g of survivingGenres) {
-      expect(space.genreTags).toContain(g)
+    const survivingElements = survivors.filter((m) => m.vulnerability).map((m) => m.vulnerability!)
+    for (const g of survivingElements) {
+      expect(space.elementTags).toContain(g)
     }
   })
 
   it('refunds the concert when the bard retreats before rolling any dice', () => {
     let state = stateWithMonsterAtPlayer()
-    const tagsBefore = state.spaces.find((space) => space.id === 1)!.genreTags
+    const tagsBefore = state.spaces.find((space) => space.id === 1)!.elementTags
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
     expect(state.players[0].fightsThisTurn).toBe(1)
     expect(state.combat.rolls).toHaveLength(0)
@@ -354,7 +354,7 @@ describe('combat flow', () => {
 
     expect(state.combat.isActive).toBe(false)
     expect(state.players[0].fightsThisTurn).toBe(0)
-    expect(state.spaces.find((space) => space.id === 1)!.genreTags).toEqual(tagsBefore)
+    expect(state.spaces.find((space) => space.id === 1)!.elementTags).toEqual(tagsBefore)
     expect(applyAction(state, { type: 'START_COMBAT', playerId: 'player-1' }, ctx()).ok).toBe(true)
   })
 
@@ -362,22 +362,22 @@ describe('combat flow', () => {
     const started = apply(stateWithMonsterAtPlayer(), { type: 'START_COMBAT', playerId: 'player-1' }).state
     const base = { ...started, combat: { ...started.combat, rolls: [recordedRoll] } }
     const target = base.combat.monsters.find((m) => m.vulnerability)!
-    const genre = target.vulnerability!
-    const count = (st: typeof base) => st.spaces.find((s) => s.id === base.combat.spaceId)!.genreTags.filter((g) => g === genre).length
+    const element = target.vulnerability!
+    const count = (st: typeof base) => st.spaces.find((s) => s.id === base.combat.spaceId)!.elementTags.filter((g) => g === element).length
     const before = count(base)
     // Untouched: no new chip
     expect(count(apply(base, { type: 'END_COMBAT' }).state)).toBe(before)
     // Moved but not won over: one more chip of its element
     const moved = { ...base, combat: { ...base.combat, monsters: base.combat.monsters.map((m) => (m.id === target.id ? { ...m, currentHP: m.maxHP - 1 } : m)) } }
-    expect(count(apply(moved, { type: 'END_COMBAT' }).state)).toBe(Math.min(before + 1, DEFAULT_TUNABLES.maxTagsPerGenre))
+    expect(count(apply(moved, { type: 'END_COMBAT' }).state)).toBe(Math.min(before + 1, DEFAULT_TUNABLES.maxTagsPerElement))
     // With retreatLevelsUpAll, untouched monsters level up too
     const all = { ...base, tunables: { ...base.tunables, retreatLevelsUpAll: 1 } }
-    expect(count(apply(all, { type: 'END_COMBAT' }).state)).toBe(Math.min(before + 1, DEFAULT_TUNABLES.maxTagsPerGenre))
+    expect(count(apply(all, { type: 'END_COMBAT' }).state)).toBe(Math.min(before + 1, DEFAULT_TUNABLES.maxTagsPerElement))
   })
 
   it('retreat pays EXP only for monsters the bard wounded', () => {
     let state = stateWithMonsterAtPlayer()
-    state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Folk', 'Hymn', 'Hymn'] } : s)) }
+    state = { ...state, spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, elementTags: ['Folk', 'Hymn', 'Hymn'] } : s)) }
     // Step off and back on so the space respawns from the new chips
     state = apply(state, { type: 'UNDO_MOVE', playerId: 'player-1' }).state
     state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 }).state
@@ -428,8 +428,8 @@ describe('combat flow', () => {
     state = {
       ...state,
       // Half-damage Dissonance, so a roll of 1 rounds down to zero damage (the shipped default is full damage)
-      tunables: { ...state.tunables, counterpointMultiplier: 0.5 },
-      players: state.players.map((p, i) => i === 0 ? { ...p, styles: ['counterpoint'], inspiration: 1 } : p),
+      tunables: { ...state.tunables, crossoverMultiplier: 0.5 },
+      players: state.players.map((p, i) => i === 0 ? { ...p, genres: ['crossover'], inspiration: 1 } : p),
       combat: {
         ...state.combat,
         monsters: [
@@ -522,8 +522,8 @@ describe('END_TURN', () => {
 
   it('scatters round-end reinforcements, then increments the round and respawns monsters', () => {
     let state = startTwoPlayerGame()
-    const perSpaceBefore = new Map(state.spaces.map((s) => [s.id, s.genreTags.length]))
-    const tagsBefore = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
+    const perSpaceBefore = new Map(state.spaces.map((s) => [s.id, s.elementTags.length]))
+    const tagsBefore = state.spaces.reduce((n, s) => n + s.elementTags.length, 0)
 
     state = apply(state, { type: 'END_TURN' }).state // player-1 → player-2
     state = apply(state, { type: 'END_TURN' }).state // player-2 → round end
@@ -532,14 +532,14 @@ describe('END_TURN', () => {
     expect(state.currentRound).toBe(2)
     expect(state.currentTurnPlayerIndex).toBe(0)
     // 2 bards x one chip of each element → 8 new chips on the board
-    const tagsAfter = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
+    const tagsAfter = state.spaces.reduce((n, s) => n + s.elementTags.length, 0)
     expect(tagsAfter).toBe(tagsBefore + 2 * 4)
     // 8 chips over 16 spaces: no space took two of them
     state.spaces.forEach((s) =>
-      expect(s.genreTags.length - perSpaceBefore.get(s.id)!).toBeLessThanOrEqual(1)
+      expect(s.elementTags.length - perSpaceBefore.get(s.id)!).toBeLessThanOrEqual(1)
     )
     // Monsters respawn to match the reinforced tags
-    state.spaces.forEach((s) => expect(s.monsters.length).toBe(new Set(s.genreTags).size))
+    state.spaces.forEach((s) => expect(s.monsters.length).toBe(new Set(s.elementTags).size))
   })
 
   it('grants one final turn, then transitions and auto-starts the showdown', () => {
@@ -551,11 +551,11 @@ describe('END_TURN', () => {
     expect(state.finalTurnGranted).toBe(true)
     expect(state.showdownActive).toBe(false)
     // Play out the granted round; its round-end flips straight to the showdown
-    const tagsBefore = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
+    const tagsBefore = state.spaces.reduce((n, s) => n + s.elementTags.length, 0)
     state = apply(state, { type: 'END_TURN' }).state // player-1 → player-2
     state = apply(state, { type: 'END_TURN' }).state // round end → transition
     // No reinforcements on the way into the boss — the board stops mattering
-    expect(state.spaces.reduce((n, s) => n + s.genreTags.length, 0)).toBe(tagsBefore)
+    expect(state.spaces.reduce((n, s) => n + s.elementTags.length, 0)).toBe(tagsBefore)
     expect(state.phase).toBe('finalBoss')
     expect(state.finalTurnGranted).toBe(false)
     expect(state.showdownActive).toBe(true)
@@ -565,16 +565,16 @@ describe('END_TURN', () => {
 
   it('reinforces with one chip of each element per bard, scattered at random', () => {
     let state = startTwoPlayerGame()
-    const before = new Map(state.spaces.map((s) => [s.id, [...s.genreTags]]))
+    const before = new Map(state.spaces.map((s) => [s.id, [...s.elementTags]]))
 
     state = apply(state, { type: 'END_TURN' }).state
     state = apply(state, { type: 'END_TURN' }).state
 
     // Collect exactly what the round added
-    const added: Genre[] = []
+    const added: Element[] = []
     for (const space of state.spaces) {
       const prior = [...before.get(space.id)!]
-      for (const tag of space.genreTags) {
+      for (const tag of space.elementTags) {
         const i = prior.indexOf(tag)
         if (i === -1) added.push(tag)
         else prior.splice(i, 1)
@@ -591,7 +591,7 @@ describe('END_TURN', () => {
       let state = startTwoPlayerGame(seed)
       state = apply(state, { type: 'END_TURN' }, ctx(seed + 100)).state
       state = apply(state, { type: 'END_TURN' }, ctx(seed + 100)).state
-      return state.spaces.map((s) => s.genreTags.join()).join('|')
+      return state.spaces.map((s) => s.elementTags.join()).join('|')
     }
     expect(layout(1)).not.toBe(layout(2))
   })
@@ -599,11 +599,11 @@ describe('END_TURN', () => {
   it('respects roundEndChipsPerElement', () => {
     let state = startTwoPlayerGame()
     state = { ...state, tunables: { ...DEFAULT_TUNABLES, roundEndChipsPerElement: 2 } }
-    const tagsBefore = state.spaces.reduce((n, s) => n + s.genreTags.length, 0)
+    const tagsBefore = state.spaces.reduce((n, s) => n + s.elementTags.length, 0)
     state = apply(state, { type: 'END_TURN' }).state
     state = apply(state, { type: 'END_TURN' }).state
     // 2 bards x 2 chips x 4 elements
-    expect(state.spaces.reduce((n, s) => n + s.genreTags.length, 0)).toBe(tagsBefore + 16)
+    expect(state.spaces.reduce((n, s) => n + s.elementTags.length, 0)).toBe(tagsBefore + 16)
   })
 })
 
@@ -635,13 +635,13 @@ describe('shop actions', () => {
     player.exp = 12
     const first = player.songs[0]
     const die = first.slots[0].dice!
-    const genre = state.elementOffers[0]
+    const element = state.elementOffers[0]
     const action: GameAction = { type: 'BUY_DIE', offerIndex: 0,
-      destination: { songId: first.id, previousDieId: die.id, genre } }
+      destination: { songId: first.id, previousDieId: die.id, element } }
     expect(applyAction(state, action, actor).ok).toBe(false)
     for (const song of player.songs.slice(1)) song.slots[0].dice = { ...die, id: song.id }
     const next = apply(state, action, actor).state
-    expect(next.players[0].songs[0].slots[0].dice).toMatchObject({ genre, type: 'd4' })
+    expect(next.players[0].songs[0].slots[0].dice).toMatchObject({ element, type: 'd4' })
     expect(next.players[0].songs.slice(1)).toEqual(player.songs.slice(1))
     expect(next.players[0].exp).toBe(11)
     expect(next.elementOffers).toEqual(state.elementOffers.slice(1))
@@ -652,17 +652,17 @@ describe('shop actions', () => {
   it('BUY_DIE deducts EXP, consumes the chip, and queues a die reward', () => {
     let state = openStudio(startTwoPlayerGame())
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 20 } : p)) }
-    const genre = state.elementOffers[0]
+    const element = state.elementOffers[0]
     state = apply(state, { type: 'BUY_DIE', offerIndex: 0 }).state
     expect(state.players[0].exp).toBe(19)
     expect(state.elementOffers).toHaveLength(3)
-    expect(state.elementDiscard).toContain(genre)
+    expect(state.elementDiscard).toContain(element)
     const rewards = state.pendingRewards['player-1']
     expect(rewards).toHaveLength(1)
     expect(rewards[0].kind).toBe('die')
     expect(state.studio.activeRewardId).toBe(rewards[0].id)
     if (rewards[0].kind === 'die') {
-      expect(rewards[0].dice.genre).toBe(genre)
+      expect(rewards[0].dice.element).toBe(element)
       expect(rewards[0].dice.type).toBe('d4')
     }
   })
@@ -740,8 +740,8 @@ describe('shop actions', () => {
     state = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, exp: 50 } : p)) }
     const p1 = state.players[0]
     const die = p1.songs[0].slots[0].dice! // Ballad d8
-    const matchingIdx = state.elementOffers.findIndex((g) => g === die.genre)
-    const mismatchIdx = state.elementOffers.findIndex((g) => g !== die.genre)
+    const matchingIdx = state.elementOffers.findIndex((g) => g === die.element)
+    const mismatchIdx = state.elementOffers.findIndex((g) => g !== die.element)
     if (mismatchIdx !== -1) {
       expect(applyAction(state, { type: 'UPGRADE_DIE', offerIndex: mismatchIdx, diceId: die.id }, ctx()).ok).toBe(false)
     }
@@ -813,9 +813,9 @@ describe('showdown actions', () => {
     state = { ...state, players: state.players.map((p) => ({ ...p, fame: p.id === 'player-1' ? 100 : 60 })) }
     state = { ...state, showdownCrownIds: ['player-1'] }
     // Verse 1: Alba 12, Bryn 17 — finished by hand so the rolls are known
-    state = { ...state, showdownCurrentFandom: 12, showdownCurrentGenre: 'Ballad', showdownSongsUsed: ['x'] }
+    state = { ...state, showdownCurrentFandom: 12, showdownCurrentElement: 'Ballad', showdownSongsUsed: ['x'] }
     state = apply(state, { type: 'FINISH_SHOWDOWN_PERFORMANCE' }).state
-    state = { ...state, showdownCurrentFandom: 17, showdownCurrentGenre: 'Folk', showdownSongsUsed: ['y'] }
+    state = { ...state, showdownCurrentFandom: 17, showdownCurrentElement: 'Folk', showdownSongsUsed: ['y'] }
     const result = apply(state, { type: 'FINISH_SHOWDOWN_PERFORMANCE' })
     state = result.state
     const verse = state.showdownHistory[0]
@@ -857,11 +857,11 @@ describe('tunables', () => {
     const started = apply(state, {
       type: 'START_GAME',
       playerConfigs: [
-        { name: 'Alba', starterGenre: 'Ballad', color: '#3b82f6' },
-        { name: 'Bryn', starterGenre: 'Folk', color: '#ef4444' },
+        { name: 'Alba', starterElement: 'Ballad', color: '#3b82f6' },
+        { name: 'Bryn', starterElement: 'Folk', color: '#ef4444' },
       ],
     }).state
-    expect(started.spaces.every((s) => s.genreTags.length === 3)).toBe(true)
+    expect(started.spaces.every((s) => s.elementTags.length === 3)).toBe(true)
   })
 
   it('the fame gate drives the showdown transition', () => {
@@ -870,7 +870,7 @@ describe('tunables', () => {
     state = { ...state, tunables: { ...DEFAULT_TUNABLES, fameFinalBossThreshold: 1 } }
     state = {
       ...state,
-      spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Ballad'] } : s)),
+      spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, elementTags: ['Ballad'] } : s)),
     }
     state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 }).state
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
@@ -883,7 +883,7 @@ describe('tunables', () => {
       songId: state.players[0].songs[0].id,
       targetMonsterId: state.combat.monsters[0].id,
     }).state
-    state = apply(state, { type: 'END_COMBAT', spreadGenre: 'Folk' }).state
+    state = apply(state, { type: 'END_COMBAT', spreadElement: 'Folk' }).state
     expect(state.pendingPhase).toBe('finalBoss')
   })
 
@@ -929,14 +929,14 @@ describe('legacy save migration', () => {
               ...p,
               songs: p.songs.map((song, si) =>
                 si === 0
-                  ? { ...song, slots: [{ dice: { id: 'old', type: 'd6' as never, genre: 'Ballad' as const } }, { dice: null }] as never }
+                  ? { ...song, slots: [{ dice: { id: 'old', type: 'd6' as never, element: 'Ballad' as const } }, { dice: null }] as never }
                   : song
               ),
             }
           : p
       ),
       pendingRewards: {
-        'player-1': [{ kind: 'die', id: 'r1', dice: { id: 'old-reward', type: 'd6' as never, genre: 'Folk' } }],
+        'player-1': [{ kind: 'die', id: 'r1', dice: { id: 'old-reward', type: 'd6' as never, element: 'Folk' } }],
       },
     }
 
@@ -970,7 +970,7 @@ describe('debug actions', () => {
     expect(state.tunables.newD4Cost).toBe(1)
 
     const space2 = state.spaces.find((s) => s.id === 2)!
-    expect(space2.genreTags).toEqual(['Hymn', 'Hymn', 'Shanty'])
+    expect(space2.elementTags).toEqual(['Hymn', 'Hymn', 'Shanty'])
     // Respawn re-derives the roster: one monster per unique chip, Hymn at Lv2
     expect(space2.monsters).toHaveLength(2)
     expect(space2.monsters.find((m) => m.level === 2)).toBeDefined()
@@ -984,7 +984,7 @@ describe('debug actions', () => {
         players: { 'player-1': { fame: -50, exp: Number.NaN, position: 999 } },
         flow: { currentTurnPlayerIndex: 99, currentRound: -3 },
         spaceTags: { 0: Array(50).fill('Ballad') },
-        tunables: { maxTagsPerGenre: 99999 },
+        tunables: { maxTagsPerElement: 99999 },
       },
     }).state
 
@@ -993,8 +993,8 @@ describe('debug actions', () => {
     expect(state.players[0].position).toBe(0) // 999 is not a real space
     expect(state.currentTurnPlayerIndex).toBe(1) // clamped to players.length - 1
     expect(state.currentRound).toBe(1)
-    expect(state.tunables.maxTagsPerGenre).toBe(20) // field max
-    expect(state.spaces[0].genreTags.length).toBeLessThanOrEqual(20)
+    expect(state.tunables.maxTagsPerElement).toBe(20) // field max
+    expect(state.spaces[0].elementTags.length).toBeLessThanOrEqual(20)
   })
 
   it('DEBUG_PATCH edits dice: retype, re-element, add and clear', () => {
@@ -1008,25 +1008,25 @@ describe('debug actions', () => {
       patch: {
         dice: [
           // retype + re-element the starter die
-          { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd20', genre: 'Shanty' } },
+          { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd20', element: 'Shanty' } },
           // fill another song
-          { playerId: 'player-1', songId: state.players[0].songs[2].id, slotIndex: 0, dice: { type: 'd12', genre: 'Hymn' } },
+          { playerId: 'player-1', songId: state.players[0].songs[2].id, slotIndex: 0, dice: { type: 'd12', element: 'Hymn' } },
           // and stock an empty song
-          { playerId: 'player-1', songId: song2.id, slotIndex: 0, dice: { type: 'd4', genre: 'Folk' } },
+          { playerId: 'player-1', songId: song2.id, slotIndex: 0, dice: { type: 'd4', element: 'Folk' } },
         ],
       },
     }).state
 
     const edited = state.players[0]
-    expect(edited.songs[0].slots[0].dice).toMatchObject({ type: 'd20', genre: 'Shanty' })
+    expect(edited.songs[0].slots[0].dice).toMatchObject({ type: 'd20', element: 'Shanty' })
     // Editing in place keeps the die id, so in-flight combat rolls still match
     expect(edited.songs[0].slots[0].dice!.id).toBe(starterDieId)
-    expect(edited.songs[2].slots[0].dice).toMatchObject({ type: 'd12', genre: 'Hymn' })
-    expect(edited.songs[1].slots[0].dice).toMatchObject({ type: 'd4', genre: 'Folk' })
+    expect(edited.songs[2].slots[0].dice).toMatchObject({ type: 'd12', element: 'Hymn' })
+    expect(edited.songs[1].slots[0].dice).toMatchObject({ type: 'd4', element: 'Folk' })
     // A newly added die gets its own id
     expect(edited.songs[2].slots[0].dice!.id).not.toBe(starterDieId)
     // The other player is untouched
-    expect(state.players[1].songs[0].slots[0].dice).toMatchObject({ type: 'd8', genre: 'Folk' })
+    expect(state.players[1].songs[0].slots[0].dice).toMatchObject({ type: 'd8', element: 'Folk' })
 
     // Clearing a slot empties it
     state = apply(state, {
@@ -1045,11 +1045,11 @@ describe('debug actions', () => {
       type: 'DEBUG_PATCH',
       patch: {
         dice: [
-          { playerId: 'nobody', songId: song1.id, slotIndex: 0, dice: { type: 'd20', genre: 'Folk' } },
-          { playerId: 'player-1', songId: 'no-such-song', slotIndex: 0, dice: { type: 'd20', genre: 'Folk' } },
-          { playerId: 'player-1', songId: song1.id, slotIndex: 9, dice: { type: 'd20', genre: 'Folk' } },
-          { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd6' as never, genre: 'Folk' } },
-          { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd20', genre: 'Jazz' as never } },
+          { playerId: 'nobody', songId: song1.id, slotIndex: 0, dice: { type: 'd20', element: 'Folk' } },
+          { playerId: 'player-1', songId: 'no-such-song', slotIndex: 0, dice: { type: 'd20', element: 'Folk' } },
+          { playerId: 'player-1', songId: song1.id, slotIndex: 9, dice: { type: 'd20', element: 'Folk' } },
+          { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd6' as never, element: 'Folk' } },
+          { playerId: 'player-1', songId: song1.id, slotIndex: 0, dice: { type: 'd20', element: 'Jazz' as never } },
         ],
       },
     }).state
@@ -1145,7 +1145,7 @@ describe('seat validation (online)', () => {
     let state = startTwoPlayerGame()
     state = {
       ...state,
-      spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, genreTags: ['Ballad', 'Ballad'] } : s)),
+      spaces: state.spaces.map((s) => (s.id === 1 ? { ...s, elementTags: ['Ballad', 'Ballad'] } : s)),
     }
     state = apply(state, { type: 'MOVE', playerId: 'player-1', toSpaceId: 1 }).state
     state = apply(state, { type: 'START_COMBAT', playerId: 'player-1' }).state
@@ -1165,7 +1165,7 @@ describe('single-die song migration', () => {
       {
         ...first,
         // A saved legacy song has two slots, unlike the current Song tuple.
-        slots: [first.slots[0], { dice: { id: 'extra', type: 'd12', genre: 'Folk' } }] as never,
+        slots: [first.slots[0], { dice: { id: 'extra', type: 'd12', element: 'Folk' } }] as never,
       },
       ...player.songs.slice(1, 3),
     ]
@@ -1192,14 +1192,14 @@ describe('single-die song migration', () => {
 describe('player colors follow the starter element', () => {
   it('colors each bard by their element, ignoring any supplied color', () => {
     const state = startTwoPlayerGame()
-    expect(state.players.map((p) => [p.starterGenre, p.color])).toEqual([
-      ['Ballad', GENRE_THEME.Ballad.color],
-      ['Folk', GENRE_THEME.Folk.color],
+    expect(state.players.map((p) => [p.starterElement, p.color])).toEqual([
+      ['Ballad', ELEMENT_THEME.Ballad.color],
+      ['Folk', ELEMENT_THEME.Folk.color],
     ])
     // The opening d8 is the same element as the bard's color
     for (const player of state.players) {
       const die = player.songs[0].slots[0].dice!
-      expect([die.type, die.genre]).toEqual(['d8', player.starterGenre])
+      expect([die.type, die.element]).toEqual(['d8', player.starterElement])
     }
   })
 
@@ -1207,8 +1207,8 @@ describe('player colors follow the starter element', () => {
     const result = applyAction(createInitialEngineState(), {
       type: 'START_GAME',
       playerConfigs: [
-        { name: 'Alba', starterGenre: 'Hymn' },
-        { name: 'Bryn', starterGenre: 'Hymn' },
+        { name: 'Alba', starterElement: 'Hymn' },
+        { name: 'Bryn', starterElement: 'Hymn' },
       ],
     }, ctx())
     expect(result.ok).toBe(false)
@@ -1217,6 +1217,6 @@ describe('player colors follow the starter element', () => {
   it('recolors players from older saves', () => {
     const state = startTwoPlayerGame()
     const legacy = { ...state, players: state.players.map((p) => ({ ...p, color: '#3b82f6' })) }
-    expect(normalizeEngineState(legacy).players.map((p) => p.color)).toEqual([GENRE_THEME.Ballad.color, GENRE_THEME.Folk.color])
+    expect(normalizeEngineState(legacy).players.map((p) => p.color)).toEqual([ELEMENT_THEME.Ballad.color, ELEMENT_THEME.Folk.color])
   })
 })

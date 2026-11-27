@@ -1,18 +1,18 @@
-import { Song, Monster, Dice, DiceRoll, Genre, DamageCalculation, DieContribution, Rng } from '../../types/index.js';
+import { Song, Monster, Dice, DiceRoll, Element, DamageCalculation, DieContribution, Rng } from '../../types/index.js';
 import { rollDiceWithCrit } from "../dice/roller.js";
 import { getTunables } from "../../data/tunables.js";
 
 /**
  * Calculate damage multiplier for a genre against a monster
  */
-export function getGenreMultiplier(genre: Genre, monster: Monster): number {
+export function getElementMultiplier(element: Element, monster: Monster): number {
   const { vulnerabilityMultiplier, resistanceMultiplier } = getTunables();
 
-  if (monster.vulnerability === genre) {
+  if (monster.vulnerability === element) {
     return vulnerabilityMultiplier; // Vulnerable: 2x damage by default
   }
 
-  if (monster.resistance === genre) {
+  if (monster.resistance === element) {
     return resistanceMultiplier; // Immune: 0x damage by default
   }
 
@@ -46,45 +46,52 @@ export function calculateDamage(
   // 2. Calculate crit bonuses
   const critBonuses = rolls.reduce((sum, roll) => sum + roll.critBonus, 0);
 
-  // 3. Calculate genre multipliers for each die
-  const genreMultipliers: { genre: Genre; multiplier: number }[] = [];
+  // 3. Calculate element multipliers for each die
+  const elementMultipliers: { element: Element; multiplier: number }[] = [];
   const perDie: DieContribution[] = [];
-  let genreAdjustedDamage = 0;
+  let elementAdjustedDamage = 0;
   let softenedImmunity = false;
 
   rolls.forEach((roll) => {
     // Find the slot that created this roll
-    const slotIdx = song.slots.findIndex((s) => s.dice?.id === roll.diceId);
+    const sourceDiceId = roll.sourceDiceId ?? roll.diceId;
+    const slotIdx = song.slots.findIndex((s) => s.dice?.id === sourceDiceId);
     const slot = slotIdx >= 0 ? song.slots[slotIdx] : undefined;
-    const dice = slot?.dice;
+    const dice = slot?.dice
+      ? {
+          ...slot.dice,
+          ...(roll.rolledType ? { type: roll.rolledType } : {}),
+          ...(roll.element ? { element: roll.element } : {}),
+        }
+      : undefined;
 
     const bonus = roll.bonus ?? 0;
     if (dice) {
-      let multiplier = getGenreMultiplier(dice.genre, monster);
+      let multiplier = getElementMultiplier(dice.element, monster);
       if (opts.multiplierFor) multiplier = opts.multiplierFor(dice, monster, multiplier);
-      // Counterpoint: an immune hit lands at a reduced multiplier instead
-      if (opts.immuneMultiplier !== undefined && monster.resistance === dice.genre && multiplier < opts.immuneMultiplier) {
+      // Crossover: an immune hit lands at a reduced multiplier instead
+      if (opts.immuneMultiplier !== undefined && monster.resistance === dice.element && multiplier < opts.immuneMultiplier) {
         multiplier = opts.immuneMultiplier;
         softenedImmunity = true;
       }
-      genreMultipliers.push({ genre: dice.genre, multiplier });
+      elementMultipliers.push({ element: dice.element, multiplier });
 
       const damage = (roll.value + bonus + roll.critBonus) * multiplier;
-      genreAdjustedDamage += damage;
-      perDie.push({ genre: dice.genre, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier, damage, ...(bonus ? { bonus } : {}) });
+      elementAdjustedDamage += damage;
+      perDie.push({ element: dice.element, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier, damage, ...(bonus ? { bonus } : {}) });
     } else {
-      // Extra dice with no slotted genre — no genre multiplier lookup
+      // Extra dice with no slotted element — no element multiplier lookup
       const damage = roll.value + bonus + roll.critBonus;
-      genreAdjustedDamage += damage;
-      perDie.push({ genre: null, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier: 1, damage, ...(bonus ? { bonus } : {}) });
+      elementAdjustedDamage += damage;
+      perDie.push({ element: null, value: roll.value, critBonus: roll.critBonus, cascadeRolls: roll.cascadeRolls, multiplier: 1, damage, ...(bonus ? { bonus } : {}) });
     }
   });
 
-  const totalDamage = Math.floor(genreAdjustedDamage);
+  const totalDamage = Math.floor(elementAdjustedDamage);
 
   return {
     baseDamage,
-    genreMultipliers,
+    elementMultipliers,
     critBonuses,
     totalDamage,
     perDie,
@@ -92,11 +99,11 @@ export function calculateDamage(
   };
 }
 
-/** Per-play damage adjustments from styles. */
+/** Per-play damage adjustments from genres. */
 export interface DamageOptions {
-  /** Counterpoint: multiplier to use instead of immunity's (if higher). */
+  /** Crossover: multiplier to use instead of immunity's (if higher). */
   immuneMultiplier?: number;
-  /** Data-defined styles: adjust a die's element multiplier against a monster. */
+  /** Data-defined genres: adjust a die's element multiplier against a monster. */
   multiplierFor?: (dice: Dice, monster: Monster, base: number) => number;
 }
 
@@ -123,7 +130,7 @@ export function isMonsterDefeated(monster: Monster): boolean {
 function zeroDamageCalculation(): DamageCalculation {
   return {
     baseDamage: 0,
-    genreMultipliers: [],
+    elementMultipliers: [],
     critBonuses: 0,
     totalDamage: 0,
     perDie: [],
@@ -184,8 +191,8 @@ export function songsCanStillDamage(
     song.slots.some((slot) => {
       if (!slot.dice) return false;
       if (softened) return true;
-      const genre = slot.dice.genre;
-      return alive.some((m) => getGenreMultiplier(genre, m) > 0);
+      const element = slot.dice.element;
+      return alive.some((m) => getElementMultiplier(element, m) > 0);
     }),
   );
 }
@@ -200,5 +207,5 @@ export function songIsImmune(song: Song, monster: Monster, opts: DamageOptions =
   const dice = song.slots.flatMap((slot) => (slot.dice ? [slot.dice] : []));
   if (dice.length === 0) return false;
   if ((opts.immuneMultiplier ?? 0) > 0) return false;
-  return dice.every((die) => getGenreMultiplier(die.genre, monster) === 0);
+  return dice.every((die) => getElementMultiplier(die.element, monster) === 0);
 }

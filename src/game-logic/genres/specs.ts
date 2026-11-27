@@ -1,7 +1,7 @@
-// KEEP IN SYNC: songStyles.md (repo root) documents every style's rule, price, tunables and simulated strength. When you change style logic, rule text, a price or a style tunable's default, or add or remove a style, update songStyles.md in the same change.
+// KEEP IN SYNC: genres.md (repo root) documents every genre's rule, price, tunables and simulated strength. When you change genre logic, rule text, a price or a genre tunable's default, or add or remove a genre, update genres.md in the same change.
 /**
- * Data-defined styles ("style specs"): a small toolkit for designing and
- * simulating new styles without writing engine code for each one.
+ * Data-defined genres ("genre specs"): a small toolkit for designing and
+ * simulating new genres without writing engine code for each one.
  *
  * A spec combines:
  *  - roll modifiers, each with an optional condition (die type, element,
@@ -14,14 +14,14 @@
  *  - new Inspiration uses (rerolls that keep the better result or add a bonus,
  *    free rerolls each turn).
  *
- * The engine applies specs a player holds (`Player.specStyles`), and the
+ * The engine applies specs a player holds (`Player.specGenres`), and the
  * simulation bot reads the very same functions to compute its odds, so the
- * simulated play is exact. No shipped style uses this yet: it powers the
- * style lab (`scripts/style-lab.ts`).
+ * simulated play is exact. No shipped genre uses this yet: it powers the
+ * genre lab (`scripts/genre-lab.ts`).
  *
  * Shared code: relative imports only.
  */
-import { Dice, DiceRoll, DiceType, Genre, Monster, Rng } from '../../types/index.js'
+import { Dice, DiceRoll, DiceType, Element, Monster, Rng } from '../../types/index.js'
 import { getMaxValue, rollDie } from '../dice/roller.js'
 import { getTunables } from '../../data/tunables.js'
 
@@ -33,7 +33,7 @@ export interface SpecCondition {
   /** Die types this applies to. */
   dice?: DiceType[]
   /** The die's element: a specific one, or the bard's starting element. */
-  element?: Genre | 'starter'
+  element?: Element | 'starter'
   /** Only on the first song of the fight (or the first die of a showdown verse). */
   firstPlay?: boolean
   /** Only once at least this many songs were played this fight. */
@@ -153,7 +153,7 @@ export interface MissEffect {
   ifCharmed?: boolean
 }
 
-export interface StyleSpec {
+export interface GenreSpec {
   id: string
   name: string
   /** Player-facing rule text. */
@@ -201,16 +201,16 @@ export interface PlayContext {
   showdown: boolean
   /** Songs already played this fight (dice already rolled this verse). */
   playIndex: number
-  lastElement: Genre | null
+  lastElement: Element | null
   /** Consecutive earlier songs of the same element as this die. */
   comboCount: number
-  elementsPlayed: Genre[]
+  elementsPlayed: Element[]
   target: Monster | null
   sharingSpace: boolean
   trailingFame: boolean
   leadingFame: boolean
   inspiration: number
-  starter: Genre
+  starter: Element
   monstersInFight: number
   /** Monsters the fight started with, including any already won over (defaults to monstersInFight). */
   monstersAtStart?: number
@@ -224,7 +224,7 @@ export interface PlayContext {
   songsLeft?: number
 }
 
-/** Generic roll options: the built-in styles and specs both reduce to these. */
+/** Generic roll options: the built-in genres and specs both reduce to these. */
 export interface GenericRollOptions {
   advantage?: boolean
   disadvantage?: boolean
@@ -256,14 +256,14 @@ export interface GenericRollOptions {
 export function conditionHolds(c: SpecCondition | undefined, die: Dice, ctx: PlayContext, specId: string): boolean {
   if (!c) return true
   if (c.dice && !c.dice.includes(die.type)) return false
-  if (c.element && die.genre !== (c.element === 'starter' ? ctx.starter : c.element)) return false
+  if (c.element && die.element !== (c.element === 'starter' ? ctx.starter : c.element)) return false
   if (c.firstPlay !== undefined && (ctx.playIndex === 0) !== c.firstPlay) return false
   if (c.playIndexAtLeast !== undefined && ctx.playIndex < c.playIndexAtLeast) return false
-  if (c.sameElementAsLast && ctx.lastElement !== die.genre) return false
-  if (c.differentElementFromLast && (ctx.lastElement === null || ctx.lastElement === die.genre)) return false
+  if (c.sameElementAsLast && ctx.lastElement !== die.element) return false
+  if (c.differentElementFromLast && (ctx.lastElement === null || ctx.lastElement === die.element)) return false
   if (c.targetLevelAtLeast !== undefined && (!ctx.target || ctx.target.level < c.targetLevelAtLeast)) return false
   if (c.targetLevelAtMost !== undefined && (!ctx.target || ctx.target.level > c.targetLevelAtMost)) return false
-  if (c.targetAdores && (!ctx.target || ctx.target.vulnerability !== die.genre)) return false
+  if (c.targetAdores && (!ctx.target || ctx.target.vulnerability !== die.element)) return false
   if (c.targetUntouched && (!ctx.target || ctx.target.currentHP < ctx.target.maxHP)) return false
   if (c.targetWounded && (!ctx.target || ctx.target.currentHP >= ctx.target.maxHP)) return false
   if (c.sharingSpace && !ctx.sharingSpace) return false
@@ -285,11 +285,11 @@ export function conditionHolds(c: SpecCondition | undefined, die: Dice, ctx: Pla
 
 /**
  * Fold every applicable roll modifier of the bard's specs into generic roll
- * options on top of `base` (the built-in styles' options). Returns which
+ * options on top of `base` (the built-in genres' options). Returns which
  * once-per-turn specs fired.
  */
 export function applySpecRollModifiers(
-  specs: StyleSpec[],
+  specs: GenreSpec[],
   die: Dice,
   ctx: PlayContext,
   base: GenericRollOptions
@@ -335,14 +335,14 @@ export function applySpecRollModifiers(
 }
 
 /** The element multiplier for one die against one monster, after spec changes. */
-export function specMultiplier(specs: StyleSpec[], die: Dice, monster: Monster, ctx: PlayContext, base: number): number {
+export function specMultiplier(specs: GenreSpec[], die: Dice, monster: Monster, ctx: PlayContext, base: number): number {
   let mult = base
   for (const spec of specs) {
     for (const mod of spec.multiplier ?? []) {
       if (!conditionHolds(mod.when, die, { ...ctx, target: monster }, spec.id)) continue
-      if (monster.vulnerability === die.genre && mod.adored !== undefined) mult = Math.max(mult, mod.adored)
-      else if (monster.resistance === die.genre && mod.immune !== undefined) mult = Math.max(mult, mod.immune)
-      else if (monster.vulnerability !== die.genre && monster.resistance !== die.genre && mod.neutral !== undefined) mult = mod.neutral
+      if (monster.vulnerability === die.element && mod.adored !== undefined) mult = Math.max(mult, mod.adored)
+      else if (monster.resistance === die.element && mod.immune !== undefined) mult = Math.max(mult, mod.immune)
+      else if (monster.vulnerability !== die.element && monster.resistance !== die.element && mod.neutral !== undefined) mult = mod.neutral
     }
   }
   return mult
@@ -414,20 +414,20 @@ export function addRewards(a: SpecReward, b: SpecReward | undefined): SpecReward
   }
 }
 
-export function economyDelta(specs: StyleSpec[], key: 'd4Cost' | 'inspirationCost' | 'moves' | 'inspirationAsExp'): number {
+export function economyDelta(specs: GenreSpec[], key: 'd4Cost' | 'inspirationCost' | 'moves' | 'inspirationAsExp'): number {
   return specs.reduce((s, spec) => s + (spec.economy?.[key] ?? 0), 0)
 }
 
-export function upgradeDelta(specs: StyleSpec[], die: Dice, starter: Genre): number {
+export function upgradeDelta(specs: GenreSpec[], die: Dice, starter: Element): number {
   return specs.reduce((s, spec) => {
     const e = spec.economy
     if (!e?.upgradeCost) return s
-    if (e.upgradeStarterOnly && die.genre !== starter) return s
+    if (e.upgradeStarterOnly && die.element !== starter) return s
     return s + e.upgradeCost
   }, 0)
 }
 
-export function inspirationRules(specs: StyleSpec[]) {
+export function inspirationRules(specs: GenreSpec[]) {
   return {
     keepBetter: specs.some((s) => s.inspiration?.rerollKeepBetter),
     bonus: specs.reduce((t, s) => t + (s.inspiration?.rerollBonus ?? 0), 0),

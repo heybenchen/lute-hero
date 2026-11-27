@@ -1,6 +1,6 @@
 /**
  * What is an Inspiration worth? One bard (random seat) starts the game with a
- * bonus, the others don't; smart bots everywhere, natural style shopping, same
+ * bonus, the others don't; smart bots everywhere, natural genre shopping, same
  * seeds for every bonus so rows compare directly (parity is 33.3%).
  *
  *   BONUS='{"inspiration":5}' npx tsx scripts/inspiration-value.ts [games=400]
@@ -10,7 +10,7 @@ import { applyAction, ActionCtx } from '../src/engine/reducer.js'
 import { createInitialEngineState } from '../src/engine/state.js'
 import { SmartBot } from '../src/sim/smartBot.js'
 import { mulberry32 } from '../src/engine/rng.js'
-import { ALL_GENRES } from '../src/data/genreTheme.js'
+import { ALL_ELEMENTS } from '../src/data/elementTheme.js'
 
 const GAMES = Number(process.argv[2] ?? 400)
 const BONUS = JSON.parse(process.env.BONUS ?? '{}') as { inspiration?: number; exp?: number }
@@ -21,9 +21,9 @@ let fame = 0
 for (let g = 0; g < GAMES; g++) {
   const rng = mulberry32(7000 + g)
   const ctx: ActionCtx = { rng, actor: { kind: 'hotseat' } }
-  const genres = [...ALL_GENRES].sort(() => rng() - 0.5).slice(0, PLAYERS)
+  const elements = [...ALL_ELEMENTS].sort(() => rng() - 0.5).slice(0, PLAYERS)
   const init = createInitialEngineState()
-  const r = applyAction({ ...init, tunables: { ...init.tunables, ...TUNE } }, { type: 'START_GAME', playerConfigs: genres.map((x, i) => ({ name: `B${i}`, starterGenre: x })) }, ctx)
+  const r = applyAction({ ...init, tunables: { ...init.tunables, ...TUNE } }, { type: 'START_GAME', playerConfigs: elements.map((x, i) => ({ name: `B${i}`, starterElement: x })) }, ctx)
   if (!r.ok) throw new Error(r.message)
   let s = r.state
   const seat = Math.floor(rng() * PLAYERS)

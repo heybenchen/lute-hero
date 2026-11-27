@@ -150,20 +150,20 @@ Prices are in EXP. The **Songbook** page (`/songbook`) lists them with their str
 | **Country** | 1 | Increase the rolled value of all dice matching your starting element by 1. |
 | **Lo-fi** | 3 | Upgrades cost 1 less EXP. |
 | **Soul** | 2 | If you started this turn with 2+ Inspiration, spend 1 Inspiration to add +2 to every song. |
-| **Baroque** | 1 | Whenever a die roll is 3 or less, increase its rolled value by 1. Does not affect bonus dice. |
+| **Baroque** | 1 | Whenever a die roll is less than 3, change its rolled value to 3. |
 | **Rap** | 2 | Gain 2 EXP at the start of each turn. |
 | **House** | 2 | Add +2 to each song for each same-element song played just before it. Reduced to +1 in the Final Showdown. |
 | **Orchestra** | 2 | While there are 3+ monsters remaining, increase the rolled value of all dice by 1. |
 | **Mariachi** | 2 | While sharing a space with another bard, add +2 to each song. |
 | **Punk** | 2 | Whenever you crit, add +4 to the song. |
 | **Soft Rock** | 2 | Increase the rolled value of your d8s and d12s by 1. |
-| **Prog Rock** | 2 | Your 4th and later songs in a concert add +2. |
+| **Prog Rock** | 2 | Your 3rd and later songs in a concert add +2. |
 | **Ska** | 2 | Whenever you roll an odd number, add +1 to the song. |
 | **K-Pop** | 2 | Gain +15 Fame for winning over 3 monsters or +25 Fame for winning 4 monsters in one concert. |
 | **Emo** | 2 | Declare that this is your last song of the concert: add +8 to it. The concert ends after this song. |
 | **Trance** | 2 | While you have 0 Inspiration, add +3 to each song. |
-| **Grunge** | 2 | Every time a song moves a monster without winning it over, add +1 to your next song. |
-| **Dubstep** | 2 | Once per turn, after winning over a monster, your next song rolls twice and keeps the higher, then adds +3. |
+| **Grunge** | 2 | You may roll two d12s in place of your d20s. |
+| **Dubstep** | 2 | Every time a song moves a monster without winning it over, add +2 to your next song. |
 | **Trip-Hop** | 1 | Once per turn, move to any space on the board. |
 <!-- GENRES:END -->
 

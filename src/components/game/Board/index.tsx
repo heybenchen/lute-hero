@@ -3,7 +3,7 @@ import { useGameStore, selectCurrentPlayer, selectCanAct } from '@/store'
 import { BoardSpace as BoardSpaceComponent } from './BoardSpace'
 import { getReachableMoves } from '@/game-logic/board/graphBuilder'
 import { movesFor } from '@/engine/economy'
-import { STYLES } from '@/data/styles'
+import { GENRES } from '@/data/genres'
 import realmMap from '@/imports/board-background.jpg'
 import realmMapMobile from '@/imports/board-background-mobile.jpg'
 import { Footprints, Map as MapIcon, Undo2 } from 'lucide-react'
@@ -32,7 +32,7 @@ export function Board() {
   const reachableById = new Map(reachable.map((r) => [r.space.id, r]))
   // Trip-Hop: once per turn, any space beyond walking reach is one jump away (costs no regular move)
   const canJump = canAct && !travelling && !combatActive && !studioOpen &&
-    currentPlayer.styles.includes('trip-hop') && !tripHopUsed
+    currentPlayer.genres.includes('trip-hop') && !tripHopUsed
   const isJumpTarget = (spaceId: number) =>
     canJump && spaceId !== currentPlayer.position && !reachableById.has(spaceId)
 
@@ -106,7 +106,7 @@ export function Board() {
             <div className="font-medieval font-bold text-sm sm:text-base text-parchment-100">The Resonant Realm</div>
             <div className="flex items-center gap-1.5 text-[10px] text-parchment-500">
               <Footprints size={11} aria-hidden="true" />
-              {movesLeft} move{movesLeft === 1 ? '' : 's'} remaining{canJump ? ` · ${STYLES['trip-hop'].name}: jump anywhere` : ''}
+              {movesLeft} move{movesLeft === 1 ? '' : 's'} remaining{canJump ? ` · ${GENRES['trip-hop'].name}: jump anywhere` : ''}
             </div>
           </div>
         </div>

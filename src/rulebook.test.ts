@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_TUNABLES as T } from './data/tunables'
-import { ALL_STYLE_IDS, STYLES, styleCost, styleRule } from './data/styles'
+import { ALL_GENRE_IDS, GENRES, genreCost, genreRule } from './data/genres'
 
 /**
  * rulebook/RULEBOOK.md quotes the game's numbers. This keeps it honest: when a
@@ -48,13 +48,13 @@ describe('rulebook', () => {
     expect(md).toContain(`d8: ${T.upgradeCostD8} EXP, d12: ${T.upgradeCostD12} EXP, d20: ${T.upgradeCostD20} EXP`)
     expect(md).toContain(`| **Buy a new d4** | ${T.newD4Cost} EXP |`)
     expect(md).toContain(`| **Buy Inspiration** | ${T.inspirationBaseCost} EXP each |`)
-    expect(md).toContain(`**${T.maxTagsPerGenre} chips of the same element**`)
+    expect(md).toContain(`**${T.maxTagsPerElement} chips of the same element**`)
     expect(T.showdownTurns).toBe(3) // the book says "three verses" throughout
     expect(md).toContain(`**rounded down to a multiple of ${T.showdownFameRounding}**`)
     expect(md).toContain(`- **Beat it:** take **+${T.showdownCrownBeatBonus} Fame**.`)
     expect(md).toContain(`- **Match it exactly:** take **+${T.showdownCrownTieBonus} Fame**.`)
     expect(T.showdownFandomMultiplier).toBe(1) // "take their fandom as Fame"
-    expect(T.maxStyles).toBe(2) // "hold 2 genres"
+    expect(T.maxGenres).toBe(2) // "hold 2 genres"
   })
 
   it('talks about concerts, never fighting', () => {
@@ -63,9 +63,9 @@ describe('rulebook', () => {
   })
 
   it('lists every genre with its live rule and price (Appendix A is generated)', () => {
-    for (const id of ALL_STYLE_IDS) {
-      const row = `| **${STYLES[id].name}** | ${styleCost(id)} | ${styleRule(id)} |`
-      expect(md, `Appendix A row for ${STYLES[id].name}; run: npx tsx scripts/rulebook-visuals.ts`).toContain(row)
+    for (const id of ALL_GENRE_IDS) {
+      const row = `| **${GENRES[id].name}** | ${genreCost(id)} | ${genreRule(id)} |`
+      expect(md, `Appendix A row for ${GENRES[id].name}; run: npx tsx scripts/rulebook-visuals.ts`).toContain(row)
     }
   })
 })

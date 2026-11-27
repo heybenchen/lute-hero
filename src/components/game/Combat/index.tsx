@@ -10,22 +10,22 @@ import { DamageCell } from './DamageBreakdown'
 import { DamagePopups, DamagePopupEntry, createDamagePopups } from './DamagePopup'
 import { calculateMonsterFameValue } from '@/game-logic/fame/calculator'
 import { computeCombatRewards } from '@/engine/reducer'
-import { Monster, Song, StyleId } from '@/types'
+import { Monster, Song, GenreId } from '@/types'
 import type { EngineEvent } from '@/engine/events'
-import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
+import { ELEMENT_THEME, ALL_ELEMENTS } from '@/data/elementTheme'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
-import { STYLES } from '@/data/styles'
-import { counterpointMultiplier, fermataCanRefresh, rubatoCanReroll, rubatoUsesLeft, staccatoCanRefresh } from '@/game-logic/styles/styleEffects'
+import { GENRES } from '@/data/genres'
+import { crossoverMultiplier, bluesCanRefresh, bebopCanReroll, bebopUsesLeft, gospelCanRefresh } from '@/game-logic/genres/genreEffects'
 import { getTunables } from '@/data/tunables'
 import { songIsImmune, songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
-import { CombatStyles } from '../DraftShop/StyleShelf'
+import { CombatGenres } from '../DraftShop/GenreShelf'
 import { ArrowLeft, Flag, Map as MapIcon, RotateCcw, Sparkles } from 'lucide-react'
 import { COMBAT_STAGE_BACKDROPS } from '@/assets/combat/stages'
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
   const playerId = useGameStore((state) => state.playerId)
-  const selectedSpreadGenre = useGameStore((state) => state.selectedSpreadGenre)
+  const selectedSpreadElement = useGameStore((state) => state.selectedSpreadElement)
   const dispatch = useGameStore((state) => state.dispatch)
   const canAct = useGameStore(selectCanAct)
   const remoteEntry = useGameStore((state) => state.remoteEntry)
@@ -51,9 +51,9 @@ export function CombatModal() {
       lastTargetMonsterId: state.lastTargetMonsterId,
       lockedTargetMonsterId: state.lockedTargetMonsterId,
       players: state.players,
-      stylesUsed: state.stylesUsed,
+      genresUsed: state.genresUsed,
       specFired: state.specFired,
-      styleNotes: state.styleNotes,
+      genreNotes: state.genreNotes,
       rallyReady: state.rallyReady,
       featuredPlayerIds: state.featuredPlayerIds,
       turnStartInspiration: state.turnStartInspiration,
@@ -72,9 +72,9 @@ export function CombatModal() {
     lastTargetMonsterId,
     lockedTargetMonsterId,
     players,
-    stylesUsed,
+    genresUsed,
     specFired,
-    styleNotes,
+    genreNotes,
     rallyReady,
     featuredPlayerIds,
     turnStartInspiration,
@@ -111,8 +111,8 @@ export function CombatModal() {
 
   // Reward math lives in the engine.
   const rewards = useMemo(
-    () => computeCombatRewards({ monsters, killCredits }, player?.styles),
-    [monsters, killCredits, player?.styles]
+    () => computeCombatRewards({ monsters, killCredits }, player?.genres),
+    [monsters, killCredits, player?.genres]
   )
   // Keep a live monster targeted: default to the first, and re-pick when the
   // current target is defeated.
@@ -202,10 +202,10 @@ export function CombatModal() {
 
   // Choices for the next song: Gospel's call and Soul's paid bonus. Both reset after a play.
   const t = getTunables()
-  const canCall = player.styles.includes('staccato') && !stylesUsed.includes('staccato')
-  const canFinale = player.styles.includes('emo') && !finaleDeclared
-  const canSoul = player.styles.includes('inspired-play') && !soulActive &&
-    (turnStartInspiration ?? 0) >= t.inspiredPlayMin && player.inspiration >= t.inspiredPlayCost
+  const canCall = player.genres.includes('gospel') && !genresUsed.includes('gospel')
+  const canFinale = player.genres.includes('emo') && !finaleDeclared
+  const canSoul = player.genres.includes('soul') && !soulActive &&
+    (turnStartInspiration ?? 0) >= t.soulMin && player.inspiration >= t.soulCost
 
   const handleSelectTarget = (monsterId: string) => {
     if (monsterId !== selectedTargetId) setRollDisplayDismissed(true)
@@ -218,8 +218,8 @@ export function CombatModal() {
       type: 'PLAY_SONG',
       songId,
       targetMonsterId: selectedTargetId,
-      ...(callIt && canCall ? { staccatoCall: true } : {}),
-      ...(soul && canSoul ? { inspiredPlay: true } : {}),
+      ...(callIt && canCall ? { gospelCall: true } : {}),
+      ...(soul && canSoul ? { soul: true } : {}),
       ...(finale && canFinale ? { emoFinale: true } : {}),
     })
     setCallIt(false)
@@ -234,46 +234,46 @@ export function CombatModal() {
     if (result.ok) void showDamageEvents(result.events)
   }
 
-  // Rubato: a free reroll of a d4/d8 song, once per turn
+  // Bebop: a free reroll of a d4/d8 song, once per turn
   // Gospel: a called monster was won over; the bard picks a spent song to refresh
-  const canRally = canRoll && rallyReady && player.styles.includes('staccato')
+  const canRally = canRoll && rallyReady && player.genres.includes('gospel')
   const handleRally = (songId: string) => {
     if (!canRally) return
     void dispatch({ type: 'RALLY_SONG', songId })
   }
   // Blues: pay Inspiration to refresh a spent d20 song, once per turn
-  const canLinger = canRoll && player.styles.includes('fermata') && !stylesUsed.includes('fermata') &&
-    player.inspiration >= t.fermataInspirationCost
+  const canLinger = canRoll && player.genres.includes('blues') && !genresUsed.includes('blues') &&
+    player.inspiration >= t.bluesInspirationCost
   const handleLinger = (songId: string) => {
     if (!canLinger) return
     void dispatch({ type: 'LINGER_SONG', songId })
   }
   const refreshFor = (song: Song): { onRefresh: () => void; refreshTitle: string } | undefined => {
     if (!isSongSpent(song.id)) return undefined
-    if (canRally && staccatoCanRefresh(song)) {
-      return { onRefresh: () => handleRally(song.id), refreshTitle: `${STYLES.staccato.name}: your call came true. Refresh this song` }
+    if (canRally && gospelCanRefresh(song)) {
+      return { onRefresh: () => handleRally(song.id), refreshTitle: `${GENRES.gospel.name}: your call came true. Refresh this song` }
     }
-    if (canLinger && fermataCanRefresh(song)) {
-      return { onRefresh: () => handleLinger(song.id), refreshTitle: `${STYLES.fermata.name}: refresh this song for ${t.fermataInspirationCost} Inspiration (once per turn)` }
+    if (canLinger && bluesCanRefresh(song)) {
+      return { onRefresh: () => handleLinger(song.id), refreshTitle: `${GENRES.blues.name}: refresh this song for ${t.bluesInspirationCost} Inspiration (once per turn)` }
     }
     return undefined
   }
   const hasSpentOwnSong = player.songs.some((sg) => isSongSpent(sg.id))
 
-  const canRubato = (song: Song) =>
-    player.styles.includes('rubato') && rubatoUsesLeft(stylesUsed) > 0 && rubatoCanReroll(song)
-  const canNimbleReroll = canPaidReroll && !!lastPlayedSong && canRubato(lastPlayedSong)
+  const canBebop = (song: Song) =>
+    player.genres.includes('bebop') && bebopUsesLeft(genresUsed) > 0 && bebopCanReroll(song)
+  const canNimbleReroll = canPaidReroll && !!lastPlayedSong && canBebop(lastPlayedSong)
 
-  const handleRubato = async () => {
-    if (!canRoll || !lastPlayedSong || !canRubato(lastPlayedSong)) return
-    const result = await dispatch({ type: 'REROLL_SONG', rubato: true })
+  const handleBebop = async () => {
+    if (!canRoll || !lastPlayedSong || !canBebop(lastPlayedSong)) return
+    const result = await dispatch({ type: 'REROLL_SONG', bebop: true })
     if (result.ok) void showDamageEvents(result.events)
   }
 
   // The reroll sits on the dice of the song just played (free with Nimble Fingers, else 1 Inspiration)
   const reroll = canPaidReroll
     ? makeReroll({
-        free: canNimbleReroll ? { name: STYLES.rubato.name, onClick: handleRubato } : undefined,
+        free: canNimbleReroll ? { name: GENRES.bebop.name, onClick: handleBebop } : undefined,
         inspiration: player.inspiration,
         enabled: canRoll,
         subject: 'song',
@@ -298,7 +298,7 @@ export function CombatModal() {
 
   // Songs that could still hurt something: if every remaining die is immune
   // against every living monster, retreating gives nothing up — no confirm.
-  // (Featured songs roll without styles, so Dissonance doesn't soften theirs.)
+  // (Featured songs roll without genres, so Dissonance doesn't soften theirs.)
   const remainingSongs = playableSongs.filter((s) => !isSongSpent(s.id))
   const target = monsters.find((monster) => monster.id === selectedTargetId)
   const lastTargetIndex = monsters.findIndex((monster) => monster.id === lastTargetMonsterId)
@@ -306,7 +306,7 @@ export function CombatModal() {
   const lastHitCalculation = lastTargetIndex >= 0 ? lastDamageCalculations[lastTargetIndex] : undefined
   const availableTargets = lockedTarget ? [lockedTarget] : monsters
   const damageOptions = {
-    immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false, elementCount: 0 }),
+    immuneMultiplier: crossoverMultiplier({ genres: player.genres, used: genresUsed, firstRoll: false, allElements: false, elementCount: 0 }),
   }
   const retreatForfeitsDamage =
     hasRolledDice &&
@@ -406,7 +406,7 @@ export function CombatModal() {
                   <DamageCell
                     calc={lastHitCalculation}
                     monster={lastHitMonster}
-                    styleNotes={styleNotes}
+                    genreNotes={genreNotes}
                   />
                 ) : null}
               </div>
@@ -424,16 +424,16 @@ export function CombatModal() {
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {ALL_GENRES.map((genre) => {
-                  const { emoji, rgb } = GENRE_THEME[genre]
-                  const isChosen = selectedSpreadGenre === genre
+                {ALL_ELEMENTS.map((element) => {
+                  const { emoji, rgb } = ELEMENT_THEME[element]
+                  const isChosen = selectedSpreadElement === element
                   return (
                     <button
-                      key={genre}
+                      key={element}
                       disabled={!canAct}
                       onClick={() => dispatch({
                         type: 'SELECT_COMBAT_SPREAD',
-                        genre: isChosen ? null : genre,
+                        element: isChosen ? null : element,
                       })}
                       className={`relative flex min-h-20 flex-col items-center justify-center gap-1 rounded-lg px-3 py-3 transition-all duration-200 ${canAct ? 'hover:-translate-y-0.5' : 'cursor-default'}`}
                       style={{
@@ -450,7 +450,7 @@ export function CombatModal() {
                         {emoji}
                       </span>
                       <span className="font-medieval text-sm sm:text-base font-bold uppercase tracking-wider" style={{ color: `rgb(${rgb})` }}>
-                        {genre}
+                        {element}
                       </span>
                       {isChosen && (
                         <span
@@ -467,7 +467,7 @@ export function CombatModal() {
 
               <button
                 onClick={handleEndCombat}
-                disabled={!canAct || !selectedSpreadGenre}
+                disabled={!canAct || !selectedSpreadElement}
                 className="btn-primary mt-3 w-full py-3 text-base disabled:cursor-not-allowed disabled:opacity-40"
                 style={{
                   background: 'linear-gradient(135deg, #3d8c40, #2d6e30)',
@@ -476,9 +476,9 @@ export function CombatModal() {
                   textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
                   boxShadow: 'none',
                 }}
-                title={selectedSpreadGenre ? undefined : 'Choose an element to radiate first'}
+                title={selectedSpreadElement ? undefined : 'Choose an element to radiate first'}
               >
-                {selectedSpreadGenre ? 'Claim Fame & Glory' : 'Choose an Element'}
+                {selectedSpreadElement ? 'Claim Fame & Glory' : 'Choose an Element'}
               </button>
               <button
                 type="button"
@@ -530,33 +530,33 @@ export function CombatModal() {
               {canRally && hasSpentOwnSong && (
                 <div className="mb-3 flex items-center justify-center gap-2 border-l-2 border-orange-300/40 py-1.5 pl-3 text-center text-sm text-orange-100 animate-fade-in">
                   <RotateCcw size={15} aria-hidden="true" />
-                  <span><strong>{STYLES.staccato.name}</strong>: your call came true. Choose a spent song to refresh.</span>
+                  <span><strong>{GENRES.gospel.name}</strong>: your call came true. Choose a spent song to refresh.</span>
                 </div>
               )}
-              {soulActive && player.styles.includes('inspired-play') && (
-                <p className="mb-2 text-center text-xs text-amber-200"><strong>{STYLES['inspired-play'].name}</strong>: +{t.inspiredPlayBonus} on every song this concert</p>
+              {soulActive && player.genres.includes('soul') && (
+                <p className="mb-2 text-center text-xs text-amber-200"><strong>{GENRES['soul'].name}</strong>: +{t.soulBonus} on every song this concert</p>
               )}
               {finaleDeclared && (
-                <p className="mb-2 text-center text-xs text-amber-200"><strong>{STYLES.emo.name}</strong>: that was your final song. End the concert.</p>
+                <p className="mb-2 text-center text-xs text-amber-200"><strong>{GENRES.emo.name}</strong>: that was your final song. End the concert.</p>
               )}
               {canRoll && !finaleDeclared && (canCall || canSoul || canFinale) && (
                 <div className="mb-3 flex flex-wrap items-center justify-center gap-2 text-xs" role="group" aria-label="Choices for your next song">
                   {canCall && (
                     <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-gold-700/30 px-3 py-1 text-parchment-200 hover:bg-white/5">
                       <input type="checkbox" checked={callIt} onChange={(e) => setCallIt(e.target.checked)} />
-                      <span><strong>{STYLES.staccato.name}</strong>: call it (this song wins over {target?.name ?? 'the target'})</span>
+                      <span><strong>{GENRES.gospel.name}</strong>: call it (this song wins over {target?.name ?? 'the target'})</span>
                     </label>
                   )}
                   {canFinale && (
                     <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-gold-700/30 px-3 py-1 text-parchment-200 hover:bg-white/5">
                       <input type="checkbox" checked={finale} onChange={(e) => setFinale(e.target.checked)} />
-                      <span><strong>{STYLES.emo.name}</strong>: make this my final song (+{t.emoBonus}, then the concert ends)</span>
+                      <span><strong>{GENRES.emo.name}</strong>: make this my final song (+{t.emoBonus}, then the concert ends)</span>
                     </label>
                   )}
                   {canSoul && (
                     <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-gold-700/30 px-3 py-1 text-parchment-200 hover:bg-white/5">
                       <input type="checkbox" checked={soul} onChange={(e) => setSoul(e.target.checked)} />
-                      <span><strong>{STYLES['inspired-play'].name}</strong>: +{t.inspiredPlayBonus} on every song this concert, for {t.inspiredPlayCost} Inspiration</span>
+                      <span><strong>{GENRES['soul'].name}</strong>: +{t.soulBonus} on every song this concert, for {t.soulCost} Inspiration</span>
                     </label>
                   )}
                 </div>
@@ -576,7 +576,7 @@ export function CombatModal() {
                   />
                 ))}
               </SongGrid>
-              <CombatStyles player={player} usedStyleIds={[...stylesUsed, ...((specFired ?? []) as StyleId[])]} />
+              <CombatGenres player={player} usedGenreIds={[...genresUsed, ...((specFired ?? []) as GenreId[])]} />
             </section>
           )}
 

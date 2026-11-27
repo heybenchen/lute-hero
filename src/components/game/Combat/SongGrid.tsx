@@ -5,7 +5,7 @@ import type { CSSProperties, ReactNode } from 'react'
  * row from tablet width up, and two rows on phones (half the songs per row,
  * rounded up) so nothing scrolls sideways. The actual setlist size owns the
  * desktop column count: the normal six songs fill the width, and Extra Verse
- * (or any future slot-adding style) only makes the grid denser when present.
+ * (or any future slot-adding genre) only makes the grid denser when present.
  */
 export function SongGrid({ count, children }: { count: number; children: ReactNode }) {
   const style = {

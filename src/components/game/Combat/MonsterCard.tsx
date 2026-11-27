@@ -1,5 +1,5 @@
-import { Monster, Genre } from '@/types'
-import { GenreBadge } from '@/components/ui/GenreBadge'
+import { Monster, Element } from '@/types'
+import { ElementBadge } from '@/components/ui/ElementBadge'
 import { Crown } from 'lucide-react'
 import { MONSTER_LEVEL_SPRITES } from '@/assets/combat/levels'
 
@@ -16,7 +16,7 @@ interface MonsterCardProps {
   lastDamage?: number
 }
 
-const glowByGenre: Record<Genre, string> = {
+const glowByElement: Record<Element, string> = {
   Ballad: 'rgba(232, 32, 64, .55)',
   Folk: 'rgba(76, 175, 80, .55)',
   Hymn: 'rgba(186, 230, 253, .55)',
@@ -29,9 +29,9 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
     ? Math.min(lastDamage, monster.maxHP - Math.max(0, monster.currentHP)) / monster.maxHP * 100
     : 0
   const isDefeated = monster.currentHP <= 0
-  const spriteGenre = monster.vulnerability ?? monster.resistance ?? 'Ballad'
+  const spriteElement = monster.vulnerability ?? monster.resistance ?? 'Ballad'
   const spriteLevel = Math.min(5, Math.max(1, monster.level))
-  const sprite = MONSTER_LEVEL_SPRITES[spriteGenre][spriteLevel - 1]
+  const sprite = MONSTER_LEVEL_SPRITES[spriteElement][spriteLevel - 1]
   const selectable = !!onSelect && !isDefeated
   const TargetCard = selectable ? 'button' : 'div'
 
@@ -41,7 +41,7 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
       style={{
         animationDelay: `${index * 80}ms`,
         animationFillMode: 'both',
-        '--monster-glow': glowByGenre[spriteGenre],
+        '--monster-glow': glowByElement[spriteElement],
       } as React.CSSProperties}
     >
       <TargetCard
@@ -101,13 +101,13 @@ export function MonsterCard({ monster, index = 0, fameValue, isSelected = false,
             {monster.vulnerability && (
               <div title="Weak — songs of this element count double">
                 <strong className="!ml-0 text-[#9af0a2]">×2</strong>
-                <GenreBadge genre={monster.vulnerability} className="rounded-none px-1.5 py-0.5 text-[10px]" />
+                <ElementBadge element={monster.vulnerability} className="rounded-none px-1.5 py-0.5 text-[10px]" />
               </div>
             )}
             {monster.resistance && (
               <div title="Immune — songs of this element count for nothing">
                 <strong className="!ml-0 text-[#d8e0ea]">×0</strong>
-                <GenreBadge genre={monster.resistance} className="rounded-none px-1.5 py-0.5 text-[10px]" />
+                <ElementBadge element={monster.resistance} className="rounded-none px-1.5 py-0.5 text-[10px]" />
               </div>
             )}
           </div>

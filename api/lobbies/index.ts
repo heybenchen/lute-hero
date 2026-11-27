@@ -5,7 +5,7 @@ import { hashToken, newGameId, newSeatId, newJoinCode } from '../_lib/auth.js'
 import { buildSnapshot } from '../_lib/gameDoc.js'
 import { ApiRequest, ApiResponse, readJsonBody, sendJson, sendError, methodNotAllowed, getPlayerToken } from '../_lib/http.js'
 
-import { ALL_GENRES, playerColorFor } from '../../src/data/genreTheme.js'
+import { ALL_ELEMENTS, playerColorFor } from '../../src/data/elementTheme.js'
 
 /** POST /api/lobbies — create a lobby; the creator takes the host seat. */
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
@@ -24,8 +24,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     seatId: newSeatId(),
     playerId: null,
     name,
-    color: playerColorFor(ALL_GENRES[0]),
-    starterGenre: ALL_GENRES[0],
+    color: playerColorFor(ALL_ELEMENTS[0]),
+    starterElement: ALL_ELEMENTS[0],
     ready: false,
     tokenHash: hashToken(token),
   }

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useGameStore } from '@/store'
 import { Player } from '@/types'
 import { calculateFinalRankings } from '@/game-logic/fame/calculator'
-import { readableTextColor } from '@/data/genreTheme'
+import { readableTextColor } from '@/data/elementTheme'
 
 interface Award {
   title: string

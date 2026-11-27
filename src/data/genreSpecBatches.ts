@@ -1,18 +1,18 @@
 /**
- * Style lab batches: 100 data-defined styles in ten themed batches, plus
- * candidate reworks of existing styles. Each entry is a complete style;
- * `scripts/style-lab.ts` simulates any of them against a no-style baseline
+ * Genre lab batches: 100 data-defined genres in ten themed batches, plus
+ * candidate reworks of existing genres. Each entry is a complete genre;
+ * `scripts/genre-lab.ts` simulates any of them against a no-genre baseline
  * with smart bots. None is in the shipped Studio.
  */
-import type { StyleSpec } from '../game-logic/styles/specs.js'
+import type { GenreSpec } from '../game-logic/genres/specs.js'
 
 const BIG = ['d12', 'd20'] as const
 const SMALL = ['d4', 'd8'] as const
 
-const spec = (s: Omit<StyleSpec, 'cost'> & { cost?: number }): StyleSpec => ({ cost: 3, ...s })
+const spec = (s: Omit<GenreSpec, 'cost'> & { cost?: number }): GenreSpec => ({ cost: 3, ...s })
 
 // 1 — Element-specific
-const ELEMENT: StyleSpec[] = [
+const ELEMENT: GenreSpec[] = [
   spec({ id: 'ember-heart', name: 'Ember Heart', theme: 'element', rule: 'Your Ballad dice get +2 (can crit).',
     roll: [{ when: { element: 'Ballad' }, critBonus: 2 }] }),
   spec({ id: 'greenwood', name: 'Greenwood Ballad', theme: 'element', rule: 'Your Folk dice reroll a 1 or 2 once.',
@@ -21,7 +21,7 @@ const ELEMENT: StyleSpec[] = [
     roll: [{ when: { element: 'Hymn' }, advantage: true }] }),
   spec({ id: 'sea-legs', name: 'Sea Legs', theme: 'element', rule: 'Your Shanty dice never roll below 3.',
     roll: [{ when: { element: 'Shanty' }, floor: 3 }] }),
-  spec({ id: 'hometown-hero', name: 'Hometown Hero', theme: 'element', rule: 'Dice of your starting element get +1 (can crit).',
+  spec({ id: 'country', name: 'Country', theme: 'element', rule: 'Dice of your starting element get +1 (can crit).',
     roll: [{ when: { element: 'starter' }, critBonus: 1 }] }),
   spec({ id: 'true-voice', name: 'True Voice', theme: 'element', rule: 'Dice of your starting element deal ×3 (not ×2) to monsters weak to them.',
     multiplier: [{ when: { element: 'starter' }, adored: 3 }] }),
@@ -36,7 +36,7 @@ const ELEMENT: StyleSpec[] = [
 ]
 
 // 2 — Dice-specific
-const DICE: StyleSpec[] = [
+const DICE: GenreSpec[] = [
   spec({ id: 'drumline', name: 'Drumline', theme: 'dice', rule: 'Your d4s get +2.',
     roll: [{ when: { dice: ['d4'] }, flat: 2 }] }),
   spec({ id: 'lute-player', name: "Lute Player's Pride", theme: 'dice', rule: 'Your d8s crit on a 7 or 8.',
@@ -60,7 +60,7 @@ const DICE: StyleSpec[] = [
 ]
 
 // 3 — Inspiration & economy
-const INSPIRATION: StyleSpec[] = [
+const INSPIRATION: GenreSpec[] = [
   spec({ id: 'patron', name: 'Patron', theme: 'inspiration', rule: 'Buying Inspiration costs 1 less EXP.',
     economy: { inspirationCost: -1 } }),
   spec({ id: 'bard-of-means', name: 'Bard of Means', theme: 'inspiration', rule: 'In the Studio, each Inspiration can pay for 2 EXP.',
@@ -75,16 +75,16 @@ const INSPIRATION: StyleSpec[] = [
     onClear: { inspiration: 1 } }),
   spec({ id: 'saving-for-glory', name: 'Saving for Glory', theme: 'inspiration', rule: 'When the showdown ends, each unspent Inspiration is worth 4 fans.',
     showdownEnd: { perInspiration: 4 } }),
-  spec({ id: 'inspired-play', name: 'Inspired Play', theme: 'inspiration', rule: '+2 to every die while you hold 3+ Inspiration.',
+  spec({ id: 'soul', name: 'Soul', theme: 'inspiration', rule: '+2 to every die while you hold 3+ Inspiration.',
     roll: [{ when: { inspirationAtLeast: 3 }, flat: 2 }] }),
   spec({ id: 'tip-jar', name: 'Tip Jar', theme: 'inspiration', rule: '+1 Inspiration whenever you tame a Lv3+ monster.',
     onTame: [{ when: { targetLevelAtLeast: 3 }, reward: { inspiration: 1 } }] }),
-  spec({ id: 'studio-regular', name: 'Studio Regular', theme: 'inspiration', rule: 'Upgrades cost 1 less EXP.',
+  spec({ id: 'lo-fi', name: 'Lo-fi', theme: 'inspiration', rule: 'Upgrades cost 1 less EXP.',
     economy: { upgradeCost: -1 } }),
 ]
 
 // 4 — Dice manipulation
-const MANIPULATION: StyleSpec[] = [
+const MANIPULATION: GenreSpec[] = [
   spec({ id: 'steady-hand', name: 'Steady Hand', theme: 'manipulation', rule: 'Your dice never roll a 1.',
     roll: [{ floor: 2 }] }),
   spec({ id: 'second-chance', name: 'Second Chance', theme: 'manipulation', rule: 'Any die showing a 1 or 2 rerolls once.',
@@ -108,7 +108,7 @@ const MANIPULATION: StyleSpec[] = [
 ]
 
 // 5 — Combo rolls
-const COMBO: StyleSpec[] = [
+const COMBO: GenreSpec[] = [
   spec({ id: 'motif', name: 'Motif', theme: 'combo', rule: '+2 to a song played right after a song of the same element.',
     roll: [{ when: { sameElementAsLast: true }, flat: 2 }] }),
   spec({ id: 'call-and-response', name: 'Call and Response', theme: 'combo', rule: "+2 to a song whose element differs from the previous song's.",
@@ -117,7 +117,7 @@ const COMBO: StyleSpec[] = [
     roll: [{ perPlayBonus: 1, bonusCap: 4 }] }),
   spec({ id: 'medley', name: 'Medley', theme: 'combo', rule: '+1 per different element already played this fight (max +3).',
     roll: [{ perElementPlayed: 1, bonusCap: 3 }] }),
-  spec({ id: 'chain-reaction', name: 'Chain Reaction', theme: 'combo', rule: '+2 per same-element song played in a row before this one (max +6).',
+  spec({ id: 'house', name: 'House', theme: 'combo', rule: '+2 per same-element song played in a row before this one (max +6).',
     roll: [{ perComboBonus: 2, bonusCap: 6 }] }),
   spec({ id: 'grand-crescendo', name: 'Grand Crescendo', theme: 'combo', rule: 'Your 4th and later songs each fight roll twice; keep the higher.',
     roll: [{ when: { playIndexAtLeast: 3 }, advantage: true }] }),
@@ -132,7 +132,7 @@ const COMBO: StyleSpec[] = [
 ]
 
 // 6 — Gambles
-const GAMBLE: StyleSpec[] = [
+const GAMBLE: GenreSpec[] = [
   spec({ id: 'all-or-nothing', name: 'All or Nothing', theme: 'gamble', rule: 'Your dice roll twice and keep the LOWER, but deal double.',
     roll: [{ disadvantage: true, times: 2 }] }),
   spec({ id: 'showboat', name: 'Showboat', theme: 'gamble', rule: '+5 Fame per tame, −3 Fame per miss.',
@@ -157,7 +157,7 @@ const GAMBLE: StyleSpec[] = [
 ]
 
 // 7 — Crits
-const CRIT: StyleSpec[] = [
+const CRIT: GenreSpec[] = [
   spec({ id: 'sharp-ear', name: 'Sharp Ear', theme: 'crit', rule: 'All your dice crit one face lower.',
     roll: [{ critFaceDelta: 1 }] }),
   spec({ id: 'resonance', name: 'Resonance', theme: 'crit', rule: 'Each crit bonus die adds +2.',
@@ -181,7 +181,7 @@ const CRIT: StyleSpec[] = [
 ]
 
 // 8 — Targeting
-const TARGET: StyleSpec[] = [
+const TARGET: GenreSpec[] = [
   spec({ id: 'giant-slayer', name: 'Giant Slayer', theme: 'target', rule: '+3 against Lv4+ monsters.',
     roll: [{ when: { targetLevelAtLeast: 4 }, flat: 3 }] }),
   spec({ id: 'pest-control', name: 'Pest Control', theme: 'target', rule: '+2 (can crit) against Lv1–2 monsters.',
@@ -198,15 +198,15 @@ const TARGET: StyleSpec[] = [
     multiplier: [{ neutral: 1.5 }] }),
   spec({ id: 'big-game', name: 'Big Game', theme: 'target', rule: '+2 EXP per Lv3+ monster tamed.',
     onTame: [{ when: { targetLevelAtLeast: 3 }, reward: { exp: 2 } }] }),
-  spec({ id: 'swarm-singer', name: 'Swarm Singer', theme: 'target', rule: '+2 to every die in fights with 3+ monsters.',
+  spec({ id: 'orchestra', name: 'Orchestra', theme: 'target', rule: '+2 to every die in fights with 3+ monsters.',
     roll: [{ when: { monstersAtLeast: 3 }, flat: 2 }] }),
   spec({ id: 'bounty-hunter', name: 'Bounty Hunter', theme: 'target', rule: '+8 Fame per Lv4+ monster tamed.',
     onTame: [{ when: { targetLevelAtLeast: 4 }, reward: { fame: 8 } }] }),
 ]
 
 // 9 — Table position & rivalry
-const SOCIAL: StyleSpec[] = [
-  spec({ id: 'jam-session', name: 'Jam Session', theme: 'social', rule: '+2 to every die while you share a space with another bard.',
+const SOCIAL: GenreSpec[] = [
+  spec({ id: 'mariachi', name: 'Mariachi', theme: 'social', rule: '+2 to every die while you share a space with another bard.',
     roll: [{ when: { sharingSpace: true }, flat: 2 }] }),
   spec({ id: 'underdog', name: 'Underdog', theme: 'social', rule: 'While you have the least Fame, +1 Inspiration at the start of your turn.',
     onTurnStart: [{ when: { trailingFame: true }, reward: { inspiration: 1 } }] }),
@@ -220,7 +220,7 @@ const SOCIAL: StyleSpec[] = [
     economy: { moves: 2 } }),
   spec({ id: 'busker', name: 'Busker', theme: 'social', rule: '+2 EXP whenever a fight ends with monsters left.',
     onRetreat: { exp: 2 } }),
-  spec({ id: 'street-performer', name: 'Street Performer', theme: 'social', rule: '+1 EXP at the start of each turn.',
+  spec({ id: 'rap', name: 'Rap', theme: 'social', rule: '+1 EXP at the start of each turn.',
     onTurnStart: [{ reward: { exp: 1 } }] }),
   spec({ id: 'chip-on-shoulder', name: 'Chip on the Shoulder', theme: 'social', rule: 'While you have the least Fame, +3 Fame per tame.',
     onTame: [{ when: { trailingFame: true }, reward: { fame: 3 } }] }),
@@ -229,7 +229,7 @@ const SOCIAL: StyleSpec[] = [
 ]
 
 // 10 — Showdown & tempo
-const TEMPO: StyleSpec[] = [
+const TEMPO: GenreSpec[] = [
   spec({ id: 'showstopper', name: 'Showstopper', theme: 'tempo', rule: '+3 to every die in the Final Showdown.',
     roll: [{ when: { showdown: true }, flat: 3 }] }),
   spec({ id: 'grand-finale', name: 'Grand Finale', theme: 'tempo', rule: 'Showdown dice roll twice; keep the higher.',
@@ -252,10 +252,10 @@ const TEMPO: StyleSpec[] = [
     onTurnStart: [{ reward: { fame: 1 } }] }),
 ]
 
-export const STYLE_SPEC_BATCHES: StyleSpec[][] = [ELEMENT, DICE, INSPIRATION, MANIPULATION, COMBO, GAMBLE, CRIT, TARGET, SOCIAL, TEMPO]
+export const GENRE_SPEC_BATCHES: GenreSpec[][] = [ELEMENT, DICE, INSPIRATION, MANIPULATION, COMBO, GAMBLE, CRIT, TARGET, SOCIAL, TEMPO]
 
-/** Candidate reworks of existing styles that no tunable could balance. */
-export const STYLE_SPEC_REWORKS: StyleSpec[] = [
+/** Candidate reworks of existing genres that no tunable could balance. */
+export const GENRE_SPEC_REWORKS: GenreSpec[] = [
   spec({ id: 'war-drums-v2', name: 'War Drums (rework A)', theme: 'rework', rule: 'Your d4s and d8s get +1 (can crit).',
     roll: [{ when: { dice: [...SMALL] }, critBonus: 1 }] }),
   spec({ id: 'war-drums-v3', name: 'War Drums (rework B)', theme: 'rework', rule: 'Your d4s crit on a 3 or 4, and their crit dice add +2.',
