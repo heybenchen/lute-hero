@@ -8,8 +8,8 @@ import { getTunables } from '../data/tunables.js'
 import { inspirationRules } from '../game-logic/styles/specs.js'
 import { specsOf } from '../data/styleSpecs.js'
 import { canAfford, d4CostFor, inspirationCostFor, movesFor, upgradeCostFor } from './economy.js'
-import { styleCost, maxStyles } from '../data/styles.js'
-import { rubatoCanReroll, rubatoUsesLeft, staccatoCanRefresh } from '../game-logic/styles/styleEffects.js'
+import { STYLES, styleCost, maxStyles } from '../data/styles.js'
+import { fermataCanRefresh, rubatoCanReroll, rubatoUsesLeft, staccatoCanRefresh } from '../game-logic/styles/styleEffects.js'
 
 export function maxMovesPerTurn(): number {
   return getTunables().maxMovesPerTurn
@@ -120,9 +120,15 @@ export function validateAction(
       const player = state.players.find((p) => p.id === action.playerId)
       if (!player) return illegal('Unknown player')
       if (player.id !== currentPlayerId(state)) return illegal('Not this player\'s turn')
-      if (player.movesThisTurn >= movesFor(player)) return illegal('No moves left this turn')
       if (action.toSpaceId === player.position) return illegal('Already on that space')
       if (!state.spaces.some((s) => s.id === action.toSpaceId)) return illegal('Unknown space')
+      if (action.anywhere) {
+        // Trip-Hop: once per turn, to any space, without spending a regular move
+        if (!player.styles.includes('trip-hop')) return illegal(`${STYLES['trip-hop'].name} is not one of your genres`)
+        if (state.tripHopUsed) return illegal(`${STYLES['trip-hop'].name} is already used this turn`)
+        return ok
+      }
+      if (player.movesThisTurn >= movesFor(player)) return illegal('No moves left this turn')
       if (!areSpacesConnected(player.position, action.toSpaceId, state.spaces)) {
         return illegal('Spaces are not connected')
       }
@@ -169,6 +175,17 @@ export function validateAction(
       const song = fighter.songs.find((s) => s.id === action.songId)
       if (!song) return illegal('Unknown song')
       if (!song.slots.some((slot) => slot.dice)) return illegal('Song has no dice')
+      if (action.inspiredPlay && !state.combat.soulActive) {
+        // Soul: needs enough Inspiration at the start of the turn, and pays once for the concert
+        const t = getTunables()
+        if (!fighter.styles.includes('inspired-play')) return illegal(`${STYLES['inspired-play'].name} is not one of your genres`)
+        if ((state.turnStartInspiration ?? 0) < t.inspiredPlayMin) return illegal(`${STYLES['inspired-play'].name} needs ${t.inspiredPlayMin}+ Inspiration at the start of your turn`)
+        if (fighter.inspiration < t.inspiredPlayCost) return illegal('Not enough Inspiration')
+      }
+      if (action.staccatoCall) {
+        if (!fighter.styles.includes('staccato')) return illegal(`${STYLES.staccato.name} is not one of your genres`)
+        if (state.combat.stylesUsed.includes('staccato')) return illegal(`${STYLES.staccato.name} is already used this turn`)
+      }
       return validateCombatTarget(state.combat, action.targetMonsterId)
     }
 
@@ -188,10 +205,10 @@ export function validateAction(
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
       if (!fighter) return illegal('No performing bard')
       if (action.rubato) {
-        if (!fighter.styles.includes('rubato')) return illegal('Rubato is not one of your styles')
-        if (rubatoUsesLeft(state.combat.stylesUsed) <= 0) return illegal('Nimble Fingers is used up this turn')
+        if (!fighter.styles.includes('rubato')) return illegal(`${STYLES.rubato.name} is not one of your genres`)
+        if (rubatoUsesLeft(state.combat.stylesUsed) <= 0) return illegal(`${STYLES.rubato.name} is used up this turn`)
         const song = fighter.songs.find((sg) => sg.id === state.combat.lastPlayedSongId)
-        if (!song || !rubatoCanReroll(song)) return illegal("Nimble Fingers can't encore a die that large")
+        if (!song || !rubatoCanReroll(song)) return illegal(`${STYLES.rubato.name} can't encore a die that large`)
       } else if (
         fighter.inspiration < inspirationSpend() &&
         state.combat.freeRerollsUsed >= inspirationRules(specsOf(fighter)).freePerTurn
@@ -207,13 +224,28 @@ export function validateAction(
       if (!state.combat.isActive) return illegal('No concert in progress')
       if (state.combat.featureRequest) return illegal('Waiting for an answer about a guest song')
       const fighter = state.players.find((p) => p.id === state.combat.playerId)
-      if (!fighter?.styles.includes('staccato')) return illegal('Rallying Cry is not one of your styles')
-      if (state.combat.stylesUsed.includes('staccato')) return illegal('Rallying Cry is already used this turn')
-      if (!state.combat.rallyReady) return illegal('Win a monster over first')
+      if (!fighter?.styles.includes('staccato')) return illegal(`${STYLES.staccato.name} is not one of your genres`)
+      if (!state.combat.rallyReady) return illegal('Call a monster and win it over first')
       if (!fighter.songs.some((sg) => sg.id === action.songId)) return illegal('Choose one of your own songs')
       if (!state.combat.spentSongIds.includes(action.songId)) return illegal('That song is not spent')
       const rallied = fighter.songs.find((sg) => sg.id === action.songId)
-      if (!rallied || !staccatoCanRefresh(rallied)) return illegal('Rallying Cry cannot refresh a die that large')
+      if (!rallied || !staccatoCanRefresh(rallied)) return illegal(`${STYLES.staccato.name} cannot refresh a die that large`)
+      return ok
+    }
+
+    case 'LINGER_SONG': {
+      const gate = requireCurrentTurn()
+      if (!gate.ok) return gate
+      if (!state.combat.isActive) return illegal('No concert in progress')
+      if (state.combat.featureRequest) return illegal('Waiting for an answer about a guest song')
+      const fighter = state.players.find((p) => p.id === state.combat.playerId)
+      if (!fighter?.styles.includes('fermata')) return illegal(`${STYLES.fermata.name} is not one of your genres`)
+      if (state.combat.stylesUsed.includes('fermata')) return illegal(`${STYLES.fermata.name} is already used this turn`)
+      const song = fighter.songs.find((sg) => sg.id === action.songId)
+      if (!song) return illegal('Choose one of your own songs')
+      if (!state.combat.spentSongIds.includes(action.songId)) return illegal('That song is not spent')
+      if (!fermataCanRefresh(song)) return illegal(`${STYLES.fermata.name} only refreshes a d20 song`)
+      if (fighter.inspiration < getTunables().fermataInspirationCost) return illegal('Not enough Inspiration')
       return ok
     }
 
@@ -417,15 +449,20 @@ export function validateAction(
       const player = state.players[state.currentTurnPlayerIndex]
       if (!player) return illegal('No current player')
       const styleId = state.styleOffers[action.offerIndex]
-      if (!styleId || (action.expectedStyleId && action.expectedStyleId !== styleId)) return illegal('No such style on offer')
-      if (player.styles.includes(styleId)) return illegal('You already play in that style')
+      if (!styleId || (action.expectedStyleId && action.expectedStyleId !== styleId)) return illegal('No such genre on offer')
+      if (player.styles.includes(styleId)) return illegal('You already play that genre')
       if (!canAfford(player, styleCost(styleId))) return illegal('Not enough EXP')
       if (player.styles.length >= maxStyles()) {
         if (!action.replaceStyleId || !player.styles.includes(action.replaceStyleId)) {
-          return illegal(`You can hold ${maxStyles()} styles — choose one to replace`)
+          return illegal(`You can hold ${maxStyles()} genres — choose one to replace`)
         }
       } else if (action.replaceStyleId) {
-        return illegal('You have room for another style')
+        return illegal('You have room for another genre')
+      }
+      // New Age: giving it up with its 7th song in use means naming a song to give up
+      if (action.replaceStyleId === 'coda' && player.songs.some((sg) => sg.id === `${player.id}-coda` && sg.slots[0]?.dice)) {
+        const song = player.songs.find((sg) => sg.id === action.giveUpSongId)
+        if (!song || !song.slots[0]?.dice) return illegal(`Choose a song to give up with ${STYLES.coda.name}`)
       }
       return ok
     }
@@ -462,11 +499,11 @@ export function validateAction(
       const performer = state.players.find((p) => p.id === performerId)
       if (!performer) return illegal('No performer')
       if (action.rubato) {
-        if (!performer.styles.includes('rubato')) return illegal('Rubato is not one of your styles')
+        if (!performer.styles.includes('rubato')) return illegal(`${STYLES.rubato.name} is not one of your genres`)
         if (state.showdownUndo.rubatoUsed) return illegal('Rubato is already used this verse')
         const undo = state.showdownUndo
         const songs = performer.songs.filter((sg) => (undo.songIds ?? [undo.songId]).includes(sg.id))
-        if (!songs.length || !rubatoCanReroll(mergeSongs(songs))) return illegal("Nimble Fingers can't encore a die that large")
+        if (!songs.length || !rubatoCanReroll(mergeSongs(songs))) return illegal(`${STYLES.rubato.name} can't encore a die that large`)
       } else if (
         performer.inspiration < inspirationSpend() &&
         (state.showdownUndo.freeRerollsUsed ?? 0) >= inspirationRules(specsOf(performer)).freePerTurn

@@ -18,7 +18,7 @@ import { createBoardGraph, addGenreTagToNeighbors, dealBalancedGenreTags, ensure
 import { spawnMonstersFromTags, spawnInitialMonsters, clearSpace } from '../game-logic/combat/monsterSpawner.js'
 import { calculateSingleTargetDamage, calculateDamage, rollSong } from '../game-logic/combat/damageCalculator.js'
 import { PlayContext, StyleSpec, addRewards, conditionHolds, inspirationRules, specMultiplier } from '../game-logic/styles/specs.js'
-import { specsOf } from '../data/styleSpecs.js'
+import { specsOf, inspiredPlaySpec } from '../data/styleSpecs.js'
 import {
   calculateFameEarned,
   calculateMonsterExp,
@@ -50,8 +50,6 @@ import {
   holdsAllElements,
   elementCount,
   counterpointMultiplier,
-  fermataHolds,
-  staccatoArms,
   ONCE_PER_TURN,
   bravoFameFor,
 } from '../game-logic/styles/styleEffects.js'
@@ -117,7 +115,8 @@ function reduce(
           ? {
               ...p,
               position: action.toSpaceId,
-              movesThisTurn: p.movesThisTurn + 1,
+              // Trip-Hop's move to any space costs no regular move
+              movesThisTurn: p.movesThisTurn + (action.anywhere ? 0 : 1),
             }
           : p
       )
@@ -137,9 +136,10 @@ function reduce(
         {
           playerId: action.playerId,
           fromSpaceId: mover.position,
+          ...(action.anywhere ? { anywhere: true } : {}),
         },
       ]
-      return { ...state, players, spaces, moveTrail }
+      return { ...state, players, spaces, moveTrail, ...(action.anywhere ? { tripHopUsed: true } : {}) }
     }
 
     case 'UNDO_MOVE': {
@@ -151,19 +151,25 @@ function reduce(
           ? {
               ...p,
               position: step.fromSpaceId,
-              movesThisTurn: Math.max(0, p.movesThisTurn - 1),
+              movesThisTurn: step.anywhere ? p.movesThisTurn : Math.max(0, p.movesThisTurn - 1),
               inspiration: p.inspiration + (step.inspirationSpent ?? 0),
             }
           : p
       )
-      return { ...state, players, moveTrail: state.moveTrail.slice(0, -1) }
+      return { ...state, players, moveTrail: state.moveTrail.slice(0, -1), ...(step.anywhere ? { tripHopUsed: false } : {}) }
     }
 
     case 'START_COMBAT': {
       const player = state.players.find((p) => p.id === action.playerId)!
       const space = state.spaces.find((s) => s.id === player.position)!
+      // Pop (Muse's Favor): Inspiration before every concert
+      const { ispiratoPerTurn: popGain, ispiratoMin: popFloor } = getTunables()
       const players = state.players.map((p) =>
-        p.id === player.id ? { ...p, fightsThisTurn: p.fightsThisTurn + 1 } : p
+        p.id !== player.id ? p : {
+          ...p,
+          fightsThisTurn: p.fightsThisTurn + 1,
+          ...(p.styles.includes('ispirato') ? { inspiration: Math.max(p.inspiration + popGain, popFloor) } : {}),
+        }
       )
       const combat: EngineCombatState = {
         ...createInitialCombatState(),
@@ -190,10 +196,19 @@ function reduce(
         specFired: state.combat.specFired,
         playLog: state.combat.playLog,
         specRewards: state.combat.specRewards,
+        lastPlayResult: state.combat.lastPlayResult,
       }
-      const combat = performCombatPlay(state.combat, snapshot, song, action.targetMonsterId, fighter, rng, events, state.players)
-      const players = chargeLingeringNote(state.players, fighter.id, false, lingeringTriggered(combat, snapshot))
-      return { ...state, players, combat: { ...combat, undoSnapshot: snapshot, lastPlayedSongId: song.id } }
+      // Soul: paying once switches its bonus on for every song this concert.
+      // Gospel's call rides on the play, and an encore replays it.
+      const activateSoul = !!action.inspiredPlay && !state.combat.soulActive
+      const soulActive = !!state.combat.soulActive || activateSoul
+      const flags = { staccatoCall: !!action.staccatoCall }
+      const players = activateSoul
+        ? adjustInspiration(state.players, fighter.id, -getTunables().inspiredPlayCost)
+        : state.players
+      const extra = soulActive ? [inspiredPlaySpec()] : []
+      const combat = performCombatPlay({ ...state.combat, soulActive }, snapshot, song, action.targetMonsterId, fighter, rng, events, state.players, extra, flags)
+      return { ...state, players, combat: { ...combat, undoSnapshot: snapshot, lastPlayedSongId: song.id, lastPlayFlags: flags } }
     }
 
     case 'REROLL_SONG': {
@@ -217,7 +232,9 @@ function reduce(
       const rerollBonus: StyleSpec[] = !action.rubato && insp.bonus
         ? [{ id: '_reroll-bonus', name: '', rule: '', theme: '', cost: 0, roll: [{ flat: insp.bonus }] }]
         : []
-      let combat = performCombatPlay(state.combat, snapshot, song, targetId, updatedFighter, rng, events, state.players, rerollBonus)
+      const flags = state.combat.lastPlayFlags ?? {}
+      const replayed = state.combat.soulActive ? [...rerollBonus, inspiredPlaySpec()] : rerollBonus
+      let combat = performCombatPlay(state.combat, snapshot, song, targetId, updatedFighter, rng, events, state.players, replayed, flags)
       // Keep-the-better rerolls (Nimble Fingers always, plus any style-lab spec that grants
       // it): if the new roll charms the target less, the old result stands
       let keptFirst = false
@@ -241,21 +258,20 @@ function reduce(
         ...combat.stylesUsed,
         ...Array<StyleId>(Math.max(0, rubatoWanted - countRubato(combat.stylesUsed))).fill('rubato'),
       ]
-      // Lingering Note's Inspiration: charge or refund as the reroll changes whether it held
-      const wasHeld = lingeringTriggered(state.combat, snapshot)
-      const nowHeld = lingeringTriggered(combat, snapshot)
-      const charged = chargeLingeringNote(players, fighterId, wasHeld, nowHeld)
       const styleNotes = action.rubato
         ? [keptFirst ? `${STYLES.rubato.name}: kept your higher first roll` : STYLES.rubato.name, ...combat.styleNotes]
         : combat.styleNotes
-      return { ...state, players: charged, combat: { ...combat, stylesUsed, styleNotes } }
+      return { ...state, players, combat: { ...combat, stylesUsed, styleNotes } }
     }
 
     case 'RALLY_SONG': {
       // Rallying Cry: refresh the chosen spent song. Also clear it from the
       // reroll snapshot, so rerolling an earlier play can't re-spend it.
       const unspend = (ids: string[]) => ids.filter((id) => id !== action.songId)
-      const stylesUsed = [...state.combat.stylesUsed, 'staccato' as const]
+      // Gospel's call already spent the once-per-turn use
+      const stylesUsed = state.combat.stylesUsed.includes('staccato')
+        ? state.combat.stylesUsed
+        : [...state.combat.stylesUsed, 'staccato' as const]
       const snapshot = state.combat.undoSnapshot
       return {
         ...state,
@@ -268,6 +284,26 @@ function reduce(
           undoSnapshot: snapshot
             ? { ...snapshot, spentSongIds: unspend(snapshot.spentSongIds), stylesUsed, rallyReady: false }
             : snapshot,
+        },
+      }
+    }
+
+    case 'LINGER_SONG': {
+      // Blues (Lingering Note): pay Inspiration to refresh a spent d20 song, once per turn.
+      // Also clear it from the reroll snapshot, so an encore of an earlier play can't re-spend it.
+      const fighterId = state.combat.playerId!
+      const unspend = (ids: string[]) => ids.filter((id) => id !== action.songId)
+      const stylesUsed = [...state.combat.stylesUsed, 'fermata' as const]
+      const snapshot = state.combat.undoSnapshot
+      return {
+        ...state,
+        players: adjustInspiration(state.players, fighterId, -getTunables().fermataInspirationCost),
+        combat: {
+          ...state.combat,
+          spentSongIds: unspend(state.combat.spentSongIds),
+          stylesUsed,
+          styleNotes: [STYLES.fermata.name],
+          undoSnapshot: snapshot ? { ...snapshot, spentSongIds: unspend(snapshot.spentSongIds), stylesUsed } : snapshot,
         },
       }
     }
@@ -449,7 +485,7 @@ function reduce(
     }
 
     case 'BUY_STYLE':
-      return buyStyle(state, action.offerIndex, action.replaceStyleId, newId)
+      return buyStyle(state, action.offerIndex, action.replaceStyleId, newId, action.giveUpSongId)
 
     case 'REFRESH_STYLE_OFFERS': {
       const player = state.players[state.currentTurnPlayerIndex]
@@ -746,14 +782,27 @@ const codaSongId = (playerId: string) => `${playerId}-coda`
 
 /**
  * Buy an offered style. At the cap, the named style is given up (no refund).
- * Gaining Coda adds a 7th empty song; giving it up removes that song and
- * queues any die in it as an unclaimed reward, so nothing is lost.
+ * Gaining Coda (New Age) adds a 7th empty song. Replacing it with that song in
+ * use means giving up a song the bard names: its die is lost, and the 7th
+ * song's die moves into its place so the six songs keep their ids.
  */
-function buyStyle(state: EngineState, offerIndex: number, replaceStyleId: StyleId | undefined, newId: NewId): EngineState {
-  const player = state.players[state.currentTurnPlayerIndex]
+function buyStyle(state: EngineState, offerIndex: number, replaceStyleId: StyleId | undefined, newId: NewId, giveUpSongId?: string): EngineState {
+  let player = state.players[state.currentTurnPlayerIndex]
   const styleId = state.styleOffers[offerIndex]
   const styles = replaceStyleId ? player.styles.map((id) => id === replaceStyleId ? styleId : id) : [...player.styles, styleId]
-  const paid = { ...state, players: payFor(state.players, player.id, styleCost(styleId)) }
+  let players = state.players
+  const codaSong = player.songs.find((sg) => sg.id === codaSongId(player.id))
+  if (replaceStyleId === 'coda' && codaSong?.slots[0]?.dice && giveUpSongId) {
+    const kept = codaSong.slots[0].dice
+    // Empty the 7th song, so losing New Age below leaves no reward behind
+    const songs = player.songs.map((sg) =>
+      sg.id === codaSong.id ? { ...sg, slots: [{ dice: null }] as Song['slots'] }
+        : sg.id === giveUpSongId ? { ...sg, slots: [{ dice: kept }] as Song['slots'] }
+        : sg)
+    player = { ...player, songs }
+    players = players.map((p) => (p.id === player.id ? player : p))
+  }
+  const paid = { ...state, players: payFor(players, player.id, styleCost(styleId)) }
   return {
     ...setPlayerStyles(paid, player.id, styles, newId),
     styleOffers: state.styleOffers.filter((_, i) => i !== offerIndex),
@@ -798,12 +847,7 @@ function setPlayerStyles(state: EngineState, playerId: string, styles: StyleId[]
 function beginTurn(state: EngineState, rng: Rng): EngineState {
   const player = state.players[state.currentTurnPlayerIndex]
   if (!player) return state
-  const floor = getTunables().ispiratoMin
-  const gain = getTunables().ispiratoPerTurn
-  const players = player.styles.includes('ispirato') && (player.inspiration < floor || gain > 0)
-    ? state.players.map((p) => (p.id === player.id ? { ...p, inspiration: Math.max(p.inspiration + gain, floor) } : p))
-    : state.players
-  const withSpecs = applyTurnStartSpecs(players, player.id)
+  const withSpecs = applyTurnStartSpecs(state.players, player.id)
   const missingOffers = Math.max(0, styleOfferCount() - state.styleOffers.length)
   const styleOffers = missingOffers > 0
     ? [
@@ -811,7 +855,9 @@ function beginTurn(state: EngineState, rng: Rng): EngineState {
         ...drawStyleOffers(missingOffers, [...player.styles, ...state.styleOffers], rng),
       ]
     : state.styleOffers
-  return { ...state, players: withSpecs, styleOffers }
+  // Soul checks the Inspiration a bard started their turn with
+  const turnStartInspiration = withSpecs.find((p) => p.id === player.id)?.inspiration ?? 0
+  return { ...state, players: withSpecs, styleOffers, turnStartInspiration, tripHopUsed: false }
 }
 
 /** Data-defined styles' start-of-turn rewards (conditions like trailing in Fame). */
@@ -864,7 +910,8 @@ function performCombatPlay(
   rng: Rng,
   events: EngineEvent[],
   players: Player[] = [],
-  extraSpecs: StyleSpec[] = []
+  extraSpecs: StyleSpec[] = [],
+  flags: { staccatoCall?: boolean } = {}
 ): EngineCombatState {
   const monstersBefore = base.monsters
   const targetBefore = monstersBefore.find((m) => m.id === targetMonsterId)
@@ -918,6 +965,8 @@ function performCombatPlay(
       const effects = defeatedTarget ? spec.onTame ?? [] : spec.onMiss ?? []
       for (const effect of effects) {
         if (!conditionHolds(effect.when, die, firedCtx, spec.id)) continue
+        // K-Pop: only a song that moved its monster earns its miss reward
+        if (!defeatedTarget && 'ifCharmed' in effect && effect.ifCharmed && totalDamageDealt <= 0) continue
         if (effect.when?.oncePerTurn) firedNow.push(spec.id)
         specRewards = addRewards(specRewards, effect.reward)
         if (!defeatedTarget && 'keepSong' in effect && effect.keepSong) keptBySpec = true
@@ -928,16 +977,16 @@ function performCombatPlay(
   let spentSongIds: string[]
   if (defeatedTarget || keptBySpec) {
     spentSongIds = base.spentSongIds.filter((id) => id !== song.id)
-  } else if (fermataHolds(song, styleCtx)) {
-    spentSongIds = base.spentSongIds.filter((id) => id !== song.id)
-    triggered.push('fermata')
   } else {
     spentSongIds = base.spentSongIds.includes(song.id) ? base.spentSongIds : [...base.spentSongIds, song.id]
   }
 
   const onceUsed = triggered.filter((id) => ONCE_PER_TURN.includes(id) && !base.stylesUsed.includes(id))
-  // Rallying Cry arms on a tame; the bard spends it by choosing a song (RALLY_SONG)
-  const rallyReady = base.rallyReady || (defeatedTarget && staccatoArms(styleCtx))
+  // Gospel (Rallying Cry): a call spends the once-per-turn use; if the called monster
+  // is won over, the bard may refresh a spent song of their choice (RALLY_SONG)
+  const called = !!flags.staccatoCall && !base.stylesUsed.includes('staccato')
+  if (called) onceUsed.push('staccato')
+  const rallyReady = base.rallyReady || (called && defeatedTarget)
 
   events.push({ type: 'diceRolled', playerId: fighter.id, songId: song.id, context: 'combat', rolls })
   events.push({
@@ -968,6 +1017,7 @@ function performCombatPlay(
       ...specApplied.flatMap((id) => (id in STYLES ? [STYLES[id as StyleId].name] : [])),
     ],
     rallyReady,
+    lastPlayResult: defeatedTarget ? 'won' : totalDamageDealt > 0 ? 'moved' : 'missed',
     specFired: [...new Set([...(base.specFired ?? []), ...firedNow])],
     playLog: die ? [...(base.playLog ?? []), die.genre] : base.playLog ?? [],
     specRewards,
@@ -1000,20 +1050,14 @@ function combatPlayContext(
     inspiration: fighter.inspiration,
     starter: fighter.starterGenre,
     monstersInFight: base.monsters.filter((m) => m.currentHP > 0).length,
+    // Every monster the concert started with stays in the list (won-over ones at 0 Resolve)
+    monstersAtStart: base.monsters.length,
+    spentSongs: base.spentSongIds.length,
+    lastPlayResult: base.lastPlayResult ?? null,
+    // Unspent songs left, counting the one being played (Emo)
+    songsLeft: fighter.songs.filter((sg) => sg.slots.some((sl) => sl.dice) && !base.spentSongIds.includes(sg.id)).length,
     used: base.specFired ?? [],
   }
-}
-
-/** Did Lingering Note hold the last play's song (it fired in this play, not before)? */
-function lingeringTriggered(combat: EngineCombatState, before: CombatSnapshot): boolean {
-  return combat.stylesUsed.includes('fermata') && !before.stylesUsed.includes('fermata')
-}
-
-/** Charge (or refund) Lingering Note's Inspiration when whether it held changes. */
-function chargeLingeringNote(players: Player[], fighterId: string, wasHeld: boolean, nowHeld: boolean): Player[] {
-  const cost = getTunables().fermataInspirationCost
-  if (cost <= 0 || wasHeld === nowHeld) return players
-  return adjustInspiration(players, fighterId, nowHeld ? -cost : cost)
 }
 
 /**
@@ -1054,6 +1098,8 @@ function playFeaturedSong(state: EngineState, feature: FeatureRequest, rng: Rng,
         ? [...combat.killCredits, { monsterId: feature.targetMonsterId, featuredPlayerId: guest.id }]
         : combat.killCredits,
       featuredPlayerIds: [...combat.featuredPlayerIds, guest.id],
+      // A guest song counts as the previous song for "after a miss" genres
+      lastPlayResult: defeatedTarget ? 'won' : damage > 0 ? 'moved' : 'missed',
       currentSongId: song.id,
       lastTargetMonsterId: feature.targetMonsterId,
       lockedTargetMonsterId: defeatedTarget
@@ -1150,6 +1196,13 @@ function endCombat(state: EngineState, spreadGenre: Genre | null, events: Engine
   // Clearing every monster on a space earns the victor 1 Inspiration.
   if (success) {
     players = players.map((p) => (p.id === fighterId ? { ...p, inspiration: p.inspiration + 1 } : p))
+  }
+  // K-Pop: Fame for winning over 3, or 4+, monsters in one concert (guest songs' wins don't count)
+  if (fighterStyles.includes('k-pop')) {
+    const wins = combat.killCredits.filter((k) => !k.featuredPlayerId).length
+    const { kPopFame3, kPopFame4 } = getTunables()
+    const bonus = wins >= 4 ? kPopFame4 : wins === 3 ? kPopFame3 : 0
+    if (bonus) players = players.map((p) => (p.id === fighterId ? { ...p, fame: p.fame + bonus } : p))
   }
   // Data-defined styles: rewards earned in the fight, plus clear / take-a-bow rewards
   const fighterSpecs = specsOf(state.players.find((p) => p.id === fighterId))

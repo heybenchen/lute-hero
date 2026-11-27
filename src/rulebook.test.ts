@@ -7,14 +7,14 @@ import { ALL_STYLE_IDS, STYLES, styleCost, styleRule } from './data/styles'
 /**
  * rulebook/RULEBOOK.md quotes the game's numbers. This keeps it honest: when a
  * balance number changes, this fails and says what to update. Regenerate the
- * diagrams and the style list with:  npx tsx scripts/rulebook-visuals.ts
+ * diagrams and the genre list with:  npx tsx scripts/rulebook-visuals.ts
  */
 const rulebookDir = resolve(process.cwd(), 'rulebook')
 const md = readFileSync(resolve(rulebookDir, 'RULEBOOK.md'), 'utf8')
 
 describe('rulebook', () => {
   it('has every section the rules promise', () => {
-    for (const h of ['1. Introduction', '2. Setup', '3. Turns', '4. End of Round', '5. Concerts', '6. The Studio', '7. Monsters', '8. The Final Showdown', '9. Scoring', 'Appendix A: The Styles', 'Appendix B: Edge Cases']) {
+    for (const h of ['1. Introduction', '2. Setup', '3. Turns', '4. End of Round', '5. Concerts', '6. The Studio', '7. Monsters', '8. The Final Showdown', '9. Scoring', 'Appendix A: The Genres', 'Appendix B: Edge Cases']) {
       expect(md).toContain(`## ${h}`)
     }
   })
@@ -50,7 +50,7 @@ describe('rulebook', () => {
     expect(md).toContain(`| **Buy Inspiration** | ${T.inspirationBaseCost} EXP each |`)
     expect(md).toContain(`**${T.maxTagsPerGenre} chips of the same element**`)
     expect(T.showdownTurns).toBe(3) // the book says "three verses" throughout
-    expect(T.maxStyles).toBe(2) // "hold 2 styles"
+    expect(T.maxStyles).toBe(2) // "hold 2 genres"
   })
 
   it('talks about concerts, never fighting', () => {
@@ -58,7 +58,7 @@ describe('rulebook', () => {
     expect(rules).not.toMatch(/\b(fight|tam(e|ed|es|ing)|wound(ed)?|damage|attack|HP)\b/i)
   })
 
-  it('lists every style with its live rule and price (Appendix A is generated)', () => {
+  it('lists every genre with its live rule and price (Appendix A is generated)', () => {
     for (const id of ALL_STYLE_IDS) {
       const row = `| **${STYLES[id].name}** | ${styleCost(id)} | ${styleRule(id)} |`
       expect(md, `Appendix A row for ${STYLES[id].name}; run: npx tsx scripts/rulebook-visuals.ts`).toContain(row)

@@ -15,7 +15,8 @@ import type { EngineEvent } from '@/engine/events'
 import { GENRE_THEME, ALL_GENRES } from '@/data/genreTheme'
 import { diceBus, useDiceTrayBusy, useHeldWhileRolling } from '@/components/dice3d/diceBus'
 import { STYLES } from '@/data/styles'
-import { counterpointMultiplier, rubatoCanReroll, rubatoUsesLeft, staccatoCanRefresh } from '@/game-logic/styles/styleEffects'
+import { counterpointMultiplier, fermataCanRefresh, rubatoCanReroll, rubatoUsesLeft, staccatoCanRefresh } from '@/game-logic/styles/styleEffects'
+import { getTunables } from '@/data/tunables'
 import { songIsImmune, songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
 import { Flag, RotateCcw, Target } from 'lucide-react'
@@ -51,6 +52,8 @@ export function CombatModal() {
       styleNotes: state.styleNotes,
       rallyReady: state.rallyReady,
       featuredPlayerIds: state.featuredPlayerIds,
+      turnStartInspiration: state.turnStartInspiration,
+      soulActive: state.soulActive,
     }))
   )
   const {
@@ -69,6 +72,8 @@ export function CombatModal() {
     styleNotes,
     rallyReady,
     featuredPlayerIds,
+    turnStartInspiration,
+    soulActive,
   } = useHeldWhileRolling(liveView)
   const diceBusy = useDiceTrayBusy()
 
@@ -86,6 +91,9 @@ export function CombatModal() {
   const [popups, setPopups] = useState<DamagePopupEntry[]>([])
   // Retreating with damage left on the table asks once more
   const [confirmingRetreat, setConfirmingRetreat] = useState(false)
+  // Choices for the next song (Gospel's call, Soul's paid bonus); reset after each play
+  const [callIt, setCallIt] = useState(false)
+  const [soul, setSoul] = useState(false)
 
   const handlePopupComplete = useCallback((id: string) => {
     setPopups((prev) => prev.filter((p) => p.id !== id))
@@ -171,9 +179,22 @@ export function CombatModal() {
   const canRoll = canAct && !diceBusy && !featureRequest
   const canPaidReroll = !!lastPlayedSong && canRerollSong(lastPlayedSong.id)
 
+  // Choices for the next song: Gospel's call and Soul's paid bonus. Both reset after a play.
+  const t = getTunables()
+  const canCall = player.styles.includes('staccato') && !stylesUsed.includes('staccato')
+  const canSoul = player.styles.includes('inspired-play') && !soulActive &&
+    (turnStartInspiration ?? 0) >= t.inspiredPlayMin && player.inspiration >= t.inspiredPlayCost
   const handlePlaySong = async (songId: string) => {
     if (!canRoll || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
-    const result = await dispatch({ type: 'PLAY_SONG', songId, targetMonsterId: selectedTargetId })
+    const result = await dispatch({
+      type: 'PLAY_SONG',
+      songId,
+      targetMonsterId: selectedTargetId,
+      ...(callIt && canCall ? { staccatoCall: true } : {}),
+      ...(soul && canSoul ? { inspiredPlay: true } : {}),
+    })
+    setCallIt(false)
+    setSoul(false)
     if (result.ok) void showDamageEvents(result.events)
   }
 
@@ -184,12 +205,28 @@ export function CombatModal() {
   }
 
   // Rubato: a free reroll of a d4/d8 song, once per turn
-  // Rallying Cry: armed by a tame this turn; the bard picks a spent song to refresh
-  const canRally =
-    canRoll && rallyReady && player.styles.includes('staccato') && !stylesUsed.includes('staccato')
+  // Gospel: a called monster was won over; the bard picks a spent song to refresh
+  const canRally = canRoll && rallyReady && player.styles.includes('staccato')
   const handleRally = (songId: string) => {
     if (!canRally) return
     void dispatch({ type: 'RALLY_SONG', songId })
+  }
+  // Blues: pay Inspiration to refresh a spent d20 song, once per turn
+  const canLinger = canRoll && player.styles.includes('fermata') && !stylesUsed.includes('fermata') &&
+    player.inspiration >= t.fermataInspirationCost
+  const handleLinger = (songId: string) => {
+    if (!canLinger) return
+    void dispatch({ type: 'LINGER_SONG', songId })
+  }
+  const refreshFor = (song: Song): { onRefresh: () => void; refreshTitle: string } | undefined => {
+    if (!isSongSpent(song.id)) return undefined
+    if (canRally && staccatoCanRefresh(song)) {
+      return { onRefresh: () => handleRally(song.id), refreshTitle: `${STYLES.staccato.name}: your call came true. Refresh this song` }
+    }
+    if (canLinger && fermataCanRefresh(song)) {
+      return { onRefresh: () => handleLinger(song.id), refreshTitle: `${STYLES.fermata.name}: refresh this song for ${t.fermataInspirationCost} Inspiration (once per turn)` }
+    }
+    return undefined
   }
   const hasSpentOwnSong = player.songs.some((sg) => isSongSpent(sg.id))
 
@@ -400,7 +437,7 @@ export function CombatModal() {
                       <div className="flex flex-col gap-1.5">
                         <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
                         {styleNotes.length > 0 && (
-                          <div className="flex flex-wrap justify-end gap-1" aria-label="Styles that shaped this play">
+                          <div className="flex flex-wrap justify-end gap-1" aria-label="Genres that shaped this play">
                             {styleNotes.map((name) => (
                               <span key={name} className="style-chip">&#x266A; {name}</span>
                             ))}
@@ -423,7 +460,26 @@ export function CombatModal() {
               {canRally && hasSpentOwnSong && (
                 <div className="mb-3 flex items-center justify-center gap-2 border-l-2 border-orange-300/40 py-1.5 pl-3 text-center text-sm text-orange-100 animate-fade-in">
                   <RotateCcw size={15} aria-hidden="true" />
-                  <span><strong>{STYLES.staccato.name}</strong> is ready. Choose a spent song to refresh.</span>
+                  <span><strong>{STYLES.staccato.name}</strong>: your call came true. Choose a spent song to refresh.</span>
+                </div>
+              )}
+              {soulActive && player.styles.includes('inspired-play') && (
+                <p className="mb-2 text-center text-xs text-amber-200"><strong>{STYLES['inspired-play'].name}</strong>: +{t.inspiredPlayBonus} on every song this concert</p>
+              )}
+              {canRoll && (canCall || canSoul) && (
+                <div className="mb-3 flex flex-wrap items-center justify-center gap-2 text-xs" role="group" aria-label="Choices for your next song">
+                  {canCall && (
+                    <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-gold-700/30 px-3 py-1 text-parchment-200 hover:bg-white/5">
+                      <input type="checkbox" checked={callIt} onChange={(e) => setCallIt(e.target.checked)} />
+                      <span><strong>{STYLES.staccato.name}</strong>: call it (this song wins over {target?.name ?? 'the target'})</span>
+                    </label>
+                  )}
+                  {canSoul && (
+                    <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-gold-700/30 px-3 py-1 text-parchment-200 hover:bg-white/5">
+                      <input type="checkbox" checked={soul} onChange={(e) => setSoul(e.target.checked)} />
+                      <span><strong>{STYLES['inspired-play'].name}</strong>: +{t.inspiredPlayBonus} on every song this concert, for {t.inspiredPlayCost} Inspiration</span>
+                    </label>
+                  )}
                 </div>
               )}
               <SongGrid count={playableSongs.length}>
@@ -437,7 +493,7 @@ export function CombatModal() {
                     index={idx}
                     rolls={currentSongId === song.id ? rolls : undefined}
                     reroll={reroll && lastPlayedSong?.id === song.id ? reroll : undefined}
-                    onRally={canRally && isSongSpent(song.id) && staccatoCanRefresh(song) ? () => handleRally(song.id) : undefined}
+                    {...refreshFor(song)}
                   />
                 ))}
               </SongGrid>

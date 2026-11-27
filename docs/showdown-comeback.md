@@ -32,4 +32,6 @@ Measured with `npx tsx scripts/showdown-comeback.ts` (smart bots; each game is p
 
 At other table sizes (typical pace, 200 games): 2 bards (parity 50%): current 97%, head start 20/10 77%, 10/5 72%, fandom only 64%. 4 bards (parity 25%): current 89%, head start 20/10 57%, 10/5 47%, underdog boost 52%.
 
+Re-run after the switch from styles to genres (3 bards, typical pace, 300 games): current rules 92%, fandom ×6 72%, head start 20/10/0 66%, 10/5/0 57%, head start 20/10/0 + Silence targets the leader 47%, fandom only 48%. Same picture.
+
 The re-scored variants assume the bots would play the Showdown the same way under the new rule. Bots maximise their own fandom either way, so that holds closely.

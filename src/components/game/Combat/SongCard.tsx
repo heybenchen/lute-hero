@@ -1,7 +1,6 @@
 import { Song, SongSlot, DiceRoll } from '@/types'
 import { DiceShape } from '@/components/ui/DiceShape'
 import { GENRE_THEME } from '@/data/genreTheme'
-import { STYLES } from '@/data/styles'
 import { Ban, RotateCcw } from 'lucide-react'
 import { RerollPill } from './RerollPill'
 import type { RerollOption } from './reroll'
@@ -16,8 +15,10 @@ interface SongCardProps {
   rolls?: DiceRoll[]
   /** When set, these are the most recently rolled dice: a reroll button sits on them */
   reroll?: RerollOption
-  /** Rallying Cry: offered on a spent song once a tame has armed it */
-  onRally?: () => void
+  /** Refresh this spent song: Gospel after a called win, or Blues for Inspiration */
+  onRefresh?: () => void
+  /** Tooltip naming the genre that refreshes it */
+  refreshTitle?: string
 }
 
 /**
@@ -53,7 +54,7 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
             >
               {displayValue}
               {styleBonus > 0 && (
-                <span className="ml-0.5 align-top text-[10px] text-amber-300" title="Style bonus">+{styleBonus}</span>
+                <span className="ml-0.5 align-top text-[10px] text-amber-300" title="Genre bonus">+{styleBonus}</span>
               )}
               {cascadeSum > 0 && (
                 <span className="ml-0.5 align-top text-[10px] text-gold-400" title="Crit bonus dice">+{cascadeSum}</span>
@@ -70,12 +71,12 @@ function SlotDie({ slot, roll }: { slot: SongSlot; roll?: DiceRoll }) {
   )
 }
 
-export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, reroll, onRally }: SongCardProps) {
+export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, reroll, onRefresh, refreshTitle }: SongCardProps) {
   const hasDice = song.slots.some((s) => s.dice)
   // The just-played song shows its roll results, so keep it fully lit (not dimmed);
   // a spent song on offer for Rallying Cry stays lit too.
   const isCurrent = !!rolls && rolls.length > 0
-  const dimmed = song.used && !isCurrent && !onRally
+  const dimmed = song.used && !isCurrent && !onRefresh
   // Clicking the die itself performs the song
   const playable = hasDice && !song.used && !disabled
 
@@ -96,7 +97,7 @@ export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, r
         <div className="p-2">
           {/* Dice: click them to perform the song. A reroll button sits on the
               dice just rolled, hanging off their lower edge so the numbers stay visible. */}
-          <div className={`relative ${reroll ? 'mb-6' : onRally ? 'mb-2.5' : ''}`}>
+          <div className={`relative ${reroll ? 'mb-6' : onRefresh ? 'mb-2.5' : ''}`}>
           <button
             type="button"
             onClick={playable ? onPlay : undefined}
@@ -121,10 +122,10 @@ export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, r
           {reroll && <RerollPill reroll={reroll} />}
           </div>
 
-          {/* Rallying Cry: bring this spent song back */}
-          {onRally && (
+          {/* Gospel or Blues: bring this spent song back */}
+          {onRefresh && (
             <button
-              onClick={onRally}
+              onClick={onRefresh}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 font-medieval text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 animate-gentle-flash"
               style={{
                 background: 'linear-gradient(135deg, rgba(232, 120, 60, 0.3), rgba(180, 80, 40, 0.22))',
@@ -132,7 +133,7 @@ export function SongCard({ song, resisted, onPlay, disabled, index = 0, rolls, r
                 color: '#ffe0c7',
                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
               }}
-              title={`${STYLES.staccato.name}: refresh this spent song (once per turn)`}
+              title={refreshTitle ?? 'Refresh this spent song'}
             >
               <RotateCcw size={13} aria-hidden="true" />
               Refresh song
