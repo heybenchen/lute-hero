@@ -172,6 +172,9 @@ const hasHarmony = (songs: Song[]) => elementCount(songs) >= getTunables().barbe
  * nothing, unless Crossover lets it through (each Showdown performance is the
  * bard's whole turn, so its once-per-turn use is always fresh).
  */
+/** Trance adds its bonus only while the bard holds 0 Inspiration. */
+const holdsTrance = (p: Player) => p.genres.includes('trance')
+
 const immuneFactor = (p: Player) => (p.genres.includes('crossover') ? getTunables().crossoverMultiplier : 0)
 
 function songDie(song: Song): Dice | null {
@@ -342,7 +345,18 @@ export class SmartBot {
   }
 
   private spareInspiration(player: Player): number {
+    // Trance pays only at 0 Inspiration, so a Trance bard keeps no reserve
+    if (holdsTrance(player)) return player.inspiration
     return Math.max(0, player.inspiration - (this.endgame() ? this.p.showdownReserve : 0))
+  }
+
+  /**
+   * What one Inspiration is worth to this bard when deciding an encore. For a
+   * Trance bard holding Inspiration is a cost (every song misses its bonus until
+   * it is gone), so an encore is nearly free.
+   */
+  private inspirationWorth(player: Player): number {
+    return holdsTrance(player) ? 0.5 : this.p.inspirationValue
   }
 
   // ------------------------------------------------------------------
@@ -651,8 +665,8 @@ export class SmartBot {
     const freeReroll = has('bebop') && bebopUsesLeft(used) > 0 && isBebopDie(die)
     if (freeReroll) pk = 1 - (1 - pk) ** 2
     let inspirationSpend = 0
-    if (this.spareInspiration(fighter) >= 1 && pk * worth > this.p.inspirationValue * 1.5) {
-      inspirationSpend = (1 - pk) * this.p.inspirationValue
+    if (this.spareInspiration(fighter) >= 1 && pk * worth > this.inspirationWorth(fighter) * 1.5) {
+      inspirationSpend = (1 - pk) * this.inspirationWorth(fighter)
       pk = 1 - (1 - pk) ** 2
     }
 
@@ -689,7 +703,7 @@ export class SmartBot {
       if (canFree && pk > 0.05 && this.act({ type: 'REROLL_SONG', bebop: true })) continue
       const freeLeft = inspirationRules(specsOf(fighter)).freePerTurn > combat.freeRerollsUsed
       if (freeLeft && pk > 0.05 && this.act({ type: 'REROLL_SONG' })) continue
-      if (this.spareInspiration(fighter) >= 1 && pk * worth > this.p.inspirationValue && this.act({ type: 'REROLL_SONG' })) continue
+      if (this.spareInspiration(fighter) >= 1 && pk * worth > this.inspirationWorth(fighter) && this.act({ type: 'REROLL_SONG' })) continue
       return
     }
   }
@@ -888,7 +902,8 @@ export class SmartBot {
       punk: Math.min(1, count(['d4']) / 2),
       'soft-rock': Math.min(1, count(['d8', 'd12']) / 3),
       'prog-rock': 1, ska: 1, 'k-pop': 1, emo: 1, grunge: 1, dubstep: 1, 'trip-hop': 1,
-      trance: player.inspiration < 1 ? 1 : 0.5,
+      // The bot spends Inspiration down to 0 while it holds Trance, so the bonus lands
+      trance: 1,
     }
     const spaces = Math.max(1, this.state.spaces.filter((s) => s.monsters.length > 0).length)
     for (const st of genres) total += GENRE_MEASURED[st] * fit[st] * this.p.priorScale * spaces * 0.25
@@ -1011,6 +1026,12 @@ export class SmartBot {
       if (this.act({ type: 'REFRESH_ELEMENT_OFFERS' })) return true
     }
 
+    // Trance: spend leftover Inspiration on shelf redraws, so the next concert starts at 0
+    if (holdsTrance(me)) {
+      if (me.inspiration >= inspirationSpend() && this.act({ type: 'REFRESH_ELEMENT_OFFERS' })) return true
+      return false
+    }
+
     // Bank leftover EXP as Inspiration (it rerolls fights now and the showdown later)
     const inspCost = inspirationCostFor(me)
     const want = this.endgame() ? this.p.showdownReserve + this.p.inspirationTarget : this.p.inspirationTarget
@@ -1115,16 +1136,17 @@ export class SmartBot {
       const chase = this.crownChase(me, got)
       if (chase) {
         if (got > chase.toBeat) return
-        if (me.inspiration >= 1 && chase.pBeat * chase.gain > this.p.inspirationValue && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
+        if (me.inspiration >= 1 && chase.pBeat * chase.gain > this.inspirationWorth(me) && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
       }
       // Spread spare Inspiration over the verses still to come
-      const budget = versesLeft === 0 ? me.inspiration : Math.floor(me.inspiration / (versesLeft + 1)) || (me.inspiration > versesLeft ? 1 : 0)
+      // Trance: an encore that empties the bard's Inspiration rolls with the bonus, so spend it all
+      const budget = versesLeft === 0 || holdsTrance(me) ? me.inspiration : Math.floor(me.inspiration / (versesLeft + 1)) || (me.inspiration > versesLeft ? 1 : 0)
       if (this.p.showdownStop === 'optimal') {
         const hasFreeBebop = me.genres.includes('bebop') && !now.showdownUndo?.bebopUsed
         const rerolls = budget + (freeLeft ? 1 : 0) + (hasFreeBebop ? 1 : 0)
         const dist = this.currentPerformanceDist(me)
         if (rerolls < 1 || !dist || got >= this.stopThreshold(dist, rerolls)) return
-      } else if (got >= par * (versesLeft === 0 ? 1 : 0.85)) return
+      } else if (got >= (holdsTrance(me) && me.inspiration === 1 ? par + getTunables().tranceBonus : par) * (versesLeft === 0 ? 1 : 0.85)) return
       if (freeLeft && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue
       if (perInsp > 0 && par - got < perInsp * 2) return
       if (budget >= 1 && this.act({ type: 'REROLL_SHOWDOWN_SONG' })) continue

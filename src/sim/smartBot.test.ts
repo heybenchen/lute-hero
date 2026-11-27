@@ -27,6 +27,20 @@ describe('smart bot', () => {
     expect(Object.values(bot.state.showdownFandom).every((f) => f >= 0)).toBe(true)
   })
 
+  it('spends its Inspiration down to 0 while it holds Trance, and banks it otherwise', () => {
+    const run = (genres: string[]) => {
+      const { state, ctx } = start(7)
+      const withInsp = { ...state, players: state.players.map((p, i) => (i === 0 ? { ...p, inspiration: 3, genres: genres as typeof p.genres } : p)) }
+      const bot = new SmartBot(withInsp, ctx.rng)
+      bot.takeTurn()
+      return bot.state.players[0].inspiration
+    }
+    // Trance pays only at 0 Inspiration: the Studio's shelf redraws use it up
+    expect(run(['trance'])).toBe(0)
+    // Without it the bot keeps Inspiration for encores
+    expect(run([])).toBeGreaterThan(0)
+  })
+
   it('out-scores the baseline bot head to head', () => {
     let smartFame = 0
     let baseFame = 0

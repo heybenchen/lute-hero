@@ -23,7 +23,7 @@ Run `OPP=1 ROUND=5 GENRES=<id> npx tsx scripts/genre-audit.ts 600`. It plays 3-b
 - **Real timing.** Bots buy their first genre in **round 5** and a second in round 7 (`npx tsx scripts/genre-timing.ts`). The tested bard gets the genre on their shelf from round 5 and buys it at its **real price** the first turn they can afford it, ahead of dice upgrades.
 - **Shopping rivals.** The other two bards shop for genres like anyone (real prices, whatever the smart bot values).
 - **What "balanced" means.** Three seats means a third of games (**33.3%**). The no-genre row (everyone shopping naturally) won **32.8%** in the latest run. At 600 games one result carries about ±1.9 points of noise (±3.8 at two sigma), so only gaps over about 4 points mean anything. The goal is every genre within about 4 points of parity (roughly 31–37%).
-- **The bot values every genre.** Its odds model handles Grunge's replacement dice and Dubstep's follow-up bonus directly. K-Pop still carries an audit prior (`GENRE_PRIOR` in `smartBot.ts`) because its end-of-concert Fame is outside one-roll odds. Gospel, Blues and Soul are valued from this audit too.
+- **The bot values every genre.** Its odds model handles Grunge's replacement dice and Dubstep's follow-up bonus directly, and while it holds Trance it spends Inspiration down to 0 (no Showdown reserve, near-free encores, shelf redraws with what is left). K-Pop still carries an audit prior (`GENRE_PRIOR` in `smartBot.ts`) because its end-of-concert Fame is outside one-roll odds. Gospel, Blues and Soul are valued from this audit too.
 - **The bot plays the choices.** Gospel calls a play it expects to win (at least 60%) while a spent song is waiting; Soul pays when the +2 lifts the win chance by more than the Inspiration is worth; Blues refreshes a spent d20 song when it is worth more than the Inspiration. These heuristics are simple, so the two choice genres that measure low (Gospel, Soul) may play better in human hands.
 
 ## All genres (current values)
@@ -74,8 +74,8 @@ Data-defined specs, except Trip-Hop, which the `MOVE` reducer handles (`anywhere
 | **Ska** | `ska` | 2 (4) | Whenever you roll an odd number, add +1 to the song. | `skaBonus` (1) | 32.1 |
 | **K-Pop** | `k-pop` | 2 (2) | Gain +15 Fame for winning over 3 monsters or +25 Fame for winning 4 monsters in one concert. | `kPopFame3` (15), `kPopFame4` (25) | 32.0 |
 | **Emo** | `emo` | 2 (2) | Declare that this is your last song of the concert: add +8 to it. The concert ends after this song. | `emoBonus` (8) | 24.8 |
-| **Trance** | `trance` | 2 (2) | While you have 0 Inspiration, add +3 to each song. | `tranceBonus` (3) | 26.4 |
-| **Grunge** | `grunge` | 2 (2) | You may roll two d12s in place of your d20s. | — | 31.2† |
+| **Trance** | `trance` | 2 (2) | While you have 0 Inspiration, add +3 to each song. | `tranceBonus` (3) | 35.0‡ |
+| **Grunge** | `grunge` | 2 (2) | You may roll two d12s in place of your d20s. | — | 35.8‡ |
 | **Dubstep** | `dubstep` | 2 (2) | Every time a song moves a monster without winning it over, add +2 to your next song. | `dubstepBonus` (2) | 28.8† |
 | **Trip-Hop** | `trip-hop` | 1 (2) | Once per turn, move to any space on the board. | — | 29.0 |
 
@@ -83,12 +83,11 @@ All 30 land between **24.8% (Emo) and 39.3% (Bluegrass)**. 16 sit inside the 31�
 
 ## Outside the band
 
-Latest run (600 games each, baseline 32.8%), after the earlier buffs. † Baroque, Prog Rock, Grunge and Dubstep changed afterward, so their listed rates are historical until the next audit.
+Latest run (600 games each, baseline 32.8%), after the earlier buffs. † Baroque, Prog Rock and Dubstep changed afterward, so their listed rates are historical until the next audit. ‡ Re-measured separately (600 games, `OPP=1 ROUND=5`): Grunge after its rule change, and Trance once the smart bot learned to spend its Inspiration down to 0 while holding it (22.2% with the old bot, which banked Inspiration).
 
 | Genre | Result | Notes |
 |---|---|---|
 | **Emo** | 24.8% at 2 EXP | A declared final song at +8 (see below). Earlier versions that boosted only the last song (doubling, +4, +5) measured 22–25%: the last song rarely comes up |
-| **Trance** | 26.4% at 2 EXP | The smart bot banks Inspiration for the showdown, so it rarely sits at 0; players who spend it down will get more from it |
 | **Gospel** | 27.1% at 2 EXP | Refreshing any die didn't move it; the call is the lever |
 | **New Age** | 28.1% at 1 EXP | 34.9% at 0 EXP |
 | **Prog Rock** | 28.1% at 2 EXP | 31.4% last run, partly noise |

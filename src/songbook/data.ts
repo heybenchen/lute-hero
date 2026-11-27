@@ -98,8 +98,8 @@ export const GENRE_META: Record<GenreId, GenreMeta> = {
   ska: { group: 'new', timing: 'always', was: 4, win: 32.1, tunables: ['skaBonus'], note: 'Reads the face the die lands on, before any bonus.' },
   'k-pop': { group: 'new', timing: 'always', was: 2, win: 32.0, tunables: ['kPopFame3', 'kPopFame4'], note: 'Paid at the end of the concert; guest songs\' wins don\'t count.' },
   emo: { group: 'new', timing: 'button', was: 2, win: 24.8, tunables: ['emoBonus'], note: 'Tick it before a song: that song gets the bonus, and the concert ends after it (monsters you moved but didn\'t win over level up, as when you end early). An encore keeps the bonus.' },
-  trance: { group: 'new', timing: 'always', was: 2, win: 26.4, tunables: ['tranceBonus'] },
-  grunge: { group: 'new', timing: 'always', was: 2, win: 31.2, tunables: [], note: 'Each d20 becomes two independently rolled d12s, including in the Final Showdown.' },
+  trance: { group: 'new', timing: 'always', was: 2, win: 35.0, tunables: ['tranceBonus'] },
+  grunge: { group: 'new', timing: 'always', was: 2, win: 35.8, tunables: [], note: 'Each d20 becomes two independently rolled d12s, including in the Final Showdown.' },
   dubstep: { group: 'new', timing: 'always', was: 2, win: 28.8, tunables: ['dubstepBonus'], note: 'Only a song that took some Resolve counts.' },
   'trip-hop': {
     group: 'new', timing: 'button', was: 2, win: 29.0, tunables: [],
