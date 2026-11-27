@@ -336,6 +336,57 @@ const VARIANTS: Variant[] = [
       return total
     },
   })),
+  ...([[1, 2], [2, 2], [1, 3], [2, 4]] as const).map(([k, bonus]): Variant => ({
+    // Outplay bonus, nothing taken: every bard whose performance beats the verse-start
+    // leader's gains bonus x the margin as extra Fame; the leader keeps everything
+    name: `Fandom x${k} + outplay bonus ${bonus}x margin (leader loses nothing)`,
+    kind: 'scoring',
+    score: (fame, p) => {
+      const total = { ...fame }
+      const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+      for (let v = 0; v < verses; v++) {
+        const lead = leaderOf(total)
+        const leadPerf = p.verses[lead][v] ?? 0
+        for (const id of Object.keys(fame)) {
+          const perf = p.verses[id][v] ?? 0
+          total[id] += k * perf + (id === lead ? 0 : bonus * Math.max(0, perf - leadPerf))
+        }
+      }
+      return total
+    },
+  })),
+  ...(() => {
+    // Chip-friendly: each verse's performance is rounded down to a multiple of 5 first,
+    // so every Fame change is a multiple of 5 (Fame chips come in 5 / 10 / 25 / 50)
+    const r5 = (n: number) => Math.floor(n / 5) * 5
+    const chip = (name: string, k: number, bonus: (margin: number) => number): Variant => ({
+      name: `[chips] ${name}`,
+      kind: 'scoring',
+      score: (fame, p) => {
+        const total = { ...fame }
+        const verses = Math.max(...Object.values(p.verses).map((v) => v.length))
+        for (let v = 0; v < verses; v++) {
+          const lead = leaderOf(total)
+          const leadPerf = r5(p.verses[lead][v] ?? 0)
+          for (const id of Object.keys(fame)) {
+            const perf = r5(p.verses[id][v] ?? 0)
+            total[id] += k * perf + (id === lead ? 0 : bonus(perf - leadPerf))
+          }
+        }
+        return total
+      },
+    })
+    return [
+      chip('rounded, current rules', 1, () => 0),
+      chip('rounded, fandom x2', 2, () => 0),
+      chip('rounded, fandom x2 + 2x margin over the leader', 2, (m) => 2 * Math.max(0, m)),
+      chip('rounded, fandom x2 + 4x margin over the leader', 2, (m) => 4 * Math.max(0, m)),
+      chip('rounded, fandom x2 + 25 for beating the leader', 2, (m) => (m > 0 ? 25 : 0)),
+      chip('rounded, fandom x2 + 25 for beating the leader, 50 by 10+', 2, (m) => (m >= 10 ? 50 : m > 0 ? 25 : 0)),
+      chip('rounded, fandom x2 + 50 for beating the leader', 2, (m) => (m > 0 ? 50 : 0)),
+      chip('rounded, fandom x1 + 25 for beating the leader, 50 by 10+', 1, (m) => (m >= 10 ? 50 : m > 0 ? 25 : 0)),
+    ]
+  })(),
   {
     name: 'Fandom x2 + catch-up Inspiration',
     kind: 'replay',

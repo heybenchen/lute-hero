@@ -83,3 +83,22 @@ Showdown fandom is multiplied by a bard's Fame rank. "At start" uses the ranking
 | Last place ×6, others ×2 (each verse) | 45% (25%) | 54% (23%) | 52% (49%) | 63% (13%) |
 | **By rank each verse: leader ×1, then evenly up to last ×3** | **56% (16%)** | **64% (11%)** | **64% (37%)** | **62% (9%)** |
 | By rank each verse: leader ×2 … last ×4 | 56% (17%) | 64% (12%) | 66% (35%) | 59% (9%) |
+
+## Outplay bonus without taking anything, and chip-friendly scoring
+
+Fame is tracked with chips of 5 / 10 / 25 / 50, so every Fame change must be a multiple of 5. "[chips]" variants round each verse's performance down to a multiple of 5 before scoring. The leader (most Fame at the start of the verse) never loses Fame in these. Leader win % (last-place win %).
+
+| Variant | 3 bards, expert | 3 bards, typical | 2 bards, typical | 4 bards, typical |
+|---|---|---|---|---|
+| Current rules | 95% (0%) | 92% (0%) | 96% (5%) | 95% (0%) |
+| Fandom ×2 + everyone who beats the leader's verse gains 2× the margin | 76% (6%) | 74% (3%) | 86% (15%) | 68% (5%) |
+| Fandom ×2 + 4× the margin | 65% (11%) | 66% (6%) | 81% (20%) | 62% (7%) |
+| [chips] rounded, current rules | 93% (0%) | 93% (0%) | 96% (5%) | 95% (0%) |
+| [chips] fandom ×2 + 2× margin | 76% (6%) | 74% (3%) | 86% (14%) | 68% (6%) |
+| [chips] fandom ×2 + 4× margin | 67% (10%) | 64% (7%) | 80% (20%) | 61% (7%) |
+| [chips] fandom ×2 + 25 for beating the leader | 75% (6%) | 77% (2%) | 86% (14%) | 70% (4%) |
+| [chips] fandom ×2 + 25, or 50 when beating by 10+ | 69% (8%) | 72% (5%) | 80% (20%) | 62% (6%) |
+| [chips] fandom ×2 + 50 for beating the leader | 64% (10%) | 69% (5%) | 78% (22%) | 60% (6%) |
+| [chips] fandom ×1 + 25, or 50 when beating by 10+ | 70% (6%) | 74% (2%) | 84% (16%) | 68% (3%) |
+
+Rounding to 5s barely changes anything. Bonuses that take nothing from the leader are a little weaker than the switch-over versions, and every option is weakest at 2 bards, where the trailing bard starts ~115 Fame behind.
