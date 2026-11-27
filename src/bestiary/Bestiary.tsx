@@ -14,7 +14,7 @@ import {
   type Monster,
 } from './data'
 import { MONSTER_LEVEL_SPRITES } from '@/assets/combat/levels'
-import type { Genre } from '@/types'
+import type { Element } from '@/types'
 
 /* ------------------------------------------------------------------ */
 /*  Elemental identity: colour + icon (effects come from the roster).  */
@@ -139,7 +139,7 @@ function Portrait({
   const Icon = t.Icon
   const internalImage = url.match(/^game-monster:\/\/(Ballad|Folk|Hymn|Shanty)\/([1-5])$/)
   const resolvedUrl = internalImage
-    ? MONSTER_LEVEL_SPRITES[internalImage[1] as Genre][Number(internalImage[2]) - 1]
+    ? MONSTER_LEVEL_SPRITES[internalImage[1] as Element][Number(internalImage[2]) - 1]
     : url
   if (url) {
     return (

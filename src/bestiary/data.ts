@@ -5,7 +5,7 @@
  * relative imports.
  */
 import { MONSTER_TEMPLATES } from '../data/monsters.js'
-import type { Genre } from '../types/index.js'
+import type { Element } from '../types/index.js'
 
 export type BestiaryType = 'fire' | 'sea' | 'sky' | 'forest'
 
@@ -81,7 +81,7 @@ export const slug = (s: string): string =>
 
 type RosterEntry = [name: string, type: BestiaryType, baseHp: number, tagline: string]
 
-const GAME_TYPE_BY_GENRE: Record<Genre, BestiaryType> = {
+const GAME_TYPE_BY_ELEMENT: Record<Element, BestiaryType> = {
   Ballad: 'fire',
   Folk: 'forest',
   Hymn: 'sky',
@@ -91,18 +91,18 @@ const GAME_TYPE_BY_GENRE: Record<Genre, BestiaryType> = {
 const GAME_LEVEL_HP = [8, 14, 24, 40, 60] as const
 
 /** Stable reference resolved to a bundled sprite by the browser UI. */
-export const gameMonsterImage = (genre: Genre, level: number): string =>
-  `game-monster://${genre}/${level}`
+export const gameMonsterImage = (element: Element, level: number): string =>
+  `game-monster://${element}/${level}`
 
 /** The sixteen spawnable monsters used by Lute Hero, with their five evolutions. */
 export function gameMonsters(): Monster[] {
   return MONSTER_TEMPLATES.filter(
-    (template): template is typeof template & { vulnerability: Genre } =>
+    (template): template is typeof template & { vulnerability: Element } =>
       !template.isBoss && template.vulnerability !== null
   ).map((template) => {
-    const genre = template.vulnerability
-    const type = GAME_TYPE_BY_GENRE[genre]
-    const matchup = `Weak to ${genre} · Immune to ${template.resistance}`
+    const element = template.vulnerability
+    const type = GAME_TYPE_BY_ELEMENT[element]
+    const matchup = `Weak to ${element} · Immune to ${template.resistance}`
 
     return {
       id: `lute-hero-${template.id}`,
@@ -110,13 +110,13 @@ export function gameMonsters(): Monster[] {
       type,
       baseHp: GAME_LEVEL_HP[0],
       tagline: template.description,
-      imageUrl: gameMonsterImage(genre, 1),
+      imageUrl: gameMonsterImage(element, 1),
       hidden: false,
       levels: GAME_LEVEL_HP.map((hp, index) => ({
         level: index + 1,
         hp,
         effect: matchup,
-        imageUrl: gameMonsterImage(genre, index + 1),
+        imageUrl: gameMonsterImage(element, index + 1),
       })),
     }
   })
