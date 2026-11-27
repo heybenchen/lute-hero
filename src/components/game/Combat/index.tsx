@@ -19,7 +19,8 @@ import { counterpointMultiplier, fermataCanRefresh, rubatoCanReroll, rubatoUsesL
 import { getTunables } from '@/data/tunables'
 import { songIsImmune, songsCanStillDamage } from '@/game-logic/combat/damageCalculator'
 import { CombatStyles } from '../DraftShop/StyleShelf'
-import { Flag, RotateCcw, Target } from 'lucide-react'
+import { ArrowLeft, Flag, Map as MapIcon, RotateCcw, Sparkles } from 'lucide-react'
+import { COMBAT_STAGE_BACKDROPS } from '@/assets/combat/stages'
 
 export function CombatModal() {
   const isActive = useGameStore((state) => state.isActive)
@@ -31,6 +32,9 @@ export function CombatModal() {
   const online = useGameStore((state) => state.mode === 'online')
   const myPlayerId = useGameStore(selectMyPlayerId)
   const spaceId = useGameStore((state) => state.spaceId)
+  const locationName = useGameStore(
+    (state) => state.spaces.find((space) => space.id === state.spaceId)?.name ?? 'Unknown Venue'
+  )
   const featureRequest = useGameStore((state) => state.featureRequest)
   // Everything a roll changes, held at its pre-roll value while the 3D dice
   // are in the air: HP, spent songs, rewards and roll results only appear
@@ -94,6 +98,9 @@ export function CombatModal() {
   // Choices for the next song (Gospel's call, Soul's paid bonus); reset after each play
   const [callIt, setCallIt] = useState(false)
   const [soul, setSoul] = useState(false)
+  // Victory rewards stay unresolved while the player briefly checks the board.
+  const [previewingMap, setPreviewingMap] = useState(false)
+  const [rollDisplayDismissed, setRollDisplayDismissed] = useState(false)
 
   const handlePopupComplete = useCallback((id: string) => {
     setPopups((prev) => prev.filter((p) => p.id !== id))
@@ -115,6 +122,12 @@ export function CombatModal() {
       setChosenTargetId(alive[0]?.id ?? null)
     }
   }, [isActive, monsters, chosenTargetId, lockedTarget])
+
+  // A fresh result is relevant again. Choosing another target below dismisses
+  // the old result for good rather than letting it reappear when switching back.
+  useEffect(() => {
+    setRollDisplayDismissed(false)
+  }, [rolls])
 
   // Any new play (or a new fight) drops a pending retreat confirmation
   useEffect(() => {
@@ -163,8 +176,12 @@ export function CombatModal() {
   const canContinue = ownSongsRemaining > 0 || featurableSongs.length > 0
 
   const hasLiveTarget = selectedTargetId !== null && monsters.some((m) => m.id === selectedTargetId && m.currentHP > 0)
+  const hasRolledDice = rolls.length > 0
+  const rollMatchesSelectedTarget =
+    !rollDisplayDismissed && selectedTargetId !== null && selectedTargetId === lastTargetMonsterId
   const totalExp = rewards.totalExp
   const isCombatOver = allMonstersDefeated || !canContinue
+  const stageBackdrop = COMBAT_STAGE_BACKDROPS[Math.min(15, Math.max(0, spaceId ?? 0))]
 
   /**
    * Reroll is offered only for a song whose dice are SPENT — it damaged without
@@ -184,6 +201,12 @@ export function CombatModal() {
   const canCall = player.styles.includes('staccato') && !stylesUsed.includes('staccato')
   const canSoul = player.styles.includes('inspired-play') && !soulActive &&
     (turnStartInspiration ?? 0) >= t.inspiredPlayMin && player.inspiration >= t.inspiredPlayCost
+
+  const handleSelectTarget = (monsterId: string) => {
+    if (monsterId !== selectedTargetId) setRollDisplayDismissed(true)
+    setChosenTargetId(monsterId)
+  }
+
   const handlePlaySong = async (songId: string) => {
     if (!canRoll || isSongSpent(songId) || !selectedTargetId || !hasLiveTarget) return
     const result = await dispatch({
@@ -271,11 +294,15 @@ export function CombatModal() {
   // (Featured songs roll without styles, so Dissonance doesn't soften theirs.)
   const remainingSongs = playableSongs.filter((s) => !isSongSpent(s.id))
   const target = monsters.find((monster) => monster.id === selectedTargetId)
+  const lastTargetIndex = monsters.findIndex((monster) => monster.id === lastTargetMonsterId)
+  const lastHitMonster = lastTargetIndex >= 0 ? monsters[lastTargetIndex] : undefined
+  const lastHitCalculation = lastTargetIndex >= 0 ? lastDamageCalculations[lastTargetIndex] : undefined
   const availableTargets = lockedTarget ? [lockedTarget] : monsters
   const damageOptions = {
     immuneMultiplier: counterpointMultiplier({ styles: player.styles, used: stylesUsed, firstRoll: false, allElements: false, elementCount: 0 }),
   }
   const retreatForfeitsDamage =
+    hasRolledDice &&
     canContinue &&
     !allMonstersDefeated &&
     (songsCanStillDamage(remainingSongs, availableTargets, damageOptions) || songsCanStillDamage(featurableSongs, availableTargets))
@@ -296,11 +323,27 @@ export function CombatModal() {
     dispatch({ type: 'END_COMBAT' })
   }
 
+  if (previewingMap && allMonstersDefeated) {
+    return (
+      <>
+        <div className="pointer-events-none fixed inset-0 z-40 ring-inset ring-2 ring-gold-500/20" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={() => setPreviewingMap(false)}
+          className="fixed left-1/2 top-20 z-50 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-lg border border-gold-500/50 bg-wood-950/95 px-4 py-3 font-medieval text-sm font-bold text-gold-200 shadow-xl shadow-black/60 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-gold-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+          Return to Fame &amp; Glory
+        </button>
+      </>
+    )
+  }
+
   return (
     <div className="modal-overlay">
       <DamagePopups entries={popups} onComplete={handlePopupComplete} />
-      <div className="modal-content max-w-7xl animate-scale-in">
-        <div className="p-4 sm:p-5">
+      <div className="modal-content combat-pixel-modal max-w-7xl animate-scale-in">
+        <div className="p-3 sm:p-5">
           {/* Header — once the concert is over it becomes the rewards summary */}
           {isCombatOver ? (
             <div
@@ -336,19 +379,30 @@ export function CombatModal() {
               ))}
             </div>
           ) : (
-            <div className="mb-4 flex flex-col gap-2 animate-fade-in sm:flex-row sm:items-end sm:justify-between">
+            <div className="pixel-combat-header mb-3 flex flex-col gap-2 animate-fade-in sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="font-display text-2xl leading-none text-gold-300 sm:text-3xl">The Mashup</div>
-                <p className="mt-1 text-sm text-parchment-400">
-                  {player.name}{!canAct ? ' · watching live' : ''}
-                </p>
+                <div className="mb-2 font-['Cinzel:Bold'] text-[9px] uppercase tracking-[0.3em] text-[#a88953]">
+                  {player.name}&rsquo;s concert
+                </div>
+                <div className="font-['MedievalSharp:Regular'] text-2xl leading-none text-[#f0d78c] sm:text-3xl">
+                  Performing at {locationName}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-['Spectral:Regular'] text-sm text-parchment-400">
+                  <span className="inline-flex items-center gap-1 text-violet-200" title="Current Inspiration">
+                    <Sparkles size={12} aria-hidden="true" />
+                    {player.inspiration} Inspiration
+                  </span>
+                </div>
               </div>
-              {canContinue && (
-                <p className="flex items-center gap-2 text-sm text-parchment-300">
-                  <Target size={15} className="shrink-0 text-gold-400" aria-hidden="true" />
-                  {lockedTarget ? 'Win over the monster you moved, or end the concert.' : 'Pick a monster, then play a song.'}
-                </p>
-              )}
+              <div className="pixel-last-hit-slot h-[52px]">
+                {lastHitMonster && lastHitCalculation ? (
+                  <DamageCell
+                    calc={lastHitCalculation}
+                    monster={lastHitMonster}
+                    styleNotes={styleNotes}
+                  />
+                ) : null}
+              </div>
             </div>
           )}
 
@@ -419,32 +473,41 @@ export function CombatModal() {
               >
                 {selectedSpreadGenre ? 'Claim Fame & Glory' : 'Choose an Element'}
               </button>
+              <button
+                type="button"
+                onClick={() => setPreviewingMap(true)}
+                className="btn-secondary mt-2 flex w-full items-center justify-center gap-2 px-4 py-3 text-base"
+              >
+                <MapIcon size={15} aria-hidden="true" />
+                View Map
+              </button>
             </div>
           ) : (
-            <section className="mb-4">
-              <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-x-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
+            <section
+              className="combat-battlefield mb-4"
+              style={{ backgroundImage: `linear-gradient(180deg, rgba(8,6,12,.08), rgba(8,5,3,.42)), url(${stageBackdrop})` }}
+            >
+              <div className="pixel-stage-header">
+                <span>Chamber {(spaceId ?? 0) + 1}</span>
+                <span>{monsters.filter((monster) => monster.currentHP > 0).length} hostiles remain</span>
+              </div>
+              <div className="pixel-stage-scanlines" aria-hidden="true" />
+              <div className="pixel-monster-grid">
                 {monsters.map((monster: Monster, idx: number) => (
                   // One column per monster: the card, with its damage lined up right below
-                  <div key={monster.id} className="flex w-[min(82vw,320px)] shrink-0 snap-center flex-col gap-2.5 sm:w-full">
+                  <div key={monster.id} className="flex min-w-0 flex-col gap-2">
                     <MonsterCard
                       monster={monster}
                       index={idx}
                       fameValue={calculateMonsterFameValue(monster.level)}
                       isSelected={selectedTargetId === monster.id}
-                      onSelect={canRoll && !lockedTarget && monster.currentHP > 0 ? () => setChosenTargetId(monster.id) : undefined}
+                      onSelect={canRoll && !lockedTarget && monster.currentHP > 0 ? () => handleSelectTarget(monster.id) : undefined}
+                      lastDamage={
+                        monster.id === lastTargetMonsterId
+                          ? lastDamageCalculations[idx]?.totalDamage
+                          : undefined
+                      }
                     />
-                    {monster.id === lastTargetMonsterId && lastDamageCalculations[idx] && (
-                      <div className="flex flex-col gap-1.5">
-                        <DamageCell calc={lastDamageCalculations[idx]} monster={monster} />
-                        {styleNotes.length > 0 && (
-                          <div className="flex flex-wrap justify-end gap-1" aria-label="Genres that shaped this play">
-                            {styleNotes.map((name) => (
-                              <span key={name} className="style-chip">&#x266A; {name}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -453,7 +516,7 @@ export function CombatModal() {
 
           {/* Songs Section */}
           {!allMonstersDefeated && (
-            <section className="mb-4 border-t border-gold-700/15 pt-4">
+            <section className="pixel-command-deck mb-4 pt-3">
               <SectionHeader
                 label={`Choose a song · ${ownSongsRemaining} ready`}
               />
@@ -491,8 +554,8 @@ export function CombatModal() {
                     onPlay={() => handlePlaySong(song.id)}
                     disabled={!canRoll || isSongSpent(song.id) || !hasLiveTarget}
                     index={idx}
-                    rolls={currentSongId === song.id ? rolls : undefined}
-                    reroll={reroll && lastPlayedSong?.id === song.id ? reroll : undefined}
+                    rolls={rollMatchesSelectedTarget && currentSongId === song.id ? rolls : undefined}
+                    reroll={rollMatchesSelectedTarget && reroll && lastPlayedSong?.id === song.id ? reroll : undefined}
                     {...refreshFor(song)}
                   />
                 ))}
@@ -510,7 +573,7 @@ export function CombatModal() {
               featureRequest={featureRequest}
               monsters={monsters}
               currentSongId={currentSongId}
-              rolls={rolls}
+              rolls={rollMatchesSelectedTarget ? rolls : []}
               canFeature={canRoll && hasLiveTarget}
               online={online}
               myPlayerId={myPlayerId}
@@ -568,7 +631,9 @@ export function CombatModal() {
                   color: canContinue ? '#d8c7a5' : '#f0c1aa',
                   boxShadow: 'none',
                 }}
-                title="End the concert now — you earn EXP for every monster you moved and Fame for each one you won over. Monsters you moved but didn't win over level up."
+                title={hasRolledDice
+                  ? "End the concert now — you earn EXP for every monster you moved and Fame for each one you won over. Monsters you moved but didn't win over level up."
+                  : 'Leave before rolling for free — this does not use your concert for the turn.'}
               >
                 <Flag size={16} className="shrink-0 opacity-80" aria-hidden="true" />
                 <span className="font-medieval font-bold">{canContinue ? 'End concert' : 'Finish concert'}</span>

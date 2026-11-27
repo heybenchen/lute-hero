@@ -20,6 +20,10 @@
 
 - The playtest Simulate tab has a pace: Learning / Typical (default) / Expert. The expert smart bot fought and won nearly every turn and spent every EXP at once, so by round 5 bards held 6 dice in ~3.8 elements — far ahead of real playtests. Slower paces make it slip like a person (`SmartParams.skill`); by round 5 Typical holds ~4.9 dice in ~3.2 elements, Learning ~3.4 in ~2.5. The panel shows the expected holdings for the chosen pace and round. Paces are calibrated by guesswork — retune `SIMULATION_PACES` skills against real playtest numbers.
 
+- Retreating before any dice are rolled is now free: it does not consume the bard's concert for the turn, alter monster chips, trigger retreat rewards, or show the damage-forfeit confirmation.
+
+- Removed the redundant floating level chips above combat monster sprites; level remains visible in each monster stat card.
+
 - Spec rule update applied: Gospel/K-Pop/Emo/Grunge/Dubstep/Punk/Ska/Pop/Soul/Opera/Orchestra/Baroque/Bluegrass/New Age rules, Hip-Hop renamed Rap, new wording ("add +N to the song", "increase the rolled value"). Baroque shipped at +1 (54% at +2) and Bluegrass on d8s only (44% on d4 and d8).
 
 - Styles became **genres**: all 20 renamed to real-world genres with new flavour lines, and "genre" replaces "style" everywhere players read (Studio shelf, Songbook, rulebook). Rule and price changes: Blues refreshes a spent d20 song for 1 Inspiration (a button), Orchestra counts monsters at the start of the concert, Mariachi costs 2, House has no cap and builds within a showdown verse at +1, Soul spends 1 Inspiration per use (3+ at the start of the turn) and costs 2, Gospel calls its target before rolling and refreshes a spent d12-or-smaller song, Pop gives its Inspiration after each concert. Ten new genres: Punk, Soft Rock, Prog Rock, Ska, K-Pop, Emo, Trance, Grunge, Dubstep and Trip-Hop (once per turn, move to any space), tuned with the audit. The smart bot learned the new choices (calls, Soul, Blues) and values the genres its odds can't see. Engine, bot, concert UI, tests, `songStyles.md`, Songbook, rulebook and PDF updated, and every genre re-measured with the style audit.
@@ -35,6 +39,61 @@
 - Rulebook now 5 pages + a quick-reference page. Fights are "concerts": a monster is "moved" (was wounded) or "won over" (was tamed) and becomes a fan; HP is "Resolve"; rerolls are "encores". Elements are shown as a cross diagram, monster levels appear once (on the quick reference), and a test keeps fighting words out of the book. Style text says "win over" and "concerts" too.
 
 - Made the main tabletop feel more dynamic with drifting candlelight and dust, a subtly moving realm map, twinkling title accents, tactile tile art/chip hover responses, and reduced-motion fallbacks.
+
+- Reserved a permanent responsive-height row for the Studio purchase helper, so selecting, deselecting, or placing an element never shifts the surrounding layout.
+
+- Removed the outer border/background from the Studio purchase helper and aligned it in a separate row exactly to the Your collection column width.
+- Set the combat monster stat-card cap to 296px, matching the approximate column width of a four-monster encounter at the combat modal's maximum width.
+
+- Added a centered responsive max width to combat monster stat cards so single-monster encounters no longer stretch the cards across the full battlefield.
+
+- Removed the Studio's Replace a Die mode button. Full setlists now show direct per-song replacement offers for non-matching dice, using a recycle + d4 icon and the 1 EXP cost alongside matching upgrade offers.
+
+- Merged the Studio purchase helper into the header's Your collection-aligned column, eliminating the separate reserved row so hidden guidance takes no space.
+
+- Moved the Studio's Buy Inspiration control and Inspiration balance directly beneath the active player's name.
+
+- Moved the Studio's selected-element purchase guidance and replacement action from beneath the element cards into the top-right helper area.
+
+- Moved the Studio's Inspiration helper UI to the top-right header and placed Refresh beside the "Available to Learn" heading.
+
+- Overlaid the Studio close button on the header sibling with a zero-width layout footprint, allowing Refresh to align to the same right edge.
+
+- Reduced the height of both available and collection style cards while tightening padding and rule spacing so their aligned rows remain readable.
+
+- Aligned the Studio's left and right Styles sections by matching the Song Elements block to the Songs block height and using one fixed card height for available, owned, and empty styles.
+
+- Refined the Studio's owned labels and empty states: Song Elements, Your Songs, Your Styles, two visible style-capacity slots, matching owned/available style card heights, and a fully labeled Inspiration balance.
+
+- Consolidated the Studio into two main surfaces based on the referenced Figma grouping: all purchasable dice and styles share the left column, while owned songs and styles share the right, removing the two extra style containers.
+
+- Fixed the Studio element panel itself to distribute its remaining height to the two-row card grid, eliminating the large empty area beneath the cards.
+
+- Explicitly stretched all four selected Studio element cards to the full height and width of their grid cells and centered their contents.
+
+- Made the Studio's selected element-offer grid and each element card fill their available height and width.
+
+- Simplified the Studio collection hierarchy to one "Your collection" title with "Songs" and "Styles" subsections.
+
+- Arranged the Studio's available element chips in two rows to match the roomier Your Collection layout.
+
+- Aligned the Studio's available and owned style panels with matching surfaces, heading spacing, card typography, and equal-height card rows.
+
+- Refined the Studio hierarchy and spacing from visual feedback: "Available to Learn" now covers dice and styles, redundant helper and flavor copy is removed, Refresh is right-aligned, learned styles stack vertically, and the setlist uses two roomier rows.
+
+- Made Simulate the first and default tab in the Playtest Console.
+
+- Redesigned the Studio around a clear market/collection split: dice and styles available to buy now sit on the left, while the bard's setlist, unclaimed purchases, and learned styles sit on the right.
+
+- Replaced generic monster rank names with a visual-growth progression that matches the level sprites: Lesser (Lv1), untitled (Lv2), Greater (Lv3), Elder (Lv4), and Apex (Lv5).
+
+- Added sixteen distinct pixel-art combat arenas mapped one-to-one with the board spaces, so every location now opens its own named dungeon backdrop instead of sharing a single battlefield.
+
+- Added level-specific pixel art for combat monsters: every elemental family now has five distinct silhouettes mapped directly to monster levels 1–5, progressing from minor creatures to boss-scale forms.
+
+- Stabilized the retro combat layout after attacks: the latest damage now appears as a trailing red segment in the target's HP bar, while its roll math and style details use a permanently reserved readout in the fight header instead of expanding a monster column.
+
+- Reimagined combat as a retro pixel-art dungeon encounter: monsters now appear as elemental sprites in a torchlit arena with compact live stat plates, elemental selection glows, Resolve, rewards, weaknesses, and immunities; the existing dice-song command flow remains intact in a pixel-styled action deck.
 
 - Language pass: every style's rule text is shorter and plainer (flat bonuses end with "Can't crit."). The rulebook was cut from 19 pages to 10: one section per topic, an Edge Cases appendix (B) and a one-page Quick Reference as the last page (C); the Glossary and six lightly-used diagrams were dropped.
 
@@ -90,7 +149,7 @@
 
 - Redesigned the full fight screen around a clear tactical hierarchy: a battle HUD now surfaces targets, ready songs, and Inspiration; monsters use aligned target-first cards; songs form a compact readable command rack; active styles use a concise rules strip instead of full shop cards; damage math and reroll/retreat controls have larger text and more stable responsive alignment.
 
-- Reworked the combat layout: the target/song prompt now sits beneath “The Mashup,” paid Reroll and the Inspiration counter sit beside Retreat, full owned-style cards appear below Your Songs, and the responsive song grid fits all seven Extra Verse songs on one row when space allows.
+- Reworked the combat layout: the target/song prompt now sits beneath “The Concert,” paid Reroll and the Inspiration counter sit beside Retreat, full owned-style cards appear below Your Songs, and the responsive song grid fits all seven Extra Verse songs on one row when space allows.
 
 - Removed the cover-song mechanic entirely. Combat actions now accept only the active bard's own songs; co-located players no longer lend songs or split Fame, and the cover-song UI, state fields, reward logic, helper, and tests have been removed.
 

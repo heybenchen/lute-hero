@@ -21,7 +21,7 @@ describe('Monster Spawner', () => {
       const monster = createMonsterFromTemplate(template, 5, 0)
 
       expect(monster.templateId).toBe('test-template')
-      expect(monster.name).toBe('Test Monster')
+      expect(monster.name).toBe('Lesser Test Monster')
       // HP comes from the monsterBaseHp tunable (8), not the template
       expect(monster.currentHP).toBe(8)
       expect(monster.maxHP).toBe(8)
@@ -84,7 +84,7 @@ describe('Monster Spawner', () => {
       expect(lv6.maxHP).toBe(60)  // capped at level 5
     })
 
-    it('should prefix name based on level', () => {
+    it('should name each level to match its visual growth', () => {
       const template: MonsterTemplate = {
         id: 'test',
         name: 'Goblin',
@@ -93,11 +93,11 @@ describe('Monster Spawner', () => {
         description: 'test',
       }
 
-      expect(createMonsterFromTemplate(template, 1, 0, 1).name).toBe('Goblin')
-      expect(createMonsterFromTemplate(template, 1, 0, 2).name).toBe('Strong Goblin')
-      expect(createMonsterFromTemplate(template, 1, 0, 3).name).toBe('Veteran Goblin')
-      expect(createMonsterFromTemplate(template, 1, 0, 4).name).toBe('Legendary Goblin')
-      expect(createMonsterFromTemplate(template, 1, 0, 5).name).toBe('Mythic Goblin')
+      expect(createMonsterFromTemplate(template, 1, 0, 1).name).toBe('Lesser Goblin')
+      expect(createMonsterFromTemplate(template, 1, 0, 2).name).toBe('Goblin')
+      expect(createMonsterFromTemplate(template, 1, 0, 3).name).toBe('Greater Goblin')
+      expect(createMonsterFromTemplate(template, 1, 0, 4).name).toBe('Elder Goblin')
+      expect(createMonsterFromTemplate(template, 1, 0, 5).name).toBe('Apex Goblin')
     })
 
     it('should cap the stored level at 5', () => {
@@ -113,7 +113,7 @@ describe('Monster Spawner', () => {
       const lv12 = createMonsterFromTemplate(template, 1, 0, 12)
 
       expect(lv6.level).toBe(5)
-      expect(lv6.name).toBe('Mythic Goblin')
+      expect(lv6.name).toBe('Apex Goblin')
       expect(lv12.level).toBe(5)
       expect(lv12.maxHP).toBe(lv6.maxHP)
     })
